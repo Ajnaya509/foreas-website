@@ -41,7 +41,7 @@ export default function Header() {
           <Link href="/" className="flex items-center group">
             <span className="font-title text-xl lg:text-2xl font-semibold tracking-wider text-white transition-all">
               FOREAS
-              <span className="text-accent-purple group-hover:text-accent-cyan transition-colors">/</span>
+              <span className="text-white group-hover:text-accent-purple transition-colors">/</span>
             </span>
           </Link>
 
@@ -79,7 +79,7 @@ export default function Header() {
           {/* Mobile menu button */}
           <button
             type="button"
-            className="md:hidden p-2 text-white/60 hover:text-white transition-colors"
+            className="md:hidden p-3 -mr-2 text-white/60 hover:text-white transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

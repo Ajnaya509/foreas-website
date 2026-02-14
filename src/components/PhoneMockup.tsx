@@ -132,7 +132,7 @@ export default function PhoneMockup() {
                 </motion.div>
 
                 {/* === USER POSITION - Cyan marker === */}
-                <div className="absolute top-[54%] left-[22%]">
+                <div className="absolute top-[62%] left-[22%]">
                   {/* Pulse around user */}
                   <motion.div
                     animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }}
@@ -146,7 +146,7 @@ export default function PhoneMockup() {
                 </div>
 
                 {/* "VOUS" label */}
-                <div className="absolute top-[66%] left-[22%] -translate-x-1/2">
+                <div className="absolute top-[74%] left-[22%] -translate-x-1/2">
                   <span className="text-[10px] text-white font-bold tracking-wide bg-accent-cyan/90 px-2 py-0.5 rounded shadow-lg shadow-accent-cyan/30">VOUS</span>
                 </div>
 
@@ -157,17 +157,17 @@ export default function PhoneMockup() {
                       <stop offset="0%" stopColor="#00D4FF"/>
                       <stop offset="100%" stopColor="#8C52FF"/>
                     </linearGradient>
-                    <marker id="routeArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-                      <path d="M0,0 L0,10 L10,5 z" fill="#8C52FF"/>
+                    <marker id="routeArrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                      <path d="M0,0 L0,6 L6,3 z" fill="#8C52FF" opacity="0.89"/>
                     </marker>
                   </defs>
 
                   {/* Animated route path */}
                   <motion.path
-                    d="M 66 120 C 90 115 100 100 120 95 S 145 85 155 78"
+                    d="M 66 145 C 90 135 110 110 130 95 S 148 82 155 78"
                     fill="none"
                     stroke="url(#routeLine)"
-                    strokeWidth="4"
+                    strokeWidth="3"
                     strokeLinecap="round"
                     markerEnd="url(#routeArrow)"
                     initial={{ pathLength: 0, opacity: 0 }}
@@ -177,12 +177,12 @@ export default function PhoneMockup() {
 
                   {/* Moving dot along route */}
                   <motion.circle
-                    r="5"
+                    r="3.5"
                     fill="#00D4FF"
                     filter="url(#glow)"
                     animate={{
-                      cx: [66, 90, 120, 155],
-                      cy: [120, 115, 95, 78],
+                      cx: [66, 90, 130, 155],
+                      cy: [145, 135, 95, 78],
                       opacity: [1, 1, 1, 0]
                     }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}

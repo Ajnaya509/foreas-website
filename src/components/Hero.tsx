@@ -94,7 +94,7 @@ export default function Hero() {
               >
                 {/* Button gradient background */}
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-purple/80 transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-cyan/80" />
-                <span className="relative">Essayer 7 jours</span>
+                <span className="relative">Essayer gratuitement</span>
                 <svg className="relative w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>

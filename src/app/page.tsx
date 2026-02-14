@@ -10,6 +10,7 @@ import RevenueSimulator from '@/components/RevenueSimulator'
 import Testimonials from '@/components/Testimonials'
 import AppDemo from '@/components/AppDemo'
 import DownloadSection from '@/components/DownloadSection'
+import AjnayaChatScroll from '@/components/AjnayaChatScroll'
 
 export default function Home() {
   return (
@@ -23,6 +24,11 @@ export default function Home() {
       <ScrollMapAnimation />
 
       <Features />
+      <GradientLine className="py-8" />
+
+      {/* Ajnaya chat conversation scroll */}
+      <AjnayaChatScroll />
+
       <GradientLine className="py-8" />
 
       {/* Interactive app demo */}

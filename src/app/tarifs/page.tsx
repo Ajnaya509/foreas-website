@@ -13,14 +13,12 @@ export default function TarifsPage() {
       price: 12.97,
       period: '/semaine',
       savings: null,
-      priceId: 'price_weekly_xxx' // À remplacer par le vrai price_id Stripe
     },
     annual: {
       price: 9.97,
       period: '/semaine',
       savings: '23%',
       total: 518.44,
-      priceId: 'price_annual_xxx' // À remplacer par le vrai price_id Stripe
     }
   }
 
@@ -44,15 +42,12 @@ export default function TarifsPage() {
         body: JSON.stringify({ plan: billingCycle })
       })
       const data = await response.json()
-
       if (data.url) {
         window.location.href = data.url
       } else {
-        console.error('Checkout error:', data.error)
-        alert('Configuration Stripe requise. Ajoutez vos clés API dans Vercel.')
+        alert(data.error || 'Erreur lors du paiement. Réessayez.')
       }
-    } catch (error) {
-      console.error('Checkout error:', error)
+    } catch {
       alert('Erreur de connexion. Réessayez.')
     } finally {
       setLoading(false)
@@ -78,10 +73,10 @@ export default function TarifsPage() {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full mb-6">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              7 jours d'essai gratuit
+              Essai gratuit inclus
             </span>
 
-            <h1 className="font-title text-4xl md:text-5xl lg:text-6xl font-semibold text-white mb-4">
+            <h1 className="font-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-white mb-4">
               Un investissement.<br />
               <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
                 Pas une dépense.
@@ -143,14 +138,14 @@ export default function TarifsPage() {
                 RECOMMANDÉ
               </div>
 
-              <div className="p-8 md:p-12">
+              <div className="p-5 sm:p-8 md:p-12">
                 {/* Price */}
                 <div className="text-center mb-8">
                   <div className="flex items-end justify-center gap-1 mb-2">
-                    <span className="font-title text-6xl md:text-7xl font-bold text-white">
+                    <span className="font-title text-4xl sm:text-6xl md:text-7xl font-bold text-white">
                       {pricing[billingCycle].price.toFixed(2).replace('.', ',')}
                     </span>
-                    <span className="text-2xl text-white/60 mb-2">€</span>
+                    <span className="text-lg sm:text-2xl text-white/60 mb-2">€</span>
                     <span className="text-white/40 mb-2">{pricing[billingCycle].period}</span>
                   </div>
 
@@ -166,7 +161,7 @@ export default function TarifsPage() {
                 <button
                   onClick={handleCheckout}
                   disabled={loading}
-                  className="w-full py-4 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold text-lg hover:opacity-90 transition-opacity mb-8 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold text-lg hover:opacity-90 transition-opacity mb-8 flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {loading ? (
                     <>
@@ -174,11 +169,11 @@ export default function TarifsPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      Redirection...
+                      Redirection vers Stripe...
                     </>
                   ) : (
                     <>
-                      Commencer l'essai gratuit
+                      Essayer gratuitement
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                       </svg>
@@ -187,7 +182,7 @@ export default function TarifsPage() {
                 </button>
 
                 <p className="text-center text-white/30 text-sm mb-8">
-                  Annulez à tout moment. Sans engagement.
+                  0€ aujourd&apos;hui. Annulez quand vous voulez.
                 </p>
 
                 {/* Features */}
@@ -218,7 +213,7 @@ export default function TarifsPage() {
               </div>
 
               {/* Bottom section - Guarantee */}
-              <div className="border-t border-white/5 bg-white/[0.02] px-8 md:px-12 py-6">
+              <div className="border-t border-white/5 bg-white/[0.02] px-5 sm:px-8 md:px-12 py-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
                     <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -268,7 +263,7 @@ export default function TarifsPage() {
               {[
                 {
                   q: "Comment fonctionne l'essai gratuit ?",
-                  a: "Vous avez 7 jours pour tester toutes les fonctionnalités. Aucune carte bancaire requise pour commencer. Vous ne payez que si vous êtes convaincu."
+                  a: "Testez gratuitement dès maintenant. Une empreinte de carte est requise mais aucun prélèvement n'est effectué pendant la période d'essai. Annulez avant la fin = 0€."
                 },
                 {
                   q: "Puis-je annuler à tout moment ?",

@@ -21,7 +21,7 @@ export default function Preloader() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#050508]"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#050508] overflow-hidden"
         >
           {/* Subtle ambient glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent-purple/[0.06] rounded-full blur-[120px] pointer-events-none" />
@@ -36,7 +36,7 @@ export default function Preloader() {
             {/* FOREAS/ */}
             <h1 className="font-title text-5xl md:text-7xl font-semibold tracking-wider text-white">
               FOREAS
-              <span className="text-accent-purple">/</span>
+              <span className="text-white">/</span>
             </h1>
           </motion.div>
 
@@ -50,13 +50,16 @@ export default function Preloader() {
             Toujours plus loin.
           </motion.p>
 
-          {/* Animated gradient line */}
+          {/* Gradient bar - composant graphique SVG */}
           <motion.div
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-8 w-48 h-[2px] bg-gradient-to-r from-accent-cyan to-accent-purple rounded-full origin-left"
-          />
+            transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-8 w-[340px] md:w-[500px] origin-center"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/gradient-bar.svg" alt="" className="w-full h-[2px] object-cover" />
+          </motion.div>
 
           {/* Loading indicator */}
           <motion.div

@@ -81,7 +81,7 @@ export default function ChauffeursPage() {
               className="group relative inline-flex items-center justify-center gap-2 px-6 py-3.5 md:px-8 md:py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-xl md:rounded-2xl transition-all hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-purple/80 group-hover:to-accent-cyan/80 transition-all" />
-              <span className="relative">Essayer 7 jours</span>
+              <span className="relative">Essayer gratuitement</span>
             </a>
             <a
               href="#avantages"

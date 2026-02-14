@@ -22,21 +22,28 @@ export default function Footer() {
         {/* Main */}
         <div className="py-12 md:py-16">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 md:gap-12">
-            {/* Brand */}
-            <div className="flex-shrink-0">
-              <Link href="/" className="inline-block mb-3 group">
+            {/* Brand — toujours centré internement, bloc à gauche sur desktop */}
+            <div className="flex-shrink-0 flex flex-col items-center text-center">
+              <Link href="/" className="inline-block group">
                 <span className="font-title text-xl md:text-2xl font-semibold tracking-wider text-white">
                   FOREAS
-                  <span className="text-accent-purple group-hover:text-accent-cyan transition-colors">/</span>
+                  <span className="text-white group-hover:text-accent-purple transition-colors">/</span>
                 </span>
               </Link>
-              <p className="tagline text-sm md:text-base text-white/50">
+              <p className="tagline text-sm md:text-base text-white/50 mt-2">
                 Toujours plus loin.
               </p>
+              {/* Barre dégradée cyan-violet-cyan (identique au preloader) */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/gradient-bar.svg"
+                alt=""
+                className="w-[140px] md:w-[180px] h-[2px] object-cover mt-3 opacity-60"
+              />
             </div>
 
             {/* Links */}
-            <div className="flex flex-wrap gap-x-6 gap-y-3 md:gap-x-8">
+            <div className="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-3 sm:gap-x-6 md:gap-x-8">
               {links.map((link) => (
                 <Link
                   key={link.name}
@@ -49,12 +56,12 @@ export default function Footer() {
             </div>
 
             {/* Social */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center md:justify-start gap-3">
               {['twitter', 'linkedin'].map((social) => (
                 <a
                   key={social}
                   href={`#${social}`}
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition-all"
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition-all"
                 >
                   {social === 'twitter' && (
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -75,20 +82,20 @@ export default function Footer() {
         {/* Bottom */}
         <div className="py-5 md:py-6 border-t border-white/[0.05]">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-[11px] md:text-xs text-white/20">
+            <p className="text-xs text-white/20">
               © 2026 FOREAS Labs
             </p>
-            <div className="flex items-center gap-4 md:gap-6">
+            <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
               {legal.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-[11px] md:text-xs text-white/20 hover:text-white/60 transition-colors"
+                  className="text-xs text-white/20 hover:text-white/60 transition-colors"
                 >
                   {link.name}
                 </Link>
               ))}
-              <span className="text-[11px] md:text-xs text-white/20">
+              <span className="text-xs text-white/20">
                 Paris
               </span>
             </div>
