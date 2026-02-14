@@ -90,7 +90,7 @@ export default function CTA() {
 
           {/* Trust badges */}
           <p className="text-white/50 text-sm">
-            Gratuit 7j • Résiliable en 1 clic • Vos données
+            Résiliable en 1 clic • Vos données restent les vôtres
           </p>
         </motion.div>
       </div>

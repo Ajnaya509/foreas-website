@@ -144,7 +144,7 @@ export default function ChauffeursPage() {
             </a>
           </motion.div>
           <p className="mt-4 text-white/30 text-xs md:text-sm">
-            Gratuit 7j • Résiliable en 1 clic
+            Résiliable en 1 clic
           </p>
         </div>
       </section>

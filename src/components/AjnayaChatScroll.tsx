@@ -281,19 +281,22 @@ export default function AjnayaChatScroll() {
     offset: ['start end', 'end start'],
   })
 
+  // Phone appears first
+  const phoneOpacity = useTransform(scrollYProgress, [0, 0.06, 0.85, 0.95], [0, 1, 1, 0])
+  const phoneScale = useTransform(scrollYProgress, [0, 0.06], [0.95, 1])
   const sectionOpacity = useTransform(scrollYProgress, [0, 0.08, 0.85, 0.95], [0, 1, 1, 0])
 
-  // Messages appear progressively as user scrolls
+  // Messages appear progressively — start AFTER phone is visible (0.09)
   const msgCount = messages.length
   const msgOpacities = messages.map((_, i) => {
-    const start = 0.08 + (i / msgCount) * 0.58
-    const end = start + 0.05
+    const start = 0.09 + (i / msgCount) * 0.56
+    const end = start + 0.04
     return useTransform(scrollYProgress, [start, end], [0, 1])
   })
 
-  // Micro-cards
+  // Micro-cards — appear slightly after their corresponding message
   const cardOpacities = microCards.map((_, i) => {
-    const start = 0.1 + (i / microCards.length) * 0.55
+    const start = 0.12 + (i / microCards.length) * 0.55
     const mid = start + 0.05
     const end = start + 0.22
     return {
@@ -302,8 +305,8 @@ export default function AjnayaChatScroll() {
     }
   })
 
-  // Chat scrolls up as messages accumulate
-  const chatScrollY = useTransform(scrollYProgress, [0.08, 0.78], [0, -520])
+  // Chat scrolls up as messages accumulate — starts when 2nd message appears
+  const chatScrollY = useTransform(scrollYProgress, [0.14, 0.78], [0, -580])
 
   return (
     <section ref={containerRef} className="relative h-[420vh] bg-foreas-deepblack">
@@ -348,18 +351,19 @@ export default function AjnayaChatScroll() {
           </div>
 
           {/* ─── Phone Mockup ───────────────────────────── */}
-          <div className="relative">
+          <motion.div className="relative" style={{ opacity: phoneOpacity, scale: phoneScale }}>
             <div className="absolute -inset-6 bg-gradient-to-b from-accent-purple/12 via-accent-cyan/6 to-transparent rounded-[4rem] blur-[50px] opacity-50" />
 
             <div className="relative w-[250px] sm:w-[270px] md:w-[290px] h-[480px] sm:h-[520px] md:h-[560px] bg-gradient-to-b from-[#1a1a1f] to-[#0d0d12] rounded-[2.8rem] p-[3px] shadow-2xl shadow-black/50">
               <div className="absolute inset-0 rounded-[2.8rem] border border-white/[0.08]" />
 
-              <div className="relative w-full h-full bg-[#050508] rounded-[2.6rem] overflow-hidden">
+              {/* Phone screen — isolation forces proper paint containment for overflow clipping */}
+              <div className="relative w-full h-full bg-[#050508] rounded-[2.6rem]" style={{ overflow: 'hidden', isolation: 'isolate' }}>
                 {/* Dynamic Island */}
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90px] h-[28px] bg-black rounded-full z-20" />
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90px] h-[28px] bg-black rounded-full z-30" />
 
                 {/* Status bar */}
-                <div className="absolute top-3 left-6 right-6 flex justify-between items-center text-white text-[10px] font-medium z-10">
+                <div className="absolute top-3 left-6 right-6 flex justify-between items-center text-white text-[10px] font-medium z-20">
                   <span>20:03</span>
                   <div className="flex items-center gap-1 opacity-70">
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -372,8 +376,8 @@ export default function AjnayaChatScroll() {
                   </div>
                 </div>
 
-                {/* Chat header */}
-                <div className="absolute top-12 left-0 right-0 z-10 px-4 pb-2.5 bg-[#050508]/95 backdrop-blur-sm border-b border-white/[0.04]">
+                {/* Chat header — z-20 to sit above scrolling messages */}
+                <div className="absolute top-12 left-0 right-0 z-20 px-4 pb-2.5 bg-[#050508] border-b border-white/[0.04]">
                   <div className="flex items-center gap-2.5">
                     {/* Ajnaya avatar */}
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center shadow-lg shadow-accent-purple/20">
@@ -396,70 +400,72 @@ export default function AjnayaChatScroll() {
                   </div>
                 </div>
 
-                {/* ─── Chat messages ───────────────────────── */}
-                <motion.div
-                  style={{ y: chatScrollY }}
-                  className="absolute top-[90px] left-0 right-0 px-3 space-y-2 pb-28"
-                >
-                  {messages.map((msg, i) => (
-                    <motion.div
-                      key={i}
-                      style={{ opacity: msgOpacities[i] }}
-                      className={`flex ${msg.sender === 'driver' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[88%] px-3 py-2 rounded-2xl ${
-                          msg.sender === 'ajnaya'
-                            ? 'bg-white/[0.05] border border-white/[0.04] rounded-tl-sm'
-                            : msg.sender === 'voice'
-                            ? 'bg-accent-purple/8 border border-accent-purple/15 rounded-tr-sm'
-                            : 'bg-gradient-to-r from-accent-purple/20 to-accent-cyan/10 border border-accent-cyan/[0.08] rounded-tr-sm'
-                        }`}
+                {/* ─── Chat scroll area — clipped zone between header and input ── */}
+                <div className="absolute top-[88px] bottom-[58px] left-0 right-0 z-10" style={{ overflow: 'hidden' }}>
+                  <motion.div
+                    style={{ y: chatScrollY }}
+                    className="px-3 space-y-2 pt-1 pb-4"
+                  >
+                    {messages.map((msg, i) => (
+                      <motion.div
+                        key={i}
+                        style={{ opacity: msgOpacities[i] }}
+                        className={`flex ${msg.sender === 'driver' ? 'justify-end' : 'justify-start'}`}
                       >
-                        {/* Voice command label */}
-                        {msg.sender === 'voice' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <div className="w-3.5 h-3.5 rounded-full bg-accent-purple/25 flex items-center justify-center">
-                              <svg className="w-2 h-2 text-accent-purple" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                              </svg>
+                        <div
+                          className={`max-w-[88%] px-3 py-2 rounded-2xl ${
+                            msg.sender === 'ajnaya'
+                              ? 'bg-white/[0.05] border border-white/[0.04] rounded-tl-sm'
+                              : msg.sender === 'voice'
+                              ? 'bg-accent-purple/8 border border-accent-purple/15 rounded-tr-sm'
+                              : 'bg-gradient-to-r from-accent-purple/20 to-accent-cyan/10 border border-accent-cyan/[0.08] rounded-tr-sm'
+                          }`}
+                        >
+                          {/* Voice command label */}
+                          {msg.sender === 'voice' && (
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <div className="w-3.5 h-3.5 rounded-full bg-accent-purple/25 flex items-center justify-center">
+                                <svg className="w-2 h-2 text-accent-purple" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                                </svg>
+                              </div>
+                              <span className="text-[7px] text-accent-purple/50 font-mono tracking-wider">COMMANDE VOCALE</span>
                             </div>
-                            <span className="text-[7px] text-accent-purple/50 font-mono tracking-wider">COMMANDE VOCALE</span>
-                          </div>
-                        )}
-
-                        <p className={`text-[11px] leading-[1.5] ${
-                          msg.sender === 'voice' ? 'text-accent-purple font-medium' : 'text-white/90'
-                        }`}>{msg.text}</p>
-
-                        {/* Visual blocks */}
-                        {msg.visualBlock?.type === 'mapSnapshot' && (
-                          <MapSnapshotBlock block={msg.visualBlock} />
-                        )}
-                        {msg.visualBlock?.type === 'voiceConfirm' && (
-                          <VoiceConfirmBlock block={msg.visualBlock} />
-                        )}
-                        {msg.visualBlock?.type === 'courseCard' && (
-                          <CourseCardBlock block={msg.visualBlock} />
-                        )}
-
-                        {/* Timestamp + watermark */}
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-white/20 text-[8px]">{msg.time}</span>
-                          {msg.watermark && (
-                            <span className="text-[6px] text-green-400/30 font-mono tracking-widest">{msg.watermark}</span>
                           )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
 
-                {/* ─── Input bar with mic button ──────────── */}
-                <div className="absolute bottom-5 left-3 right-3 z-10">
+                          <p className={`text-[11px] leading-[1.5] ${
+                            msg.sender === 'voice' ? 'text-accent-purple font-medium' : 'text-white/90'
+                          }`}>{msg.text}</p>
+
+                          {/* Visual blocks */}
+                          {msg.visualBlock?.type === 'mapSnapshot' && (
+                            <MapSnapshotBlock block={msg.visualBlock} />
+                          )}
+                          {msg.visualBlock?.type === 'voiceConfirm' && (
+                            <VoiceConfirmBlock block={msg.visualBlock} />
+                          )}
+                          {msg.visualBlock?.type === 'courseCard' && (
+                            <CourseCardBlock block={msg.visualBlock} />
+                          )}
+
+                          {/* Timestamp + watermark */}
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-white/20 text-[8px]">{msg.time}</span>
+                            {msg.watermark && (
+                              <span className="text-[6px] text-green-400/30 font-mono tracking-widest">{msg.watermark}</span>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
+
+                {/* ─── Input bar with mic button — z-20 above messages ── */}
+                <div className="absolute bottom-5 left-3 right-3 z-20">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center bg-white/[0.04] border border-white/[0.06] rounded-full px-3.5 py-2.5">
+                    <div className="flex-1 flex items-center bg-[#050508]/95 backdrop-blur-md border border-white/[0.06] rounded-full px-3.5 py-2.5">
                       <span className="text-white/20 text-[10px]">Parlez ou écrivez...</span>
                     </div>
                     {/* Mic button — gradient, prominent */}
@@ -473,10 +479,10 @@ export default function AjnayaChatScroll() {
                 </div>
 
                 {/* Home indicator */}
-                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[100px] h-[4px] bg-white/15 rounded-full" />
+                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[100px] h-[4px] bg-white/15 rounded-full z-20" />
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right micro-cards (desktop) */}
           <div className="hidden lg:flex flex-col gap-5 w-[210px]">
