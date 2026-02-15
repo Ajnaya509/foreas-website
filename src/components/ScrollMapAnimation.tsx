@@ -23,8 +23,10 @@ export default function ScrollMapAnimation() {
   // on the visitor's REAL screen — no phone mockup, full immersion
   const mapTranslateX = useTransform(scrollYProgress, [0.08, 0.75], ['0%', '-45%'])
 
-  // ─── Car cursor position within the wide SVG ──────────
-  const carProgress = useTransform(scrollYProgress, [0.12, 0.72], [0, 1])
+  // ─── Car cursor — only appears AFTER map is fully visible & settled ──
+  // Map arrives at 0.08, so car starts moving at 0.18 (well after map is centered)
+  const carOpacity = useTransform(scrollYProgress, [0.16, 0.20], [0, 1])
+  const carProgress = useTransform(scrollYProgress, [0.20, 0.72], [0, 1])
   const carX = useTransform(carProgress, [0, 0.3, 0.6, 1], [180, 320, 500, 650])
   const carY = useTransform(carProgress, [0, 0.3, 0.6, 1], [320, 280, 200, 130])
 
@@ -180,28 +182,30 @@ export default function ScrollMapAnimation() {
                 style={{ pathLength: routeLength }}
               />
 
-              {/* ─── Car / driver cursor ─── */}
-              <motion.circle
-                style={{ cx: carX, cy: carY }}
-                r="12"
-                fill="#00D4FF"
-                opacity="0.15"
-              />
-              <motion.circle
-                style={{ cx: carX, cy: carY }}
-                r="8"
-                fill="#00D4FF"
-                stroke="#fff"
-                strokeWidth="2.5"
-              />
-              <motion.text
-                style={{ x: carX, y: useTransform(carY, v => v + 22) }}
-                textAnchor="middle"
-                fill="#00D4FF"
-                fontSize="10"
-                fontWeight="700"
-                fontFamily="system-ui"
-              >VOUS</motion.text>
+              {/* ─── Car / driver cursor — appears only after map is settled ─── */}
+              <motion.g style={{ opacity: carOpacity }}>
+                <motion.circle
+                  style={{ cx: carX, cy: carY }}
+                  r="12"
+                  fill="#00D4FF"
+                  opacity="0.15"
+                />
+                <motion.circle
+                  style={{ cx: carX, cy: carY }}
+                  r="8"
+                  fill="#00D4FF"
+                  stroke="#fff"
+                  strokeWidth="2.5"
+                />
+                <motion.text
+                  style={{ x: carX, y: useTransform(carY, v => v + 22) }}
+                  textAnchor="middle"
+                  fill="#00D4FF"
+                  fontSize="10"
+                  fontWeight="700"
+                  fontFamily="system-ui"
+                >VOUS</motion.text>
+              </motion.g>
             </svg>
           </motion.div>
 
