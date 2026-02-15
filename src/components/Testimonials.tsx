@@ -77,8 +77,6 @@ function StatBadge({ value, label, color }: { value: string; label: string; colo
 
 /* ─── Video Card ───────────────────────────────────────────── */
 function VideoCard({ testimonial, isActive, isMobile }: { testimonial: Testimonial; isActive: boolean; isMobile: boolean }) {
-  const [playing, setPlaying] = useState(false)
-
   const cardWidth = isMobile ? 240 : 280
 
   return (
@@ -91,51 +89,39 @@ function VideoCard({ testimonial, isActive, isMobile }: { testimonial: Testimoni
         transform: isActive ? 'scale(1)' : 'scale(0.92)',
       }}
     >
-      {/* Video thumbnail — vertical 9:14 */}
+      {/* Video — Mux Player with built-in poster/thumbnail */}
       <div
-        className="relative w-full rounded-2xl overflow-hidden cursor-pointer"
+        className="relative w-full rounded-2xl overflow-hidden"
         style={{
           aspectRatio: '9/14',
           border: isActive ? `1px solid ${testimonial.accentColor}30` : '1px solid rgba(255,255,255,0.06)',
+          background: '#0a0a14',
         }}
-        onClick={() => setPlaying(!playing)}
       >
-        {!playing ? (
-          <>
-            {/* Mux auto-generated thumbnail */}
-            <img
-              src={`https://image.mux.com/${testimonial.playbackId}/thumbnail.webp?time=2&width=400`}
-              alt={`Témoignage ${testimonial.name}`}
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-            />
+        {/* Mux Player — paused by default, shows poster frame automatically */}
+        <MuxPlayer
+          playbackId={testimonial.playbackId}
+          streamType="on-demand"
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            inset: 0,
+          } as any}
+          thumbnailTime={2}
+          primaryColor="#ffffff"
+          secondaryColor="#000000"
+          accentColor={testimonial.accentColor}
+          preload="metadata"
+        />
 
-            {/* Play button center */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <PlayButton />
-            </div>
+        {/* Stat badge overlay — always visible */}
+        <div className="absolute bottom-4 left-3 right-3 z-10 pointer-events-none">
+          <StatBadge value={testimonial.stat.value} label={testimonial.stat.label} color={testimonial.accentColor} />
+        </div>
 
-            {/* Bottom gradient */}
-            <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/90 to-transparent" />
-
-            {/* Stat badge — the hook before watching */}
-            <div className="absolute bottom-4 left-3 right-3">
-              <StatBadge value={testimonial.stat.value} label={testimonial.stat.label} color={testimonial.accentColor} />
-            </div>
-          </>
-        ) : (
-          /* Mux Player — loads only on tap */
-          <MuxPlayer
-            playbackId={testimonial.playbackId}
-            autoPlay
-            muted={false}
-            style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
-            streamType="on-demand"
-            primaryColor="#ffffff"
-            secondaryColor="#000000"
-            accentColor={testimonial.accentColor}
-          />
-        )}
+        {/* Bottom gradient for badge readability */}
+        <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/80 to-transparent z-[5] pointer-events-none" />
       </div>
 
       {/* Driver info + quote */}
