@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, MotionValue } from 'framer-motion'
 import { useRef } from 'react'
 import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 
@@ -20,20 +20,17 @@ interface ChatMessage {
 
 // ─── Scénario : le chauffeur demande, Ajnaya agit ─────────
 const messages: ChatMessage[] = [
-  // 1. Le chauffeur initie — la question que TOUT chauffeur se pose
   {
     sender: 'driver',
     text: 'Où est-ce que je peux gagner plus là ?',
     time: '20:03',
   },
-  // 2. Ajnaya répond avec logique TERRAIN (jamais "d'après ses données")
   {
     sender: 'ajnaya',
     text: 'Gare de Lyon, à 800m de toi. 3 Intercités arrivent à 20:15 — la demande va monter de +40% dans 12 minutes.',
     time: '20:03',
     watermark: 'SAFE',
   },
-  // 3. Ajnaya affiche le snapshot Mapbox
   {
     sender: 'ajnaya',
     text: 'Si tu pars maintenant, tu arrives avant le pic.',
@@ -49,13 +46,11 @@ const messages: ChatMessage[] = [
     },
     watermark: 'SAFE',
   },
-  // 4. Le chauffeur valide — engagement immédiat
   {
     sender: 'driver',
     text: 'D\'accord, j\'y vais.',
     time: '20:04',
   },
-  // 5. Confirmation vocale avec countdown
   {
     sender: 'ajnaya',
     text: 'Navigation vers Gare de Lyon ?',
@@ -66,19 +61,16 @@ const messages: ChatMessage[] = [
       countdown: 10,
     },
   },
-  // 6. Confirmation voice
   {
     sender: 'voice',
     text: '🎙 "Oui"',
     time: '20:04',
   },
-  // 7. Ajnaya lance — dopamine maximale
   {
     sender: 'ajnaya',
     text: 'C\'est parti. Navigation lancée — arrivée 20:08.',
     time: '20:04',
   },
-  // 8. La récompense : course assignée
   {
     sender: 'ajnaya',
     text: 'Course assignée.',
@@ -92,7 +84,6 @@ const messages: ChatMessage[] = [
     },
     watermark: 'SAFE',
   },
-  // 9. L'enchaînement — le chauffeur comprend la boucle vertueuse
   {
     sender: 'ajnaya',
     text: 'Neuilly : concert au Théâtre des Sablons à 21h. Enchaînement estimé dans 8 min. On y va ?',
@@ -101,68 +92,100 @@ const messages: ChatMessage[] = [
   },
 ]
 
-// ─── Micro-cards ───────────────────────────────────────────
+// ─── Explanation cards — tied to specific chat moments ─────
 type CardColor = 'cyan' | 'purple' | 'green'
 
-const colorClasses: Record<CardColor, { bg: string; text: string }> = {
-  cyan: { bg: 'bg-accent-cyan/5 border-accent-cyan/20', text: 'text-accent-cyan' },
-  purple: { bg: 'bg-accent-purple/5 border-accent-purple/20', text: 'text-accent-purple' },
-  green: { bg: 'bg-green-500/5 border-green-500/20', text: 'text-green-400' },
+interface ExplanationCard {
+  title: string
+  desc: string
+  icon: string      // emoji for simplicity + universal comprehension
+  color: CardColor
+  side: 'left' | 'right'
+  msgIndex: number  // which message this card explains
 }
 
-const microCards: { title: string; desc: string; color: CardColor; side: 'left' | 'right' }[] = [
+const explanationCards: ExplanationCard[] = [
   {
     title: 'Le chauffeur demande',
-    desc: 'Une question naturelle. Ajnaya comprend l\'intention et agit.',
+    desc: 'Une question naturelle. Ajnaya comprend et agit.',
+    icon: '💬',
     color: 'cyan',
     side: 'left',
+    msgIndex: 0,
   },
   {
     title: 'Logique terrain',
-    desc: 'Horaires de trains, événements, affluence — expliqués, pas cachés.',
+    desc: 'Trains, événements, affluence — tout est expliqué.',
+    icon: '🧠',
     color: 'purple',
     side: 'right',
+    msgIndex: 1,
   },
   {
-    title: 'Snapshot Mapbox',
-    desc: 'Carte intégrée au chat. Un regard, une décision. Zéro friction.',
+    title: 'Carte intégrée',
+    desc: 'Un regard sur la carte, une décision. Zéro friction.',
+    icon: '🗺️',
     color: 'cyan',
     side: 'left',
+    msgIndex: 2,
   },
   {
     title: '+34€ en 1 course',
     desc: 'Bonne zone, bon timing. Le résultat parle.',
+    icon: '💰',
     color: 'green',
     side: 'right',
+    msgIndex: 7,
   },
   {
     title: 'Boucle vertueuse',
-    desc: 'La course suivante est déjà calculée. Enchaînement sans temps mort.',
+    desc: 'La suivante est déjà calculée. Zéro temps mort.',
+    icon: '🔄',
     color: 'purple',
     side: 'left',
+    msgIndex: 8,
   },
 ]
+
+const colorClasses: Record<CardColor, { bg: string; border: string; text: string; dot: string; line: string }> = {
+  cyan: {
+    bg: 'bg-accent-cyan/[0.06]',
+    border: 'border-accent-cyan/20',
+    text: 'text-accent-cyan',
+    dot: 'bg-accent-cyan',
+    line: 'from-accent-cyan/40 to-accent-cyan/0',
+  },
+  purple: {
+    bg: 'bg-accent-purple/[0.06]',
+    border: 'border-accent-purple/20',
+    text: 'text-accent-purple',
+    dot: 'bg-accent-purple',
+    line: 'from-accent-purple/40 to-accent-purple/0',
+  },
+  green: {
+    bg: 'bg-green-500/[0.06]',
+    border: 'border-green-500/20',
+    text: 'text-green-400',
+    dot: 'bg-green-400',
+    line: 'from-green-400/40 to-green-400/0',
+  },
+}
 
 // ─── Visual block sub-components ───────────────────────────
 
 function MapSnapshotBlock({ block }: { block: Extract<VisualBlock, { type: 'mapSnapshot' }> }) {
   return (
     <div className="mt-2.5 rounded-xl overflow-hidden border border-white/10">
-      {/* Mapbox-style dark snapshot */}
       <div className="relative h-[75px] bg-[#080810]">
         <svg className="w-full h-full" viewBox="0 0 220 75" preserveAspectRatio="xMidYMid slice">
           <rect width="220" height="75" fill="#080810" />
-          {/* Street grid - Paris style */}
           <path d="M 0 25 L 220 25" stroke="#111120" strokeWidth="0.6" />
           <path d="M 0 50 L 220 50" stroke="#111120" strokeWidth="0.6" />
           <path d="M 55 0 L 55 75" stroke="#111120" strokeWidth="0.6" />
           <path d="M 110 0 L 110 75" stroke="#111120" strokeWidth="0.6" />
           <path d="M 165 0 L 165 75" stroke="#111120" strokeWidth="0.6" />
-          {/* Seine-like curve */}
           <path d="M 0 62 Q 60 55 110 60 Q 160 65 220 58" stroke="#0a1a2a" strokeWidth="3" fill="none" opacity="0.5" />
-          {/* Diagonal boulevard */}
           <path d="M 15 70 Q 80 48 140 32 Q 180 22 215 18" stroke="#14142a" strokeWidth="1.2" fill="none" />
-          {/* Route line — gradient */}
           <defs>
             <linearGradient id="snapRoute" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#00D4FF" />
@@ -170,26 +193,21 @@ function MapSnapshotBlock({ block }: { block: Extract<VisualBlock, { type: 'mapS
             </linearGradient>
           </defs>
           <path d="M 40 50 Q 90 44 140 30 Q 175 20 195 24" fill="none" stroke="url(#snapRoute)" strokeWidth="2.5" strokeLinecap="round" />
-          {/* Origin pin — glow + solid */}
           <circle cx="40" cy="50" r="6" fill="#00D4FF" opacity="0.15" />
           <circle cx="40" cy="50" r="3.5" fill="#00D4FF" />
           <circle cx="40" cy="50" r="1.5" fill="#fff" />
-          {/* Destination pin — glow + solid */}
           <circle cx="195" cy="24" r="6" fill="#8C52FF" opacity="0.15" />
           <circle cx="195" cy="24" r="3.5" fill="#8C52FF" />
           <circle cx="195" cy="24" r="1.5" fill="#fff" />
         </svg>
-        {/* Location labels */}
         <div className="absolute bottom-1.5 left-2 right-2 flex justify-between">
           <span className="text-[7px] text-accent-cyan font-semibold bg-[#050508]/90 px-1.5 py-0.5 rounded-sm">{block.from}</span>
           <span className="text-[7px] text-accent-purple font-semibold bg-[#050508]/90 px-1.5 py-0.5 rounded-sm">{block.to}</span>
         </div>
-        {/* SAFE watermark */}
         <div className="absolute top-1.5 right-2">
           <span className="text-[6px] text-green-400/50 font-mono tracking-widest">SAFE</span>
         </div>
       </div>
-      {/* Bottom CTA bar */}
       <div className="flex items-center justify-between px-3 py-2 bg-[#0a0a16] border-t border-white/5">
         <div className="flex items-center gap-2.5">
           <span className="text-[9px] text-white/50 font-medium">{block.duration}</span>
@@ -227,7 +245,6 @@ function VoiceConfirmBlock({ block }: { block: Extract<VisualBlock, { type: 'voi
             <span className="text-[8px] text-white/30 block">Dites &quot;Oui&quot; ou &quot;Non&quot;</span>
           </div>
         </div>
-        {/* Countdown circle */}
         <div className="relative w-8 h-8">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 32 32">
             <circle cx="16" cy="16" r="13" fill="none" stroke="#8C52FF15" strokeWidth="2.5" />
@@ -244,7 +261,6 @@ function CourseCardBlock({ block }: { block: Extract<VisualBlock, { type: 'cours
   return (
     <div className="mt-2.5 rounded-xl overflow-hidden border border-green-500/15 bg-gradient-to-br from-green-500/[0.06] to-green-500/[0.02]">
       <div className="px-3 py-2.5">
-        {/* Route */}
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-accent-cyan shadow-sm shadow-accent-cyan/30" />
@@ -256,7 +272,6 @@ function CourseCardBlock({ block }: { block: Extract<VisualBlock, { type: 'cours
             <div className="w-2 h-2 rounded-full bg-accent-purple shadow-sm shadow-accent-purple/30" />
           </div>
         </div>
-        {/* Amount + badge */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1">
             <span className="text-xl font-bold text-green-400">{block.amount}</span>
@@ -269,6 +284,57 @@ function CourseCardBlock({ block }: { block: Extract<VisualBlock, { type: 'cours
         <span className="text-[6px] text-green-400/40 font-mono tracking-widest">SAFE</span>
       </div>
     </div>
+  )
+}
+
+// ─── Floating explanation card with connector ──────────────
+function FloatingCard({
+  card,
+  opacity,
+  x,
+  isMobile,
+}: {
+  card: ExplanationCard
+  opacity: MotionValue<number>
+  x: MotionValue<number>
+  isMobile: boolean
+}) {
+  const colors = colorClasses[card.color]
+  const isLeft = card.side === 'left'
+
+  return (
+    <motion.div
+      style={{ opacity, x }}
+      className={`flex items-center gap-0 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}
+    >
+      {/* Card content */}
+      <div className={`${isMobile ? 'w-[130px]' : 'w-[190px]'} p-2.5 sm:p-3 rounded-2xl border ${colors.bg} ${colors.border}`}>
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="text-sm sm:text-base">{card.icon}</span>
+          <span className={`text-[10px] sm:text-xs font-semibold ${colors.text}`}>{card.title}</span>
+        </div>
+        <p className="text-white/45 text-[9px] sm:text-[11px] leading-snug">{card.desc}</p>
+      </div>
+
+      {/* Connector line — thin gradient line from card to phone */}
+      <div className={`flex items-center ${isLeft ? '' : 'flex-row-reverse'}`}>
+        {/* Dot on card side */}
+        <div className={`w-1.5 h-1.5 rounded-full ${colors.dot} shrink-0`} />
+        {/* Line */}
+        <div
+          className={`${isMobile ? 'w-3 sm:w-4' : 'w-6 lg:w-10'} h-px bg-gradient-to-r ${
+            isLeft ? colors.line : colors.line.replace('from-', 'to-').replace('to-', 'from-')
+          }`}
+          style={{
+            backgroundImage: isLeft
+              ? `linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to))`
+              : undefined,
+          }}
+        />
+        {/* Dot on phone side */}
+        <div className={`w-1 h-1 rounded-full ${colors.dot} opacity-60 shrink-0`} />
+      </div>
+    </motion.div>
   )
 }
 
@@ -286,9 +352,6 @@ export default function AjnayaChatScroll() {
   })
 
   // ─── Timing thresholds ─────────────────────────────────────
-  // Mobile (300vh) : le scroll avance plus vite par pixel,
-  // on retarde les messages pour que le phone soit bien centré à l'écran.
-  // Desktop (420vh) : timing original, plus de marge de scroll.
   const t = isMobile
     ? { phoneIn: 0.08, phoneOut: 0.88, sectionIn: 0.10, sectionOut: 0.90,
         msgStart: 0.18, msgSpan: 0.52, cardStart: 0.22, cardSpan: 0.50,
@@ -297,12 +360,12 @@ export default function AjnayaChatScroll() {
         msgStart: 0.09, msgSpan: 0.56, cardStart: 0.12, cardSpan: 0.55,
         scrollStart: 0.14, scrollEnd: 0.78, chatTravel: -580 }
 
-  // Phone appears first — with breathing room on mobile
+  // Phone appears first
   const phoneOpacity = useTransform(scrollYProgress, [0, t.phoneIn, t.phoneOut, t.phoneOut + 0.10], [0, 1, 1, 0])
   const phoneScale = useTransform(scrollYProgress, [0, t.phoneIn], [0.95, 1])
   const sectionOpacity = useTransform(scrollYProgress, [0, t.sectionIn, t.sectionOut, t.sectionOut + 0.10], [0, 1, 1, 0])
 
-  // Messages appear progressively — delayed on mobile so phone is fully centered first
+  // Messages appear progressively
   const msgCount = messages.length
   const msgOpacities = messages.map((_, i) => {
     const start = t.msgStart + (i / msgCount) * t.msgSpan
@@ -310,19 +373,38 @@ export default function AjnayaChatScroll() {
     return useTransform(scrollYProgress, [start, end], [0, 1])
   })
 
-  // Micro-cards — appear slightly after their corresponding message
-  const cardOpacities = microCards.map((_, i) => {
-    const start = t.cardStart + (i / microCards.length) * t.cardSpan
-    const mid = start + 0.05
-    const end = start + 0.22
+  // ─── Explanation cards — horizontal slide in/out ─────────
+  // Each card slides in from its side, stays visible while its message is relevant, then slides out
+  const slideDistance = isMobile ? 100 : 160
+  const cardAnimations = explanationCards.map((card, i) => {
+    const totalCards = explanationCards.length
+    // Space cards evenly across the card timing window
+    const cardWindowStart = t.cardStart + (i / totalCards) * t.cardSpan
+    const enterEnd = cardWindowStart + 0.06
+    const exitStart = cardWindowStart + 0.14
+    const exitEnd = exitStart + 0.06
+
+    const direction = card.side === 'left' ? -1 : 1
+
     return {
-      opacity: useTransform(scrollYProgress, [start, mid, end, end + 0.08], [0, 1, 1, 0]),
-      y: useTransform(scrollYProgress, [start, mid], [24, 0]),
+      opacity: useTransform(scrollYProgress, [cardWindowStart, enterEnd, exitStart, exitEnd], [0, 1, 1, 0]),
+      x: useTransform(scrollYProgress, [cardWindowStart, enterEnd, exitStart, exitEnd], [
+        direction * slideDistance,
+        0,
+        0,
+        direction * -slideDistance,
+      ]),
     }
   })
 
   // Chat scrolls up as messages accumulate
   const chatScrollY = useTransform(scrollYProgress, [t.scrollStart, t.scrollEnd], [0, t.chatTravel])
+
+  // Vertical positions for cards — staggered to align with message flow
+  // These represent approximate vertical % positions within the phone viewport area
+  const cardVerticalPositions = isMobile
+    ? ['14%', '30%', '46%', '62%', '78%']
+    : ['10%', '26%', '42%', '58%', '74%']
 
   return (
     <section ref={containerRef} className={`relative bg-foreas-deepblack ${isMobile ? 'h-[300vh]' : 'h-[420vh]'}`}>
@@ -333,7 +415,7 @@ export default function AjnayaChatScroll() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-purple/[0.04] rounded-full blur-[100px]" />
         )}
 
-        {/* Title — in flow, not absolute */}
+        {/* Title */}
         <motion.div
           style={{ opacity: sectionOpacity }}
           className="relative text-center z-20 px-4 pt-6 sm:pt-10 md:pt-14 pb-4 sm:pb-5 flex-shrink-0"
@@ -346,27 +428,31 @@ export default function AjnayaChatScroll() {
           </p>
         </motion.div>
 
-        {/* Layout: left cards + phone + right cards — fills remaining space */}
+        {/* Phone + floating explanation cards zone */}
         <motion.div
           style={{ opacity: sectionOpacity }}
-          className="relative flex items-start justify-center gap-4 md:gap-8 lg:gap-12 flex-1 min-h-0"
+          className="relative flex-1 min-h-0 w-full flex items-start justify-center"
         >
-          {/* Left micro-cards (desktop) */}
-          <div className="hidden lg:flex flex-col gap-5 w-[210px]">
-            {microCards.filter(c => c.side === 'left').map((card, i) => {
-              const idx = microCards.findIndex(c => c === card)
-              return (
-                <motion.div
-                  key={i}
-                  style={{ opacity: cardOpacities[idx].opacity, y: cardOpacities[idx].y }}
-                  className={`p-4 rounded-2xl border backdrop-blur-md ${colorClasses[card.color].bg}`}
-                >
-                  <span className={`text-sm font-semibold ${colorClasses[card.color].text}`}>{card.title}</span>
-                  <p className="text-white/50 text-xs leading-relaxed mt-1.5">{card.desc}</p>
-                </motion.div>
-              )
-            })}
-          </div>
+          {/* ─── Floating explanation cards — positioned absolutely around the phone ── */}
+          {explanationCards.map((card, i) => (
+            <div
+              key={i}
+              className="absolute z-30"
+              style={{
+                top: cardVerticalPositions[i],
+                ...(card.side === 'left'
+                  ? { right: '50%', marginRight: isMobile ? '120px' : '155px' }
+                  : { left: '50%', marginLeft: isMobile ? '120px' : '155px' }),
+              }}
+            >
+              <FloatingCard
+                card={card}
+                opacity={cardAnimations[i].opacity}
+                x={cardAnimations[i].x}
+                isMobile={isMobile}
+              />
+            </div>
+          ))}
 
           {/* ─── Phone Mockup ───────────────────────────── */}
           <motion.div className="relative" style={{ opacity: phoneOpacity, scale: phoneScale }}>
@@ -377,7 +463,6 @@ export default function AjnayaChatScroll() {
             <div className="relative w-[250px] sm:w-[270px] md:w-[290px] h-[480px] sm:h-[520px] md:h-[560px] bg-gradient-to-b from-[#1a1a1f] to-[#0d0d12] rounded-[2.8rem] p-[3px] shadow-2xl shadow-black/50">
               <div className="absolute inset-0 rounded-[2.8rem] border border-white/[0.08]" />
 
-              {/* Phone screen — isolation forces proper paint containment for overflow clipping */}
               <div className="relative w-full h-full bg-[#050508] rounded-[2.6rem]" style={{ overflow: 'hidden', isolation: 'isolate' }}>
                 {/* Dynamic Island */}
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90px] h-[28px] bg-black rounded-full z-30" />
@@ -396,10 +481,9 @@ export default function AjnayaChatScroll() {
                   </div>
                 </div>
 
-                {/* Chat header — z-20 to sit above scrolling messages */}
+                {/* Chat header */}
                 <div className="absolute top-12 left-0 right-0 z-20 px-4 pb-2.5 bg-[#050508] border-b border-white/[0.04]">
                   <div className="flex items-center gap-2.5">
-                    {/* Ajnaya avatar */}
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center shadow-lg shadow-accent-purple/20">
                       <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -412,7 +496,6 @@ export default function AjnayaChatScroll() {
                         <span className="text-green-400/80 text-[8px]">En ligne</span>
                       </div>
                     </div>
-                    {/* Safe driving state */}
                     <div className="ml-auto flex items-center gap-1 bg-white/[0.04] px-2 py-0.5 rounded-full">
                       <div className="w-1 h-1 rounded-full bg-green-400" />
                       <span className="text-[7px] text-green-400/60 font-mono">STOPPED</span>
@@ -420,7 +503,7 @@ export default function AjnayaChatScroll() {
                   </div>
                 </div>
 
-                {/* ─── Chat scroll area — clipped zone between header and input ── */}
+                {/* ─── Chat scroll area ── */}
                 <div className="absolute top-[88px] bottom-[58px] left-0 right-0 z-10" style={{ overflow: 'hidden' }}>
                   <motion.div
                     style={{ y: chatScrollY }}
@@ -441,7 +524,6 @@ export default function AjnayaChatScroll() {
                               : 'bg-gradient-to-r from-accent-purple/20 to-accent-cyan/10 border border-accent-cyan/[0.08] rounded-tr-sm'
                           }`}
                         >
-                          {/* Voice command label */}
                           {msg.sender === 'voice' && (
                             <div className="flex items-center gap-1.5 mb-1">
                               <div className="w-3.5 h-3.5 rounded-full bg-accent-purple/25 flex items-center justify-center">
@@ -458,7 +540,6 @@ export default function AjnayaChatScroll() {
                             msg.sender === 'voice' ? 'text-accent-purple font-medium' : 'text-white/90'
                           }`}>{msg.text}</p>
 
-                          {/* Visual blocks */}
                           {msg.visualBlock?.type === 'mapSnapshot' && (
                             <MapSnapshotBlock block={msg.visualBlock} />
                           )}
@@ -469,7 +550,6 @@ export default function AjnayaChatScroll() {
                             <CourseCardBlock block={msg.visualBlock} />
                           )}
 
-                          {/* Timestamp + watermark */}
                           <div className="flex items-center justify-between mt-1">
                             <span className="text-white/20 text-[8px]">{msg.time}</span>
                             {msg.watermark && (
@@ -482,13 +562,12 @@ export default function AjnayaChatScroll() {
                   </motion.div>
                 </div>
 
-                {/* ─── Input bar with mic button — z-20 above messages ── */}
+                {/* ─── Input bar ── */}
                 <div className="absolute bottom-5 left-3 right-3 z-20">
                   <div className="flex items-center gap-2">
                     <div className="flex-1 flex items-center bg-[#050508] md:bg-[#050508]/95 md:backdrop-blur-md border border-white/[0.06] rounded-full px-3.5 py-2.5">
                       <span className="text-white/20 text-[10px]">Parlez ou écrivez...</span>
                     </div>
-                    {/* Mic button — gradient, prominent */}
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center shadow-lg shadow-accent-purple/25">
                       <svg className="w-4.5 h-4.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
@@ -503,38 +582,7 @@ export default function AjnayaChatScroll() {
               </div>
             </div>
           </motion.div>
-
-          {/* Right micro-cards (desktop) */}
-          <div className="hidden lg:flex flex-col gap-5 w-[210px]">
-            {microCards.filter(c => c.side === 'right').map((card, i) => {
-              const idx = microCards.findIndex(c => c === card)
-              return (
-                <motion.div
-                  key={i}
-                  style={{ opacity: cardOpacities[idx].opacity, y: cardOpacities[idx].y }}
-                  className={`p-4 rounded-2xl border backdrop-blur-md ${colorClasses[card.color].bg}`}
-                >
-                  <span className={`text-sm font-semibold ${colorClasses[card.color].text}`}>{card.title}</span>
-                  <p className="text-white/50 text-xs leading-relaxed mt-1.5">{card.desc}</p>
-                </motion.div>
-              )
-            })}
-          </div>
         </motion.div>
-
-        {/* Mobile micro-cards */}
-        <div className="lg:hidden absolute bottom-12 left-3 right-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {microCards.map((card, i) => (
-            <motion.div
-              key={i}
-              style={{ opacity: cardOpacities[i].opacity }}
-              className={`flex-shrink-0 p-2.5 rounded-xl border w-[150px] ${colorClasses[card.color].bg}`}
-            >
-              <span className={`text-[10px] font-semibold ${colorClasses[card.color].text}`}>{card.title}</span>
-              <p className="text-white/40 text-[9px] leading-snug mt-0.5">{card.desc}</p>
-            </motion.div>
-          ))}
-        </div>
 
         {/* Scroll indicator */}
         <motion.div
