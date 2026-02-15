@@ -34,7 +34,7 @@ export default function PhoneMockup() {
             </div>
 
             {/* Status bar */}
-            <div className="absolute top-3 left-7 right-7 flex justify-between items-center text-white text-[11px] font-medium z-10">
+            <div className="absolute top-2 sm:top-3 left-5 sm:left-7 right-5 sm:right-7 flex justify-between items-center text-white text-[9px] sm:text-[11px] font-medium z-10">
               <span>20:08</span>
               <div className="flex items-center gap-1.5 opacity-80">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -49,9 +49,9 @@ export default function PhoneMockup() {
             </div>
 
             {/* App Content */}
-            <div className="absolute inset-0 pt-14">
+            <div className="absolute inset-0 pt-10 sm:pt-14">
               {/* Map Area - Paris Style */}
-              <div className="h-[42%] relative bg-[#0a0a12] overflow-hidden">
+              <div className="h-[48%] sm:h-[42%] relative bg-[#0a0a12] overflow-hidden">
                 {/* Paris-style map background */}
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 220" preserveAspectRatio="xMidYMid slice">
                   <defs>
@@ -112,13 +112,13 @@ export default function PhoneMockup() {
                     />
                   )}
                   {/* Middle glow — static on mobile */}
-                  <div className="absolute inset-0 w-16 h-16 -translate-x-[12%] -translate-y-[12%] rounded-full bg-gradient-to-br from-orange-500/50 to-red-600/50 opacity-50" />
+                  <div className="absolute inset-0 w-10 h-10 sm:w-16 sm:h-16 -translate-x-[12%] -translate-y-[12%] rounded-full bg-gradient-to-br from-orange-500/50 to-red-600/50 opacity-50" />
                   {/* Inner hot zone */}
                   <div
-                    className="relative w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-lg shadow-red-500/50 border border-orange-300/30 flex items-center justify-center"
+                    className="relative w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-lg shadow-red-500/50 border border-orange-300/30 flex items-center justify-center"
                   >
                     {/* +35% inside hot zone for clarity */}
-                    <span className="text-white font-bold text-[10px]">+35%</span>
+                    <span className="text-white font-bold text-[7px] sm:text-[10px]">+35%</span>
                   </div>
                 </div>
 
@@ -129,7 +129,7 @@ export default function PhoneMockup() {
                   transition={{ delay: 0.5 }}
                   className="absolute top-[16%] left-[55%] -translate-x-1/2"
                 >
-                  <span className="text-[11px] text-white font-bold tracking-wide bg-red-500/90 px-2.5 py-1 rounded-md shadow-lg shadow-red-500/30">RÉPUBLIQUE</span>
+                  <span className="text-[8px] sm:text-[11px] text-white font-bold tracking-wide bg-red-500/90 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded sm:rounded-md shadow-lg shadow-red-500/30">RÉPUBLIQUE</span>
                 </motion.div>
 
                 {/* === USER POSITION - Cyan marker === */}
@@ -143,14 +143,14 @@ export default function PhoneMockup() {
                     />
                   )}
                   {/* User marker */}
-                  <div className="relative w-6 h-6 -translate-x-1/2 -translate-y-1/2 bg-accent-cyan rounded-full shadow-lg shadow-accent-cyan/60 border-2 border-white flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                  <div className="relative w-4 h-4 sm:w-6 sm:h-6 -translate-x-1/2 -translate-y-1/2 bg-accent-cyan rounded-full shadow-lg shadow-accent-cyan/60 border-[1.5px] sm:border-2 border-white flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full" />
                   </div>
                 </div>
 
                 {/* "VOUS" label */}
                 <div className="absolute top-[74%] left-[22%] -translate-x-1/2">
-                  <span className="text-[10px] text-white font-bold tracking-wide bg-accent-cyan/90 px-2 py-0.5 rounded shadow-lg shadow-accent-cyan/30">VOUS</span>
+                  <span className="text-[8px] sm:text-[10px] text-white font-bold tracking-wide bg-accent-cyan/90 px-1.5 sm:px-2 py-0.5 rounded shadow-lg shadow-accent-cyan/30">VOUS</span>
                 </div>
 
                 {/* === ROUTE LINE - Cyan to Purple === */}
@@ -199,10 +199,10 @@ export default function PhoneMockup() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-[#0f0f18] md:bg-[#0f0f18]/90 md:backdrop-blur-sm rounded-lg border border-white/10"
+                  className="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#0f0f18] md:bg-[#0f0f18]/90 md:backdrop-blur-sm rounded sm:rounded-lg border border-white/10"
                 >
-                  <div className="w-1.5 h-1.5 bg-accent-cyan rounded-full" />
-                  <span className="text-white/70 text-[10px] font-medium">Paris 11e</span>
+                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-accent-cyan rounded-full" />
+                  <span className="text-white/70 text-[8px] sm:text-[10px] font-medium">Paris 11e</span>
                 </motion.div>
 
                 {/* Time badge */}
@@ -210,46 +210,46 @@ export default function PhoneMockup() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 bg-[#0f0f18] md:bg-[#0f0f18]/90 md:backdrop-blur-sm rounded-lg border border-white/10"
+                  className="absolute top-1.5 sm:top-3 right-1.5 sm:right-3 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#0f0f18] md:bg-[#0f0f18]/90 md:backdrop-blur-sm rounded sm:rounded-lg border border-white/10"
                 >
-                  <span className="text-accent-purple text-[10px]">⏱</span>
-                  <span className="text-white text-[10px] font-bold">12 min</span>
+                  <span className="text-accent-purple text-[8px] sm:text-[10px]">⏱</span>
+                  <span className="text-white text-[8px] sm:text-[10px] font-bold">12 min</span>
                 </motion.div>
               </div>
 
               {/* Ajnaya Card - Cyan/Purple theme */}
-              <div className="absolute bottom-[72px] left-3 right-3">
+              <div className="absolute bottom-[52px] sm:bottom-[72px] left-2 right-2 sm:left-3 sm:right-3">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
-                  className="bg-gradient-to-br from-[#12121a] to-[#0a0a10] md:backdrop-blur-xl rounded-2xl p-4 border border-white/[0.08] shadow-xl"
+                  className="bg-gradient-to-br from-[#12121a] to-[#0a0a10] md:backdrop-blur-xl rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-white/[0.08] shadow-xl"
                 >
                   {/* Header with Ajnaya branding */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3">
+                    <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/>
                       </svg>
                     </div>
-                    <span className="text-white/50 text-[11px] font-medium">Ajnaya recommande</span>
+                    <span className="text-white/50 text-[9px] sm:text-[11px] font-medium">Ajnaya recommande</span>
                   </div>
 
                   {/* Recommendation */}
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-1.5 sm:mb-3">
                     <div>
-                      <p className="text-white font-semibold text-[14px]">République • 12 min</p>
-                      <p className="text-white/40 text-[11px]">Zone chaude détectée</p>
+                      <p className="text-white font-semibold text-[11px] sm:text-[14px]">République • 12 min</p>
+                      <p className="text-white/40 text-[9px] sm:text-[11px]">Zone chaude détectée</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-accent-cyan font-bold text-[16px]">+35%</p>
-                      <p className="text-white/30 text-[10px]">vs ici</p>
+                      <p className="text-accent-cyan font-bold text-[13px] sm:text-[16px]">+35%</p>
+                      <p className="text-white/30 text-[8px] sm:text-[10px]">vs ici</p>
                     </div>
                   </div>
 
                   {/* CTA Button - Gradient */}
-                  <button className="w-full py-2.5 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold text-[13px] flex items-center justify-center gap-2 shadow-lg shadow-accent-purple/20 hover:opacity-90 transition-opacity">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <button className="w-full py-1.5 sm:py-2.5 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-lg sm:rounded-xl text-white font-semibold text-[11px] sm:text-[13px] flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-accent-purple/20 hover:opacity-90 transition-opacity">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                     Y aller
@@ -258,7 +258,7 @@ export default function PhoneMockup() {
               </div>
 
               {/* Bottom Navigation */}
-              <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-[#0a0a10] md:bg-[#0a0a10]/95 md:backdrop-blur-xl border-t border-white/[0.05] flex items-center justify-around px-2">
+              <div className="absolute bottom-0 left-0 right-0 h-[50px] sm:h-[68px] bg-[#0a0a10] md:bg-[#0a0a10]/95 md:backdrop-blur-xl border-t border-white/[0.05] flex items-center justify-around px-1 sm:px-2">
                 {[
                   { icon: 'home', label: 'Accueil', active: true },
                   { icon: 'sparkle', label: 'Ajnaya', active: false },
@@ -268,11 +268,11 @@ export default function PhoneMockup() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+                    className={`flex flex-col items-center gap-0.5 sm:gap-1 py-1 sm:py-2 px-1.5 sm:px-3 rounded-lg sm:rounded-xl transition-colors ${
                       item.active ? 'text-white' : 'text-white/30'
                     }`}
                   >
-                    <div className={`w-5 h-5 ${item.active ? 'text-accent-cyan' : ''}`}>
+                    <div className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${item.active ? 'text-accent-cyan' : ''}`}>
                       {item.icon === 'home' && (
                         <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                       )}
@@ -289,7 +289,7 @@ export default function PhoneMockup() {
                         <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                       )}
                     </div>
-                    <span className="text-[9px] font-medium">{item.label}</span>
+                    <span className="text-[7px] sm:text-[9px] font-medium">{item.label}</span>
                     {item.active && (
                       <div className="absolute bottom-1 w-1 h-1 bg-accent-cyan rounded-full" />
                     )}
