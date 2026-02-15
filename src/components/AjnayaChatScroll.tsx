@@ -285,22 +285,34 @@ export default function AjnayaChatScroll() {
     offset: ['start end', 'end start'],
   })
 
-  // Phone appears first
-  const phoneOpacity = useTransform(scrollYProgress, [0, 0.06, 0.85, 0.95], [0, 1, 1, 0])
-  const phoneScale = useTransform(scrollYProgress, [0, 0.06], [0.95, 1])
-  const sectionOpacity = useTransform(scrollYProgress, [0, 0.08, 0.85, 0.95], [0, 1, 1, 0])
+  // ─── Timing thresholds ─────────────────────────────────────
+  // Mobile (300vh) : le scroll avance plus vite par pixel,
+  // on retarde les messages pour que le phone soit bien centré à l'écran.
+  // Desktop (420vh) : timing original, plus de marge de scroll.
+  const t = isMobile
+    ? { phoneIn: 0.08, phoneOut: 0.88, sectionIn: 0.10, sectionOut: 0.90,
+        msgStart: 0.18, msgSpan: 0.52, cardStart: 0.22, cardSpan: 0.50,
+        scrollStart: 0.24, scrollEnd: 0.82, chatTravel: -480 }
+    : { phoneIn: 0.06, phoneOut: 0.85, sectionIn: 0.08, sectionOut: 0.85,
+        msgStart: 0.09, msgSpan: 0.56, cardStart: 0.12, cardSpan: 0.55,
+        scrollStart: 0.14, scrollEnd: 0.78, chatTravel: -580 }
 
-  // Messages appear progressively — start AFTER phone is visible (0.09)
+  // Phone appears first — with breathing room on mobile
+  const phoneOpacity = useTransform(scrollYProgress, [0, t.phoneIn, t.phoneOut, t.phoneOut + 0.10], [0, 1, 1, 0])
+  const phoneScale = useTransform(scrollYProgress, [0, t.phoneIn], [0.95, 1])
+  const sectionOpacity = useTransform(scrollYProgress, [0, t.sectionIn, t.sectionOut, t.sectionOut + 0.10], [0, 1, 1, 0])
+
+  // Messages appear progressively — delayed on mobile so phone is fully centered first
   const msgCount = messages.length
   const msgOpacities = messages.map((_, i) => {
-    const start = 0.09 + (i / msgCount) * 0.56
+    const start = t.msgStart + (i / msgCount) * t.msgSpan
     const end = start + 0.04
     return useTransform(scrollYProgress, [start, end], [0, 1])
   })
 
   // Micro-cards — appear slightly after their corresponding message
   const cardOpacities = microCards.map((_, i) => {
-    const start = 0.12 + (i / microCards.length) * 0.55
+    const start = t.cardStart + (i / microCards.length) * t.cardSpan
     const mid = start + 0.05
     const end = start + 0.22
     return {
@@ -309,11 +321,11 @@ export default function AjnayaChatScroll() {
     }
   })
 
-  // Chat scrolls up as messages accumulate — starts when 2nd message appears
-  const chatScrollY = useTransform(scrollYProgress, [0.14, 0.78], [0, -580])
+  // Chat scrolls up as messages accumulate
+  const chatScrollY = useTransform(scrollYProgress, [t.scrollStart, t.scrollEnd], [0, t.chatTravel])
 
   return (
-    <section ref={containerRef} className={`relative bg-foreas-deepblack ${isMobile ? 'h-[260vh]' : 'h-[420vh]'}`}>
+    <section ref={containerRef} className={`relative bg-foreas-deepblack ${isMobile ? 'h-[300vh]' : 'h-[420vh]'}`}>
       <div className="sticky top-0 h-screen flex flex-col items-center overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-b from-foreas-deepblack via-foreas-black to-foreas-deepblack" />
