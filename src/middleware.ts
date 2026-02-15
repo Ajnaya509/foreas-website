@@ -27,6 +27,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/fonts') ||
     pathname.startsWith('/images') ||
+    pathname.startsWith('/assets') ||
     pathname.includes('favicon') ||
     pathname.includes('sitemap') ||
     pathname.includes('robots')

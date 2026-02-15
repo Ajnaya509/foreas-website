@@ -221,11 +221,11 @@ export default function AjnayaChatScroll() {
   // ─── Timing ──────────────────────────────────────────────
   const t = isMobile
     ? { phoneIn: 0.08, phoneOut: 0.88, sectionIn: 0.10, sectionOut: 0.90,
-        msgStart: 0.18, msgSpan: 0.52, cardStart: 0.22, cardSpan: 0.50,
-        scrollStart: 0.24, scrollEnd: 0.82, chatTravel: -480 }
+        msgStart: 0.25, msgSpan: 0.48, cardStart: 0.25, cardSpan: 0.48,
+        scrollStart: 0.28, scrollEnd: 0.82, chatTravel: -480 }
     : { phoneIn: 0.06, phoneOut: 0.85, sectionIn: 0.08, sectionOut: 0.85,
-        msgStart: 0.09, msgSpan: 0.56, cardStart: 0.12, cardSpan: 0.55,
-        scrollStart: 0.14, scrollEnd: 0.78, chatTravel: -580 }
+        msgStart: 0.16, msgSpan: 0.50, cardStart: 0.16, cardSpan: 0.50,
+        scrollStart: 0.18, scrollEnd: 0.78, chatTravel: -580 }
 
   const phoneOpacity = useTransform(scrollYProgress, [0, t.phoneIn, t.phoneOut, t.phoneOut + 0.10], [0, 1, 1, 0])
   const phoneScale = useTransform(scrollYProgress, [0, t.phoneIn], [0.95, 1])
@@ -240,14 +240,18 @@ export default function AjnayaChatScroll() {
 
   // ─── Card animations ────────────────────────────────────
   const slideDistance = isMobile ? 80 : 160
+
+  // Which message index each explanation card corresponds to
+  const cardToMessage = [0, 1, 3, 7, 8]
+
   const cardAnimations = explanationCards.map((card, i) => {
-    const totalCards = explanationCards.length
-    const cardWindowStart = t.cardStart + (i / totalCards) * t.cardSpan
-    const enterEnd = cardWindowStart + 0.06
-    const exitStart = cardWindowStart + 0.14
-    const exitEnd = exitStart + 0.06
-    // Mobile: cards slide in from the bottom
-    // Desktop: cards slide in from left/right
+    const msgIdx = cardToMessage[i]
+    const cardWindowStart = t.msgStart + (msgIdx / msgCount) * t.msgSpan
+    const enterEnd = cardWindowStart + 0.04
+    // Next card's start (or section end) determines when this card exits
+    const nextIdx = i < cardToMessage.length - 1 ? cardToMessage[i + 1] : msgCount
+    const exitStart = t.msgStart + (nextIdx / msgCount) * t.msgSpan - 0.02
+    const exitEnd = exitStart + 0.04
     const direction = isMobile ? 1 : (card.side === 'left' ? -1 : 1)
 
     return {
