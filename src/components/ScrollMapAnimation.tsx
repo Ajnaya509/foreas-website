@@ -20,8 +20,8 @@ export default function ScrollMapAnimation() {
 
   // ─── Map pan — pixel-based for reliable mobile behavior ──
   // Mobile: pan 350px left (shows zone vide first, zone chaude enters from right)
-  // Desktop: pan 500px left (wider screen = more travel needed)
-  const mapPanPx = isMobile ? -350 : -500
+  // Desktop: pan 350px left with narrower SVG (145vw vs 200vw) — zone chaude stays in viewport
+  const mapPanPx = -350
   const mapTranslateX = useTransform(scrollYProgress, [0.08, 0.75], [0, mapPanPx])
 
   // ─── Car cursor — appears AFTER map is settled ──────────
@@ -65,7 +65,7 @@ export default function ScrollMapAnimation() {
           >
             <svg
               className="h-full"
-              style={{ width: isMobile ? '200vw' : '180vw' }}
+              style={{ width: isMobile ? '200vw' : '145vw' }}
               viewBox="0 0 750 500"
               preserveAspectRatio="xMinYMid slice"
             >
