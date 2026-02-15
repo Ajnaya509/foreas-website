@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Preloader from '@/components/Preloader'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 // Preload critical fonts for immediate rendering
 export const metadata: Metadata = {
@@ -59,6 +61,8 @@ export default function RootLayout({
       <body className="bg-foreas-black text-foreas-light antialiased">
         <Preloader />
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
