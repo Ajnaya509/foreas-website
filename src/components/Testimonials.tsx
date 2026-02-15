@@ -1,143 +1,317 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { useRef, useState, useEffect, useCallback } from 'react'
+import { useIsMobile } from '@/hooks/useDevicePerf'
+import dynamic from 'next/dynamic'
 
-const testimonials = [
+// Lazy load Mux Player — heavy component, only load when needed
+const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
+
+/* ─── Testimonial data ─────────────────────────────────────────
+ * playbackId: Mux public playback ID
+ * Pour ajouter une vidéo: upload sur Mux → copier le Playback ID → ajouter ici
+ * Thumbnail auto-générée par Mux via: image.mux.com/{playbackId}/thumbnail.webp
+ * ─────────────────────────────────────────────────────────────── */
+interface Testimonial {
+  id: number
+  name: string
+  city: string
+  since: string
+  stat: { value: string; label: string }
+  quote: string
+  playbackId: string
+  accentColor: string
+}
+
+const TESTIMONIALS: Testimonial[] = [
   {
-    name: 'Karim M.',
-    role: 'Chauffeur VTC Paris',
-    avatar: 'KM',
-    quote: "Depuis que j'utilise FOREAS, je fais +400€ par semaine. L'IA me dit exactement où aller, je ne tourne plus à vide.",
-    stats: '+38% CA',
-    rating: 5,
-    color: 'from-accent-purple to-accent-cyan'
+    id: 1,
+    name: 'Binate',
+    city: 'Paris',
+    since: 'Chauffeur VTC',
+    stat: { value: '+35%', label: 'de CA' },
+    quote: "FOREAS a changé ma manière de travailler. Je sais exactement où aller.",
+    playbackId: 'i9Bm4N9eyzCeQNKu7wutBb9yj7nUtrIpSrGJYQBfKI',
+    accentColor: '#00d4ff',
   },
-  {
-    name: 'Sarah L.',
-    role: 'Chauffeure VTC Lyon',
-    avatar: 'SL',
-    quote: "Je travaille moins mais je gagne plus. Ajnaya m'a fait découvrir des zones que je n'aurais jamais trouvées seule.",
-    stats: '-2h/jour de vide',
-    rating: 5,
-    color: 'from-accent-cyan to-accent-purple'
-  },
-  {
-    name: 'David K.',
-    role: 'Chauffeur VTC Paris',
-    avatar: 'DK',
-    quote: "L'essai gratuit m'a convaincu en 3 jours. Maintenant je ne peux plus m'en passer. C'est comme avoir un copilote intelligent.",
-    stats: '+32% CA',
-    rating: 5,
-    color: 'from-accent-purple to-red-500'
-  }
+  // Ajouter les 5 autres vidéos ici quand elles seront uploadées sur Mux:
+  // {
+  //   id: 2,
+  //   name: 'Prénom',
+  //   city: 'Ville',
+  //   since: 'Chauffeur VTC',
+  //   stat: { value: '+XX%', label: 'description' },
+  //   quote: "Citation courte...",
+  //   playbackId: 'MUX_PLAYBACK_ID_ICI',
+  //   accentColor: '#a855f7',
+  // },
 ]
 
-export default function Testimonials() {
+/* ─── Play button overlay ──────────────────────────────────── */
+function PlayButton() {
   return (
-    <section className="relative py-24 bg-foreas-deepblack overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-0 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-accent-purple/[0.03] rounded-full blur-[60px] md:blur-[120px]" />
-        <div className="absolute top-1/2 right-0 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-accent-cyan/[0.03] rounded-full blur-[60px] md:blur-[120px]" />
+    <div className="w-14 h-14 rounded-full bg-black/60 backdrop-blur-sm border-2 border-white/20 flex items-center justify-center transition-transform duration-200 hover:scale-110 hover:bg-accent-cyan/30">
+      <svg width="20" height="24" viewBox="0 0 20 24" fill="none">
+        <path d="M2 1.5L18.5 12L2 22.5V1.5Z" fill="white" />
+      </svg>
+    </div>
+  )
+}
+
+/* ─── Stat badge — visible BEFORE watching ─────────────────── */
+function StatBadge({ value, label, color }: { value: string; label: string; color: string }) {
+  return (
+    <div
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+      style={{ background: `${color}15`, border: `1px solid ${color}30` }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
+        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+      </svg>
+      <span className="text-sm font-semibold" style={{ color }}>{value}</span>
+      <span className="text-xs" style={{ color: `${color}99` }}>{label}</span>
+    </div>
+  )
+}
+
+/* ─── Video Card ───────────────────────────────────────────── */
+function VideoCard({ testimonial, isActive, isMobile }: { testimonial: Testimonial; isActive: boolean; isMobile: boolean }) {
+  const [playing, setPlaying] = useState(false)
+
+  const cardWidth = isMobile ? 240 : 280
+
+  return (
+    <div
+      className="flex-shrink-0 transition-all duration-400"
+      style={{
+        width: cardWidth,
+        scrollSnapAlign: 'center',
+        opacity: isActive ? 1 : 0.5,
+        transform: isActive ? 'scale(1)' : 'scale(0.92)',
+      }}
+    >
+      {/* Video thumbnail — vertical 9:14 */}
+      <div
+        className="relative w-full rounded-2xl overflow-hidden cursor-pointer"
+        style={{
+          aspectRatio: '9/14',
+          border: isActive ? `1px solid ${testimonial.accentColor}30` : '1px solid rgba(255,255,255,0.06)',
+        }}
+        onClick={() => setPlaying(!playing)}
+      >
+        {!playing ? (
+          <>
+            {/* Mux auto-generated thumbnail */}
+            <img
+              src={`https://image.mux.com/${testimonial.playbackId}/thumbnail.webp?time=2&width=400`}
+              alt={`Témoignage ${testimonial.name}`}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="lazy"
+            />
+
+            {/* Play button center */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <PlayButton />
+            </div>
+
+            {/* Bottom gradient */}
+            <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/90 to-transparent" />
+
+            {/* Stat badge — the hook before watching */}
+            <div className="absolute bottom-4 left-3 right-3">
+              <StatBadge value={testimonial.stat.value} label={testimonial.stat.label} color={testimonial.accentColor} />
+            </div>
+          </>
+        ) : (
+          /* Mux Player — loads only on tap */
+          <MuxPlayer
+            playbackId={testimonial.playbackId}
+            autoPlay
+            muted={false}
+            style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
+            streamType="on-demand"
+            primaryColor="#ffffff"
+            secondaryColor="#000000"
+            accentColor={testimonial.accentColor}
+          />
+        )}
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6">
-        {/* Header */}
+      {/* Driver info + quote */}
+      <div className="pt-3 px-1">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-white text-[15px] font-semibold">{testimonial.name}</span>
+          <span className="text-white/30 text-[13px]">•</span>
+          <span className="text-white/40 text-[13px]">{testimonial.city}</span>
+        </div>
+        <p className="text-white/50 text-[13px] leading-relaxed">
+          « {testimonial.quote} »
+        </p>
+        <p className="text-white/25 text-[11px] mt-1.5">{testimonial.since}</p>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Dot indicators ───────────────────────────────────────── */
+function DotIndicator({ count, active }: { count: number; active: number }) {
+  return (
+    <div className="flex gap-2 justify-center mt-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="h-1.5 rounded-full transition-all duration-300"
+          style={{
+            width: i === active ? 24 : 6,
+            background: i === active ? '#00d4ff' : 'rgba(255,255,255,0.15)',
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ *  MAIN SECTION
+ * ═══════════════════════════════════════════════════════════════ */
+export default function Testimonials() {
+  const isMobile = useIsMobile()
+  const [activeIndex, setActiveIndex] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const cardWidth = isMobile ? 240 : 280
+  const gap = 20
+
+  // Handle scroll to detect active card
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const handleScroll = () => {
+      const center = el.scrollLeft + el.clientWidth / 2
+      const idx = Math.round((center - el.clientWidth / 2) / (cardWidth + gap))
+      setActiveIndex(Math.max(0, Math.min(idx, TESTIMONIALS.length - 1)))
+    }
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [cardWidth])
+
+  // Center first card on mount (for multi-card carousels)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || TESTIMONIALS.length < 2) return
+    // Small delay to let layout settle
+    const t = setTimeout(() => {
+      el.scrollLeft = 0
+    }, 100)
+    return () => clearTimeout(t)
+  }, [])
+
+  return (
+    <section className="relative py-16 md:py-24 bg-foreas-deepblack overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-accent-purple/[0.03] rounded-full blur-[80px] md:blur-[120px]" />
+      </div>
+
+      <div className="relative z-10">
+        {/* ═══ HEADER ═══ */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center px-6 mb-10 md:mb-14"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full mb-6">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-            847 chauffeurs actifs
-          </span>
+          {/* Social proof chip — stacked avatars */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 border border-accent-cyan/15 rounded-full mb-5">
+            <div className="flex -space-x-2">
+              {['K', 'Y', 'F'].map((letter, i) => (
+                <div
+                  key={i}
+                  className="w-5 h-5 rounded-full border-2 border-foreas-deepblack flex items-center justify-center text-[9px] text-white font-semibold relative"
+                  style={{
+                    background: i === 0 ? 'linear-gradient(135deg, #00d4ff, #0066ff)' :
+                                i === 1 ? 'linear-gradient(135deg, #a855f7, #6b21a8)' :
+                                'linear-gradient(135deg, #22c55e, #15803d)',
+                    zIndex: 3 - i,
+                  }}
+                >
+                  {letter}
+                </div>
+              ))}
+            </div>
+            <span className="text-white/50 text-xs tracking-wide">847+ chauffeurs actifs</span>
+          </div>
 
-          <h2 className="font-title text-3xl md:text-5xl text-white mb-4">
-            Ils ont fait le <span className="text-accent-cyan">choix</span>
+          <h2 className="font-title text-2xl md:text-5xl text-white mb-2">
+            Ils gagnent plus.{' '}
+            <span className="text-accent-cyan">Ils en parlent.</span>
           </h2>
-          <p className="text-white/50 text-lg max-w-xl mx-auto">
-            Des résultats mesurés, pas des promesses.
+          <p className="text-white/35 text-sm md:text-lg">
+            Résultats réels, tournés sur le terrain.
           </p>
         </motion.div>
 
-        {/* Testimonials grid */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={testimonial.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="relative group"
+        {/* ═══ CAROUSEL ═══ */}
+        {TESTIMONIALS.length === 1 ? (
+          /* Single video — centered, no carousel */
+          <div className="flex justify-center px-6">
+            <VideoCard
+              testimonial={TESTIMONIALS[0]}
+              isActive={true}
+              isMobile={isMobile}
+            />
+          </div>
+        ) : (
+          /* Multi-video carousel */
+          <>
+            <div
+              ref={scrollRef}
+              className="flex overflow-x-auto scrollbar-hide"
+              style={{
+                gap,
+                scrollSnapType: 'x mandatory',
+                padding: `0 calc(50% - ${cardWidth / 2}px)`,
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+              }}
             >
-              {/* Card glow on hover */}
-              <div className={`absolute -inset-1 bg-gradient-to-r ${testimonial.color} rounded-2xl blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
+              {TESTIMONIALS.map((t, i) => (
+                <VideoCard
+                  key={t.id}
+                  testimonial={t}
+                  isActive={i === activeIndex}
+                  isMobile={isMobile}
+                />
+              ))}
+            </div>
+            <DotIndicator count={TESTIMONIALS.length} active={activeIndex} />
+          </>
+        )}
 
-              <div className="relative bg-gradient-to-b from-[#12121a] to-[#0a0a10] rounded-2xl border border-white/10 p-6 h-full flex flex-col">
-                {/* Quote */}
-                <p className="text-white/70 text-sm leading-relaxed mb-6 flex-1">
-                  "{testimonial.quote}"
-                </p>
-
-                {/* Stats badge */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-lg border border-green-500/20 w-fit mb-4">
-                  <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  <span className="text-green-400 text-sm font-medium">{testimonial.stats}</span>
-                </div>
-
-                {/* Author */}
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${testimonial.color} flex items-center justify-center text-white font-medium text-sm`}>
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <p className="text-white font-medium text-sm">{testimonial.name}</p>
-                    <p className="text-white/60 text-xs">{testimonial.role}</p>
-                  </div>
-                  <div className="ml-auto flex gap-0.5">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Trust badges */}
+        {/* ═══ TRUST BAR ═══ */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-16 flex flex-wrap items-center justify-center gap-8"
+          className="flex justify-center gap-6 md:gap-8 mt-10 md:mt-14 px-6 flex-wrap"
         >
-          <div className="flex items-center gap-2 text-white/50">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-            </svg>
-            <span className="text-sm">Données sécurisées</span>
-          </div>
-          <div className="flex items-center gap-2 text-white/50">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-            </svg>
-            <span className="text-sm">Résultats vérifiés</span>
-          </div>
-          <div className="flex items-center gap-2 text-white/50">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
-            <span className="text-sm">Support 24/7</span>
-          </div>
+          {[
+            { icon: '🎬', text: 'Tournés par un pro' },
+            { icon: '📊', text: 'Résultats vérifiés' },
+            { icon: '🔒', text: 'Données protégées' },
+          ].map((badge, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-white/30 text-xs">
+              <span className="text-sm">{badge.icon}</span>
+              <span>{badge.text}</span>
+            </div>
+          ))}
         </motion.div>
+
+        {/* Disclaimer */}
+        <p className="text-center text-white/15 text-[10px] mt-6 px-6">
+          Résultats individuels. Les performances varient selon la zone, les horaires et l&apos;usage de l&apos;application.
+        </p>
       </div>
     </section>
   )
