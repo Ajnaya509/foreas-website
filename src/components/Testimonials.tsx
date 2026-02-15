@@ -32,7 +32,7 @@ const TESTIMONIALS: Testimonial[] = [
     since: 'Chauffeur VTC',
     stat: { value: '+35%', label: 'de CA' },
     quote: "FOREAS a changé ma manière de travailler. Je sais exactement où aller.",
-    playbackId: 'i9Bm4N9eyzCeQNKu7wutBb9yj7nUtrIpSrGJYQBfKI',
+    playbackId: '6nQGxaDK00IFLHD39mhm0042qxb00RO8D4FKuL01cqv00Zo8',
     accentColor: '#00d4ff',
   },
   // Ajouter les 5 autres vidéos ici quand elles seront uploadées sur Mux:
