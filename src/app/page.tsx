@@ -1,55 +1,50 @@
-import dynamic from 'next/dynamic'
-import Header from '@/components/Header'
-import Hero from '@/components/Hero'
-import Stats from '@/components/Stats'
-import GradientLine from '@/components/GradientLine'
+'use client'
 
-// Lazy load below-fold components — reduces initial JS bundle on mobile
-const ScrollMapAnimation = dynamic(() => import('@/components/ScrollMapAnimation'))
-const Features = dynamic(() => import('@/components/Features'))
-const AjnayaChatScroll = dynamic(() => import('@/components/AjnayaChatScroll'))
-const AppDemo = dynamic(() => import('@/components/AppDemo'))
-const RevenueSimulator = dynamic(() => import('@/components/RevenueSimulator'))
-const Testimonials = dynamic(() => import('@/components/Testimonials'))
-const DownloadSection = dynamic(() => import('@/components/DownloadSection'))
-const CTA = dynamic(() => import('@/components/CTA'))
-const Footer = dynamic(() => import('@/components/Footer'))
+import { motion } from 'framer-motion'
 
-export default function Home() {
+export default function ComingSoon() {
   return (
-    <main className="min-h-screen">
-      <Header />
-      <Hero />
-      <Stats />
-      <GradientLine className="py-8" />
+    <main className="min-h-screen bg-foreas-black flex flex-col items-center justify-center relative overflow-hidden px-6">
+      {/* Subtle ambient glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-accent-purple/[0.04] rounded-full blur-[100px]" />
+      </div>
 
-      {/* Apple-style scroll animation */}
-      <ScrollMapAnimation />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className="relative z-10 text-center max-w-lg"
+      >
+        {/* Logo / Brand */}
+        <h1 className="font-title text-5xl md:text-7xl text-white tracking-tight mb-4">
+          FOREAS
+        </h1>
 
-      <Features />
-      <GradientLine className="py-8" />
+        {/* Tagline */}
+        <p className="text-white/40 text-lg md:text-xl mb-12">
+          Quelque chose arrive.
+        </p>
 
-      {/* Ajnaya chat conversation scroll */}
-      <AjnayaChatScroll />
+        {/* Status indicator */}
+        <div className="inline-flex items-center gap-3 px-5 py-3 border border-white/10 rounded-full">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-cyan" />
+          </span>
+          <span className="text-white/50 text-sm tracking-wide">Site en construction</span>
+        </div>
+      </motion.div>
 
-      <GradientLine className="py-8" />
-
-      {/* Interactive app demo */}
-      <AppDemo />
-
-      {/* Revenue simulator */}
-      <RevenueSimulator />
-
-      <GradientLine className="py-8" />
-
-      {/* Testimonials */}
-      <Testimonials />
-
-      {/* Download section with store buttons */}
-      <DownloadSection />
-
-      <CTA />
-      <Footer />
+      {/* Bottom line */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 1 }}
+        className="absolute bottom-8 text-white/20 text-xs tracking-wider"
+      >
+        FOREAS LABS © 2026
+      </motion.p>
     </main>
   )
 }
