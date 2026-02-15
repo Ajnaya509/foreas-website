@@ -27,9 +27,11 @@ export default function Header() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, delay: 2.4, ease: [0.16, 1, 0.3, 1] }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-[#050508]/95 backdrop-blur-xl border-b border-white/5'
-          : 'bg-transparent'
+        mobileMenuOpen
+          ? 'bg-[#050508]'
+          : scrolled
+            ? 'bg-[#050508]/95 backdrop-blur-xl border-b border-white/5'
+            : 'bg-transparent'
       }`}
     >
       <nav className="mx-auto max-w-7xl px-6 lg:px-8" aria-label="Global">
@@ -93,7 +95,7 @@ export default function Header() {
               transition={{ duration: 0.3 }}
               className="md:hidden overflow-hidden"
             >
-              <div className="py-6 space-y-1 border-t border-white/5">
+              <div className="py-6 space-y-1 border-t border-white/5 bg-[#050508]">
                 {navigation.map((item, index) => (
                   <motion.div
                     key={item.name}
