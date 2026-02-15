@@ -8,7 +8,7 @@ export default function AppDemo() {
     <section id="demo" className="relative py-24 bg-foreas-deepblack overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-accent-purple/[0.04] rounded-full blur-[150px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[800px] md:h-[600px] bg-accent-purple/[0.04] rounded-full blur-[60px] md:blur-[150px]" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">

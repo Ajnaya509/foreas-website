@@ -37,8 +37,8 @@ export default function Testimonials() {
     <section className="relative py-24 bg-foreas-deepblack overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-accent-purple/[0.03] rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-accent-cyan/[0.03] rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-0 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-accent-purple/[0.03] rounded-full blur-[60px] md:blur-[120px]" />
+        <div className="absolute top-1/2 right-0 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-accent-cyan/[0.03] rounded-full blur-[60px] md:blur-[120px]" />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">

@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
+import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 
 // ─── Visual Block types (architecture réelle Ajnaya) ───────
 type VisualBlock =
@@ -275,6 +276,9 @@ function CourseCardBlock({ block }: { block: Extract<VisualBlock, { type: 'cours
 
 export default function AjnayaChatScroll() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
+  const reducedMotion = useReducedMotion()
+  const skipInfinite = isMobile || reducedMotion
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -309,11 +313,13 @@ export default function AjnayaChatScroll() {
   const chatScrollY = useTransform(scrollYProgress, [0.14, 0.78], [0, -580])
 
   return (
-    <section ref={containerRef} className="relative h-[420vh] bg-foreas-deepblack">
+    <section ref={containerRef} className={`relative bg-foreas-deepblack ${isMobile ? 'h-[260vh]' : 'h-[420vh]'}`}>
       <div className="sticky top-0 h-screen flex flex-col items-center overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-b from-foreas-deepblack via-foreas-black to-foreas-deepblack" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-purple/[0.04] rounded-full blur-[100px]" />
+        {!isMobile && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-purple/[0.04] rounded-full blur-[100px]" />
+        )}
 
         {/* Title — in flow, not absolute */}
         <motion.div
@@ -352,7 +358,9 @@ export default function AjnayaChatScroll() {
 
           {/* ─── Phone Mockup ───────────────────────────── */}
           <motion.div className="relative" style={{ opacity: phoneOpacity, scale: phoneScale }}>
-            <div className="absolute -inset-6 bg-gradient-to-b from-accent-purple/12 via-accent-cyan/6 to-transparent rounded-[4rem] blur-[50px] opacity-50" />
+            {!isMobile && (
+              <div className="absolute -inset-6 bg-gradient-to-b from-accent-purple/12 via-accent-cyan/6 to-transparent rounded-[4rem] blur-[50px] opacity-50" />
+            )}
 
             <div className="relative w-[250px] sm:w-[270px] md:w-[290px] h-[480px] sm:h-[520px] md:h-[560px] bg-gradient-to-b from-[#1a1a1f] to-[#0d0d12] rounded-[2.8rem] p-[3px] shadow-2xl shadow-black/50">
               <div className="absolute inset-0 rounded-[2.8rem] border border-white/[0.08]" />
@@ -465,7 +473,7 @@ export default function AjnayaChatScroll() {
                 {/* ─── Input bar with mic button — z-20 above messages ── */}
                 <div className="absolute bottom-5 left-3 right-3 z-20">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center bg-[#050508]/95 backdrop-blur-md border border-white/[0.06] rounded-full px-3.5 py-2.5">
+                    <div className="flex-1 flex items-center bg-[#050508] md:bg-[#050508]/95 md:backdrop-blur-md border border-white/[0.06] rounded-full px-3.5 py-2.5">
                       <span className="text-white/20 text-[10px]">Parlez ou écrivez...</span>
                     </div>
                     {/* Mic button — gradient, prominent */}
@@ -508,7 +516,7 @@ export default function AjnayaChatScroll() {
             <motion.div
               key={i}
               style={{ opacity: cardOpacities[i].opacity }}
-              className={`flex-shrink-0 p-2.5 rounded-xl border backdrop-blur-md w-[150px] ${colorClasses[card.color].bg}`}
+              className={`flex-shrink-0 p-2.5 rounded-xl border w-[150px] ${colorClasses[card.color].bg}`}
             >
               <span className={`text-[10px] font-semibold ${colorClasses[card.color].text}`}>{card.title}</span>
               <p className="text-white/40 text-[9px] leading-snug mt-0.5">{card.desc}</p>
@@ -523,8 +531,8 @@ export default function AjnayaChatScroll() {
         >
           <span className="text-white/30 text-xs">Scrollez</span>
           <motion.div
-            animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+            animate={skipInfinite ? undefined : { y: [0, 5, 0] }}
+            transition={skipInfinite ? undefined : { duration: 1.5, repeat: Infinity }}
             className="w-5 h-8 border-2 border-white/10 rounded-full flex justify-center pt-1.5"
           >
             <div className="w-1 h-2.5 bg-white/20 rounded-full" />

@@ -1,16 +1,19 @@
+import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import Hero from '@/components/Hero'
 import Stats from '@/components/Stats'
-import Features from '@/components/Features'
-import CTA from '@/components/CTA'
-import Footer from '@/components/Footer'
 import GradientLine from '@/components/GradientLine'
-import ScrollMapAnimation from '@/components/ScrollMapAnimation'
-import RevenueSimulator from '@/components/RevenueSimulator'
-import Testimonials from '@/components/Testimonials'
-import AppDemo from '@/components/AppDemo'
-import DownloadSection from '@/components/DownloadSection'
-import AjnayaChatScroll from '@/components/AjnayaChatScroll'
+
+// Lazy load below-fold components — reduces initial JS bundle on mobile
+const ScrollMapAnimation = dynamic(() => import('@/components/ScrollMapAnimation'))
+const Features = dynamic(() => import('@/components/Features'))
+const AjnayaChatScroll = dynamic(() => import('@/components/AjnayaChatScroll'))
+const AppDemo = dynamic(() => import('@/components/AppDemo'))
+const RevenueSimulator = dynamic(() => import('@/components/RevenueSimulator'))
+const Testimonials = dynamic(() => import('@/components/Testimonials'))
+const DownloadSection = dynamic(() => import('@/components/DownloadSection'))
+const CTA = dynamic(() => import('@/components/CTA'))
+const Footer = dynamic(() => import('@/components/Footer'))
 
 export default function Home() {
   return (

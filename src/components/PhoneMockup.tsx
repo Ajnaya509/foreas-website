@@ -1,18 +1,23 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 
 export default function PhoneMockup() {
+  const isMobile = useIsMobile()
+  const reducedMotion = useReducedMotion()
+  const skipInfinite = isMobile || reducedMotion
+
   return (
     <div className="relative">
-      {/* Outer glow layers */}
-      <div className="absolute -inset-8 bg-gradient-to-b from-accent-purple/20 via-accent-cyan/10 to-transparent rounded-[4rem] blur-[60px] opacity-60" />
-      <div className="absolute -inset-4 bg-gradient-to-b from-accent-purple/10 to-transparent rounded-[4rem] blur-[40px]" />
+      {/* Outer glow layers — smaller on mobile */}
+      <div className="absolute -inset-4 md:-inset-8 bg-gradient-to-b from-accent-purple/20 via-accent-cyan/10 to-transparent rounded-[4rem] blur-[40px] md:blur-[60px] opacity-60" />
+      <div className="absolute -inset-2 md:-inset-4 bg-gradient-to-b from-accent-purple/10 to-transparent rounded-[4rem] blur-[25px] md:blur-[40px]" />
 
-      {/* Phone container with subtle float */}
+      {/* Phone container — float disabled on mobile for perf */}
       <motion.div
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        animate={skipInfinite ? undefined : { y: [0, -8, 0] }}
+        transition={skipInfinite ? undefined : { duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         className="relative"
       >
         {/* iPhone Frame - Compact for above-fold */}
@@ -98,27 +103,23 @@ export default function PhoneMockup() {
 
                 {/* === HOT ZONE - Red/Orange with pulse === */}
                 <div className="absolute top-[35%] left-[55%] -translate-x-1/2 -translate-y-1/2">
-                  {/* Outer pulse */}
-                  <motion.div
-                    animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
-                    transition={{ duration: 2.5, repeat: Infinity }}
-                    className="absolute inset-0 w-24 h-24 -translate-x-[25%] -translate-y-[25%] rounded-full bg-red-500/40"
-                  />
-                  {/* Middle glow */}
-                  <motion.div
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0.3, 0.6] }}
-                    transition={{ duration: 1.8, repeat: Infinity }}
-                    className="absolute inset-0 w-16 h-16 -translate-x-[12%] -translate-y-[12%] rounded-full bg-gradient-to-br from-orange-500/50 to-red-600/50"
-                  />
+                  {/* Outer pulse — disabled on mobile */}
+                  {!skipInfinite && (
+                    <motion.div
+                      animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
+                      transition={{ duration: 2.5, repeat: Infinity }}
+                      className="absolute inset-0 w-24 h-24 -translate-x-[25%] -translate-y-[25%] rounded-full bg-red-500/40"
+                    />
+                  )}
+                  {/* Middle glow — static on mobile */}
+                  <div className="absolute inset-0 w-16 h-16 -translate-x-[12%] -translate-y-[12%] rounded-full bg-gradient-to-br from-orange-500/50 to-red-600/50 opacity-50" />
                   {/* Inner hot zone */}
-                  <motion.div
-                    animate={{ scale: [1, 1.08, 1] }}
-                    transition={{ duration: 1.2, repeat: Infinity }}
+                  <div
                     className="relative w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-lg shadow-red-500/50 border border-orange-300/30 flex items-center justify-center"
                   >
                     {/* +35% inside hot zone for clarity */}
                     <span className="text-white font-bold text-[10px]">+35%</span>
-                  </motion.div>
+                  </div>
                 </div>
 
                 {/* Zone label - RÉPUBLIQUE */}
@@ -133,12 +134,14 @@ export default function PhoneMockup() {
 
                 {/* === USER POSITION - Cyan marker === */}
                 <div className="absolute top-[62%] left-[22%]">
-                  {/* Pulse around user */}
-                  <motion.div
-                    animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-cyan"
-                  />
+                  {/* Pulse around user — disabled on mobile */}
+                  {!skipInfinite && (
+                    <motion.div
+                      animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-cyan"
+                    />
+                  )}
                   {/* User marker */}
                   <div className="relative w-6 h-6 -translate-x-1/2 -translate-y-1/2 bg-accent-cyan rounded-full shadow-lg shadow-accent-cyan/60 border-2 border-white flex items-center justify-center">
                     <div className="w-2 h-2 bg-white rounded-full" />
@@ -175,18 +178,20 @@ export default function PhoneMockup() {
                     transition={{ delay: 0.3, duration: 1.2, ease: "easeOut" }}
                   />
 
-                  {/* Moving dot along route */}
-                  <motion.circle
-                    r="3.5"
-                    fill="#00D4FF"
-                    filter="url(#glow)"
-                    animate={{
-                      cx: [66, 90, 130, 155],
-                      cy: [145, 135, 95, 78],
-                      opacity: [1, 1, 1, 0]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  />
+                  {/* Moving dot along route — disabled on mobile */}
+                  {!skipInfinite && (
+                    <motion.circle
+                      r="3.5"
+                      fill="#00D4FF"
+                      filter="url(#glow)"
+                      animate={{
+                        cx: [66, 90, 130, 155],
+                        cy: [145, 135, 95, 78],
+                        opacity: [1, 1, 1, 0]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    />
+                  )}
                 </svg>
 
                 {/* Location badge - Paris 11e */}
@@ -194,7 +199,7 @@ export default function PhoneMockup() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-[#0f0f18]/90 backdrop-blur-sm rounded-lg border border-white/10"
+                  className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-[#0f0f18] md:bg-[#0f0f18]/90 md:backdrop-blur-sm rounded-lg border border-white/10"
                 >
                   <div className="w-1.5 h-1.5 bg-accent-cyan rounded-full" />
                   <span className="text-white/70 text-[10px] font-medium">Paris 11e</span>
@@ -205,7 +210,7 @@ export default function PhoneMockup() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 bg-[#0f0f18]/90 backdrop-blur-sm rounded-lg border border-white/10"
+                  className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 bg-[#0f0f18] md:bg-[#0f0f18]/90 md:backdrop-blur-sm rounded-lg border border-white/10"
                 >
                   <span className="text-accent-purple text-[10px]">⏱</span>
                   <span className="text-white text-[10px] font-bold">12 min</span>
@@ -218,7 +223,7 @@ export default function PhoneMockup() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
-                  className="bg-gradient-to-br from-[#12121a] to-[#0a0a10] backdrop-blur-xl rounded-2xl p-4 border border-white/[0.08] shadow-xl"
+                  className="bg-gradient-to-br from-[#12121a] to-[#0a0a10] md:backdrop-blur-xl rounded-2xl p-4 border border-white/[0.08] shadow-xl"
                 >
                   {/* Header with Ajnaya branding */}
                   <div className="flex items-center gap-2 mb-3">
@@ -253,7 +258,7 @@ export default function PhoneMockup() {
               </div>
 
               {/* Bottom Navigation */}
-              <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-[#0a0a10]/95 backdrop-blur-xl border-t border-white/[0.05] flex items-center justify-around px-2">
+              <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-[#0a0a10] md:bg-[#0a0a10]/95 md:backdrop-blur-xl border-t border-white/[0.05] flex items-center justify-around px-2">
                 {[
                   { icon: 'home', label: 'Accueil', active: true },
                   { icon: 'sparkle', label: 'Ajnaya', active: false },

@@ -2,8 +2,11 @@
 
 import { motion } from 'framer-motion'
 import PhoneMockup from './PhoneMockup'
+import { useIsMobile } from '@/hooks/useDevicePerf'
 
 export default function Hero() {
+  const isMobile = useIsMobile()
+
   return (
     <section className="relative min-h-[100dvh] lg:h-screen flex items-center overflow-hidden">
       {/* Background - Cinematic dark gradient */}
@@ -18,9 +21,13 @@ export default function Hero() {
         }}
       />
 
-      {/* Floating orbs - Subtle depth */}
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-accent-purple/[0.03] rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent-cyan/[0.02] rounded-full blur-[120px] pointer-events-none" />
+      {/* Floating orbs - Subtle depth (desktop only — blur-[150px] is GPU-heavy) */}
+      {!isMobile && (
+        <>
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-accent-purple/[0.03] rounded-full blur-[150px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent-cyan/[0.02] rounded-full blur-[120px] pointer-events-none" />
+        </>
+      )}
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 pt-24 lg:pt-20 pb-12">
@@ -36,8 +43,8 @@ export default function Hero() {
               transition={{ duration: 0.5 }}
               className="mb-5 lg:mb-6"
             >
-              <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full backdrop-blur-sm">
-                <span className="w-1.5 h-1.5 bg-accent-green rounded-full animate-pulse" />
+              <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full md:backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 bg-accent-green rounded-full md:animate-pulse" />
                 Disponible sur iOS & Android
               </span>
             </motion.div>
@@ -102,7 +109,7 @@ export default function Hero() {
 
               <a
                 href="#demo"
-                className="group inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl md:rounded-2xl transition-all duration-300 backdrop-blur-sm"
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl md:rounded-2xl transition-all duration-300 md:backdrop-blur-sm"
               >
                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
@@ -120,7 +127,9 @@ export default function Hero() {
             className="relative flex justify-center lg:justify-end mt-4 lg:mt-0"
           >
             {/* Glow behind phone */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[400px] h-[400px] md:h-[500px] bg-gradient-to-b from-accent-purple/20 via-accent-cyan/10 to-transparent rounded-full blur-[80px] md:blur-[100px] pointer-events-none" />
+            {!isMobile && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[400px] h-[400px] md:h-[500px] bg-gradient-to-b from-accent-purple/20 via-accent-cyan/10 to-transparent rounded-full blur-[80px] md:blur-[100px] pointer-events-none" />
+            )}
 
             <PhoneMockup />
           </motion.div>

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
+import { useThrottledScroll } from '@/hooks/useDevicePerf'
 
 const navigation = [
   { name: 'Chauffeurs', href: '/chauffeurs' },
@@ -16,13 +17,9 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  useThrottledScroll(useCallback((scrollY: number) => {
+    setScrolled(scrollY > 20)
+  }, []))
 
   return (
     <motion.header

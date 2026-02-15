@@ -105,7 +105,7 @@ export default function Features() {
               transition={{ duration: 0.5, delay: index * 0.08 }}
               className="group relative"
             >
-              <div className="relative h-full p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05] backdrop-blur-sm overflow-hidden transition-all duration-500 hover:bg-white/[0.04] hover:border-white/10">
+              <div className="relative h-full p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05] md:backdrop-blur-sm overflow-hidden transition-all duration-500 hover:bg-white/[0.04] hover:border-white/10">
                 {/* Hover glow */}
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-500`} />
 

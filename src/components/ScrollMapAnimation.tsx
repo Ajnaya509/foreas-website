@@ -2,9 +2,13 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
+import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 
 export default function ScrollMapAnimation() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
+  const reducedMotion = useReducedMotion()
+  const skipInfinite = isMobile || reducedMotion
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -29,7 +33,7 @@ export default function ScrollMapAnimation() {
   const step3Opacity = useTransform(scrollYProgress, [0.55, 0.65, 0.8], [0, 1, 1])
 
   return (
-    <section ref={containerRef} className="relative h-[350vh] bg-foreas-deepblack">
+    <section ref={containerRef} className={`relative bg-foreas-deepblack ${isMobile ? 'h-[200vh]' : 'h-[350vh]'}`}>
       {/* Sticky container */}
       <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
         {/* Background gradient */}
@@ -110,12 +114,14 @@ export default function ScrollMapAnimation() {
               style={{ opacity: busyZoneOpacity }}
               className="absolute top-[15%] right-[10%]"
             >
-              {/* Pulse effect */}
-              <motion.div
-                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute inset-0 w-40 h-40 -translate-x-4 -translate-y-4 rounded-full bg-red-500/30"
-              />
+              {/* Pulse effect — disabled on mobile */}
+              {!skipInfinite && (
+                <motion.div
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute inset-0 w-40 h-40 -translate-x-4 -translate-y-4 rounded-full bg-red-500/30"
+                />
+              )}
 
               <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-orange-500/30 to-red-500/30 border-2 border-red-500/50 flex items-center justify-center">
                 <div className="text-center">
@@ -165,7 +171,7 @@ export default function ScrollMapAnimation() {
           {/* Step indicators - plus visibles */}
           <motion.div
             style={{ opacity: step1Opacity }}
-            className="absolute -left-8 top-1/2 -translate-y-1/2 bg-[#12121a]/95 backdrop-blur-md rounded-2xl p-5 border border-white/20 max-w-[220px] shadow-xl"
+            className="absolute -left-8 top-1/2 -translate-y-1/2 bg-[#12121a] md:bg-[#12121a]/95 md:backdrop-blur-md rounded-2xl p-5 border border-white/20 max-w-[220px] shadow-xl"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 rounded-full bg-accent-cyan/30 flex items-center justify-center text-accent-cyan text-sm font-bold">1</div>
@@ -176,7 +182,7 @@ export default function ScrollMapAnimation() {
 
           <motion.div
             style={{ opacity: step2Opacity }}
-            className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-[#12121a]/95 backdrop-blur-md rounded-2xl p-5 border border-white/20 max-w-[240px] shadow-xl"
+            className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-[#12121a] md:bg-[#12121a]/95 md:backdrop-blur-md rounded-2xl p-5 border border-white/20 max-w-[240px] shadow-xl"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 rounded-full bg-accent-purple/30 flex items-center justify-center text-accent-purple text-sm font-bold">2</div>
@@ -187,7 +193,7 @@ export default function ScrollMapAnimation() {
 
           <motion.div
             style={{ opacity: step3Opacity }}
-            className="absolute -right-8 top-1/4 bg-gradient-to-br from-[#12121a]/95 to-[#0a0a12]/95 backdrop-blur-md rounded-2xl p-5 border border-accent-cyan/30 max-w-[220px] shadow-xl shadow-accent-cyan/10"
+            className="absolute -right-8 top-1/4 bg-gradient-to-br from-[#12121a] to-[#0a0a12] md:from-[#12121a]/95 md:to-[#0a0a12]/95 md:backdrop-blur-md rounded-2xl p-5 border border-accent-cyan/30 max-w-[220px] shadow-xl shadow-accent-cyan/10"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 rounded-full bg-green-500/30 flex items-center justify-center text-green-400 text-sm font-bold">3</div>
@@ -204,8 +210,8 @@ export default function ScrollMapAnimation() {
         >
           <span className="text-white/60 text-sm font-medium">Scrollez pour voir</span>
           <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+            animate={skipInfinite ? undefined : { y: [0, 8, 0] }}
+            transition={skipInfinite ? undefined : { duration: 1.5, repeat: Infinity }}
             className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center pt-2"
           >
             <div className="w-1.5 h-3 bg-white/40 rounded-full" />

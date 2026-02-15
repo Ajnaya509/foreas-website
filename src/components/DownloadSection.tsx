@@ -36,7 +36,7 @@ export default function DownloadSection() {
     <section id="telecharger" className="relative py-24 bg-foreas-deepblack overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent-purple/[0.08] rounded-full blur-[150px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[200px] md:w-[600px] md:h-[400px] bg-accent-purple/[0.08] rounded-full blur-[60px] md:blur-[150px]" />
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">

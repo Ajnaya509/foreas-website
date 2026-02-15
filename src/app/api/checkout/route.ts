@@ -28,7 +28,14 @@ function getNextMonday18hParis(): number {
     6: 2, // samedi → +2
   }
 
-  const daysToAdd = daysMap[dayOfWeek]
+  let daysToAdd = daysMap[dayOfWeek]
+
+  // Stripe exige trial_end ≥ 48h dans le futur.
+  // Si le prochain lundi est à moins de 2 jours, on prend le suivant (+7j).
+  if (daysToAdd < 2) {
+    daysToAdd += 7
+  }
+
   const monday = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
 
   // 18h Paris = 17h UTC (hiver CET) ou 16h UTC (été CEST)
