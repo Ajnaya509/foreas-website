@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { useRef, useState, useEffect } from 'react'
 import { useIsMobile } from '@/hooks/useDevicePerf'
 import dynamic from 'next/dynamic'
@@ -27,62 +27,62 @@ interface Testimonial {
 const TESTIMONIALS: Testimonial[] = [
   {
     id: 1,
-    name: 'Kitenge',
-    city: 'Paris',
-    since: 'Chauffeur VTC',
-    stat: { value: '+35%', label: 'de CA' },
-    quote: "FOREAS a transformé ma vision du métier. Je sais où aller, quand y aller.",
-    playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
-    accentColor: '#00d4ff',
-  },
-  {
-    id: 2,
-    name: 'Haitham',
-    city: 'Île-de-France',
-    since: 'Chauffeur VTC',
-    stat: { value: '-40%', label: 'temps mort' },
-    quote: "Moins de temps à attendre, plus de temps à rouler. C'est concret.",
-    playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
-    accentColor: '#a855f7',
-  },
-  {
-    id: 3,
-    name: 'Nikolic',
-    city: 'Paris',
-    since: 'Chauffeur VTC',
-    stat: { value: '+28%', label: 'courses/jour' },
-    quote: "FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui comprennent le terrain.",
-    playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
-    accentColor: '#22c55e',
-  },
-  {
-    id: 4,
-    name: 'Hadietou',
-    city: 'Paris',
-    since: 'Chauffeur VTC',
-    stat: { value: '+22%', label: 'revenus nets' },
-    quote: "Je recommande FOREAS à tous les chauffeurs qui veulent travailler intelligemment.",
-    playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
-    accentColor: '#f59e0b',
-  },
-  {
-    id: 5,
-    name: 'Dragan',
-    city: 'Île-de-France',
-    since: 'Chauffeur VTC',
-    stat: { value: '-35%', label: 'km à vide' },
-    quote: "Avant je tournais en rond. Maintenant chaque kilomètre compte.",
-    playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
-    accentColor: '#ef4444',
-  },
-  {
-    id: 6,
     name: 'Binate',
     city: 'Paris',
     since: 'Chauffeur VTC',
     stat: { value: '+35%', label: 'de CA' },
     quote: "FOREAS a changé ma manière de travailler. Je sais exactement où aller.",
     playbackId: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
+    accentColor: '#00d4ff',
+  },
+  {
+    id: 2,
+    name: 'Kitenge',
+    city: 'Paris',
+    since: 'Chauffeur VTC',
+    stat: { value: '+35%', label: 'de CA' },
+    quote: "FOREAS a transformé ma vision du métier. Je sais où aller, quand y aller.",
+    playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
+    accentColor: '#a855f7',
+  },
+  {
+    id: 3,
+    name: 'Haitham',
+    city: 'Île-de-France',
+    since: 'Chauffeur VTC',
+    stat: { value: '-40%', label: 'temps mort' },
+    quote: "Moins de temps à attendre, plus de temps à rouler. C'est concret.",
+    playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
+    accentColor: '#22c55e',
+  },
+  {
+    id: 4,
+    name: 'Nikolic',
+    city: 'Paris',
+    since: 'Chauffeur VTC',
+    stat: { value: '+28%', label: 'courses/jour' },
+    quote: "FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui comprennent le terrain.",
+    playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
+    accentColor: '#f59e0b',
+  },
+  {
+    id: 5,
+    name: 'Hadietou',
+    city: 'Paris',
+    since: 'Chauffeur VTC',
+    stat: { value: '+22%', label: 'revenus nets' },
+    quote: "Je recommande FOREAS à tous les chauffeurs qui veulent travailler intelligemment.",
+    playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
+    accentColor: '#ef4444',
+  },
+  {
+    id: 6,
+    name: 'Dragan',
+    city: 'Île-de-France',
+    since: 'Chauffeur VTC',
+    stat: { value: '-35%', label: 'km à vide' },
+    quote: "Avant je tournais en rond. Maintenant chaque kilomètre compte.",
+    playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
     accentColor: '#06b6d4',
   },
 ]
@@ -320,7 +320,7 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
               accentColor={testimonial.accentColor}
               preload="metadata"
               paused={!isPlaying}
-              onPlay={() => setIsPlaying(true)}
+              onPlay={() => { setIsPlaying(true); onVideoPlay?.() }}
               onPause={() => setIsPlaying(false)}
               style={{
                 width: '100%',
@@ -419,12 +419,19 @@ function NavArrow({ direction, onClick, disabled }: { direction: 'left' | 'right
 export default function Testimonials() {
   const isMobile = useIsMobile()
   const [activeIndex, setActiveIndex] = useState(0)
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const [userInteracted, setUserInteracted] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const isInView = useInView(sectionRef, { once: false, amount: 0.3 })
+
+  const stopAutoPlay = () => {
+    setUserInteracted(true)
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+  }
 
   const goTo = (idx: number) => {
     setActiveIndex(idx)
-    setIsAutoPlaying(false) // Pause autoplay on manual nav
+    stopAutoPlay()
   }
 
   const goNext = () => {
@@ -435,20 +442,26 @@ export default function Testimonials() {
     setActiveIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
   }
 
-  // Autoplay every 8s — stops permanently once user interacts (click, play video)
+  // Autoplay: starts when section scrolls into view, stops permanently on user interaction
   useEffect(() => {
-    if (!isAutoPlaying) {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+    if (userInteracted) {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
       return
     }
-    intervalRef.current = setInterval(goNext, 8000)
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+    if (isInView) {
+      if (!intervalRef.current) {
+        intervalRef.current = setInterval(goNext, 8000)
+      }
+    } else {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
     }
-  }, [isAutoPlaying])
+    return () => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    }
+  }, [isInView, userInteracted])
 
   return (
-    <section className="relative py-20 md:py-32 bg-foreas-deepblack overflow-hidden">
+    <section ref={sectionRef} className="relative py-20 md:py-32 bg-foreas-deepblack overflow-hidden">
       {/* Premium background glow */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div
@@ -541,17 +554,17 @@ export default function Testimonials() {
               exit={{ opacity: 0, x: -40 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              <CinematicVideoCard testimonial={TESTIMONIALS[activeIndex]} onVideoPlay={() => setIsAutoPlaying(false)} />
+              <CinematicVideoCard testimonial={TESTIMONIALS[activeIndex]} onVideoPlay={() => stopAutoPlay()} />
             </motion.div>
 
             {/* Desktop navigation arrows */}
             {!isMobile && (
               <>
                 <div className="absolute top-1/2 -left-16 -translate-y-1/2">
-                  <NavArrow direction="left" onClick={() => { goPrev(); setIsAutoPlaying(false) }} disabled={false} />
+                  <NavArrow direction="left" onClick={() => { goPrev(); stopAutoPlay() }} disabled={false} />
                 </div>
                 <div className="absolute top-1/2 -right-16 -translate-y-1/2">
-                  <NavArrow direction="right" onClick={() => { goNext(); setIsAutoPlaying(false) }} disabled={false} />
+                  <NavArrow direction="right" onClick={() => { goNext(); stopAutoPlay() }} disabled={false} />
                 </div>
               </>
             )}
@@ -561,7 +574,7 @@ export default function Testimonials() {
           <div className="flex items-center justify-center gap-6 mt-10">
             {/* Mobile prev */}
             {isMobile && (
-              <NavArrow direction="left" onClick={() => { goPrev(); setIsAutoPlaying(false) }} disabled={false} />
+              <NavArrow direction="left" onClick={() => { goPrev(); stopAutoPlay() }} disabled={false} />
             )}
 
             <div className="flex items-center gap-4">
@@ -589,7 +602,7 @@ export default function Testimonials() {
 
             {/* Mobile next */}
             {isMobile && (
-              <NavArrow direction="right" onClick={() => { goNext(); setIsAutoPlaying(false) }} disabled={false} />
+              <NavArrow direction="right" onClick={() => { goNext(); stopAutoPlay() }} disabled={false} />
             )}
           </div>
         </div>
