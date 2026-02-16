@@ -1,11 +1,11 @@
 'use client'
 
 import { motion, useInView } from 'framer-motion'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { useIsMobile } from '@/hooks/useDevicePerf'
 import dynamic from 'next/dynamic'
 
-// Lazy load Mux Player — heavy component, only load when needed
+// Lazy load Mux Player — only loaded when user clicks play (saves ~200KB from critical path)
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
 
 /* ─── Testimonial data ─────────────────────────────────────────
@@ -144,30 +144,134 @@ function StatBadge({ value, label, color }: { value: string; label: string; colo
   )
 }
 
-/* ─── Premium Cinematic Video Card ───────────────────────────────────────────── */
+/* ─── Mux Thumbnail URL helper ──────────────────────────────────────────────── */
+function getMuxThumbnail(playbackId: string, width = 640) {
+  return `https://image.mux.com/${playbackId}/thumbnail.webp?width=${width}&time=2`
+}
+
+/* ─── Premium Cinematic Video Card (Thumbnail-First for Performance) ──────── */
 function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimonial; onVideoPlay?: () => void }) {
+  const [playerLoaded, setPlayerLoaded] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const muxPlayerRef = useRef<any>(null)
   const isMobile = useIsMobile()
 
-  const handlePlayPause = () => {
+  // Only load MuxPlayer SDK when user clicks play — saves ~200KB from critical path
+  const handleFirstPlay = useCallback(() => {
+    if (!playerLoaded) {
+      setPlayerLoaded(true)
+      onVideoPlay?.()
+    }
+  }, [playerLoaded, onVideoPlay])
+
+  const handlePlayPause = useCallback(() => {
+    if (!playerLoaded) {
+      handleFirstPlay()
+      return
+    }
     if (muxPlayerRef.current) {
       if (isPlaying) {
         muxPlayerRef.current.pause()
       } else {
         muxPlayerRef.current.play()
-        onVideoPlay?.() // Stop carousel autoplay when video starts
+        onVideoPlay?.()
       }
       setIsPlaying(!isPlaying)
     }
-  }
+  }, [playerLoaded, isPlaying, handleFirstPlay, onVideoPlay])
+
+  // Auto-play once MuxPlayer is loaded
+  useEffect(() => {
+    if (playerLoaded && muxPlayerRef.current && !isPlaying) {
+      const timer = setTimeout(() => {
+        muxPlayerRef.current?.play()
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [playerLoaded])
+
+  /* ── Shared video container (thumbnail-first, then Mux player) ── */
+  const VideoContainer = ({ rounded, statPosition }: { rounded: string; statPosition: 'top-right' | 'bottom-left' }) => (
+    <div
+      className={`relative w-full ${rounded} overflow-hidden shadow-2xl group`}
+      style={{
+        aspectRatio: '16/9',
+        background: '#0a0a14',
+        border: `1.5px solid rgba(0, 212, 255, 0.15)`,
+        boxShadow: '0 0 60px rgba(0, 212, 255, 0.05), inset 0 0 30px rgba(255, 255, 255, 0.05)',
+      }}
+    >
+      {/* Phase 1: Static thumbnail (instant load, ~5KB WebP) */}
+      {!playerLoaded && (
+        <>
+          <img
+            src={getMuxThumbnail(testimonial.playbackId, isMobile ? 480 : 640)}
+            alt={`Témoignage de ${testimonial.name}`}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+          {/* Dark overlay for premium feel */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 pointer-events-none" />
+        </>
+      )}
+
+      {/* Phase 2: Mux Player (loaded only after user clicks play) */}
+      {playerLoaded && (
+        <MuxPlayer
+          ref={muxPlayerRef}
+          playbackId={testimonial.playbackId}
+          streamType="on-demand"
+          thumbnailTime={2}
+          primaryColor="#ffffff"
+          secondaryColor="#000000"
+          accentColor={testimonial.accentColor}
+          preload="auto"
+          onPlay={() => { setIsPlaying(true); onVideoPlay?.() }}
+          onPause={() => setIsPlaying(false)}
+          style={{
+            width: '100%',
+            height: '100%',
+            aspectRatio: '16/9',
+            '--controls': 'none',
+          } as any}
+        />
+      )}
+
+      {/* Custom play button overlay */}
+      <PremiumPlayButton isVisible={!isPlaying} />
+
+      {/* Click handler */}
+      <div
+        className="absolute inset-0 z-10 cursor-pointer"
+        onClick={handlePlayPause}
+        role="button"
+        aria-label={isPlaying ? `Mettre en pause la vidéo de ${testimonial.name}` : `Lire la vidéo de ${testimonial.name}`}
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlayPause() } }}
+      />
+
+      {/* Gradient overlay (top) */}
+      {!playerLoaded && (
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/40 to-transparent z-[5] pointer-events-none" />
+      )}
+
+      {/* Stat Badge */}
+      <div className={statPosition === 'top-right' ? 'absolute top-6 right-6 z-20' : 'absolute bottom-4 left-4 z-20'}>
+        <StatBadge
+          value={testimonial.stat.value}
+          label={testimonial.stat.label}
+          color={testimonial.accentColor}
+        />
+      </div>
+    </div>
+  )
 
   return (
     <div className="w-full">
       {/* Desktop: Cinematic layout with video left, info right */}
       {!isMobile && (
         <div className="flex gap-10 items-start max-w-5xl mx-auto">
-          {/* Video Card */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -175,61 +279,7 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
             transition={{ duration: 0.8 }}
             className="flex-1 min-w-0"
           >
-            {/* Glow background */}
-            <div className="absolute -inset-8 bg-gradient-to-br from-accent-cyan/10 via-accent-purple/5 to-transparent rounded-3xl blur-3xl -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-            {/* Video container with glassmorphism border */}
-            <div
-              className="relative w-full rounded-3xl overflow-hidden shadow-2xl group"
-              style={{
-                aspectRatio: '16/9',
-                background: '#0a0a14',
-                border: `1.5px solid rgba(0, 212, 255, 0.15)`,
-                boxShadow: '0 0 60px rgba(0, 212, 255, 0.05), inset 0 0 30px rgba(255, 255, 255, 0.05)',
-              }}
-            >
-              {/* Mux Player with custom styling */}
-              <MuxPlayer
-                ref={muxPlayerRef}
-                playbackId={testimonial.playbackId}
-                streamType="on-demand"
-                thumbnailTime={2}
-                primaryColor="#ffffff"
-                secondaryColor="#000000"
-                accentColor={testimonial.accentColor}
-                preload="metadata"
-                paused={!isPlaying}
-                onPlay={() => { setIsPlaying(true); onVideoPlay?.() }}
-                onPause={() => setIsPlaying(false)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  aspectRatio: '16/9',
-                  '--controls': 'none',
-                } as any}
-              />
-
-              {/* Custom play button overlay */}
-              <PremiumPlayButton isVisible={!isPlaying} />
-
-              {/* Click handler */}
-              <div
-                className="absolute inset-0 z-10 cursor-pointer"
-                onClick={handlePlayPause}
-              />
-
-              {/* Gradient overlay (top) - for premium feel */}
-              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/40 to-transparent z-[5] pointer-events-none" />
-
-              {/* Stat Badge - floating top right */}
-              <div className="absolute top-6 right-6 z-20">
-                <StatBadge
-                  value={testimonial.stat.value}
-                  label={testimonial.stat.label}
-                  color={testimonial.accentColor}
-                />
-              </div>
-            </div>
+            <VideoContainer rounded="rounded-3xl" statPosition="top-right" />
           </motion.div>
 
           {/* Info Section - Right side */}
@@ -240,14 +290,11 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
             transition={{ duration: 0.8, delay: 0.1 }}
             className="flex-1 flex flex-col justify-start pt-8"
           >
-            {/* Driver Header */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-2">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white"
-                  style={{
-                    background: `linear-gradient(135deg, ${testimonial.accentColor}, ${testimonial.accentColor}99)`,
-                  }}
+                  style={{ background: `linear-gradient(135deg, ${testimonial.accentColor}, ${testimonial.accentColor}99)` }}
                 >
                   {testimonial.name[0]}
                 </div>
@@ -259,7 +306,6 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
               <p className="text-white/40 text-sm mt-4">{testimonial.since}</p>
             </div>
 
-            {/* Quote */}
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -267,14 +313,7 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
               transition={{ duration: 0.8, delay: 0.2 }}
               className="relative"
             >
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 32 32"
-                fill="none"
-                className="opacity-20 mb-4"
-                style={{ color: testimonial.accentColor }}
-              >
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="opacity-20 mb-4">
                 <path
                   d="M7.5 10.5c-2 0-3 1.5-3 4s1 6 3 8m10-12c-2 0-3 1.5-3 4s1 6 3 8"
                   stroke={testimonial.accentColor}
@@ -299,65 +338,13 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
           transition={{ duration: 0.8 }}
           className="w-full px-4 space-y-6"
         >
-          {/* Video container */}
-          <div
-            className="relative w-full rounded-2xl overflow-hidden shadow-xl"
-            style={{
-              aspectRatio: '16/9',
-              background: '#0a0a14',
-              border: `1px solid rgba(0, 212, 255, 0.15)`,
-              boxShadow: '0 0 40px rgba(0, 212, 255, 0.03)',
-            }}
-          >
-            {/* Mux Player */}
-            <MuxPlayer
-              ref={muxPlayerRef}
-              playbackId={testimonial.playbackId}
-              streamType="on-demand"
-              thumbnailTime={2}
-              primaryColor="#ffffff"
-              secondaryColor="#000000"
-              accentColor={testimonial.accentColor}
-              preload="metadata"
-              paused={!isPlaying}
-              onPlay={() => { setIsPlaying(true); onVideoPlay?.() }}
-              onPause={() => setIsPlaying(false)}
-              style={{
-                width: '100%',
-                height: '100%',
-                aspectRatio: '16/9',
-                '--controls': 'none',
-              } as any}
-            />
+          <VideoContainer rounded="rounded-2xl" statPosition="bottom-left" />
 
-            {/* Custom play button overlay */}
-            <PremiumPlayButton isVisible={!isPlaying} />
-
-            {/* Click handler */}
-            <div
-              className="absolute inset-0 z-10 cursor-pointer"
-              onClick={handlePlayPause}
-            />
-
-            {/* Stat Badge - floating */}
-            <div className="absolute bottom-4 left-4 z-20">
-              <StatBadge
-                value={testimonial.stat.value}
-                label={testimonial.stat.label}
-                color={testimonial.accentColor}
-              />
-            </div>
-          </div>
-
-          {/* Info Section */}
           <div className="space-y-4">
-            {/* Driver Header */}
             <div className="flex items-center gap-3">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white flex-shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, ${testimonial.accentColor}, ${testimonial.accentColor}99)`,
-                }}
+                style={{ background: `linear-gradient(135deg, ${testimonial.accentColor}, ${testimonial.accentColor}99)` }}
               >
                 {testimonial.name[0]}
               </div>
@@ -370,10 +357,8 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
                 </div>
               </div>
             </div>
-
-            {/* Quote */}
             <p className="text-white/70 text-sm leading-relaxed italic">
-              "{testimonial.quote}"
+              &ldquo;{testimonial.quote}&rdquo;
             </p>
           </div>
         </motion.div>
@@ -393,6 +378,7 @@ function NavArrow({ direction, onClick, disabled }: { direction: 'left' | 'right
       whileTap={{ scale: disabled ? 1 : 0.95 }}
       onClick={onClick}
       disabled={disabled}
+      aria-label={direction === 'left' ? 'Témoignage précédent' : 'Témoignage suivant'}
       className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-300 ${
         disabled
           ? 'border-white/5 bg-white/[0.02] cursor-not-allowed'
@@ -584,6 +570,8 @@ export default function Testimonials() {
                   <motion.button
                     key={t.id}
                     onClick={() => goTo(i)}
+                    aria-label={`Voir le témoignage de ${t.name}`}
+                    aria-current={i === activeIndex ? 'true' : undefined}
                     animate={{
                       width: i === activeIndex ? 28 : 8,
                       backgroundColor: i === activeIndex ? t.accentColor : 'rgba(255,255,255,0.15)',

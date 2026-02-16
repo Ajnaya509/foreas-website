@@ -42,6 +42,12 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
 
+        {/* Preconnect to critical third-party CDNs for faster resource loading */}
+        <link rel="preconnect" href="https://image.mux.com" />
+        <link rel="dns-prefetch" href="https://image.mux.com" />
+        <link rel="preconnect" href="https://stream.mux.com" />
+        <link rel="dns-prefetch" href="https://stream.mux.com" />
+
         {/* Preload Genos font for immediate rendering on preloader */}
         <link
           rel="preload"
