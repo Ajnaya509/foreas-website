@@ -52,7 +52,7 @@ const TESTIMONIALS: Testimonial[] = [
     since: 'Chauffeur VTC',
     stat: { value: '+28%', label: 'courses/jour' },
     quote: "FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui comprennent le terrain.",
-    playbackId: '6PbitAE7sjbgTlMsdjl7EYJ01OsX9GnBbQNvj1TFhsow',
+    playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
     accentColor: '#22c55e',
   },
   {
@@ -62,7 +62,7 @@ const TESTIMONIALS: Testimonial[] = [
     since: 'Chauffeur VTC',
     stat: { value: '+22%', label: 'revenus nets' },
     quote: "Je recommande FOREAS à tous les chauffeurs qui veulent travailler intelligemment.",
-    playbackId: 'tjnuX01n9h01GfOA5O1C02a9lIVVbGnib02Z017POgodDpfj4',
+    playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
     accentColor: '#f59e0b',
   },
   {
