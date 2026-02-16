@@ -27,25 +27,64 @@ interface Testimonial {
 const TESTIMONIALS: Testimonial[] = [
   {
     id: 1,
+    name: 'Kitenge',
+    city: 'Paris',
+    since: 'Chauffeur VTC',
+    stat: { value: '+35%', label: 'de CA' },
+    quote: "FOREAS a transformé ma vision du métier. Je sais où aller, quand y aller.",
+    playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
+    accentColor: '#00d4ff',
+  },
+  {
+    id: 2,
+    name: 'Haitham',
+    city: 'Île-de-France',
+    since: 'Chauffeur VTC',
+    stat: { value: '-40%', label: 'temps mort' },
+    quote: "Moins de temps à attendre, plus de temps à rouler. C'est concret.",
+    playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
+    accentColor: '#a855f7',
+  },
+  {
+    id: 3,
+    name: 'Nikolic',
+    city: 'Paris',
+    since: 'Chauffeur VTC',
+    stat: { value: '+28%', label: 'courses/jour' },
+    quote: "FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui comprennent le terrain.",
+    playbackId: '6PbitAE7sjbgTlMsdjl7EYJ01OsX9GnBbQNvj1TFhsow',
+    accentColor: '#22c55e',
+  },
+  {
+    id: 4,
+    name: 'Hadietou',
+    city: 'Paris',
+    since: 'Chauffeur VTC',
+    stat: { value: '+22%', label: 'revenus nets' },
+    quote: "Je recommande FOREAS à tous les chauffeurs qui veulent travailler intelligemment.",
+    playbackId: 'tjnuX01n9h01GfOA5O1C02a9lIVVbGnib02Z017POgodDpfj4',
+    accentColor: '#f59e0b',
+  },
+  {
+    id: 5,
+    name: 'Dragan',
+    city: 'Île-de-France',
+    since: 'Chauffeur VTC',
+    stat: { value: '-35%', label: 'km à vide' },
+    quote: "Avant je tournais en rond. Maintenant chaque kilomètre compte.",
+    playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
+    accentColor: '#ef4444',
+  },
+  {
+    id: 6,
     name: 'Binate',
     city: 'Paris',
     since: 'Chauffeur VTC',
     stat: { value: '+35%', label: 'de CA' },
     quote: "FOREAS a changé ma manière de travailler. Je sais exactement où aller.",
     playbackId: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
-    accentColor: '#00d4ff',
+    accentColor: '#06b6d4',
   },
-  // Ajouter les 5 autres vidéos ici quand elles seront uploadées sur Mux:
-  // {
-  //   id: 2,
-  //   name: 'Prénom',
-  //   city: 'Ville',
-  //   since: 'Chauffeur VTC',
-  //   stat: { value: '+XX%', label: 'description' },
-  //   quote: "Citation courte...",
-  //   playbackId: 'MUX_PLAYBACK_ID_ICI',
-  //   accentColor: '#a855f7',
-  // },
 ]
 
 /* ─── Premium Play Button Overlay ──────────────────────────────────── */
@@ -345,26 +384,69 @@ function CinematicVideoCard({ testimonial }: { testimonial: Testimonial }) {
 /* ═══════════════════════════════════════════════════════════════
  *  MAIN SECTION
  * ═══════════════════════════════════════════════════════════════ */
+/* ─── Navigation Arrow ─────────────────────────────────────── */
+function NavArrow({ direction, onClick, disabled }: { direction: 'left' | 'right'; onClick: () => void; disabled: boolean }) {
+  return (
+    <motion.button
+      whileHover={{ scale: disabled ? 1 : 1.1 }}
+      whileTap={{ scale: disabled ? 1 : 0.95 }}
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-300 ${
+        disabled
+          ? 'border-white/5 bg-white/[0.02] cursor-not-allowed'
+          : 'border-white/15 bg-white/[0.05] hover:bg-white/10 hover:border-accent-cyan/30 cursor-pointer'
+      }`}
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        className={`transition-colors ${disabled ? 'text-white/10' : 'text-white/60'}`}
+      >
+        {direction === 'left' ? (
+          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        ) : (
+          <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        )}
+      </svg>
+    </motion.button>
+  )
+}
+
 export default function Testimonials() {
   const isMobile = useIsMobile()
-  const scrollRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // For carousel functionality (when multiple testimonials are added)
+  const goTo = (idx: number) => {
+    setActiveIndex(idx)
+    setIsAutoPlaying(false) // Pause autoplay on manual nav
+  }
+
+  const goNext = () => {
+    setActiveIndex((prev) => (prev + 1) % TESTIMONIALS.length)
+  }
+
+  const goPrev = () => {
+    setActiveIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
+  }
+
+  // Autoplay every 8s — pause when user interacts or video plays
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el || TESTIMONIALS.length < 2) return
-
-    const handleScroll = () => {
-      const scrollPosition = el.scrollLeft
-      const cardWidth = isMobile ? 280 : 400
-      const idx = Math.round(scrollPosition / cardWidth)
-      setActiveIndex(Math.max(0, Math.min(idx, TESTIMONIALS.length - 1)))
+    if (!isAutoPlaying) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      // Resume autoplay after 20s of inactivity
+      const timeout = setTimeout(() => setIsAutoPlaying(true), 20000)
+      return () => clearTimeout(timeout)
     }
-
-    el.addEventListener('scroll', handleScroll, { passive: true })
-    return () => el.removeEventListener('scroll', handleScroll)
-  }, [isMobile])
+    intervalRef.current = setInterval(goNext, 8000)
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [isAutoPlaying])
 
   return (
     <section className="relative py-20 md:py-32 bg-foreas-deepblack overflow-hidden">
@@ -404,7 +486,7 @@ export default function Testimonials() {
             className="inline-flex items-center gap-2 px-4 py-2 border border-accent-cyan/20 rounded-full mb-6 backdrop-blur-sm"
           >
             <div className="flex -space-x-2">
-              {['K', 'Y', 'F'].map((letter, i) => (
+              {['K', 'H', 'B'].map((letter, i) => (
                 <motion.div
                   key={i}
                   initial={{ scale: 0, opacity: 0 }}
@@ -427,12 +509,12 @@ export default function Testimonials() {
               ))}
             </div>
             <span className="text-white/60 text-xs font-medium tracking-wide">
-              847+ chauffeurs actifs
+              6 témoignages terrain
             </span>
           </motion.div>
 
           <h2 className="font-title text-3xl md:text-6xl text-white mb-3 leading-tight">
-            Ils gagnent plus.{' '}
+            Ils témoignent.{' '}
             <motion.span
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -440,66 +522,77 @@ export default function Testimonials() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-accent-cyan"
             >
-              Ils en parlent.
+              En toute transparence.
             </motion.span>
           </h2>
           <p className="text-white/50 text-base md:text-lg max-w-2xl mx-auto">
-            Résultats réels, tournés sur le terrain. Découvrez comment FOREAS transforme
-            le travail des chauffeurs VTC en France.
+            Des chauffeurs VTC parlent de FOREAS, de leur expérience et du sérieux
+            de notre démarche. Sans filtre, sans script.
           </p>
         </motion.div>
 
-        {/* ═══ MAIN CONTENT ═══ */}
-        <div className="px-4 md:px-6 mb-16 md:mb-20">
-          {TESTIMONIALS.length === 1 ? (
-            /* Single testimonial — cinematic desktop layout */
-            <CinematicVideoCard testimonial={TESTIMONIALS[0]} />
-          ) : (
-            /* Multi-testimonial carousel */
-            <div className="space-y-12">
-              <div
-                ref={scrollRef}
-                className="flex overflow-x-auto snap-x snap-mandatory gap-8 pb-4 -mx-6 px-6 scrollbar-hide"
-              >
-                {TESTIMONIALS.map((testimonial) => (
-                  <div
-                    key={testimonial.id}
-                    className="flex-shrink-0 w-full md:max-w-2xl snap-center"
-                  >
-                    <CinematicVideoCard testimonial={testimonial} />
-                  </div>
+        {/* ═══ CAROUSEL ═══ */}
+        <div className="px-4 md:px-6 mb-12 md:mb-16">
+          <div className="relative max-w-5xl mx-auto">
+            {/* Active testimonial with AnimatePresence */}
+            <motion.div
+              key={activeIndex}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+            >
+              <CinematicVideoCard testimonial={TESTIMONIALS[activeIndex]} />
+            </motion.div>
+
+            {/* Desktop navigation arrows */}
+            {!isMobile && (
+              <>
+                <div className="absolute top-1/2 -left-16 -translate-y-1/2">
+                  <NavArrow direction="left" onClick={() => { goPrev(); setIsAutoPlaying(false) }} disabled={false} />
+                </div>
+                <div className="absolute top-1/2 -right-16 -translate-y-1/2">
+                  <NavArrow direction="right" onClick={() => { goNext(); setIsAutoPlaying(false) }} disabled={false} />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Navigation: dots + counter + mobile arrows */}
+          <div className="flex items-center justify-center gap-6 mt-10">
+            {/* Mobile prev */}
+            {isMobile && (
+              <NavArrow direction="left" onClick={() => { goPrev(); setIsAutoPlaying(false) }} disabled={false} />
+            )}
+
+            <div className="flex items-center gap-4">
+              {/* Dots */}
+              <div className="flex gap-2">
+                {TESTIMONIALS.map((t, i) => (
+                  <motion.button
+                    key={t.id}
+                    onClick={() => goTo(i)}
+                    animate={{
+                      width: i === activeIndex ? 28 : 8,
+                      backgroundColor: i === activeIndex ? t.accentColor : 'rgba(255,255,255,0.15)',
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="h-2 rounded-full cursor-pointer"
+                  />
                 ))}
               </div>
 
-              {/* Carousel indicators */}
-              {TESTIMONIALS.length > 1 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  className="flex gap-2 justify-center"
-                >
-                  {TESTIMONIALS.map((_, i) => (
-                    <motion.button
-                      key={i}
-                      onClick={() => {
-                        if (scrollRef.current) {
-                          const cardWidth = isMobile ? 280 : 400
-                          scrollRef.current.scrollLeft = i * cardWidth
-                        }
-                      }}
-                      animate={{
-                        width: i === activeIndex ? 28 : 8,
-                        backgroundColor: i === activeIndex ? '#00d4ff' : 'rgba(255,255,255,0.2)',
-                      }}
-                      transition={{ duration: 0.3 }}
-                      className="h-2 rounded-full"
-                    />
-                  ))}
-                </motion.div>
-              )}
+              {/* Counter */}
+              <span className="text-white/30 text-sm font-mono tabular-nums">
+                {activeIndex + 1}/{TESTIMONIALS.length}
+              </span>
             </div>
-          )}
+
+            {/* Mobile next */}
+            {isMobile && (
+              <NavArrow direction="right" onClick={() => { goNext(); setIsAutoPlaying(false) }} disabled={false} />
+            )}
+          </div>
         </div>
 
         {/* ═══ TRUST BAR ═══ */}
@@ -511,8 +604,8 @@ export default function Testimonials() {
           className="flex justify-center gap-8 md:gap-12 px-6 flex-wrap max-w-3xl mx-auto"
         >
           {[
-            { icon: '🎬', text: 'Tournés par un pro' },
-            { icon: '📊', text: 'Résultats vérifiés' },
+            { icon: '🎬', text: 'Tournés sur le terrain' },
+            { icon: '🤝', text: 'Témoignages authentiques' },
             { icon: '🔒', text: 'Données protégées' },
           ].map((badge, i) => (
             <motion.div
@@ -537,8 +630,8 @@ export default function Testimonials() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="text-center text-white/20 text-xs mt-10 px-6 max-w-2xl mx-auto leading-relaxed"
         >
-          Résultats individuels. Les performances varient selon la zone, les horaires et
-          l&apos;usage de l&apos;application. Voir conditions générales.
+          Témoignages recueillis auprès de chauffeurs VTC utilisant FOREAS.
+          Les résultats varient selon la zone, les horaires et l&apos;usage de l&apos;application.
         </motion.p>
       </div>
     </section>
