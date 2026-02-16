@@ -145,7 +145,7 @@ function StatBadge({ value, label, color }: { value: string; label: string; colo
 }
 
 /* ─── Premium Cinematic Video Card ───────────────────────────────────────────── */
-function CinematicVideoCard({ testimonial }: { testimonial: Testimonial }) {
+function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimonial; onVideoPlay?: () => void }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const muxPlayerRef = useRef<any>(null)
   const isMobile = useIsMobile()
@@ -156,6 +156,7 @@ function CinematicVideoCard({ testimonial }: { testimonial: Testimonial }) {
         muxPlayerRef.current.pause()
       } else {
         muxPlayerRef.current.play()
+        onVideoPlay?.() // Stop carousel autoplay when video starts
       }
       setIsPlaying(!isPlaying)
     }
@@ -198,7 +199,7 @@ function CinematicVideoCard({ testimonial }: { testimonial: Testimonial }) {
                 accentColor={testimonial.accentColor}
                 preload="metadata"
                 paused={!isPlaying}
-                onPlay={() => setIsPlaying(true)}
+                onPlay={() => { setIsPlaying(true); onVideoPlay?.() }}
                 onPause={() => setIsPlaying(false)}
                 style={{
                   width: '100%',
@@ -434,13 +435,11 @@ export default function Testimonials() {
     setActiveIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
   }
 
-  // Autoplay every 8s — pause when user interacts or video plays
+  // Autoplay every 8s — stops permanently once user interacts (click, play video)
   useEffect(() => {
     if (!isAutoPlaying) {
       if (intervalRef.current) clearInterval(intervalRef.current)
-      // Resume autoplay after 20s of inactivity
-      const timeout = setTimeout(() => setIsAutoPlaying(true), 20000)
-      return () => clearTimeout(timeout)
+      return
     }
     intervalRef.current = setInterval(goNext, 8000)
     return () => {
@@ -542,7 +541,7 @@ export default function Testimonials() {
               exit={{ opacity: 0, x: -40 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              <CinematicVideoCard testimonial={TESTIMONIALS[activeIndex]} />
+              <CinematicVideoCard testimonial={TESTIMONIALS[activeIndex]} onVideoPlay={() => setIsAutoPlaying(false)} />
             </motion.div>
 
             {/* Desktop navigation arrows */}
