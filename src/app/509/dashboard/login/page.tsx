@@ -48,7 +48,7 @@ export default function DashboardLogin() {
           <h1 className="font-title text-3xl text-white mb-2">Dashboard FOREAS</h1>
           <p className="text-white/40 text-sm">Connectez-vous pour accéder à votre espace</p>
           {/* Gradient line */}
-          <div className="mt-5 mx-auto w-32 h-px bg-gradient-to-r from-transparent via-accent-purple/50 to-accent-cyan/50" />
+          <div className="mt-6 mx-auto w-48 h-[2px] rounded-full bg-gradient-to-r from-accent-purple/60 via-accent-cyan/80 to-accent-cyan/60 shadow-[0_0_8px_1px] shadow-accent-cyan/20" />
         </div>
 
         {/* Login Card */}
