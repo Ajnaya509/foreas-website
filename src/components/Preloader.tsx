@@ -1,18 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Preloader() {
-  const [isLoading, setIsLoading] = useState(true)
+  const pathname = usePathname()
+  const isDashboard = pathname.startsWith('/dashboard')
+  const [isLoading, setIsLoading] = useState(!isDashboard)
 
   useEffect(() => {
+    if (isDashboard) return
     const timer = setTimeout(() => {
       setIsLoading(false)
     }, 2200)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [isDashboard])
 
   return (
     <AnimatePresence>
