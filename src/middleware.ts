@@ -19,6 +19,9 @@ export function middleware(request: NextRequest) {
   // / (page en construction elle-même)
   if (pathname === '/') return NextResponse.next()
 
+  // Dashboard (chauffeur + partenaire)
+  if (pathname.startsWith('/dashboard')) return NextResponse.next()
+
   // API routes (Stripe webhooks, waitlist, etc.)
   if (pathname.startsWith('/api')) return NextResponse.next()
 
