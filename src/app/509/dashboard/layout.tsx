@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -53,6 +54,15 @@ function NavIcon({ icon, className }: { icon: string; className?: string }) {
   }
 }
 
+/* ─── Gradient Line Separator ──────────────────────────────────── */
+function GradientLine() {
+  return (
+    <div className="w-full h-px relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent-purple/40 to-accent-cyan/40" />
+    </div>
+  )
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith('/509/dashboard/admin')
@@ -67,70 +77,92 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = isAdmin ? ADMIN_NAV : isPartner ? PARTNER_NAV : DRIVER_NAV
   const roleLabel = isAdmin ? 'Admin' : isPartner ? 'Partenaire' : 'Chauffeur'
+  const roleColor = isAdmin ? 'text-red-400' : isPartner ? 'text-accent-purple' : 'text-accent-cyan'
+  const roleDot = isAdmin ? 'bg-red-400' : isPartner ? 'bg-accent-purple' : 'bg-accent-cyan'
 
   return (
     <div className="min-h-screen bg-[#050508] flex">
+      {/* ═══ Ambient Background ═══ */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[40%] -left-[20%] w-[60%] h-[60%] bg-accent-purple/[0.03] rounded-full blur-[150px]" />
+        <div className="absolute -bottom-[30%] -right-[15%] w-[50%] h-[50%] bg-accent-cyan/[0.02] rounded-full blur-[150px]" />
+      </div>
+
       {/* ═══ SIDEBAR ═══ */}
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#0a0a12] border-r border-white/[0.06] flex flex-col transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[260px] bg-[#08080f]/95 backdrop-blur-xl border-r border-white/[0.06] flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         {/* Brand */}
-        <div className="px-6 py-6 border-b border-white/[0.06]">
-          <Link href="/509" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center">
-              <span className="text-white font-bold text-sm">F</span>
-            </div>
-            <span className="font-title text-xl text-white tracking-tight">FOREAS</span>
+        <div className="px-5 pt-6 pb-5">
+          <Link href="/509" className="flex items-center gap-2.5 group">
+            <Image
+              src="/assets/logo-mini-blanc.svg"
+              alt="FOREAS"
+              width={36}
+              height={36}
+              className="opacity-90 group-hover:opacity-100 transition-opacity"
+            />
           </Link>
-          <div className="mt-3 inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08]">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan" />
-            <span className="text-white/50 text-xs font-medium">{roleLabel}</span>
+          <div className="mt-4 flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${roleDot} shadow-[0_0_6px_1px] ${isAdmin ? 'shadow-red-400/40' : isPartner ? 'shadow-accent-purple/40' : 'shadow-accent-cyan/40'}`} />
+            <span className={`${roleColor} text-[11px] font-semibold uppercase tracking-[0.15em]`}>{roleLabel}</span>
           </div>
         </div>
 
+        <GradientLine />
+
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-5 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={`group relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20'
-                    : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
+                    ? 'text-white'
+                    : 'text-white/40 hover:text-white/70'
                 }`}
               >
-                <NavIcon icon={item.icon} className={`w-5 h-5 ${isActive ? 'text-accent-cyan' : ''}`} />
-                {item.label}
+                {/* Active background glow */}
+                {isActive && (
+                  <>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent-cyan/10 via-accent-cyan/[0.06] to-transparent" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-accent-cyan shadow-[0_0_8px_2px] shadow-accent-cyan/30" />
+                  </>
+                )}
+                <NavIcon icon={item.icon} className={`w-[18px] h-[18px] relative z-10 transition-colors ${isActive ? 'text-accent-cyan' : 'text-white/30 group-hover:text-white/60'}`} />
+                <span className="relative z-10">{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
+        <GradientLine />
+
         {/* User / Logout */}
-        <div className="px-4 py-4 border-t border-white/[0.06]">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-purple/50 to-accent-cyan/50 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">B</span>
+        <div className="px-4 py-5">
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent-purple/30 to-accent-cyan/30 border border-white/[0.08] flex items-center justify-center">
+              <span className="text-white/80 text-xs font-bold">B</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">Binate</p>
-              <p className="text-white/30 text-xs truncate">Paris</p>
+              <p className="text-white/90 text-sm font-medium truncate">Binate</p>
+              <p className="text-white/25 text-[11px] truncate">Paris • en ligne</p>
             </div>
           </div>
           <Link
             href="/509/dashboard/login"
-            className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-all text-sm"
+            className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-white/25 hover:text-white/50 hover:bg-white/[0.03] transition-all text-xs"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             Déconnexion
@@ -139,24 +171,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ═══ MAIN CONTENT ═══ */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen relative z-10">
         {/* Mobile header */}
-        <header className="lg:hidden sticky top-0 z-30 bg-[#050508]/90 backdrop-blur-lg border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 z-30 bg-[#050508]/80 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-white/[0.05]"
+            className="p-2 rounded-lg hover:bg-white/[0.05] transition-colors"
             aria-label="Ouvrir le menu"
           >
-            <svg className="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg className="w-5 h-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="font-title text-lg text-white">FOREAS</span>
+          <Image
+            src="/assets/logo-mini-blanc.svg"
+            alt="FOREAS"
+            width={28}
+            height={28}
+            className="opacity-80"
+          />
           <div className="w-9" />
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-5 md:p-8 lg:p-10">
           {children}
         </main>
       </div>

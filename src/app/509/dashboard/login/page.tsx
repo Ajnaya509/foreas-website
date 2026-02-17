@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -35,11 +36,19 @@ export default function DashboardLogin() {
       >
         {/* Brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-accent-purple to-accent-cyan mb-4">
-            <span className="text-white font-bold text-2xl font-title">F</span>
+          <div className="inline-flex items-center justify-center mb-5">
+            <Image
+              src="/assets/logo-mini-blanc.svg"
+              alt="FOREAS"
+              width={52}
+              height={52}
+              className="opacity-90"
+            />
           </div>
           <h1 className="font-title text-3xl text-white mb-2">Dashboard FOREAS</h1>
           <p className="text-white/40 text-sm">Connectez-vous pour accéder à votre espace</p>
+          {/* Gradient line */}
+          <div className="mt-5 mx-auto w-32 h-px bg-gradient-to-r from-transparent via-accent-purple/50 to-accent-cyan/50" />
         </div>
 
         {/* Login Card */}
