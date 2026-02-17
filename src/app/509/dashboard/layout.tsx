@@ -6,24 +6,24 @@ import { usePathname } from 'next/navigation'
 
 /* ─── Sidebar Navigation Items ─────────────────────────────────── */
 const DRIVER_NAV = [
-  { href: '/dashboard/driver', label: 'Performance', icon: 'chart' },
-  { href: '/dashboard/driver/finances', label: 'Finances', icon: 'wallet' },
-  { href: '/dashboard/driver/analytics', label: 'Analytics', icon: 'analytics' },
-  { href: '/dashboard/driver/abonnement', label: 'Abonnement', icon: 'card' },
+  { href: '/509/dashboard/driver', label: 'Performance', icon: 'chart' },
+  { href: '/509/dashboard/driver/finances', label: 'Finances', icon: 'wallet' },
+  { href: '/509/dashboard/driver/analytics', label: 'Analytics', icon: 'analytics' },
+  { href: '/509/dashboard/driver/abonnement', label: 'Abonnement', icon: 'card' },
 ]
 
 const PARTNER_NAV = [
-  { href: '/dashboard/partner', label: 'Ma flotte', icon: 'fleet' },
-  { href: '/dashboard/partner/annonces', label: 'Annonces', icon: 'megaphone' },
-  { href: '/dashboard/partner/recrutement', label: 'Recrutement', icon: 'users' },
-  { href: '/dashboard/partner/facturation', label: 'Facturation', icon: 'invoice' },
+  { href: '/509/dashboard/partner', label: 'Ma flotte', icon: 'fleet' },
+  { href: '/509/dashboard/partner/annonces', label: 'Annonces', icon: 'megaphone' },
+  { href: '/509/dashboard/partner/recrutement', label: 'Recrutement', icon: 'users' },
+  { href: '/509/dashboard/partner/facturation', label: 'Facturation', icon: 'invoice' },
 ]
 
 const ADMIN_NAV = [
-  { href: '/dashboard/admin', label: 'Vue globale', icon: 'chart' },
-  { href: '/dashboard/admin/chauffeurs', label: 'Chauffeurs', icon: 'users' },
-  { href: '/dashboard/admin/partenaires', label: 'Partenaires', icon: 'fleet' },
-  { href: '/dashboard/admin/permissions', label: 'Accès & Permissions', icon: 'shield' },
+  { href: '/509/dashboard/admin', label: 'Vue globale', icon: 'chart' },
+  { href: '/509/dashboard/admin/chauffeurs', label: 'Chauffeurs', icon: 'users' },
+  { href: '/509/dashboard/admin/partenaires', label: 'Partenaires', icon: 'fleet' },
+  { href: '/509/dashboard/admin/permissions', label: 'Accès & Permissions', icon: 'shield' },
 ]
 
 /* ─── Icon Components ──────────────────────────────────────────── */
@@ -55,9 +55,9 @@ function NavIcon({ icon, className }: { icon: string; className?: string }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname.startsWith('/dashboard/admin')
-  const isPartner = pathname.startsWith('/dashboard/partner')
-  const isLogin = pathname === '/dashboard/login' || pathname === '/dashboard'
+  const isAdmin = pathname.startsWith('/509/dashboard/admin')
+  const isPartner = pathname.startsWith('/509/dashboard/partner')
+  const isLogin = pathname === '/509/dashboard/login' || pathname === '/509/dashboard'
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Login page — no sidebar
@@ -127,7 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <Link
-            href="/dashboard/login"
+            href="/509/dashboard/login"
             className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-all text-sm"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

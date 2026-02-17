@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Preloader() {
   const pathname = usePathname()
-  const isDashboard = pathname.startsWith('/dashboard')
+  const isDashboard = pathname.startsWith('/509/dashboard')
   const [isLoading, setIsLoading] = useState(!isDashboard)
 
   useEffect(() => {

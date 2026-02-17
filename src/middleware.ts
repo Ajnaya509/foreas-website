@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
   if (pathname === '/') return NextResponse.next()
 
   // Dashboard (chauffeur + partenaire)
-  if (pathname.startsWith('/dashboard')) return NextResponse.next()
+  if (pathname.startsWith('/509/dashboard')) return NextResponse.next()
 
   // API routes (Stripe webhooks, waitlist, etc.)
   if (pathname.startsWith('/api')) return NextResponse.next()

@@ -15,7 +15,7 @@ export default function DashboardLogin() {
     setLoading(true)
     // TODO: Supabase auth — pour l'instant on redirige directement
     setTimeout(() => {
-      router.push(role === 'driver' ? '/dashboard/driver' : '/dashboard/partner')
+      router.push(role === 'driver' ? '/509/dashboard/driver' : '/509/dashboard/partner')
     }, 800)
   }
 
