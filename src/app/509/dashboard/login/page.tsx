@@ -4,9 +4,12 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 /* ─────────────────────────────────────────────
-   FOREAS Sync — Orbital Particle Login
+   FOREAS Sync V2 — Nebula Orbital Login
+   Spectaculaire: plus de particules, orbites inclinées,
+   nébuleuse centrale, effets de lumière
    ───────────────────────────────────────────── */
 
 interface Particle {
@@ -15,33 +18,43 @@ interface Particle {
   speed: number
   size: number
   opacity: number
-  color: string
-  trail: { x: number; y: number; opacity: number }[]
+  hue: number
+  tiltX: number
+  tiltY: number
+  trail: { x: number; y: number }[]
 }
 
-const COLORS = {
-  cyan: '#00D4FF',
-  purple: '#8C52FF',
-  magenta: '#EC4899',
-  white: '#ffffff',
-}
+const ORBIT_CONFIG = [
+  { radius: 60, count: 6, tiltX: 0.95, tiltY: 0.6 },
+  { radius: 100, count: 10, tiltX: 0.8, tiltY: 0.85 },
+  { radius: 150, count: 14, tiltX: 0.95, tiltY: 0.7 },
+  { radius: 200, count: 10, tiltX: 0.75, tiltY: 0.9 },
+  { radius: 260, count: 16, tiltX: 0.9, tiltY: 0.65 },
+  { radius: 320, count: 8, tiltX: 0.85, tiltY: 0.8 },
+  { radius: 380, count: 12, tiltX: 0.7, tiltY: 0.95 },
+]
 
-const ORBIT_COUNT = 5
-const PARTICLES_PER_ORBIT = [8, 12, 6, 10, 4]
-const ORBIT_RADII = [80, 130, 180, 230, 280]
+function hueToColor(hue: number): string {
+  if (hue < 60) return `hsl(${185 + hue * 1.2}, 100%, ${55 + hue * 0.3}%)`  // cyan range
+  if (hue < 120) return `hsl(${260 + (hue - 60) * 0.5}, 80%, ${60 + (hue - 60) * 0.2}%)` // purple range
+  return `hsl(${320 + (hue - 120) * 0.8}, 85%, ${55 + (hue - 120) * 0.3}%)` // magenta range
+}
 
 function createParticles(): Particle[] {
   const particles: Particle[] = []
-  const colorKeys = Object.values(COLORS)
-  for (let o = 0; o < ORBIT_COUNT; o++) {
-    for (let p = 0; p < PARTICLES_PER_ORBIT[o]; p++) {
+  for (let o = 0; o < ORBIT_CONFIG.length; o++) {
+    const cfg = ORBIT_CONFIG[o]
+    for (let p = 0; p < cfg.count; p++) {
+      const dir = o % 2 === 0 ? 1 : -1
       particles.push({
         orbit: o,
-        angle: (Math.PI * 2 * p) / PARTICLES_PER_ORBIT[o] + Math.random() * 0.5,
-        speed: (0.002 + Math.random() * 0.003) * (o % 2 === 0 ? 1 : -1),
-        size: 1.5 + Math.random() * 2.5,
-        opacity: 0.3 + Math.random() * 0.7,
-        color: colorKeys[Math.floor(Math.random() * colorKeys.length)],
+        angle: (Math.PI * 2 * p) / cfg.count + Math.random() * 0.8,
+        speed: (0.001 + Math.random() * 0.004) * dir,
+        size: 1 + Math.random() * 3,
+        opacity: 0.2 + Math.random() * 0.8,
+        hue: Math.random() * 180,
+        tiltX: cfg.tiltX + (Math.random() - 0.5) * 0.1,
+        tiltY: cfg.tiltY + (Math.random() - 0.5) * 0.1,
         trail: [],
       })
     }
@@ -49,17 +62,19 @@ function createParticles(): Particle[] {
   return particles
 }
 
-function OrbitalCanvas({ phase }: { phase: 'idle' | 'sending' | 'success' }) {
+function NebulaCanvas({ phase }: { phase: 'idle' | 'sending' | 'success' }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particlesRef = useRef<Particle[]>(createParticles())
   const frameRef = useRef<number>(0)
   const phaseRef = useRef(phase)
   const convergenceRef = useRef(0)
-  const pulseRef = useRef(0)
+  const successTimeRef = useRef(0)
+  const timeRef = useRef(0)
 
   useEffect(() => {
     phaseRef.current = phase
     if (phase === 'sending') convergenceRef.current = 0
+    if (phase === 'success') successTimeRef.current = 0
   }, [phase])
 
   const draw = useCallback(() => {
@@ -78,114 +93,157 @@ function OrbitalCanvas({ phase }: { phase: 'idle' | 'sending' | 'success' }) {
     const cx = w / 2
     const cy = h / 2
     const currentPhase = phaseRef.current
+    timeRef.current += 0.016
 
-    // Clear
-    ctx.clearRect(0, 0, w, h)
+    // Clear with slight fade (motion blur)
+    ctx.fillStyle = 'rgba(5, 5, 8, 0.15)'
+    ctx.fillRect(0, 0, w, h)
 
-    // Draw orbit rings (subtle)
-    for (let i = 0; i < ORBIT_COUNT; i++) {
-      const r = ORBIT_RADII[i]
+    // ─── Nebula core glow ───
+    const coreSize = currentPhase === 'success'
+      ? 120 + successTimeRef.current * 200
+      : currentPhase === 'sending'
+        ? 80 + convergenceRef.current * 60
+        : 60 + Math.sin(timeRef.current * 0.5) * 10
+
+    const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreSize)
+    if (currentPhase === 'success') {
+      coreGrad.addColorStop(0, `rgba(0, 212, 255, ${0.4 + successTimeRef.current * 0.4})`)
+      coreGrad.addColorStop(0.3, `rgba(140, 82, 255, ${0.2 + successTimeRef.current * 0.2})`)
+      coreGrad.addColorStop(0.6, `rgba(236, 72, 153, ${0.05})`)
+      coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    } else if (currentPhase === 'sending') {
+      coreGrad.addColorStop(0, `rgba(0, 212, 255, ${0.2 + convergenceRef.current * 0.3})`)
+      coreGrad.addColorStop(0.4, `rgba(140, 82, 255, ${0.1 + convergenceRef.current * 0.15})`)
+      coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    } else {
+      coreGrad.addColorStop(0, 'rgba(140, 82, 255, 0.12)')
+      coreGrad.addColorStop(0.4, 'rgba(0, 212, 255, 0.06)')
+      coreGrad.addColorStop(0.7, 'rgba(236, 72, 153, 0.02)')
+      coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    }
+    ctx.fillStyle = coreGrad
+    ctx.beginPath()
+    ctx.arc(cx, cy, coreSize, 0, Math.PI * 2)
+    ctx.fill()
+
+    // ─── Orbit rings (ghostly) ───
+    for (let i = 0; i < ORBIT_CONFIG.length; i++) {
+      const cfg = ORBIT_CONFIG[i]
+      const r = cfg.radius
+      const ringOpacity = currentPhase === 'success'
+        ? 0.05 + successTimeRef.current * 0.08
+        : 0.015 + Math.sin(timeRef.current + i * 0.7) * 0.008
+
+      ctx.save()
+      ctx.translate(cx, cy)
+      ctx.scale(cfg.tiltX, cfg.tiltY)
       ctx.beginPath()
-      ctx.arc(cx, cy, r, 0, Math.PI * 2)
-      ctx.strokeStyle =
-        currentPhase === 'success'
-          ? `rgba(0, 212, 255, ${0.06 + pulseRef.current * 0.1})`
-          : `rgba(255, 255, 255, ${0.03 + Math.sin(Date.now() / 2000 + i) * 0.01})`
+      ctx.arc(0, 0, r, 0, Math.PI * 2)
+      ctx.strokeStyle = currentPhase === 'success'
+        ? `rgba(0, 212, 255, ${ringOpacity})`
+        : `rgba(200, 200, 255, ${ringOpacity})`
       ctx.lineWidth = 0.5
       ctx.stroke()
+      ctx.restore()
     }
 
-    // Center glow
-    const glowRadius = currentPhase === 'success' ? 60 + pulseRef.current * 40 : 40 + Math.sin(Date.now() / 1000) * 5
-    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius)
-    if (currentPhase === 'success') {
-      gradient.addColorStop(0, `rgba(0, 212, 255, ${0.3 + pulseRef.current * 0.3})`)
-      gradient.addColorStop(0.5, `rgba(140, 82, 255, ${0.1 + pulseRef.current * 0.1})`)
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-    } else {
-      gradient.addColorStop(0, 'rgba(140, 82, 255, 0.15)')
-      gradient.addColorStop(0.5, 'rgba(0, 212, 255, 0.05)')
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-    }
-    ctx.fillStyle = gradient
-    ctx.fillRect(cx - glowRadius, cy - glowRadius, glowRadius * 2, glowRadius * 2)
-
-    // Update & draw particles
+    // ─── Particles ───
     const particles = particlesRef.current
     for (const p of particles) {
-      // Speed multiplier based on phase
+      const cfg = ORBIT_CONFIG[p.orbit]
+
+      // Speed
       let speedMul = 1
       if (currentPhase === 'sending') {
-        speedMul = 3 + convergenceRef.current * 8
-        p.angle += p.speed * speedMul
+        speedMul = 2 + convergenceRef.current * 12
       } else if (currentPhase === 'success') {
-        speedMul = 0.5
-        p.angle += p.speed * speedMul
-      } else {
-        p.angle += p.speed
+        speedMul = 0.3
       }
+      p.angle += p.speed * speedMul
 
-      // Orbit radius — converge toward center when sending
-      let orbitR = ORBIT_RADII[p.orbit]
+      // Orbit radius — converge
+      let orbitR = cfg.radius
       if (currentPhase === 'sending') {
-        orbitR = ORBIT_RADII[p.orbit] * (1 - convergenceRef.current * 0.9)
+        orbitR = cfg.radius * (1 - convergenceRef.current * 0.95)
       } else if (currentPhase === 'success') {
-        orbitR = ORBIT_RADII[p.orbit] * 0.1 + ORBIT_RADII[p.orbit] * 0.9 * (1 - pulseRef.current)
+        orbitR = cfg.radius * (0.05 + 0.95 * Math.min(1, successTimeRef.current * 2))
       }
 
-      // Slight elliptical wobble
-      const wobble = Math.sin(p.angle * 3 + Date.now() / 1000) * 0.08
-      const x = cx + Math.cos(p.angle) * orbitR * (1 + wobble)
-      const y = cy + Math.sin(p.angle) * orbitR * (0.85 + wobble * 0.5)
+      // 3D-ish position with tilt
+      const x = cx + Math.cos(p.angle) * orbitR * p.tiltX
+      const y = cy + Math.sin(p.angle) * orbitR * p.tiltY
 
       // Trail
-      p.trail.push({ x, y, opacity: p.opacity })
-      if (p.trail.length > 8) p.trail.shift()
+      p.trail.push({ x, y })
+      if (p.trail.length > 12) p.trail.shift()
 
       // Draw trail
-      for (let t = 0; t < p.trail.length; t++) {
+      for (let t = 0; t < p.trail.length - 1; t++) {
         const tp = p.trail[t]
-        const trailOpacity = (t / p.trail.length) * tp.opacity * 0.3
+        const progress = t / p.trail.length
+        const trailOp = progress * p.opacity * 0.25
         ctx.beginPath()
-        ctx.arc(tp.x, tp.y, p.size * 0.5, 0, Math.PI * 2)
-        ctx.fillStyle = p.color.replace(')', `, ${trailOpacity})`).replace('rgb', 'rgba').replace('#', '')
-        // Use hex color with alpha
-        ctx.globalAlpha = trailOpacity
-        ctx.fillStyle = p.color
+        ctx.arc(tp.x, tp.y, p.size * 0.4 * progress, 0, Math.PI * 2)
+        ctx.fillStyle = hueToColor(p.hue)
+        ctx.globalAlpha = trailOp
         ctx.fill()
-        ctx.globalAlpha = 1
       }
 
-      // Draw particle
-      const particleGlow = ctx.createRadialGradient(x, y, 0, x, y, p.size * 3)
-      particleGlow.addColorStop(0, p.color)
-      particleGlow.addColorStop(1, 'rgba(0,0,0,0)')
-      ctx.globalAlpha = p.opacity * (currentPhase === 'sending' ? 0.8 + convergenceRef.current * 0.2 : 1)
+      // Outer glow
+      const glowSize = p.size * (currentPhase === 'sending' ? 4 + convergenceRef.current * 3 : 3.5)
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, glowSize)
+      glow.addColorStop(0, hueToColor(p.hue))
+      glow.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.globalAlpha = p.opacity * (currentPhase === 'sending' ? 0.5 + convergenceRef.current * 0.5 : 0.4)
       ctx.beginPath()
-      ctx.arc(x, y, p.size * 2, 0, Math.PI * 2)
-      ctx.fillStyle = particleGlow
+      ctx.arc(x, y, glowSize, 0, Math.PI * 2)
+      ctx.fillStyle = glow
       ctx.fill()
 
+      // Core particle
+      ctx.globalAlpha = p.opacity * (currentPhase === 'sending' ? 0.8 + convergenceRef.current * 0.2 : 0.9)
       ctx.beginPath()
       ctx.arc(x, y, p.size, 0, Math.PI * 2)
-      ctx.fillStyle = p.color
+      ctx.fillStyle = hueToColor(p.hue)
       ctx.fill()
+
+      // Bright center dot
+      ctx.globalAlpha = p.opacity
+      ctx.beginPath()
+      ctx.arc(x, y, p.size * 0.4, 0, Math.PI * 2)
+      ctx.fillStyle = '#ffffff'
+      ctx.fill()
+
       ctx.globalAlpha = 1
     }
 
-    // Update convergence
+    // ─── Convergence / Success progress ───
     if (currentPhase === 'sending') {
-      convergenceRef.current = Math.min(1, convergenceRef.current + 0.008)
+      convergenceRef.current = Math.min(1, convergenceRef.current + 0.006)
     }
     if (currentPhase === 'success') {
-      pulseRef.current = Math.min(1, pulseRef.current + 0.02)
+      successTimeRef.current = Math.min(1, successTimeRef.current + 0.015)
     }
 
-    // Success flash
-    if (currentPhase === 'success' && pulseRef.current < 0.3) {
-      ctx.fillStyle = `rgba(0, 212, 255, ${(0.3 - pulseRef.current) * 0.5})`
+    // ─── Success flash ───
+    if (currentPhase === 'success' && successTimeRef.current < 0.2) {
+      const flashOp = (0.2 - successTimeRef.current) * 2
+      ctx.fillStyle = `rgba(0, 212, 255, ${flashOp * 0.4})`
       ctx.fillRect(0, 0, w, h)
     }
+
+    // ─── Ambient floating dust ───
+    for (let i = 0; i < 30; i++) {
+      const dx = cx + Math.sin(timeRef.current * 0.3 + i * 47) * (w * 0.45)
+      const dy = cy + Math.cos(timeRef.current * 0.2 + i * 31) * (h * 0.45)
+      ctx.globalAlpha = 0.03 + Math.sin(timeRef.current + i) * 0.02
+      ctx.beginPath()
+      ctx.arc(dx, dy, 0.8, 0, Math.PI * 2)
+      ctx.fillStyle = '#aabbff'
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
 
     frameRef.current = requestAnimationFrame(draw)
   }, [])
@@ -213,65 +271,80 @@ export default function DashboardLogin() {
   const [email, setEmail] = useState('')
   const [phase, setPhase] = useState<'idle' | 'sending' | 'success'>('idle')
   const [emailSent, setEmailSent] = useState(false)
+  const [error, setError] = useState('')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) return
-
+    setError('')
     setPhase('sending')
 
-    // Simulate magic link send (TODO: wire Supabase)
-    setTimeout(() => {
+    try {
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/509/dashboard/auth/callback?role=${role}`,
+        },
+      })
+
+      if (authError) {
+        console.error('Auth error:', authError)
+        setError(authError.message)
+        setPhase('idle')
+        return
+      }
+
       setPhase('success')
-      setTimeout(() => {
-        setEmailSent(true)
-      }, 1200)
-    }, 2500)
+      setTimeout(() => setEmailSent(true), 1500)
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('Erreur de connexion. Réessayez.')
+      setPhase('idle')
+    }
   }
 
-  // For now: dev bypass — double-click logo to skip to dashboard
+  // Dev bypass
   const handleDevBypass = () => {
     router.push(role === 'driver' ? '/509/dashboard/driver' : '/509/dashboard/partner')
   }
 
   return (
     <main className="min-h-screen bg-[#050508] flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Orbital Canvas — full background */}
+      {/* Nebula Canvas */}
       <div className="absolute inset-0">
-        <OrbitalCanvas phase={phase} />
+        <NebulaCanvas phase={phase} />
       </div>
 
-      {/* Vignette overlay */}
+      {/* Vignette */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at center, transparent 30%, #050508 75%)',
+          background: 'radial-gradient(ellipse at center, transparent 20%, rgba(5,5,8,0.4) 50%, #050508 80%)',
         }}
       />
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-md">
+      <div className="relative z-10 w-full max-w-[420px]">
         <AnimatePresence mode="wait">
           {!emailSent ? (
             <motion.div
-              key="login-form"
+              key="login"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
-              {/* Logo + Brand */}
+              {/* Logo */}
               <div className="text-center mb-8">
                 <motion.div
-                  className="inline-flex items-center justify-center mb-5 cursor-pointer"
+                  className="inline-flex items-center justify-center mb-4 cursor-pointer"
                   whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onDoubleClick={handleDevBypass}
                   animate={
                     phase === 'sending'
-                      ? { scale: [1, 1.1, 1], transition: { repeat: Infinity, duration: 0.8 } }
+                      ? { scale: [1, 1.15, 1], transition: { repeat: Infinity, duration: 0.6 } }
                       : phase === 'success'
-                        ? { scale: [1, 1.3, 1.15], transition: { duration: 0.6 } }
+                        ? { scale: [1, 1.4, 1.2], transition: { duration: 0.5 } }
                         : {}
                   }
                 >
@@ -279,17 +352,16 @@ export default function DashboardLogin() {
                     <Image
                       src="/assets/logo-mini-blanc.svg"
                       alt="FOREAS"
-                      width={56}
-                      height={56}
+                      width={52}
+                      height={52}
                       className="relative z-10"
                     />
-                    {/* Logo glow ring */}
                     <div
-                      className={`absolute inset-0 -m-3 rounded-full transition-all duration-1000 ${
+                      className={`absolute -inset-4 rounded-full transition-all duration-700 ${
                         phase === 'sending'
-                          ? 'bg-accent-cyan/20 shadow-[0_0_30px_10px] shadow-accent-cyan/30 scale-110'
+                          ? 'bg-accent-cyan/15 shadow-[0_0_40px_15px] shadow-accent-cyan/25'
                           : phase === 'success'
-                            ? 'bg-accent-cyan/30 shadow-[0_0_60px_20px] shadow-accent-cyan/50 scale-125'
+                            ? 'bg-accent-cyan/25 shadow-[0_0_80px_30px] shadow-accent-cyan/40'
                             : 'bg-transparent'
                       }`}
                     />
@@ -297,127 +369,105 @@ export default function DashboardLogin() {
                 </motion.div>
 
                 <motion.h1
-                  className="font-title text-3xl text-white mb-1.5 tracking-wide"
-                  animate={
-                    phase === 'success' ? { color: '#00D4FF', transition: { duration: 0.4 } } : {}
-                  }
+                  className="font-title text-[28px] text-white mb-1 tracking-wider"
+                  animate={phase === 'success' ? { color: '#00D4FF' } : {}}
                 >
-                  {phase === 'success' ? 'Lien envoyé' : 'FOREAS Sync'}
+                  {phase === 'success' ? 'Lien envoyé ✓' : 'FOREAS Sync'}
                 </motion.h1>
-                <p className="text-white/35 text-sm">
-                  {phase === 'sending'
-                    ? 'Synchronisation en cours...'
-                    : phase === 'success'
-                      ? 'Vérifiez votre boîte mail'
-                      : 'Connectez votre espace dashboard'}
+                <p className="text-white/30 text-[13px]">
+                  {phase === 'sending' ? 'Synchronisation...' : phase === 'success' ? 'Vérifiez votre boîte mail' : 'Connectez votre espace dashboard'}
                 </p>
 
-                {/* Gradient pulse line */}
                 <motion.div
-                  className="mt-5 mx-auto h-[2px] rounded-full bg-gradient-to-r from-accent-purple/60 via-accent-cyan/80 to-accent-cyan/60"
+                  className="mt-4 mx-auto h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-accent-cyan/70 to-transparent"
                   animate={
                     phase === 'sending'
-                      ? {
-                          width: ['12rem', '16rem', '12rem'],
-                          boxShadow: [
-                            '0 0 8px 1px rgba(0,212,255,0.2)',
-                            '0 0 20px 4px rgba(0,212,255,0.5)',
-                            '0 0 8px 1px rgba(0,212,255,0.2)',
-                          ],
-                          transition: { repeat: Infinity, duration: 1.2 },
-                        }
+                      ? { width: ['8rem', '14rem', '8rem'], opacity: [0.6, 1, 0.6], transition: { repeat: Infinity, duration: 1 } }
                       : phase === 'success'
-                        ? { width: '20rem', boxShadow: '0 0 30px 6px rgba(0,212,255,0.6)' }
-                        : { width: '12rem', boxShadow: '0 0 8px 1px rgba(0,212,255,0.2)' }
+                        ? { width: '18rem', opacity: 1 }
+                        : { width: '10rem', opacity: 0.5 }
                   }
-                  style={{ width: '12rem' }}
+                  style={{ width: '10rem' }}
                 />
               </div>
 
-              {/* Login Card */}
+              {/* Card */}
               <motion.div
-                className="backdrop-blur-xl bg-[#0a0a12]/80 border border-white/[0.06] rounded-2xl p-8 shadow-2xl"
+                className="backdrop-blur-2xl bg-white/[0.03] border border-white/[0.06] rounded-2xl p-7 shadow-[0_8px_60px_-12px] shadow-black/50"
                 animate={
-                  phase === 'sending'
-                    ? {
-                        borderColor: 'rgba(0,212,255,0.15)',
-                        transition: { duration: 0.5 },
-                      }
-                    : phase === 'success'
-                      ? { borderColor: 'rgba(0,212,255,0.3)' }
-                      : {}
+                  phase === 'sending' ? { borderColor: 'rgba(0,212,255,0.12)' }
+                    : phase === 'success' ? { borderColor: 'rgba(0,212,255,0.25)' }
+                    : {}
                 }
               >
                 {/* Role Toggle */}
-                <div className="flex gap-2 p-1 bg-white/[0.03] rounded-xl mb-7">
+                <div className="flex gap-1.5 p-1 bg-white/[0.02] rounded-xl mb-6">
                   {(['driver', 'partner'] as const).map((r) => (
                     <button
                       key={r}
-                      onClick={() => setRole(r)}
+                      onClick={() => { setRole(r); setError('') }}
                       disabled={phase !== 'idle'}
-                      className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      className={`flex-1 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 ${
                         role === r
                           ? r === 'driver'
-                            ? 'bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20 shadow-[0_0_12px_2px] shadow-accent-cyan/10'
-                            : 'bg-accent-purple/10 text-accent-purple border border-accent-purple/20 shadow-[0_0_12px_2px] shadow-accent-purple/10'
-                          : 'text-white/30 hover:text-white/50 border border-transparent'
+                            ? 'bg-accent-cyan/8 text-accent-cyan border border-accent-cyan/15'
+                            : 'bg-accent-purple/8 text-accent-purple border border-accent-purple/15'
+                          : 'text-white/25 hover:text-white/40 border border-transparent'
                       }`}
                     >
-                      {r === 'driver' ? '🚗  Chauffeur' : '🏢  Partenaire'}
+                      {r === 'driver' ? 'Chauffeur' : 'Partenaire'}
                     </button>
                   ))}
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
-                  {/* Email */}
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <label className="block text-white/40 text-[11px] font-medium mb-2 uppercase tracking-widest">
+                    <label className="block text-white/30 text-[10px] font-medium mb-1.5 uppercase tracking-[0.15em]">
                       {role === 'driver' ? 'Votre email' : 'Email professionnel'}
                     </label>
                     <div className="relative">
                       <input
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => { setEmail(e.target.value); setError('') }}
                         placeholder={role === 'driver' ? 'nom@email.com' : 'contact@flotte.com'}
                         disabled={phase !== 'idle'}
-                        className="w-full pl-11 pr-4 py-3.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white placeholder:text-white/15 focus:outline-none focus:border-accent-cyan/30 focus:bg-white/[0.05] transition-all text-sm disabled:opacity-40"
+                        className="w-full pl-10 pr-4 py-3 bg-white/[0.02] border border-white/[0.06] rounded-xl text-white text-[13px] placeholder:text-white/12 focus:outline-none focus:border-accent-cyan/25 focus:bg-white/[0.04] transition-all disabled:opacity-30"
                       />
-                      {/* Mail icon */}
-                      <svg
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={1.5}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                        />
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                       </svg>
                     </div>
                   </div>
 
-                  {/* Submit button */}
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-red-400/80 text-[11px] text-center"
+                    >
+                      {error}
+                    </motion.p>
+                  )}
+
                   <motion.button
                     type="submit"
                     disabled={phase !== 'idle' || !email.trim()}
-                    className={`w-full py-3.5 rounded-xl font-semibold text-sm text-white transition-all duration-300 relative overflow-hidden ${
-                      phase !== 'idle'
-                        ? 'opacity-70 cursor-wait'
-                        : !email.trim()
-                          ? 'opacity-40 cursor-not-allowed'
-                          : 'hover:scale-[1.01] active:scale-[0.99]'
+                    className={`w-full py-3 rounded-xl font-medium text-[13px] text-white transition-all duration-300 relative overflow-hidden ${
+                      phase !== 'idle' ? 'opacity-60 cursor-wait'
+                        : !email.trim() ? 'opacity-30 cursor-not-allowed'
+                        : 'hover:scale-[1.01] active:scale-[0.99]'
                     }`}
                     style={{
-                      background:
-                        role === 'driver'
-                          ? 'linear-gradient(135deg, #00D4FF 0%, #00a8cc 100%)'
-                          : 'linear-gradient(135deg, #8C52FF 0%, #6b3fd4 100%)',
+                      background: role === 'driver'
+                        ? 'linear-gradient(135deg, #00D4FF 0%, #0099bb 100%)'
+                        : 'linear-gradient(135deg, #8C52FF 0%, #6b3fd4 100%)',
                     }}
-                    whileHover={phase === 'idle' && email.trim() ? { boxShadow: role === 'driver' ? '0 0 30px 5px rgba(0,212,255,0.3)' : '0 0 30px 5px rgba(140,82,255,0.3)' } : {}}
+                    whileHover={phase === 'idle' && email.trim() ? {
+                      boxShadow: role === 'driver'
+                        ? '0 0 35px 8px rgba(0,212,255,0.25)'
+                        : '0 0 35px 8px rgba(140,82,255,0.25)'
+                    } : {}}
                   >
                     {phase === 'sending' ? (
                       <span className="flex items-center justify-center gap-2">
@@ -425,68 +475,50 @@ export default function DashboardLogin() {
                           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
                           <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" className="opacity-75" />
                         </svg>
-                        Envoi du lien magique...
+                        Envoi du lien...
                       </span>
                     ) : phase === 'success' ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <span className="flex items-center justify-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                         </svg>
-                        Lien envoyé !
+                        Envoyé !
                       </span>
                     ) : (
-                      <>
-                        <span className="relative z-10">
-                          {role === 'driver' ? 'Recevoir mon lien de connexion' : 'Recevoir le magic link'}
-                        </span>
-                        {/* Shimmer effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-200%] animate-[shimmer_3s_infinite]" />
-                      </>
+                      <span className="relative z-10">Recevoir mon lien de connexion</span>
                     )}
                   </motion.button>
                 </form>
 
-                {/* Info text */}
-                <p className="text-center text-white/20 text-[11px] mt-5 leading-relaxed">
-                  {role === 'driver'
-                    ? 'Un lien sécurisé sera envoyé à votre email. Pas de mot de passe nécessaire.'
-                    : 'Accédez à votre espace partenaire via un lien sécurisé.'}
+                <p className="text-center text-white/15 text-[10px] mt-4 leading-relaxed">
+                  Un lien sécurisé sera envoyé. Pas de mot de passe.
                 </p>
 
-                {/* Divider */}
-                <div className="flex items-center gap-3 my-5">
+                <div className="flex items-center gap-3 my-4">
                   <div className="flex-1 h-px bg-white/[0.04]" />
-                  <span className="text-white/15 text-[10px] uppercase tracking-widest">ou</span>
+                  <span className="text-white/10 text-[9px] uppercase tracking-[0.2em]">ou</span>
                   <div className="flex-1 h-px bg-white/[0.04]" />
                 </div>
 
-                {/* Secondary options */}
                 {role === 'driver' ? (
                   <button
                     disabled={phase !== 'idle'}
-                    className="w-full py-3 rounded-xl border border-white/[0.06] text-white/35 hover:text-white/55 hover:border-white/[0.12] hover:bg-white/[0.02] transition-all text-sm font-medium disabled:opacity-30"
+                    className="w-full py-2.5 rounded-xl border border-white/[0.05] text-white/25 hover:text-white/40 hover:border-white/[0.1] hover:bg-white/[0.02] transition-all text-[12px] font-medium disabled:opacity-20"
                   >
-                    📱  Connexion par SMS
+                    Connexion par SMS
                   </button>
                 ) : (
-                  <p className="text-center text-white/25 text-xs">
+                  <p className="text-center text-white/20 text-[11px]">
                     Pas encore partenaire ?{' '}
-                    <a
-                      href="/509#contact"
-                      className="text-accent-purple/70 hover:text-accent-purple transition-colors"
-                    >
+                    <a href="/509#contact" className="text-accent-purple/60 hover:text-accent-purple/80 transition-colors">
                       Contactez-nous
                     </a>
                   </p>
                 )}
               </motion.div>
 
-              {/* Back link */}
-              <p className="text-center mt-6">
-                <a
-                  href="/509"
-                  className="text-white/15 hover:text-white/35 text-xs transition-colors inline-flex items-center gap-1.5"
-                >
+              <p className="text-center mt-5">
+                <a href="/509" className="text-white/12 hover:text-white/30 text-[11px] transition-colors inline-flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                   </svg>
@@ -495,75 +527,50 @@ export default function DashboardLogin() {
               </p>
             </motion.div>
           ) : (
-            /* ─── Email Sent confirmation ─── */
+            /* ─── Email Sent ─── */
             <motion.div
-              key="email-sent"
+              key="sent"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
               <motion.div
-                className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-accent-cyan/10 border border-accent-cyan/20 mb-6"
+                className="inline-flex items-center justify-center w-18 h-18 rounded-full bg-accent-cyan/10 border border-accent-cyan/15 mb-5 p-4"
                 animate={{
                   boxShadow: [
                     '0 0 0 0 rgba(0,212,255,0)',
-                    '0 0 0 20px rgba(0,212,255,0.1)',
-                    '0 0 0 40px rgba(0,212,255,0)',
+                    '0 0 0 25px rgba(0,212,255,0.08)',
+                    '0 0 0 50px rgba(0,212,255,0)',
                   ],
                 }}
                 transition={{ repeat: Infinity, duration: 2.5 }}
               >
-                <svg className="w-9 h-9 text-accent-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                  />
+                <svg className="w-8 h-8 text-accent-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               </motion.div>
 
-              <h2 className="font-title text-2xl text-white mb-3">Vérifiez votre email</h2>
-              <p className="text-white/40 text-sm mb-2 max-w-xs mx-auto">
-                Un lien de connexion a été envoyé à
-              </p>
-              <p className="text-accent-cyan font-medium text-sm mb-8">{email}</p>
+              <h2 className="font-title text-2xl text-white mb-2">Vérifiez votre email</h2>
+              <p className="text-white/30 text-[13px] mb-1">Un lien de connexion a été envoyé à</p>
+              <p className="text-accent-cyan font-medium text-[13px] mb-6">{email}</p>
 
-              <div className="backdrop-blur-xl bg-[#0a0a12]/60 border border-white/[0.06] rounded-xl p-5 max-w-xs mx-auto mb-8">
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent-cyan/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3 h-3 text-accent-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-white/30 text-xs leading-relaxed text-left">
-                    Cliquez sur le lien dans l'email pour accéder instantanément à votre dashboard. Le lien expire dans 10 minutes.
-                  </p>
-                </div>
+              <div className="backdrop-blur-xl bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 max-w-[300px] mx-auto mb-6">
+                <p className="text-white/25 text-[11px] leading-relaxed">
+                  Cliquez sur le lien dans l'email pour accéder à votre dashboard. Le lien expire dans 10 minutes.
+                </p>
               </div>
 
               <button
-                onClick={() => {
-                  setPhase('idle')
-                  setEmailSent(false)
-                  setEmail('')
-                }}
-                className="text-white/25 hover:text-white/45 text-xs transition-colors"
+                onClick={() => { setPhase('idle'); setEmailSent(false); setEmail('') }}
+                className="text-white/20 hover:text-white/40 text-[11px] transition-colors"
               >
-                ← Utiliser un autre email
+                ← Autre email
               </button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* Shimmer keyframe (injected via style) */}
-      <style jsx global>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-200%) skewX(-12deg); }
-          100% { transform: translateX(200%) skewX(-12deg); }
-        }
-      `}</style>
     </main>
   )
 }
