@@ -111,7 +111,7 @@ function TarifsContent() {
   const [billingCycle, setBillingCycle] = useState<'weekly' | 'annual'>('weekly')
   const [checkoutOpen, setCheckoutOpen] = useState(false)
 
-  const pricing = {
+  const pricing: Record<'weekly' | 'annual', { price: number; perDay: number; period: string; savings: string | null; total?: number }> = {
     weekly: { price: 12.97, perDay: 1.85, period: '/semaine', savings: null },
     annual: { price: 9.97,  perDay: 1.42, period: '/semaine', savings: '23%', total: 518.44 },
   }
