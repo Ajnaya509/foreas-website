@@ -13,10 +13,14 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 // Calcule le prochain lundi 18h Paris (côté client)
 function getNextMonday18hParis(): Date {
   const now = new Date()
-  const dayOfWeek = now.getDay() // 0=dim, 1=lun...
+  const dayOfWeek = now.getUTCDay() // UTC pour cohérence serveur
   const daysToAdd = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek
   const monday = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
-  monday.setHours(18, 0, 0, 0)
+  // Paris DST : CEST (UTC+2) de fin mars à fin oct → 16h UTC = 18h Paris
+  //             CET  (UTC+1) le reste              → 17h UTC = 18h Paris
+  const m = monday.getUTCMonth() // 0-indexed : 2=mars, 9=oct
+  const utcHour = (m >= 2 && m <= 9) ? 16 : 17
+  monday.setUTCHours(utcHour, 0, 0, 0)
   return monday
 }
 
@@ -79,7 +83,7 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
   const steps = [
     { icon: '🎁', label: "Aujourd'hui", sublabel: 'Accès complet immédiat à FOREAS', highlight: '0€ débité', hColor: 'text-green-400 bg-green-500/10', active: true },
     { icon: '📱', label: trialDays + ' jour' + (trialDays > 1 ? 's' : '') + ' d\'utilisation', sublabel: 'Testez Ajnaya sur vos vraies courses', highlight: null, hColor: '', active: false },
-    { icon: '📅', label: formatDateFR(nextMonday) + ' à 18h', sublabel: "Fin de l'essai gratuit", highlight: 'Annulez avant → 0€ total', hColor: 'text-violet-300 bg-violet-500/10', active: false },
+    { icon: '📅', label: formatDateFR(nextMonday) + ' à 18h', sublabel: "Fin de l'essai gratuit", highlight: 'Annulez avant → 0€ total', hColor: 'text-blue-300 bg-blue-500/10', active: false },
     { icon: '💳', label: 'Premier débit (si vous continuez)', sublabel: price + ' par ' + period, highlight: 'Annulable en 1 clic à tout moment', hColor: 'text-white/40 bg-white/5', active: false },
   ]
 
@@ -92,17 +96,18 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
       <motion.div
         initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="relative w-full max-w-md bg-[#0d0d1a] border border-violet-500/30 rounded-2xl overflow-hidden shadow-2xl shadow-violet-900/40"
+        className="relative w-full max-w-md bg-[#0d0d1a] border border-blue-500/30 rounded-2xl overflow-hidden shadow-2xl shadow-blue-900/40"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-violet-900/30 to-transparent">
+        {/* Header — logo F prominent + bleu confiance */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-blue-500/10 bg-gradient-to-r from-blue-900/30 to-transparent">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
-              <span className="text-[10px] font-bold text-white">F</span>
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/30 flex-shrink-0">
+              <span className="text-sm font-black text-white tracking-tight">F</span>
+              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-[#0d0d1a]" />
             </div>
             <div>
-              <p className="text-white font-semibold text-sm">Comment fonctionne l'essai ?</p>
-              <p className="text-violet-300 text-xs">Transparent — aucune surprise</p>
+              <p className="text-white font-bold text-sm">FOREAS</p>
+              <p className="text-blue-300 text-xs font-medium">Paiement sécurisé · Transparent</p>
             </div>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
@@ -133,7 +138,7 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
           </div>
 
           {/* Explication carte */}
-          <div className="bg-violet-500/8 border border-violet-500/15 rounded-xl p-4 mb-5">
+          <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-4 mb-5">
             <div className="flex items-start gap-2.5">
               <span className="text-base mt-0.5 flex-shrink-0">🔒</span>
               <div>
@@ -151,7 +156,7 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             onClick={onConfirm}
-            className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-violet-900/40 mb-3"
+            className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-900/40 mb-3"
           >
             Commencer {trialDays} jour{trialDays > 1 ? 's' : ''} gratuit{trialDays > 1 ? 's' : ''} →
           </motion.button>
