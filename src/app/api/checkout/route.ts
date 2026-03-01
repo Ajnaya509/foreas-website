@@ -6,11 +6,13 @@ const PRICE_IDS: Record<string, string> = {
   annual: process.env.STRIPE_PRICE_ANNUAL || 'price_1Szy2YK89oTss0Sb9pQyBWXt',
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+// Sanitize key: strip invisible chars introduced by Vercel copy-paste (\r\n etc.)
+const STRIPE_KEY = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
+
+const stripe = new Stripe(STRIPE_KEY, {
   apiVersion: '2025-02-24.acacia',
   timeout: 8000,
   maxNetworkRetries: 1,
-  httpClient: Stripe.createNodeHttpClient(),
 })
 
 function getNextMonday18hParis(): number {
@@ -34,7 +36,7 @@ function getNextMonday18hParis(): number {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!STRIPE_KEY) {
       return NextResponse.json({ error: 'Clé Stripe non configurée' }, { status: 500 })
     }
     const body = await request.json()
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
       type: err.type,
       code: err.code,
       statusCode: err.statusCode,
-      keyPrefix: (process.env.STRIPE_SECRET_KEY || '').substring(0, 12),
+      keyPrefix: STRIPE_KEY.substring(0, 14),
     }))
     return NextResponse.json({ error: err.message || 'Erreur serveur', type: err.type }, { status: 500 })
   }
@@ -80,7 +82,8 @@ export async function GET() {
   const trialDays = Math.round((trialEnd * 1000 - now.getTime()) / (24 * 60 * 60 * 1000))
   return NextResponse.json({
     status: 'ok',
-    hasKey: !!process.env.STRIPE_SECRET_KEY,
+    hasKey: !!STRIPE_KEY,
+    keyPrefix: STRIPE_KEY.substring(0, 14),
     billing: { nextMonday18hParis: trialDate.toISOString(), trialDays, rule: 'Lundi 18h Paris = sacré.' },
   })
 }
