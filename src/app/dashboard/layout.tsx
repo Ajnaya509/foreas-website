@@ -7,24 +7,24 @@ import { usePathname } from 'next/navigation'
 
 /* ─── Sidebar Navigation Items ─────────────────────────────────── */
 const DRIVER_NAV = [
-  { href: '/509/dashboard/driver', label: 'Performance', icon: 'chart' },
-  { href: '/509/dashboard/driver/finances', label: 'Finances', icon: 'wallet' },
-  { href: '/509/dashboard/driver/analytics', label: 'Analytics', icon: 'analytics' },
-  { href: '/509/dashboard/driver/abonnement', label: 'Abonnement', icon: 'card' },
+  { href: '/dashboard/driver', label: 'Performance', icon: 'chart' },
+  { href: '/dashboard/driver/finances', label: 'Finances', icon: 'wallet' },
+  { href: '/dashboard/driver/analytics', label: 'Analytics', icon: 'analytics' },
+  { href: '/dashboard/driver/abonnement', label: 'Abonnement', icon: 'card' },
 ]
 
 const PARTNER_NAV = [
-  { href: '/509/dashboard/partner', label: 'Ma flotte', icon: 'fleet' },
-  { href: '/509/dashboard/partner/annonces', label: 'Annonces', icon: 'megaphone' },
-  { href: '/509/dashboard/partner/recrutement', label: 'Recrutement', icon: 'users' },
-  { href: '/509/dashboard/partner/facturation', label: 'Facturation', icon: 'invoice' },
+  { href: '/dashboard/partner', label: 'Ma flotte', icon: 'fleet' },
+  { href: '/dashboard/partner/annonces', label: 'Annonces', icon: 'megaphone' },
+  { href: '/dashboard/partner/recrutement', label: 'Recrutement', icon: 'users' },
+  { href: '/dashboard/partner/facturation', label: 'Facturation', icon: 'invoice' },
 ]
 
 const ADMIN_NAV = [
-  { href: '/509/dashboard/admin', label: 'Vue globale', icon: 'chart' },
-  { href: '/509/dashboard/admin/chauffeurs', label: 'Chauffeurs', icon: 'users' },
-  { href: '/509/dashboard/admin/partenaires', label: 'Partenaires', icon: 'fleet' },
-  { href: '/509/dashboard/admin/permissions', label: 'Accès & Permissions', icon: 'shield' },
+  { href: '/dashboard/admin', label: 'Vue globale', icon: 'chart' },
+  { href: '/dashboard/admin/chauffeurs', label: 'Chauffeurs', icon: 'users' },
+  { href: '/dashboard/admin/partenaires', label: 'Partenaires', icon: 'fleet' },
+  { href: '/dashboard/admin/permissions', label: 'Accès & Permissions', icon: 'shield' },
 ]
 
 /* ─── Icon Components ──────────────────────────────────────────── */
@@ -65,9 +65,9 @@ function GradientLine() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname.startsWith('/509/dashboard/admin')
-  const isPartner = pathname.startsWith('/509/dashboard/partner')
-  const isLogin = pathname === '/509/dashboard/login' || pathname === '/509/dashboard'
+  const isAdmin = pathname.startsWith('/dashboard/admin')
+  const isPartner = pathname.startsWith('/dashboard/partner')
+  const isLogin = pathname === '/dashboard/login' || pathname === '/dashboard'
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Login page — no sidebar
@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[260px] bg-[#08080f]/95 backdrop-blur-xl border-r border-white/[0.06] flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         {/* Brand */}
         <div className="px-5 pt-6 pb-5">
-          <Link href="/509" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <Image
               src="/assets/logo-mini-blanc.svg"
               alt="FOREAS"
@@ -159,7 +159,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <Link
-            href="/509/dashboard/login"
+            href="/dashboard/login"
             className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-white/25 hover:text-white/50 hover:bg-white/[0.03] transition-all text-xs"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

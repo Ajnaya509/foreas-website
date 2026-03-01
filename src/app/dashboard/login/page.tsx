@@ -283,7 +283,7 @@ export default function DashboardLogin() {
       const { error: authError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/509/dashboard/auth/callback?role=${role}`,
+          emailRedirectTo: `${window.location.origin}/dashboard/auth/callback?role=${role}`,
         },
       })
 
@@ -305,7 +305,7 @@ export default function DashboardLogin() {
 
   // Dev bypass
   const handleDevBypass = () => {
-    router.push(role === 'driver' ? '/509/dashboard/driver' : '/509/dashboard/partner')
+    router.push(role === 'driver' ? '/dashboard/driver' : '/dashboard/partner')
   }
 
   return (
@@ -510,7 +510,7 @@ export default function DashboardLogin() {
                 ) : (
                   <p className="text-center text-white/20 text-[11px]">
                     Pas encore partenaire ?{' '}
-                    <a href="/509#contact" className="text-accent-purple/60 hover:text-accent-purple/80 transition-colors">
+                    <a href="/#contact" className="text-accent-purple/60 hover:text-accent-purple/80 transition-colors">
                       Contactez-nous
                     </a>
                   </p>
@@ -518,7 +518,7 @@ export default function DashboardLogin() {
               </motion.div>
 
               <p className="text-center mt-5">
-                <a href="/509" className="text-white/12 hover:text-white/30 text-[11px] transition-colors inline-flex items-center gap-1">
+                <a href="/" className="text-white/12 hover:text-white/30 text-[11px] transition-colors inline-flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                   </svg>

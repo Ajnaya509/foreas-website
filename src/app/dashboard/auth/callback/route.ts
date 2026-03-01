@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Auth callback error:', error)
       return NextResponse.redirect(
-        new URL(`/509/dashboard/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
+        new URL(`/dashboard/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
       )
     }
   } else if (code) {
@@ -33,12 +33,12 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Auth callback error:', error)
       return NextResponse.redirect(
-        new URL(`/509/dashboard/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
+        new URL(`/dashboard/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
       )
     }
   }
 
   // Redirect based on role
-  const redirectPath = role === 'partner' ? '/509/dashboard/partner' : '/509/dashboard/driver'
+  const redirectPath = role === 'partner' ? '/dashboard/partner' : '/dashboard/driver'
   return NextResponse.redirect(new URL(redirectPath, requestUrl.origin))
 }
