@@ -8,6 +8,8 @@ const PRICE_IDS: Record<string, string> = {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-02-24.acacia',
+  timeout: 8000,
+  maxNetworkRetries: 0,
 })
 
 function getNextMonday18hParis(): number {
@@ -58,9 +60,15 @@ export async function POST(request: NextRequest) {
     if (isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
-    const err = error as { message?: string }
-    console.error('Checkout error:', err.message)
-    return NextResponse.json({ error: err.message || 'Erreur serveur' }, { status: 500 })
+    const err = error as { message?: string; type?: string; code?: string; statusCode?: number }
+    console.error('Checkout error full:', JSON.stringify({
+      message: err.message,
+      type: err.type,
+      code: err.code,
+      statusCode: err.statusCode,
+      keyPrefix: (process.env.STRIPE_SECRET_KEY || '').substring(0, 12),
+    }))
+    return NextResponse.json({ error: err.message || 'Erreur serveur', type: err.type }, { status: 500 })
   }
 }
 
