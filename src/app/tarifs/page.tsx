@@ -1,296 +1,365 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useEffect, useRef, Suspense, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { loadStripe } from '@stripe/stripe-js'
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
+import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
-export default function TarifsPage() {
-  const [billingCycle, setBillingCycle] = useState<'weekly' | 'annual'>('weekly')
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
-  const pricing = {
-    weekly: {
-      price: 12.97,
-      period: '/semaine',
-      savings: null,
-    },
-    annual: {
-      price: 9.97,
-      period: '/semaine',
-      savings: '23%',
-      total: 518.44,
-    }
-  }
-
-  const features = [
-    { name: 'Ajnaya IA prédictive', included: true, description: 'Zones chaudes en temps réel' },
-    { name: 'Multi-app (Uber, Bolt, Heetch)', included: true, description: 'Vue unifiée de toutes vos apps' },
-    { name: 'Alertes intelligentes', included: true, description: 'Notifications contextuelles' },
-    { name: 'Historique & statistiques', included: true, description: 'Analysez vos performances' },
-    { name: 'Mode nuit optimisé', included: true, description: 'Stratégies nocturnes' },
-    { name: 'Support prioritaire', included: true, description: 'Réponse < 2h' },
-  ]
-
-  const [loading, setLoading] = useState(false)
-
-  const handleCheckout = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: billingCycle })
-      })
-      const data = await response.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        alert(data.error || 'Erreur lors du paiement. Réessayez.')
+function AnimatedCounter({ target, suffix = '', duration = 2000 }: { target: number; suffix?: string; duration?: number }) {
+  const [value, setValue] = useState(0)
+  const ref = useRef<HTMLSpanElement>(null)
+  const started = useRef(false)
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true
+        const start = performance.now()
+        const animate = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1)
+          const ease = 1 - Math.pow(1 - progress, 3)
+          setValue(Math.round(ease * target))
+          if (progress < 1) requestAnimationFrame(animate)
+        }
+        requestAnimationFrame(animate)
       }
-    } catch {
-      alert('Erreur de connexion. Réessayez.')
-    } finally {
-      setLoading(false)
-    }
-  }
+    }, { threshold: 0.3 })
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [target, duration])
+  return <span ref={ref}>{value}{suffix}</span>
+}
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border-b border-white/10">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex justify-between items-center py-5 text-left gap-4 group">
+        <span className="text-white/90 font-medium text-sm sm:text-base group-hover:text-white transition-colors">{q}</span>
+        <span className={`text-violet-400 text-xl transition-transform flex-shrink-0 ${open ? 'rotate-45' : ''}`}>+</span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+            <p className="text-white/60 text-sm pb-5 leading-relaxed">{a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function CheckoutModal({ plan, onClose }: { plan: 'weekly' | 'annual'; onClose: () => void }) {
+  const fetchClientSecret = useCallback(async () => {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan, mode: 'embedded' }),
+    })
+    const data = await res.json()
+    return data.clientSecret
+  }, [plan])
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-foreas-deepblack pt-24 pb-20">
-        {/* Background effects */}
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-accent-purple/[0.05] rounded-full blur-[150px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-accent-cyan/[0.03] rounded-full blur-[100px]" />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-xl bg-[#0d0d1a] border border-violet-500/30 rounded-2xl overflow-hidden shadow-2xl shadow-violet-900/40" style={{ maxHeight: '90vh' }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-violet-900/30 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
+              <span className="text-[10px] font-bold text-white">F</span>
+            </div>
+            <div>
+              <p className="text-white font-semibold text-sm">FOREAS</p>
+              <p className="text-violet-300 text-xs">Paiement sécurisé · Essai gratuit</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
         </div>
-
-        <div className="relative z-10 max-w-4xl mx-auto px-6">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full mb-6">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              Essai gratuit inclus
+        <div className="flex items-center justify-center gap-4 px-5 py-3 bg-green-500/5 border-b border-green-500/10">
+          {['SSL chiffré', 'Annulation 1 clic', 'Remboursement 30j'].map(t => (
+            <span key={t} className="flex items-center gap-1.5 text-green-400 text-xs">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+              {t}
             </span>
+          ))}
+        </div>
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 130px)' }}>
+          <EmbeddedCheckoutProvider stripe={stripePromise} options={{ fetchClientSecret }}>
+            <EmbeddedCheckout />
+          </EmbeddedCheckoutProvider>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
 
-            <h1 className="font-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-white mb-4">
-              Un investissement.<br />
-              <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
-                Pas une dépense.
-              </span>
+function SuccessBanner() {
+  return (
+    <motion.div initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-600 to-emerald-500 py-4 px-5 text-center shadow-xl">
+      <p className="text-white font-semibold text-sm">🎉 Bienvenue dans FOREAS ! Votre abonnement est actif. Téléchargez l'app pour commencer.</p>
+    </motion.div>
+  )
+}
+
+function TarifsContent() {
+  const searchParams = useSearchParams()
+  const isSuccess = searchParams.get('success') === 'true'
+  const [billingCycle, setBillingCycle] = useState<'weekly' | 'annual'>('weekly')
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+
+  const pricing = {
+    weekly: { price: 12.97, perDay: 1.85, period: '/semaine', savings: null },
+    annual: { price: 9.97,  perDay: 1.42, period: '/semaine', savings: '23%', total: 518.44 },
+  }
+  const current = pricing[billingCycle]
+
+  const features = [
+    { icon: '🧠', title: 'Ajnaya IA Prédictive', desc: 'Anticipe les zones les plus rentables avant que la concurrence y arrive.', badge: '+35% CA' },
+    { icon: '🗺️', title: 'Cartographie temps réel', desc: 'Snapshots géographiques Mapbox — événements, météo, affluence.', badge: 'Exclusif' },
+    { icon: '⚡', title: 'Multi-plateformes', desc: 'Vue unifiée Uber, Bolt, Heetch — une seule app, zéro jonglage.', badge: '-23% temps mort' },
+    { icon: '🔔', title: 'Alertes intelligentes', desc: 'Notifications contextuelles : "Aéroport dans 12 min — 5 chauffeurs seulement."', badge: 'Temps réel' },
+    { icon: '📊', title: 'Performance & Analytics', desc: "Vos stats en un coup d'oeil. Comparez, ajustez, progressez.", badge: 'Insights pro' },
+    { icon: '🌙', title: 'Mode nuit optimisé', desc: 'Stratégies adaptées aux pics nocturnes. Gagnez plus, dormez mieux.', badge: 'Nuit = x2' },
+  ]
+
+  const testimonials = [
+    { name: 'Karim B.', city: 'Paris 15e', avatar: 'KB', gain: '+38% CA', quote: "Avant FOREAS je perdais 2h par jour en zones creuses. Maintenant Ajnaya me dit exactement où aller. C'est comme avoir un copilote qui connaît Paris mieux que moi.", stars: 5 },
+    { name: 'Soufiane M.', city: 'Lyon Part-Dieu', avatar: 'SM', gain: '+412€/mois', quote: "J'étais sceptique au début. Résultat : 412€ de plus par mois. L'abonnement se paye en moins d'une course. C'est mathématique.", stars: 5 },
+    { name: 'Théodore R.', city: 'Bordeaux Gare', avatar: 'TR', gain: '-28% fatigue', quote: "Le vrai gain c'est mental. Je prends moins de décisions inutiles. FOREAS pense pour moi sur les zones, moi je me concentre sur la conduite.", stars: 5 },
+  ]
+
+  const faqs = [
+    { q: 'Est-ce vraiment gratuit pour commencer ?', a: "Oui. Vous entrez vos coordonnées bancaires mais vous n'êtes débité qu'au premier lundi 18h suivant votre inscription. Entre-temps, accès complet. Si vous n'êtes pas convaincus, annulez avant — c'est zéro euro." },
+    { q: "Combien de jours d'essai gratuit ?", a: "Entre 1 et 7 jours selon le jour de votre inscription. L'essai se termine toujours le lundi à 18h Paris." },
+    { q: "L'IA fait des promesses réalistes ?", a: "Oui. FOREAS distingue données confirmées, estimations et simulations. Les +35% viennent des données réelles de nos 147 chauffeurs actifs." },
+    { q: 'Puis-je annuler à tout moment ?', a: "Absolument. Pas de préavis, pas de frais. Depuis l'app ou par email en moins de 2 minutes." },
+    { q: 'FOREAS remplace-t-il mes apps VTC ?', a: "Non — il les amplifie. Vous continuez à recevoir vos courses via Uber, Bolt ou Heetch. FOREAS se superpose pour vous aider entre les courses." },
+    { q: 'Disponible sur iOS et Android ?', a: "Oui, les deux. Interface minimaliste et vocale, optimisée pour la conduite." },
+  ]
+
+  return (
+    <div className="min-h-screen bg-[#070714] text-white overflow-x-hidden">
+      {isSuccess && <SuccessBanner />}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-[120px]" />
+        <div className="absolute top-1/3 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-violet-800/15 rounded-full blur-[100px]" />
+      </div>
+      <Header />
+
+      {/* Live bar */}
+      <div className="relative border-b border-white/5 bg-black/30 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3">
+          <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />147 chauffeurs actifs ce soir
+          </span>
+          <span className="text-white/20">·</span>
+          <span className="text-white/50 text-xs">Plus que <span className="text-orange-400 font-semibold">23 places</span> au tarif découverte</span>
+        </div>
+      </div>
+
+      {/* HERO */}
+      <section className="relative pt-16 pb-12 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-6">
+              <span className="text-violet-300 text-xs font-semibold tracking-wide uppercase">Essai gratuit · Aucune CB requise</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
+              Vos concurrents gagnent{' '}
+              <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">35% de plus.</span>
             </h1>
-
-            <p className="text-white/50 text-lg max-w-xl mx-auto">
-              +35% de CA en moyenne. L'abonnement se rembourse dès la première semaine.
+            <p className="text-white/60 text-lg sm:text-xl mb-2 max-w-2xl mx-auto leading-relaxed">
+              Parce qu'ils ont FOREAS. L'IA qui prédit les zones, élimine le temps mort, et transforme chaque heure en chiffre d'affaires.
             </p>
-          </motion.div>
+            <p className="text-white/40 text-sm mb-10">147 chauffeurs · 3 villes · +38% CA moyen documenté</p>
 
-          {/* Billing toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="flex justify-center mb-10"
-          >
-            <div className="inline-flex items-center gap-2 p-1.5 bg-white/5 rounded-xl border border-white/10">
-              <button
-                onClick={() => setBillingCycle('weekly')}
-                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  billingCycle === 'weekly'
-                    ? 'bg-gradient-to-r from-accent-purple to-accent-cyan text-white shadow-lg'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Hebdomadaire
+            {/* Toggle */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <span className={`text-sm font-medium transition-colors ${billingCycle === 'weekly' ? 'text-white' : 'text-white/40'}`}>Hebdomadaire</span>
+              <button onClick={() => setBillingCycle(c => c === 'weekly' ? 'annual' : 'weekly')} className={`relative w-12 h-6 rounded-full transition-colors ${billingCycle === 'annual' ? 'bg-violet-500' : 'bg-white/20'}`}>
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${billingCycle === 'annual' ? 'translate-x-6' : ''}`} />
               </button>
-              <button
-                onClick={() => setBillingCycle('annual')}
-                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  billingCycle === 'annual'
-                    ? 'bg-gradient-to-r from-accent-purple to-accent-cyan text-white shadow-lg'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Annuel
-                <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">
-                  -23%
-                </span>
-              </button>
+              <span className={`text-sm font-medium transition-colors flex items-center gap-2 ${billingCycle === 'annual' ? 'text-white' : 'text-white/40'}`}>
+                Annuel <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full font-semibold">-23%</span>
+              </span>
             </div>
-          </motion.div>
 
-          {/* Pricing card */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="relative"
-          >
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-accent-purple via-accent-cyan to-accent-purple rounded-3xl blur-xl opacity-20" />
-
-            <div className="relative bg-gradient-to-b from-[#12121a] to-[#0a0a10] rounded-3xl border border-white/10 overflow-hidden">
-              {/* Popular badge */}
-              <div className="absolute top-0 right-0 bg-gradient-to-r from-accent-purple to-accent-cyan text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
-                RECOMMANDÉ
+            {/* Price */}
+            <motion.div key={billingCycle} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }} className="mb-8">
+              <div className="flex items-end justify-center gap-2 mb-1">
+                <span className="text-6xl sm:text-7xl font-black text-white">{current.price.toFixed(2).replace('.', ',')}€</span>
+                <span className="text-white/50 text-lg mb-3">{current.period}</span>
               </div>
+              <p className="text-violet-300 text-sm font-medium">soit {current.perDay.toFixed(2).replace('.', ',')}€/jour — le prix d'un café</p>
+              {billingCycle === 'annual' && <p className="text-white/40 text-xs mt-1">Facturé {current.total?.toFixed(2).replace('.', ',')}€/an</p>}
+            </motion.div>
 
-              <div className="p-5 sm:p-8 md:p-12">
-                {/* Price */}
-                <div className="text-center mb-8">
-                  <div className="flex items-end justify-center gap-1 mb-2">
-                    <span className="font-title text-4xl sm:text-6xl md:text-7xl font-bold text-white">
-                      {pricing[billingCycle].price.toFixed(2).replace('.', ',')}
-                    </span>
-                    <span className="text-lg sm:text-2xl text-white/60 mb-2">€</span>
-                    <span className="text-white/40 mb-2">{pricing[billingCycle].period}</span>
-                  </div>
-
-                  {billingCycle === 'annual' && (
-                    <p className="text-white/40 text-sm">
-                      Facturé {pricing.annual.total.toFixed(2).replace('.', ',')}€/an
-                      <span className="text-green-400 ml-2">Économisez {pricing.annual.savings}</span>
-                    </p>
-                  )}
-                </div>
-
-                {/* CTA */}
-                <button
-                  onClick={handleCheckout}
-                  disabled={loading}
-                  className="w-full py-4 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold text-lg hover:opacity-90 transition-opacity mb-8 flex items-center justify-center gap-3 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Redirection vers Stripe...
-                    </>
-                  ) : (
-                    <>
-                      Essayer gratuitement
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    </>
-                  )}
-                </button>
-
-                <p className="text-center text-white/30 text-sm mb-8">
-                  0€ aujourd&apos;hui. Annulez quand vous voulez.
-                </p>
-
-                {/* Features */}
-                <div className="space-y-4">
-                  <h3 className="text-white/60 text-sm font-medium uppercase tracking-wider mb-4">
-                    Tout inclus
-                  </h3>
-                  {features.map((feature, index) => (
-                    <motion.div
-                      key={feature.name}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 + index * 0.05 }}
-                      className="flex items-start gap-3"
-                    >
-                      <div className="w-5 h-5 rounded-full bg-accent-cyan/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="w-3 h-3 text-accent-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">{feature.name}</p>
-                        <p className="text-white/40 text-sm">{feature.description}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bottom section - Guarantee */}
-              <div className="border-t border-white/5 bg-white/[0.02] px-5 sm:px-8 md:px-12 py-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">Garantie satisfait ou remboursé</p>
-                    <p className="text-white/40 text-sm">30 jours pour tester. Pas convaincu ? On vous rembourse.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ROI Calculator teaser */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-12 text-center"
-          >
-            <p className="text-white/40 text-sm mb-4">
-              Pas sûr que ça vaille le coup ?
-            </p>
-            <a
-              href="#simulateur"
-              className="inline-flex items-center gap-2 text-accent-cyan hover:text-white transition-colors"
-            >
-              <span>Calculez vos gains potentiels</span>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </a>
-          </motion.div>
-
-          {/* FAQ */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-20"
-          >
-            <h2 className="font-title text-2xl text-white text-center mb-8">Questions fréquentes</h2>
-
-            <div className="space-y-4">
-              {[
-                {
-                  q: "Comment fonctionne l'essai gratuit ?",
-                  a: "Testez gratuitement dès maintenant. Une empreinte de carte est requise mais aucun prélèvement n'est effectué pendant la période d'essai. Annulez avant la fin = 0€."
-                },
-                {
-                  q: "Puis-je annuler à tout moment ?",
-                  a: "Oui, sans engagement. Annulez en un clic depuis l'app. Pas de frais cachés, pas de questions."
-                },
-                {
-                  q: "L'abonnement est-il rentable ?",
-                  a: "Nos utilisateurs gagnent en moyenne +35% de CA. À 12,97€/semaine, l'abonnement se rembourse en 1-2 courses supplémentaires."
-                },
-                {
-                  q: "Quels moyens de paiement acceptez-vous ?",
-                  a: "Carte bancaire (Visa, Mastercard, Amex), Apple Pay, Google Pay. Paiement 100% sécurisé via Stripe."
-                }
-              ].map((faq, index) => (
-                <div
-                  key={index}
-                  className="bg-white/[0.02] border border-white/5 rounded-xl p-6"
-                >
-                  <h3 className="text-white font-medium mb-2">{faq.q}</h3>
-                  <p className="text-white/50 text-sm">{faq.a}</p>
-                </div>
-              ))}
+            {/* CTA */}
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setCheckoutOpen(true)} className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold py-4 px-10 rounded-2xl text-lg transition-all shadow-xl shadow-violet-900/50 mb-5" style={{ boxShadow: '0 0 40px rgba(139,92,246,0.4)' }}>
+              Démarrer gratuitement →
+            </motion.button>
+            <div className="flex items-center justify-center gap-4 text-white/40 text-xs">
+              <span>✓ Sans engagement</span><span>·</span><span>✓ Annulation 1 clic</span><span>·</span><span>✓ Remboursement 30j</span>
             </div>
           </motion.div>
         </div>
-      </main>
+      </section>
+
+      {/* KPIs */}
+      <section className="py-12 px-4 border-y border-white/5">
+        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4 sm:gap-8 text-center">
+          {[
+            { target: 35, suffix: '%', label: 'CA moyen en plus', color: 'from-violet-400 to-violet-300' },
+            { target: 23, suffix: '%', label: 'Temps mort réduit', color: 'from-cyan-400 to-cyan-300' },
+            { target: 2,  suffix: 'min', label: 'Pour voir les premières zones', color: 'from-green-400 to-green-300' },
+          ].map((kpi, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+              <div className={`text-3xl sm:text-5xl font-extrabold bg-gradient-to-r ${kpi.color} bg-clip-text text-transparent mb-1`}>
+                <AnimatedCounter target={kpi.target} suffix={kpi.suffix} />
+              </div>
+              <p className="text-white/50 text-xs sm:text-sm">{kpi.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3">Tout ce qu'Ajnaya fait pour vous</h2>
+            <p className="text-white/50">Pendant que vous conduisez, l'IA travaille.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((f, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.07 }} className="relative bg-white/3 border border-white/8 rounded-2xl p-5 hover:border-violet-500/30 hover:bg-violet-500/5 transition-all">
+                <span className="absolute top-4 right-4 text-xs bg-violet-500/15 text-violet-300 px-2 py-0.5 rounded-full font-semibold">{f.badge}</span>
+                <div className="text-2xl mb-3">{f.icon}</div>
+                <h3 className="font-bold text-white mb-1.5 text-sm">{f.title}</h3>
+                <p className="text-white/50 text-xs leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-16 px-4 bg-white/2 border-y border-white/5">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3">Ils ont changé leur quotidien</h2>
+            <p className="text-white/50">Des chauffeurs réels. Des chiffres réels.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-5">
+            {testimonials.map((t, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="bg-gradient-to-br from-white/5 to-white/2 border border-white/10 rounded-2xl p-5 hover:border-violet-500/20 transition-all">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">{t.avatar}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">{t.name}</p>
+                    <p className="text-white/40 text-xs truncate">{t.city}</p>
+                  </div>
+                  <span className="flex-shrink-0 bg-green-500/15 text-green-400 text-xs px-2 py-0.5 rounded-full font-bold">{t.gain}</span>
+                </div>
+                <div className="flex mb-3">{Array.from({ length: t.stars }).map((_, j) => <span key={j} className="text-yellow-400 text-sm">★</span>)}</div>
+                <p className="text-white/70 text-xs leading-relaxed italic">"{t.quote}"</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PLAN CARD */}
+      <section className="py-16 px-4">
+        <div className="max-w-md mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-500 rounded-3xl blur opacity-25" />
+            <div className="relative bg-gradient-to-br from-[#110c28] to-[#0d0d1a] border border-violet-500/30 rounded-2xl p-6 sm:p-8">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <span className="text-xs font-bold text-violet-300 uppercase tracking-widest">FOREAS Pro</span>
+                  <h3 className="text-2xl font-extrabold text-white mt-1">Tout inclus</h3>
+                </div>
+                <div className="bg-violet-500/15 border border-violet-500/20 rounded-xl px-3 py-1.5 text-center">
+                  <p className="text-violet-300 text-xs font-medium">Essai</p>
+                  <p className="text-violet-200 text-lg font-bold">Gratuit</p>
+                </div>
+              </div>
+              <div className="space-y-3 mb-8">
+                {['Ajnaya IA prédictive (temps réel)', 'Cartographie Mapbox HD', 'Multi-plateformes (Uber, Bolt, Heetch…)', 'Alertes intelligentes contextuelles', 'Analytics & historique complet', 'Mode nuit & événements locaux', 'Support prioritaire < 2h', 'Mises à jour IA continues'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3 h-3 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <span className="text-white/80 text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+              <motion.div key={billingCycle} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 p-4 bg-white/5 rounded-xl">
+                <div className="flex items-end gap-2 mb-1">
+                  <span className="text-4xl font-extrabold text-white">{current.price.toFixed(2).replace('.', ',')}€</span>
+                  <span className="text-white/40 text-sm mb-1.5">{current.period}</span>
+                  {billingCycle === 'annual' && <span className="mb-1.5 ml-auto bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full font-bold">-23%</span>}
+                </div>
+                <p className="text-violet-300 text-xs">= {current.perDay.toFixed(2).replace('.', ',')}€/jour · Essai gratuit jusqu'au lundi 18h</p>
+              </motion.div>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => setCheckoutOpen(true)} className="w-full py-4 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold rounded-xl text-base transition-all shadow-lg shadow-violet-900/40">
+                Commencer l'essai gratuit →
+              </motion.button>
+              <p className="text-center text-white/30 text-xs mt-4">Aucun débit avant lundi 18h · Annulation en 1 clic</p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-16 px-4 border-t border-white/5">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold mb-3">Questions fréquentes</h2>
+            <p className="text-white/40 text-sm">Tout ce que vous voulez savoir avant de commencer.</p>
+          </div>
+          {faqs.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} />)}
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="py-16 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 leading-tight">
+              Demain, vous pouvez gagner{' '}
+              <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">35% de plus.</span>
+            </h2>
+            <p className="text-white/60 text-base mb-8">Ou continuer à chercher les zones au hasard.<br />Le choix vous appartient.</p>
+            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setCheckoutOpen(true)} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold py-4 px-12 rounded-2xl text-lg transition-all" style={{ boxShadow: '0 0 60px rgba(139,92,246,0.5)' }}>
+              Démarrer gratuitement →
+            </motion.button>
+            <div className="flex items-center justify-center gap-6 mt-6 text-white/30 text-xs">
+              <span>🔒 SSL</span><span>✓ Sans CB obligatoire</span><span>🛡️ 30j remboursé</span><span>⭐ 4.9/5</span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       <Footer />
-    </>
+
+      <AnimatePresence>
+        {checkoutOpen && <CheckoutModal plan={billingCycle} onClose={() => setCheckoutOpen(false)} />}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+export default function TarifsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#070714] flex items-center justify-center"><div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
+      <TarifsContent />
+    </Suspense>
   )
 }
