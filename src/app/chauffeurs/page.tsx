@@ -111,7 +111,7 @@ export default function ChauffeursPage() {
                 </div>
                 <div className="font-title text-2xl md:text-3xl font-bold text-white mb-1">{item.stat}</div>
                 <div className="text-sm md:text-base text-white/60 mb-1">{item.label}</div>
-                <div className="text-xs md:text-sm text-white/30">{item.desc}</div>
+                <div className="text-xs md:text-sm text-white/60">{item.desc}</div>
               </motion.div>
             ))}
           </div>
@@ -143,7 +143,7 @@ export default function ChauffeursPage() {
               <span className="relative">Commencer</span>
             </a>
           </motion.div>
-          <p className="mt-4 text-white/30 text-xs md:text-sm">
+          <p className="mt-4 text-white/55 text-xs md:text-sm">
             Résiliable en 1 clic
           </p>
         </div>

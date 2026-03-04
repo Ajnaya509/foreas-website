@@ -82,7 +82,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="py-5 md:py-6 border-t border-white/[0.05]">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-white/20">
+            <p className="text-xs text-white/35">
               © 2026 FOREAS Labs
             </p>
             <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
@@ -90,12 +90,12 @@ export default function Footer() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-xs text-white/20 hover:text-white/60 transition-colors"
+                  className="text-xs text-white/35 hover:text-white/65 transition-colors"
                 >
                   {link.name}
                 </Link>
               ))}
-              <span className="text-xs text-white/20">
+              <span className="text-xs text-white/35">
                 Paris
               </span>
             </div>

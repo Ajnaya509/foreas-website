@@ -56,7 +56,7 @@ export default function ContactPage() {
                   <item.icon className="w-5 h-5 md:w-6 md:h-6 text-accent-purple" />
                 </div>
                 <h3 className="font-title text-sm md:text-base font-semibold text-white mb-1">{item.title}</h3>
-                <p className="text-xs md:text-sm text-white/40">{item.value}</p>
+                <p className="text-xs md:text-sm text-white/65">{item.value}</p>
               </motion.div>
             ))}
           </div>

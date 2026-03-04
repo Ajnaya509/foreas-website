@@ -127,7 +127,7 @@ function VoiceConfirmBlock({ block }: { block: Extract<VisualBlock, { type: 'voi
           </div>
           <div>
             <span className="text-[10px] text-white/80 font-medium">Confirmer : &quot;{block.destination}&quot;</span>
-            <span className="text-[8px] text-white/30 block">Dites &quot;Oui&quot; ou &quot;Non&quot;</span>
+            <span className="text-[8px] text-white/50 block">Dites &quot;Oui&quot; ou &quot;Non&quot;</span>
           </div>
         </div>
         <div className="relative w-8 h-8">
@@ -162,7 +162,7 @@ function CourseCardBlock({ block }: { block: Extract<VisualBlock, { type: 'cours
             <span className="text-xl font-bold text-green-400">{block.amount}</span>
             <span className="text-[8px] text-green-400/50">estimé</span>
           </div>
-          <span className="text-[7px] text-white/35 font-mono bg-white/[0.04] px-2 py-0.5 rounded-full">{block.badge}</span>
+          <span className="text-[7px] text-white/55 font-mono bg-white/[0.04] px-2 py-0.5 rounded-full">{block.badge}</span>
         </div>
       </div>
       <div className="flex items-center justify-end px-2.5 py-1 bg-green-500/[0.03] border-t border-green-500/10">
@@ -289,7 +289,7 @@ export default function AjnayaChatScroll() {
           <h2 className="font-title text-2xl sm:text-3xl md:text-5xl text-white mb-1 sm:mb-2">
             Vous demandez. <span className="text-accent-cyan">Ajnaya agit.</span>
           </h2>
-          <p className="text-white/40 text-xs sm:text-sm md:text-lg max-w-md mx-auto">
+          <p className="text-white/65 text-xs sm:text-sm md:text-lg max-w-md mx-auto">
             Voix, texte, cartes — une conversation, pas un tableau de bord.
           </p>
         </motion.div>
@@ -525,7 +525,7 @@ export default function AjnayaChatScroll() {
           style={{ opacity: useTransform(scrollYProgress, [0, 0.06], [1, 0]) }}
           className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
         >
-          <span className="text-white/30 text-xs">Scrollez</span>
+          <span className="text-white/50 text-xs">Scrollez</span>
           <motion.div
             animate={skipInfinite ? undefined : { y: [0, 5, 0] }}
             transition={skipInfinite ? undefined : { duration: 1.5, repeat: Infinity }}

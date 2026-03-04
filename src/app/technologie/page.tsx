@@ -96,7 +96,7 @@ export default function TechnologiePage() {
                   {step.num}
                 </div>
                 <h3 className="font-title text-base md:text-lg font-semibold text-white mb-1">{step.title}</h3>
-                <p className="text-xs md:text-sm text-white/40">{step.desc}</p>
+                <p className="text-xs md:text-sm text-white/65">{step.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default function TechnologiePage() {
                   <item.icon className="w-5 h-5 md:w-6 md:h-6 text-accent-cyan" />
                 </div>
                 <h3 className="font-title text-base md:text-lg font-semibold text-white mb-1">{item.title}</h3>
-                <p className="text-xs md:text-sm text-white/40">{item.desc}</p>
+                <p className="text-xs md:text-sm text-white/65">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -154,7 +154,7 @@ export default function TechnologiePage() {
                 <div className="font-title text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent mb-1">
                   {stat.value}
                 </div>
-                <div className="text-xs md:text-sm text-white/40">{stat.label}</div>
+                <div className="text-xs md:text-sm text-white/65">{stat.label}</div>
               </motion.div>
             ))}
           </div>

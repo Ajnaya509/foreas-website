@@ -98,7 +98,7 @@ export default function AProposPage() {
                 className="text-center"
               >
                 <h3 className="font-title text-base md:text-lg font-semibold text-white mb-1">{value.title}</h3>
-                <p className="text-xs md:text-sm text-white/40">{value.desc}</p>
+                <p className="text-xs md:text-sm text-white/65">{value.desc}</p>
               </motion.div>
             ))}
           </div>

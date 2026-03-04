@@ -109,7 +109,7 @@ export default function EntreprisesPage() {
           >
             <h2 className="font-title text-2xl md:text-3xl lg:text-4xl font-semibold text-white">
               Briques d'intelligence.
-              <span className="block text-white/40">Prêtes à intégrer.</span>
+              <span className="block text-white/65">Prêtes à intégrer.</span>
             </h2>
           </motion.div>
 
@@ -127,7 +127,7 @@ export default function EntreprisesPage() {
                   <item.icon className="w-5 h-5 md:w-6 md:h-6 text-accent-purple" />
                 </div>
                 <h3 className="font-title text-base md:text-lg font-semibold text-white mb-1">{item.title}</h3>
-                <p className="text-xs md:text-sm text-white/40">{item.desc}</p>
+                <p className="text-xs md:text-sm text-white/65">{item.desc}</p>
               </motion.div>
             ))}
           </div>

@@ -303,7 +303,7 @@ function CinematicVideoCard({ testimonial, onVideoPlay }: { testimonial: Testimo
                   <p className="text-white/50 text-sm">{testimonial.city}</p>
                 </div>
               </div>
-              <p className="text-white/40 text-sm mt-4">{testimonial.since}</p>
+              <p className="text-white/60 text-sm mt-4">{testimonial.since}</p>
             </div>
 
             <motion.div
@@ -583,7 +583,7 @@ export default function Testimonials() {
               </div>
 
               {/* Counter */}
-              <span className="text-white/30 text-sm font-mono tabular-nums">
+              <span className="text-white/50 text-sm font-mono tabular-nums">
                 {activeIndex + 1}/{TESTIMONIALS.length}
               </span>
             </div>
@@ -614,7 +614,7 @@ export default function Testimonials() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="flex items-center gap-2 text-white/40 text-sm"
+              className="flex items-center gap-2 text-white/55 text-sm"
             >
               <span className="text-lg">{badge.icon}</span>
               <span className="font-medium">{badge.text}</span>
@@ -628,7 +628,7 @@ export default function Testimonials() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className="text-center text-white/20 text-xs mt-10 px-6 max-w-2xl mx-auto leading-relaxed"
+          className="text-center text-white/35 text-xs mt-10 px-6 max-w-2xl mx-auto leading-relaxed"
         >
           Témoignages recueillis auprès de chauffeurs VTC utilisant FOREAS.
           Les résultats varient selon la zone, les horaires et l&apos;usage de l&apos;application.

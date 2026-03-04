@@ -178,7 +178,7 @@ export default function DownloadSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-6 text-white/20"
+          className="mt-12 flex flex-wrap items-center justify-center gap-6 text-white/40"
         >
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

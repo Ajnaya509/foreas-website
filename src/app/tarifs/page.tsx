@@ -84,7 +84,7 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
     { icon: '🎁', label: "Aujourd'hui", sublabel: 'Accès complet immédiat à FOREAS', highlight: '0€ débité', hColor: 'text-green-400 bg-green-500/10', active: true },
     { icon: '📱', label: trialDays + ' jour' + (trialDays > 1 ? 's' : '') + ' d\'utilisation', sublabel: 'Testez Ajnaya sur vos vraies courses', highlight: null, hColor: '', active: false },
     { icon: '📅', label: formatDateFR(nextMonday) + ' à 18h', sublabel: "Fin de l'essai gratuit", highlight: 'Annulez avant → 0€ total', hColor: 'text-blue-300 bg-blue-500/10', active: false },
-    { icon: '💳', label: 'Premier débit (si vous continuez)', sublabel: price + ' par ' + period, highlight: 'Annulable en 1 clic à tout moment', hColor: 'text-white/40 bg-white/5', active: false },
+    { icon: '💳', label: 'Premier débit (si vous continuez)', sublabel: price + ' par ' + period, highlight: 'Annulable en 1 clic à tout moment', hColor: 'text-white/55 bg-white/5', active: false },
   ]
 
   return (
@@ -110,7 +110,7 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
               <p className="text-blue-300 text-xs font-medium">Paiement sécurisé · Transparent</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
+          <button onClick={onClose} className="text-white/55 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
         </div>
 
         <div className="px-5 pt-5 pb-6">
@@ -126,7 +126,7 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
                 </div>
                 <div className="pb-4 pt-0.5 flex-1 min-w-0">
                   <p className={'text-sm font-semibold leading-tight ' + (step.active ? 'text-white' : 'text-white/70')}>{step.label}</p>
-                  <p className="text-white/40 text-xs mt-0.5">{step.sublabel}</p>
+                  <p className="text-white/60 text-xs mt-0.5">{step.sublabel}</p>
                   {step.highlight && (
                     <span className={'inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ' + step.hColor}>
                       {step.highlight}
@@ -160,7 +160,7 @@ function TrialBridge({ plan, onConfirm, onClose }: { plan: 'weekly' | 'annual'; 
           >
             Commencer {trialDays} jour{trialDays > 1 ? 's' : ''} gratuit{trialDays > 1 ? 's' : ''} →
           </motion.button>
-          <p className="text-center text-white/30 text-xs">0€ débité maintenant · Annulation 1 clic · Remboursement 30j</p>
+          <p className="text-center text-white/50 text-xs">0€ débité maintenant · Annulation 1 clic · Remboursement 30j</p>
         </div>
       </motion.div>
     </motion.div>
@@ -194,7 +194,7 @@ function CheckoutModal({ plan, onClose }: { plan: 'weekly' | 'annual'; onClose: 
               <p className="text-green-400 text-xs font-medium">0€ débité aujourd'hui · Premier débit le {formatDateFR(nextMonday)}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
+          <button onClick={onClose} className="text-white/55 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
         </div>
         <div className="flex items-center justify-center gap-4 px-5 py-2.5 bg-green-500/5 border-b border-green-500/10">
           {['SSL chiffré', 'Annulation 1 clic', 'Remboursement 30j'].map(t => (
@@ -301,7 +301,7 @@ function TarifsContent() {
             <p className="text-white/60 text-lg sm:text-xl mb-2 max-w-2xl mx-auto leading-relaxed">
               Parce qu'ils ont FOREAS. L'IA qui prédit les zones, élimine le temps mort, et transforme chaque heure en chiffre d'affaires.
             </p>
-            <p className="text-white/40 text-sm mb-10">147 chauffeurs · 3 villes · +38% CA moyen documenté</p>
+            <p className="text-white/60 text-sm mb-10">147 chauffeurs · 3 villes · +38% CA moyen documenté</p>
 
             {/* Toggle */}
             <div className="flex items-center justify-center gap-4 mb-8">
@@ -321,7 +321,7 @@ function TarifsContent() {
                 <span className="text-white/50 text-lg mb-3">{current.period}</span>
               </div>
               <p className="text-violet-300 text-sm font-medium">soit {current.perDay.toFixed(2).replace('.', ',')}€/jour — le prix d'un café</p>
-              {billingCycle === 'annual' && <p className="text-white/40 text-xs mt-1">Facturé {current.total?.toFixed(2).replace('.', ',')}€/an</p>}
+              {billingCycle === 'annual' && <p className="text-white/55 text-xs mt-1">Facturé {current.total?.toFixed(2).replace('.', ',')}€/an</p>}
             </motion.div>
 
             {/* CTA principal */}
@@ -334,10 +334,10 @@ function TarifsContent() {
               Démarrer gratuitement →
             </motion.button>
             {/* Micro-texte honnête : carte requise mais 0€ maintenant */}
-            <p className="text-white/35 text-xs mb-2">
+            <p className="text-white/55 text-xs mb-2">
               Carte requise · <strong className="text-white/55">0€ débité maintenant</strong> · Premier débit le lundi suivant à 18h
             </p>
-            <div className="flex items-center justify-center gap-4 text-white/25 text-xs">
+            <div className="flex items-center justify-center gap-4 text-white/45 text-xs">
               <span>✓ Sans engagement</span><span>·</span><span>✓ Annulation 1 clic</span><span>·</span><span>✓ Remboursement 30j</span>
             </div>
           </motion.div>
@@ -396,7 +396,7 @@ function TarifsContent() {
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">{t.avatar}</div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">{t.name}</p>
-                    <p className="text-white/40 text-xs truncate">{t.city}</p>
+                    <p className="text-white/60 text-xs truncate">{t.city}</p>
                   </div>
                   <span className="flex-shrink-0 bg-green-500/15 text-green-400 text-xs px-2 py-0.5 rounded-full font-bold">{t.gain}</span>
                 </div>
@@ -437,7 +437,7 @@ function TarifsContent() {
               <motion.div key={billingCycle} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 p-4 bg-white/5 rounded-xl">
                 <div className="flex items-end gap-2 mb-1">
                   <span className="text-4xl font-extrabold text-white">{current.price.toFixed(2).replace('.', ',')}€</span>
-                  <span className="text-white/40 text-sm mb-1.5">{current.period}</span>
+                  <span className="text-white/60 text-sm mb-1.5">{current.period}</span>
                   {billingCycle === 'annual' && <span className="mb-1.5 ml-auto bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full font-bold">-23%</span>}
                 </div>
                 <p className="text-violet-300 text-xs">= {current.perDay.toFixed(2).replace('.', ',')}€/jour · <strong>0€ débité avant le lundi 18h</strong></p>
@@ -445,7 +445,7 @@ function TarifsContent() {
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={openCheckout} className="w-full py-4 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold rounded-xl text-base transition-all shadow-lg shadow-violet-900/40">
                 Commencer l'essai gratuit →
               </motion.button>
-              <p className="text-center text-white/30 text-xs mt-4">Carte requise · 0€ débité maintenant · Annulation en 1 clic</p>
+              <p className="text-center text-white/50 text-xs mt-4">Carte requise · 0€ débité maintenant · Annulation en 1 clic</p>
             </div>
           </motion.div>
         </div>
@@ -456,7 +456,7 @@ function TarifsContent() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold mb-3">Questions fréquentes</h2>
-            <p className="text-white/40 text-sm">Tout ce que vous voulez savoir avant de commencer.</p>
+            <p className="text-white/60 text-sm">Tout ce que vous voulez savoir avant de commencer.</p>
           </div>
           {faqs.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} />)}
         </div>
@@ -474,7 +474,7 @@ function TarifsContent() {
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={openCheckout} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold py-4 px-12 rounded-2xl text-lg transition-all" style={{ boxShadow: '0 0 60px rgba(139,92,246,0.5)' }}>
               Démarrer gratuitement →
             </motion.button>
-            <div className="flex items-center justify-center gap-6 mt-6 text-white/30 text-xs">
+            <div className="flex items-center justify-center gap-6 mt-6 text-white/50 text-xs">
               <span>🔒 SSL</span><span>✓ 0€ débité maintenant</span><span>🛡️ 30j remboursé</span><span>⭐ 4.9/5</span>
             </div>
           </motion.div>
