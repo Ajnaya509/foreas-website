@@ -313,8 +313,13 @@ function TarifsContent() {
                     <span className="text-4xl sm:text-5xl font-black text-white">{price.toFixed(2).replace('.', ',')}€</span>
                     <span className="text-white/50 text-sm mb-2">/sem</span>
                   </div>
-                  <p className="text-violet-300/70 text-xs mb-1">soit {perDay}€/jour</p>
-                  {billing === 'annual' && <p className="text-white/40 text-xs">Facturé {(plan.annualWeeklyPrice * 52).toFixed(2).replace('.', ',')}€/an</p>}
+                  <p className="text-violet-300/70 text-xs mb-1">
+                    soit {perDay}€/jour {plan.popular && <span className="text-violet-300 font-semibold">— moins cher qu'un café ☕</span>}
+                  </p>
+                  {plan.popular && (
+                    <p className="text-green-400/80 text-[11px] font-medium mt-1">💡 Se rembourse en moins d'une course supplémentaire</p>
+                  )}
+                  {billing === 'annual' && <p className="text-white/40 text-xs mt-1">Facturé {(plan.annualWeeklyPrice * 52).toFixed(2).replace('.', ',')}€/an</p>}
                 </motion.div>
 
                 <div className="h-px bg-white/[0.08] my-5" />
@@ -417,7 +422,8 @@ function TarifsContent() {
               Demain, tu peux gagner{' '}
               <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">35% de plus.</span>
             </h2>
-            <p className="text-white/60 text-base mb-8">Ou continuer à chercher les zones au hasard.</p>
+            <p className="text-white/60 text-base mb-3">Ou continuer à chercher les zones au hasard.</p>
+            <p className="text-violet-300/70 text-sm mb-8">Pour le prix d'un café par jour, Ajnaya te trouve les zones qui payent. ☕</p>
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => openFlow(PLANS[1])} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold py-4 px-12 rounded-2xl text-lg transition-all" style={{ boxShadow: '0 0 60px rgba(139,92,246,0.5)' }}>
               Démarrer gratuitement →
             </motion.button>
