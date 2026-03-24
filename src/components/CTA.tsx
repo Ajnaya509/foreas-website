@@ -52,7 +52,7 @@ export default function CTA() {
           </h2>
 
           <p className="font-body text-lg text-white/60 max-w-xl mx-auto mb-12">
-            847 chauffeurs avant vous.
+            Rejoignez les premiers chauffeurs.
           </p>
 
           {/* Download cards */}

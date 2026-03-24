@@ -7,20 +7,20 @@ const stats = [
   {
     value: '+35',
     suffix: '%',
-    label: 'de CA',
-    sublabel: 'mesuré sur 847 chauffeurs',
+    label: 'de CA visé',
+    sublabel: 'grâce à l\'IA prédictive',
   },
   {
     value: '–2',
     suffix: 'h',
-    label: 'de vide',
-    sublabel: 'par jour',
+    label: 'de vide visées',
+    sublabel: 'par jour en moins',
   },
   {
     value: '87',
     suffix: '%',
     label: 'de précision',
-    sublabel: 'validé terrain',
+    sublabel: 'IA temps réel',
   },
   {
     value: '24',

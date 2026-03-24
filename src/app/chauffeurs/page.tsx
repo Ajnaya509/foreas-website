@@ -127,7 +127,7 @@ export default function ChauffeursPage() {
             viewport={{ once: true }}
             className="font-title text-2xl md:text-3xl lg:text-4xl font-semibold text-white mb-4 md:mb-6"
           >
-            847 chauffeurs avant vous.
+            Rejoignez les premiers chauffeurs.
           </motion.h2>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

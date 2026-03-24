@@ -282,7 +282,7 @@ function ProfilScreen() {
         </div>
         <div>
           <h3 className="text-white font-semibold">Vitium</h3>
-          <p className="text-accent-cyan text-sm">Premium • 847 courses</p>
+          <p className="text-accent-cyan text-sm">Premium • 156 courses</p>
         </div>
       </div>
 

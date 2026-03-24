@@ -475,7 +475,7 @@ function TarifsContent() {
               Démarrer gratuitement →
             </motion.button>
             <div className="flex items-center justify-center gap-6 mt-6 text-white/50 text-xs">
-              <span>🔒 SSL</span><span>✓ 0€ débité maintenant</span><span>🛡️ 30j remboursé</span><span>⭐ 4.9/5</span>
+              <span>🔒 SSL</span><span>✓ 0€ débité maintenant</span><span>🛡️ 30j remboursé</span><span>✓ Satisfait ou remboursé</span>
             </div>
           </motion.div>
         </div>

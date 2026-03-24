@@ -54,7 +54,7 @@ export default function AppDemo() {
                 {
                   icon: '🤖',
                   title: 'Ajnaya IA',
-                  description: 'Prédictions basées sur 847 chauffeurs actifs'
+                  description: 'Prédictions IA temps réel multi-sources'
                 },
                 {
                   icon: '👥',

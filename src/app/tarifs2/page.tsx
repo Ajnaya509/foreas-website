@@ -255,9 +255,9 @@ function TarifsContent() {
       {/* Live bar */}
       <div className="relative border-b border-white/5 bg-black/30 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3">
-          <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium"><span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />847 chauffeurs actifs</span>
+          <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium"><span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />Lancement Paris — places limitées</span>
           <span className="text-white/20">·</span>
-          <span className="text-white/50 text-xs">Plus que <span className="text-orange-400 font-semibold">23 places</span> au tarif découverte</span>
+          <span className="text-white/50 text-xs">Tarif <span className="text-orange-400 font-semibold">early adopter</span> disponible</span>
         </div>
       </div>
 
