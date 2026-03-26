@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
+import { X, Send, Mic, Volume2 } from 'lucide-react'
 import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from '@/lib/ajnaya-analytics'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
@@ -25,6 +26,12 @@ const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
 ]
 const DEFAULT_REPLY = 'Bonne question ! Pour aller plus loin, explore le site ou essaie l\'app gratuitement sur /tarifs2.'
 
+const LABEL_PHRASES = [
+  'Demande à Ajnaya →',
+  'Où me positionner ?',
+  'Combien je peux gagner ?',
+]
+
 function matchResponse(text: string): { key: string; reply: string } {
   for (const r of RESPONSES) {
     if (r.pattern.test(text)) return { key: r.key, reply: r.reply }
@@ -32,7 +39,22 @@ function matchResponse(text: string): { key: string; reply: string } {
   return { key: 'default', reply: DEFAULT_REPLY }
 }
 
-// ─── Widget Component ─────────────────────────────────────────────────────────
+// ─── Mini Hologram (header version) ───────────────────────────────────────────
+function MiniHologram() {
+  return (
+    <div className="relative w-6 h-6 flex-shrink-0">
+      <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle at 30% 30%, #8C52FF 0%, #00D4FF 50%, #8C52FF 100%)' }}>
+        <span className="absolute inset-0 flex items-center justify-center font-title text-[9px] font-bold text-white" style={{ textShadow: '0 0 8px rgba(0,212,255,0.6)' }}>A</span>
+      </div>
+      <div className="absolute inset-[-4px] rounded-full border border-accent-cyan/20" style={{ animation: 'orbitalSpin 6s linear infinite' }} />
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WIDGET COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function AjnayaWidget() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
@@ -40,6 +62,10 @@ export default function AjnayaWidget() {
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
   const [hasStickyBelow, setHasStickyBelow] = useState(false)
+  const [labelIndex, setLabelIndex] = useState(0)
+  const [labelVisible, setLabelVisible] = useState(true)
+  const [labelDismissed, setLabelDismissed] = useState(false)
+  const [labelCycleCount, setLabelCycleCount] = useState(0)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const openedAtRef = useRef<number>(0)
@@ -48,13 +74,61 @@ export default function AjnayaWidget() {
   const sentRef = useRef(false)
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ctaTrackingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const labelDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Scroll to bottom on new message
+  const isTuPage = pathname === '/chauffeurs' || pathname === '/tarifs2'
+  const placeholder = isTuPage ? 'Écris un message...' : 'Écrivez un message...'
+
+  // ─── Label rotation ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (isOpen || labelDismissed) return
+    const interval = setInterval(() => {
+      setLabelIndex(prev => {
+        const next = (prev + 1) % LABEL_PHRASES.length
+        if (next === 0) {
+          setLabelCycleCount(c => {
+            if (c + 1 >= 3) { setLabelVisible(false); return c + 1 }
+            return c + 1
+          })
+        }
+        return next
+      })
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [isOpen, labelDismissed])
+
+  // ─── Label dismiss + reappear after 30s inactivity ──────────────────────────
+  const dismissLabel = useCallback(() => {
+    setLabelDismissed(true)
+    setLabelVisible(false)
+    if (labelDismissTimer.current) clearTimeout(labelDismissTimer.current)
+    labelDismissTimer.current = setTimeout(() => {
+      setLabelDismissed(false)
+      setLabelVisible(true)
+      setLabelCycleCount(0)
+    }, 30000)
+  }, [])
+
+  // ─── Reappear label at page bottom ──────────────────────────────────────────
+  useEffect(() => {
+    const handleScroll = () => {
+      const atBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200
+      if (atBottom && !isOpen && labelDismissed) {
+        setLabelDismissed(false)
+        setLabelVisible(true)
+        setLabelCycleCount(0)
+      }
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isOpen, labelDismissed])
+
+  // ─── Auto-scroll messages ───────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, typing])
 
-  // Welcome message on open
+  // ─── Welcome message on open ────────────────────────────────────────────────
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       openedAtRef.current = Date.now()
@@ -65,18 +139,16 @@ export default function AjnayaWidget() {
     }
   }, [isOpen, pathname, messages.length])
 
-  // Detect sticky CTA on /chauffeurs
+  // ─── Detect sticky CTA on /chauffeurs ───────────────────────────────────────
   useEffect(() => {
     if (pathname !== '/chauffeurs') { setHasStickyBelow(false); return }
-    const handleScroll = () => {
-      setHasStickyBelow(window.scrollY > window.innerHeight * 0.6)
-    }
+    const handleScroll = () => setHasStickyBelow(window.scrollY > window.innerHeight * 0.6)
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [pathname])
 
-  // Send analytics
+  // ─── Analytics ──────────────────────────────────────────────────────────────
   const sendAnalytics = useCallback((ctaUrl: string | null = null) => {
     if (sentRef.current || analyticsMessages.current.length <= 1) return
     sentRef.current = true
@@ -91,7 +163,6 @@ export default function AjnayaWidget() {
     })
   }, [pathname])
 
-  // Inactivity timer (60s)
   useEffect(() => {
     if (!isOpen || messages.length <= 1) return
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
@@ -99,14 +170,12 @@ export default function AjnayaWidget() {
     return () => { if (inactivityTimer.current) clearTimeout(inactivityTimer.current) }
   }, [isOpen, messages, sendAnalytics])
 
-  // Beforeunload
   useEffect(() => {
     const handler = () => sendAnalytics()
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [sendAnalytics])
 
-  // CTA tracking after close
   const startCtaTracking = useCallback(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -120,149 +189,235 @@ export default function AjnayaWidget() {
       }
     }
     document.addEventListener('click', handler)
-    ctaTrackingTimer.current = setTimeout(() => {
-      document.removeEventListener('click', handler)
-    }, 60000)
+    ctaTrackingTimer.current = setTimeout(() => document.removeEventListener('click', handler), 60000)
   }, [sendAnalytics])
 
-  // Close widget
-  const handleClose = () => {
-    setIsOpen(false)
-    sendAnalytics()
-    startCtaTracking()
-  }
+  // ─── Actions ────────────────────────────────────────────────────────────────
+  const handleClose = () => { setIsOpen(false); sendAnalytics(); startCtaTracking() }
 
-  // Send user message
   const handleSend = () => {
     const text = input.trim()
     if (!text) return
     setInput('')
-
     const userMsg = { role: 'user' as const, text }
     setMessages(prev => [...prev, userMsg])
     analyticsMessages.current.push({ ...userMsg, timestamp: new Date().toISOString() })
-
-    // Match response
     const { key, reply } = matchResponse(text)
     if (key !== 'default') intentsRef.current.push(key)
-
-    // Typing delay
     setTyping(true)
-    const delay = 800 + Math.random() * 700
     setTimeout(() => {
       setTyping(false)
       const ajnayaMsg = { role: 'ajnaya' as const, text: reply }
       setMessages(prev => [...prev, ajnayaMsg])
       analyticsMessages.current.push({ ...ajnayaMsg, timestamp: new Date().toISOString() })
-    }, delay)
+    }, 800 + Math.random() * 700)
   }
 
-  const bubbleBottom = hasStickyBelow ? 'bottom-24' : 'bottom-6'
+  const bubbleBottom = hasStickyBelow ? 96 : 24
 
   return (
     <>
-      {/* ─── Floating Bubble ─── */}
+      {/* ═══════════════════════════════════════════════════════════════
+          HOLOGRAM ORBITAL BUBBLE
+          ═══════════════════════════════════════════════════════════════ */}
       <AnimatePresence>
         {!isOpen && (
-          <motion.button
-            key="bubble"
+          <motion.div
+            key="hologram"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            onClick={() => setIsOpen(true)}
-            className={`fixed right-6 z-[60] w-14 h-14 md:w-[60px] md:h-[60px] rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan shadow-lg shadow-accent-purple/20 flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform ${bubbleBottom}`}
-            style={{ animation: 'widgetBounce 30s ease-in-out infinite' }}
+            className="fixed right-6 z-[60]"
+            style={{ bottom: bubbleBottom }}
           >
-            <span className="font-title text-xl md:text-2xl font-bold text-white select-none">A</span>
-          </motion.button>
+            {/* Floating label */}
+            <AnimatePresence>
+              {labelVisible && !labelDismissed && labelCycleCount < 3 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.3 }}
+                  onClick={dismissLabel}
+                  className="absolute cursor-pointer z-10
+                    bottom-[calc(100%+8px)] right-0 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:right-[calc(100%+12px)]"
+                >
+                  <div className="relative bg-black/70 backdrop-blur-sm border border-white/[0.08] rounded-xl px-4 py-2.5 min-w-[180px]">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={labelIndex}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.4 }}
+                        className="block font-body text-sm text-white/60"
+                      >
+                        {LABEL_PHRASES[labelIndex]}
+                      </motion.span>
+                    </AnimatePresence>
+                    {/* Triangle pointer → right on desktop, down on mobile */}
+                    <div className="hidden md:block absolute top-1/2 -translate-y-1/2 -right-[6px] w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-white/[0.08]" />
+                    <div className="md:hidden absolute -bottom-[6px] right-6 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/[0.08]" />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Orbital system */}
+            <button
+              onClick={() => setIsOpen(true)}
+              className="relative w-[90px] h-[90px] flex items-center justify-center cursor-pointer group"
+              aria-label="Ouvrir le chat Ajnaya"
+            >
+              {/* Glow */}
+              <div className="absolute inset-3 rounded-full bg-accent-purple/20 blur-xl" style={{ animation: 'glowPulse 3s ease-in-out infinite' }} />
+
+              {/* Orbit ring 2 (outer, slower, reverse) */}
+              <div className="absolute w-[80px] h-[80px] rounded-full border border-accent-purple/15" style={{ animation: 'orbitalSpin 18s linear infinite reverse' }}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-accent-purple" style={{ boxShadow: '0 0 8px #8C52FF' }} />
+              </div>
+
+              {/* Orbit ring 1 (inner, faster) */}
+              <div className="absolute w-[64px] h-[64px] rounded-full border border-accent-cyan/20" style={{ animation: 'orbitalSpin 12s linear infinite' }}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-accent-cyan" style={{ boxShadow: '0 0 8px #00D4FF' }} />
+              </div>
+
+              {/* Core sphere */}
+              <div
+                className="relative w-[44px] h-[44px] rounded-full border border-white/15 flex items-center justify-center group-hover:scale-110 group-active:scale-95 transition-transform duration-200"
+                style={{ background: 'radial-gradient(circle at 30% 30%, #8C52FF 0%, #00D4FF 50%, #8C52FF 100%)' }}
+              >
+                <span className="font-title text-lg font-bold text-white select-none" style={{ textShadow: '0 0 12px rgba(0,212,255,0.6)' }}>A</span>
+              </div>
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ─── Chat Window ─── */}
+      {/* ═══════════════════════════════════════════════════════════════
+          PREMIUM CHAT WINDOW
+          ═══════════════════════════════════════════════════════════════ */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             key="widget"
-            initial={{ scale: 0.8, opacity: 0, y: 20 }}
+            initial={{ scale: 0.85, opacity: 0, y: 30 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.8, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className="fixed z-[60] bottom-6 right-4 md:right-6 w-[92vw] md:w-[380px] h-[80vh] md:h-[520px] max-h-[600px] rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-white/[0.08] flex flex-col"
+            exit={{ scale: 0.85, opacity: 0, y: 30 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+            className="fixed z-[60] rounded-2xl overflow-hidden flex flex-col
+              left-3 right-3 bottom-3 max-h-[75vh]
+              md:left-auto md:right-6 md:bottom-[100px] md:w-[400px] md:h-[560px] md:max-h-none"
+            style={{
+              background: '#08080d',
+              border: '1px solid rgba(255,255,255,0.06)',
+              boxShadow: '0 30px 60px rgba(0,0,0,0.6), 0 0 40px rgba(140,82,255,0.08)',
+            }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-[#0a0a12] border-b border-white/[0.06]">
+            {/* ─── Header ─── */}
+            <div className="flex items-center justify-between px-4 h-14 flex-shrink-0" style={{ background: 'linear-gradient(180deg, #0c0c14 0%, #08080d 100%)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center">
-                  <span className="font-title text-sm font-bold text-white">A</span>
-                </div>
-                <span className="font-title text-base font-semibold text-white">Ajnaya</span>
-                <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-accent-cyan/80 bg-accent-cyan/10 rounded">IA</span>
+                <MiniHologram />
+                <span className="font-title text-base font-semibold text-white ml-0.5">Ajnaya</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-cyan/[0.08] text-accent-cyan/60 border border-accent-cyan/15 font-mono">IA</span>
               </div>
-              <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+              <div className="flex items-center">
+                <button className="p-1.5 cursor-not-allowed" title="Bientôt disponible">
+                  <Volume2 className="w-[18px] h-[18px] text-white/20" />
+                </button>
+                <button onClick={handleClose} className="p-1.5 ml-3 rounded-lg hover:bg-white/5 transition-colors">
+                  <X className="w-[18px] h-[18px] text-white/30 hover:text-white transition-colors" />
+                </button>
+              </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#08080d]">
+            {/* ─── Messages ─── */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                    msg.role === 'ajnaya'
-                      ? 'bg-accent-cyan/[0.05] border border-accent-cyan/10 text-white/80 rounded-bl-md'
-                      : 'bg-accent-purple/20 text-white/90 rounded-br-md'
-                  }`}>
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: msg.role === 'ajnaya' ? -15 : 15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed font-body ${
+                      msg.role === 'ajnaya'
+                        ? 'text-white/75'
+                        : 'text-white/80 ml-auto'
+                    }`}
+                    style={msg.role === 'ajnaya' ? {
+                      background: 'rgba(0,212,255,0.04)',
+                      border: '1px solid rgba(0,212,255,0.08)',
+                      borderRadius: '16px 16px 16px 4px',
+                    } : {
+                      background: 'rgba(140,82,255,0.12)',
+                      borderRadius: '16px 16px 4px 16px',
+                    }}
+                  >
                     {msg.text}
                   </div>
-                </div>
+                </motion.div>
               ))}
 
               {/* Typing indicator */}
               {typing && (
                 <div className="flex justify-start">
-                  <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-accent-cyan/[0.05] border border-accent-cyan/10 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-accent-cyan/50 animate-pulse" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-accent-cyan/50 animate-pulse" style={{ animationDelay: '200ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-accent-cyan/50 animate-pulse" style={{ animationDelay: '400ms' }} />
+                  <div className="px-4 py-3 flex items-center gap-[6px]" style={{ background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.08)', borderRadius: '16px 16px 16px 4px' }}>
+                    {[0, 1, 2].map(i => (
+                      <span key={i} className="w-[5px] h-[5px] rounded-full bg-white/25" style={{ animation: `typingDot 1.2s ease-in-out ${i * 0.15}s infinite` }} />
+                    ))}
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="px-3 py-3 bg-[#0a0a12] border-t border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-                  placeholder="Écris un message..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-accent-cyan/30 transition-colors"
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim()}
-                  className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan flex items-center justify-center disabled:opacity-30 transition-opacity hover:opacity-90"
-                >
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19V5m0 0l-7 7m7-7l7 7" />
-                  </svg>
-                </button>
-              </div>
+            {/* ─── Input ─── */}
+            <div className="flex-shrink-0 px-3 py-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)' }}>
+              <button className="flex-shrink-0 p-1 cursor-not-allowed" title="Bientôt disponible">
+                <Mic className="w-5 h-5 text-white/15" />
+              </button>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+                placeholder={placeholder}
+                className="flex-1 bg-transparent text-sm text-white/80 placeholder:text-white/25 focus:outline-none font-body"
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim()}
+                className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                  input.trim()
+                    ? 'bg-gradient-to-r from-accent-purple to-accent-cyan hover:opacity-90 active:scale-95'
+                    : 'bg-white/5 cursor-not-allowed'
+                }`}
+              >
+                <Send className="w-4 h-4 text-white" />
+              </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Bounce animation */}
+      {/* ─── CSS Animations ─── */}
       <style jsx global>{`
-        @keyframes widgetBounce {
-          0%, 97%, 100% { transform: translateY(0); }
-          98% { transform: translateY(-3px); }
-          99% { transform: translateY(0); }
+        @keyframes orbitalSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes glowPulse {
+          0%, 100% { opacity: 0.15; }
+          50% { opacity: 0.35; }
+        }
+        @keyframes typingDot {
+          0%, 100% { transform: scale(0.6); opacity: 0.4; }
+          50% { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </>
