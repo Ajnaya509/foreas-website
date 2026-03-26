@@ -1,11 +1,13 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useRef } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import GradientLine from '@/components/GradientLine'
 import Footer from '@/components/Footer'
-import { BarChart3, Map, Clock, TrendingDown, MessageSquare, Repeat, Brain, Target, Handshake } from 'lucide-react'
+import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
+import { BarChart3, Map, Clock, TrendingDown, MessageSquare, Repeat, Brain, Target, Handshake, Phone, UserPlus } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS /partenaires — BIG DOMINO PARTENAIRE FLOTTES
@@ -20,7 +22,7 @@ const FleetMapMockup = dynamic(() => import('@/components/FleetMapMockup'))
 const AnimatedBar = dynamic(() => import('@/components/AnimatedBar'))
 const CircularGauge = dynamic(() => import('@/components/CircularGauge'))
 
-// ─── Dualité Card ────────────────────────────────────────────────────────────
+// ─── Dualité Card — Clip-path reveal ────────────────────────────────────────
 function DualityBlock({
   frustration,
   desir,
@@ -30,27 +32,62 @@ function DualityBlock({
   desir: { title: string; desc: string }
   delay?: number
 }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 85%', 'center center'],
+  })
+  const frustrationClip = useTransform(scrollYProgress, [0, 1], ['inset(0% 100% 0% 0%)', 'inset(0%)'])
+  const desirClip = useTransform(scrollYProgress, [0, 1], ['inset(0% 0% 0% 100%)', 'inset(0%)'])
+
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
       className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
     >
-      <div className="relative p-6 md:p-8 rounded-2xl border border-red-500/10 bg-red-500/[0.03] overflow-hidden">
+      <motion.div
+        style={{ clipPath: frustrationClip }}
+        className="relative p-6 md:p-8 rounded-2xl border border-red-500/10 bg-red-500/[0.03] overflow-hidden"
+      >
         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500/60 to-transparent" />
         <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Frustration</div>
         <h3 className="font-title text-xl md:text-2xl font-semibold text-white mb-2">{frustration.title}</h3>
         <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{frustration.desc}</p>
-      </div>
-      <div className="relative p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.03] overflow-hidden">
+      </motion.div>
+      <motion.div
+        style={{ clipPath: desirClip }}
+        className="relative p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.03] overflow-hidden"
+      >
         <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-accent-cyan/60 to-transparent" />
         <div className="text-accent-cyan/60 text-xs font-mono uppercase tracking-widest mb-3">Avec FOREAS</div>
         <h3 className="font-title text-xl md:text-2xl font-semibold text-white mb-2">{desir.title}</h3>
         <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{desir.desc}</p>
-      </div>
+      </motion.div>
     </motion.div>
+  )
+}
+
+// ─── Scroll-linked AnimatedBar wrapper ──────────────────────────────────────
+function ScrollLinkedBar({ redValue, redLabel, cyanValue, cyanLabel }: {
+  redValue: number; redLabel: string; cyanValue: number; cyanLabel: string
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 90%', 'center center'],
+  })
+  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
+
+  return (
+    <div ref={ref} className="relative overflow-hidden">
+      <motion.div style={{ scaleX, transformOrigin: 'left' }}>
+        <AnimatedBar redValue={redValue} redLabel={redLabel} cyanValue={cyanValue} cyanLabel={cyanLabel} />
+      </motion.div>
+    </div>
   )
 }
 
@@ -123,28 +160,136 @@ function Metric({ value, label, desc }: { value: string; label: string; desc: st
   )
 }
 
+// ─── Timeline Scenario Card ─────────────────────────────────────────────────
+function TimelineScenario({
+  icon: Icon,
+  iconBg,
+  title,
+  children,
+  index,
+}: {
+  icon: React.ElementType
+  iconBg: string
+  title: string
+  children: React.ReactNode
+  index: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 85%', 'center center'],
+  })
+  const clipPath = useTransform(scrollYProgress, [0, 1], ['inset(20%)', 'inset(0%)'])
+  const isLeft = index % 2 === 0
+
+  return (
+    <div ref={ref} className="relative grid grid-cols-[24px_1fr] md:grid-cols-[1fr_48px_1fr] gap-4 md:gap-6">
+      {/* Desktop left content (even) / empty (odd) */}
+      <div className={`hidden md:block ${isLeft ? '' : 'order-3'}`}>
+        {isLeft && (
+          <motion.div
+            style={{ clipPath }}
+            className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
+          >
+            <div className="flex items-start gap-4">
+              <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
+                <Icon className="w-6 h-6 text-white/80" />
+              </div>
+              <div>
+                <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{title}</h4>
+                <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{children}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Central line + dot */}
+      <div className="relative flex flex-col items-center md:order-2">
+        <div className="absolute inset-0 w-px bg-gradient-to-b from-accent-purple/40 via-accent-cyan/30 to-transparent left-1/2 -translate-x-1/2" />
+        <div className="relative z-10 mt-8 w-4 h-4 rounded-full bg-accent-cyan shadow-[0_0_12px_rgba(0,200,255,0.5)]">
+          <span className="absolute inset-0 rounded-full bg-accent-cyan/40 animate-ping" />
+        </div>
+      </div>
+
+      {/* Desktop right content (odd) / empty (even) */}
+      <div className={`${isLeft ? 'hidden md:block order-3' : 'md:order-1'}`}>
+        {!isLeft && (
+          <motion.div
+            style={{ clipPath }}
+            className="hidden md:block p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
+          >
+            <div className="flex items-start gap-4">
+              <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
+                <Icon className="w-6 h-6 text-white/80" />
+              </div>
+              <div>
+                <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{title}</h4>
+                <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{children}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Mobile-only card — always right of the line */}
+      <motion.div
+        style={{ clipPath }}
+        className="md:hidden p-6 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
+      >
+        <div className="flex items-start gap-4">
+          <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
+            <Icon className="w-6 h-6 text-white/80" />
+          </div>
+          <div>
+            <h4 className="font-title text-lg font-semibold text-white mb-2">{title}</h4>
+            <p className="font-body text-sm text-white/50 leading-relaxed">{children}</p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PAGE PARTENAIRES — BIG DOMINO FLOTTES
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function PartenairesPage() {
+  const isMobile = useIsMobile()
+  const reducedMotion = useReducedMotion()
+
+  // ─── Hero parallax ────────────────────────────────────────────────────────
+  const heroRef = useRef<HTMLElement>(null)
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  })
+  const parallaxMult = reducedMotion ? 0 : isMobile ? 0.5 : 1
+  const glowY = useTransform(heroProgress, [0, 1], [0, 50 * parallaxMult])
+  const titleY = useTransform(heroProgress, [0, 1], [0, 100 * parallaxMult])
+  const mockupY = useTransform(heroProgress, [0, 1], [0, 150 * parallaxMult])
+
   return (
     <main className="min-h-screen bg-[#050508]">
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════
-          1. HERO — Le Big Domino Partenaire
+          1. HERO — Le Big Domino Partenaire (Parallax)
           Croyance à abattre : "Gérer une flotte, c'est du chaos,
           et aucun outil ne peut vraiment m'aider."
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none" />
+      <section ref={heroRef} className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
+        <motion.div
+          style={{ y: glowY }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none"
+        />
 
         <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left col — text */}
-            <div>
+            <motion.div style={{ y: titleY }}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -179,7 +324,7 @@ export default function PartenairesPage() {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="font-body text-base md:text-lg text-white/50 max-w-lg mb-8 md:mb-10"
               >
-                FOREAS transforme votre flotte VTC en machine d'efficacité pilotée par l'IA.
+                FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par l&apos;IA.
                 Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
               </motion.p>
 
@@ -207,6 +352,19 @@ export default function PartenairesPage() {
                 </a>
               </motion.div>
 
+              {/* FleetMapMockup — mobile: below CTAs */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-10 flex justify-center lg:hidden"
+              >
+                <div className="max-w-[280px] mx-auto">
+                  <FleetMapMockup />
+                </div>
+              </motion.div>
+
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -219,14 +377,15 @@ export default function PartenairesPage() {
                 <span className="w-px h-3 bg-white/10" />
                 <span>ROI mesurable</span>
               </motion.div>
-            </div>
+            </motion.div>
 
-            {/* Right col — FleetMapMockup */}
+            {/* Right col — FleetMapMockup (desktop parallax) */}
             <motion.div
+              style={{ y: mockupY }}
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex justify-center lg:justify-end"
+              className="hidden lg:flex justify-center lg:justify-end"
             >
               <FleetMapMockup />
             </motion.div>
@@ -260,8 +419,8 @@ export default function PartenairesPage() {
               delay={0}
             />
 
-            {/* Visual intercalé 1 — Barres comparatives idle vs productif */}
-            <AnimatedBar redValue={25} redLabel="Temps improductif (avant)" cyanValue={75} cyanLabel="Temps productif (avec FOREAS)" />
+            {/* Visual intercalé 1 — Barres comparatives idle vs productif (scroll-linked) */}
+            <ScrollLinkedBar redValue={25} redLabel="Temps improductif (avant)" cyanValue={75} cyanLabel="Temps productif (avec FOREAS)" />
 
             <DualityBlock
               frustration={{
@@ -382,6 +541,7 @@ export default function PartenairesPage() {
 
       {/* ═══════════════════════════════════════════════════════════════
           4. LA SOLUTION FOREAS FLEET — Ce qui change
+          Micro-animations on icons
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
@@ -393,7 +553,7 @@ export default function PartenairesPage() {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            {/* Feature 1 */}
+            {/* Feature 1 — Brain pulse */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -402,16 +562,16 @@ export default function PartenairesPage() {
               className="p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.02]"
             >
               <div className="w-12 h-12 mb-4 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
-                <Brain className="w-6 h-6 text-accent-cyan" />
+                <Brain className="w-6 h-6 text-accent-cyan animate-pulse" style={{ animationDuration: '3s' }} />
               </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Ajnaya individuelle par chauffeur</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
                 Chaque chauffeur reçoit des recommandations personnalisées selon sa position, son historique,
-                ses préférences et les conditions temps réel. Pas de conseil générique — de l'intelligence ciblée.
+                ses préférences et les conditions temps réel. Pas de conseil générique — de l&apos;intelligence ciblée.
               </p>
             </motion.div>
 
-            {/* Feature 2 */}
+            {/* Feature 2 — BarChart3 scaleY animation */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -420,16 +580,22 @@ export default function PartenairesPage() {
               className="p-6 md:p-8 rounded-2xl border border-accent-purple/10 bg-accent-purple/[0.02]"
             >
               <div className="w-12 h-12 mb-4 rounded-xl bg-accent-purple/10 flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-accent-purple" />
+                <motion.div
+                  animate={{ scaleY: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ originY: 1 }}
+                >
+                  <BarChart3 className="w-6 h-6 text-accent-purple" />
+                </motion.div>
               </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Dashboard fleet en temps réel</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
-                Vue d'ensemble de votre flotte : position de chaque chauffeur, €/h en cours, taux d'occupation,
-                alertes de sous-performance. Pilotez comme un centre d'opérations, pas comme un standard téléphonique.
+                Vue d&apos;ensemble de votre flotte : position de chaque chauffeur, €/h en cours, taux d&apos;occupation,
+                alertes de sous-performance. Pilotez comme un centre d&apos;opérations, pas comme un standard téléphonique.
               </p>
             </motion.div>
 
-            {/* Feature 3 */}
+            {/* Feature 3 — Target slow rotation */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -438,16 +604,16 @@ export default function PartenairesPage() {
               className="p-6 md:p-8 rounded-2xl border border-accent-green/10 bg-accent-green/[0.02]"
             >
               <div className="w-12 h-12 mb-4 rounded-xl bg-accent-green/10 flex items-center justify-center">
-                <Target className="w-6 h-6 text-accent-green" />
+                <Target className="w-6 h-6 text-accent-green animate-[spin_20s_linear_infinite]" />
               </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Orchestration zone intelligente</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
-                Plus jamais 5 chauffeurs sur la même zone et zéro sur une autre. L'IA distribue votre couverture
-                en fonction de la demande prédite, pas de l'habitude de vos chauffeurs.
+                Plus jamais 5 chauffeurs sur la même zone et zéro sur une autre. L&apos;IA distribue votre couverture
+                en fonction de la demande prédite, pas de l&apos;habitude de vos chauffeurs.
               </p>
             </motion.div>
 
-            {/* Feature 4 */}
+            {/* Feature 4 — Handshake bounce */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -456,12 +622,17 @@ export default function PartenairesPage() {
               className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
             >
               <div className="w-12 h-12 mb-4 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
-                <Handshake className="w-6 h-6 text-accent-cyan" />
+                <motion.div
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 4.5, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <Handshake className="w-6 h-6 text-accent-cyan" />
+                </motion.div>
               </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Pipeline partenaires intégré</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
                 Accédez aux courses Private Hunter — hôtels, Airbnb, conciergeries. Un flux de clients premium
-                que vos chauffeurs reçoivent directement dans l'app, sans commission plateforme.
+                que vos chauffeurs reçoivent directement dans l&apos;app, sans commission plateforme.
               </p>
             </motion.div>
           </div>
@@ -472,7 +643,7 @@ export default function PartenairesPage() {
 
 
       {/* ═══════════════════════════════════════════════════════════════
-          5. SCÉNARIOS TERRAIN — On connaît votre quotidien
+          5. SCÉNARIOS TERRAIN — Vertical Timeline
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-20 md:py-28">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
@@ -482,63 +653,41 @@ export default function PartenairesPage() {
             gradient="que vous reconnaîtrez."
           />
 
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.7 }}
-              className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center text-xl">📞</div>
-                <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">Lundi matin — 3 chauffeurs appellent en même temps</h4>
-                  <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
-                    "Chef, je suis où ?" "Y'a rien à Roissy." "J'ai fait 2h sans course."
-                    <span className="text-accent-cyan"> Avec FOREAS : chacun a ses instructions personnalisées dans l'app. Vous ne recevez plus ces appels.</span>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+          {/* Central gradient line */}
+          <div className="relative">
+            <div className="absolute left-[11px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-accent-purple/40 via-accent-cyan/20 to-transparent" />
 
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.7 }}
-              className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent-cyan/10 flex items-center justify-center text-xl">🆕</div>
-                <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">Nouveau chauffeur — il ne connaît pas Paris</h4>
-                  <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
-                    D'habitude, il met 3 semaines à être autonome. Pendant ce temps, il tourne, il perd, vous perdez.
-                    <span className="text-accent-cyan"> Avec Ajnaya, il reçoit les mêmes recommandations qu'un chauffeur de 5 ans d'expérience. Productif dès J1.</span>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+            <div className="space-y-8 md:space-y-12">
+              <TimelineScenario
+                icon={Phone}
+                iconBg="bg-accent-purple/10"
+                title="Lundi matin — 3 chauffeurs appellent en même temps"
+                index={0}
+              >
+                &quot;Chef, je suis où ?&quot; &quot;Y&apos;a rien à Roissy.&quot; &quot;J&apos;ai fait 2h sans course.&quot;
+                <span className="text-accent-cyan"> Avec FOREAS : chacun a ses instructions personnalisées dans l&apos;app. Vous ne recevez plus ces appels.</span>
+              </TimelineScenario>
 
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.7 }}
-              className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent-green/10 flex items-center justify-center text-xl">📊</div>
-                <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">Fin de mois — vous faites les comptes</h4>
-                  <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
-                    Excel, screenshots Uber, WhatsApp — vous reconstituez la performance de chaque chauffeur à la main.
-                    <span className="text-accent-cyan"> FOREAS génère automatiquement vos rapports : CA par chauffeur, €/h net, zones couvertes, comparatifs.</span>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+              <TimelineScenario
+                icon={UserPlus}
+                iconBg="bg-accent-cyan/10"
+                title="Nouveau chauffeur — il ne connaît pas Paris"
+                index={1}
+              >
+                D&apos;habitude, il met 3 semaines à être autonome. Pendant ce temps, il tourne, il perd, vous perdez.
+                <span className="text-accent-cyan"> Avec Ajnaya, il reçoit les mêmes recommandations qu&apos;un chauffeur de 5 ans d&apos;expérience. Productif dès J1.</span>
+              </TimelineScenario>
+
+              <TimelineScenario
+                icon={BarChart3}
+                iconBg="bg-accent-green/10"
+                title="Fin de mois — vous faites les comptes"
+                index={2}
+              >
+                Excel, screenshots Uber, WhatsApp — vous reconstituez la performance de chaque chauffeur à la main.
+                <span className="text-accent-cyan"> FOREAS génère automatiquement vos rapports : CA par chauffeur, €/h net, zones couvertes, comparatifs.</span>
+              </TimelineScenario>
+            </div>
           </div>
         </div>
       </section>
@@ -580,7 +729,7 @@ export default function PartenairesPage() {
 
             <p className="font-body text-lg text-white/55 max-w-xl mx-auto mb-10">
               Réservez un appel avec notre équipe. On vous montre le dashboard,
-              les chiffres terrain, et comment ça s'intègre à votre flotte.
+              les chiffres terrain, et comment ça s&apos;intègre à votre flotte.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

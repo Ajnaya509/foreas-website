@@ -1,10 +1,13 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useRef } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import GradientLine from '@/components/GradientLine'
 import Footer from '@/components/Footer'
+import TiltCard from '@/components/TiltCard'
+import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 import { Clock, ShieldQuestion, TrendingDown, Brain, BarChart3, Palette, Wallet } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -53,19 +56,13 @@ function PartnerCategory({ icon, name, desc }: { icon: string; name: string; des
   )
 }
 
-// ─── Value Prop Block ────────────────────────────────────────────────────────
+// ─── Value Prop Block (glassmorphism card for horizontal scroll) ─────────────
 function ValueProp({ number, title, desc, accent = 'accent-cyan', icon: Icon }: {
   number: string; title: string; desc: string; accent?: string; icon?: React.ElementType
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="relative pl-8 md:pl-10 border-l border-white/10"
-    >
-      <div className="absolute left-0 top-0 -translate-x-1/2">
+    <div className="group flex-shrink-0 w-[300px] md:w-[400px] p-5 md:p-7 rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm hover:border-accent-cyan/20 transition-all">
+      <div className="mb-4">
         {Icon ? (
           <div className={`w-10 h-10 rounded-full bg-${accent}/10 flex items-center justify-center`}>
             <Icon className={`w-5 h-5 text-${accent}`} />
@@ -77,7 +74,82 @@ function ValueProp({ number, title, desc, accent = 'accent-cyan', icon: Icon }: 
       <span className="font-mono text-xs text-white/30 uppercase tracking-widest">{number}</span>
       <h3 className="font-title text-xl md:text-2xl font-semibold text-white mt-2 mb-3">{title}</h3>
       <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{desc}</p>
-    </motion.div>
+    </div>
+  )
+}
+
+// ─── Horizontal Sticky Scroll for Solution Section ───────────────────────────
+function HorizontalValueProps() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
+  const cardWidth = isMobile ? 300 : 400
+  const gap = 24
+  const cardCount = 4
+  const totalWidth = cardCount * cardWidth + (cardCount - 1) * gap
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end'],
+  })
+
+  const x = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [0, -(totalWidth - (isMobile ? 320 : 800))]
+  )
+
+  return (
+    <div ref={containerRef} className="relative" style={{ height: '250vh' }}>
+      <div className="sticky top-0 h-screen flex items-center overflow-hidden">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-10 md:mb-14"
+          >
+            <span className="inline-block text-xs font-mono uppercase tracking-widest text-accent-cyan/50 mb-4">
+              La solution
+            </span>
+            <h2 className="font-title text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-5">
+              Un réseau intelligent
+              <span className="block bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
+                au service de votre marque.
+              </span>
+            </h2>
+          </motion.div>
+
+          <motion.div style={{ x }} className="flex gap-6">
+            <ValueProp
+              number="01"
+              icon={Brain}
+              title="Chauffeurs repositionnés en temps réel par l'IA"
+              desc="Ajnaya, notre IA, anticipe la demande et positionne les chauffeurs AVANT que vos clients appellent. Temps d'attente moyen visé : moins de 4 minutes. Pas de promesse vide — de la data en temps réel."
+            />
+            <ValueProp
+              number="02"
+              icon={BarChart3}
+              title="Qualité traçable, chauffeur par chauffeur"
+              desc="Chaque course est scorée. Ponctualité, propreté, avis client. Vous accédez à un dashboard partenaire avec vos métriques en temps réel. Plus jamais un trajet anonyme."
+              accent="accent-purple"
+            />
+            <ValueProp
+              number="03"
+              icon={Palette}
+              title="Votre marque, jusqu'au dernier kilomètre"
+              desc="Co-branding optionnel dans l'app. Votre client voit votre nom, pas le nôtre. Message de bienvenue personnalisé, itinéraire pré-configuré, suivi partagé."
+            />
+            <ValueProp
+              number="04"
+              icon={Wallet}
+              title="Un flux de revenus passif sur chaque course"
+              desc="Commission partenaire sur chaque trajet généré via votre établissement. Le transport passe d'un centre de coût à une ligne de revenu."
+              accent="accent-purple"
+            />
+          </motion.div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -87,25 +159,44 @@ function ValueProp({ number, title, desc, accent = 'accent-cyan', icon: Icon }: 
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function HomePage() {
+  const heroRef = useRef<HTMLElement>(null)
+  const isMobile = useIsMobile()
+  const reducedMotion = useReducedMotion()
+
+  const { scrollYProgress: heroScrollProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  })
+
+  // Parallax layers — halved on mobile
+  const glowY = useTransform(heroScrollProgress, [0, 1], [0, isMobile ? 25 : 50])
+  const titleY = useTransform(heroScrollProgress, [0, 1], [0, isMobile ? 50 : 100])
+  const mockupY = useTransform(heroScrollProgress, [0, 1], [0, isMobile ? 75 : 150])
+
   return (
     <main className="min-h-screen bg-[#050508]">
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════
-          1. HERO — Autorité immédiate
+          1. HERO — Autorité immédiate + Parallax
           Big Domino B2B : "Il existe un système d'intelligence mobilité
           qui peut transformer chaque déplacement de vos clients
           en expérience premium."
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-28 pb-24 md:pt-40 md:pb-32 overflow-hidden">
-        {/* Background glows */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] md:w-[800px] md:h-[800px] bg-accent-purple/6 rounded-full blur-[100px] md:blur-[200px] pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-accent-cyan/4 rounded-full blur-[80px] md:blur-[160px] pointer-events-none" />
+      <section ref={heroRef} className="relative pt-28 pb-24 md:pt-40 md:pb-32 overflow-hidden">
+        {/* Background glows — parallax layer 1 */}
+        <motion.div style={reducedMotion ? {} : { y: glowY }} className="pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] md:w-[800px] md:h-[800px] bg-accent-purple/6 rounded-full blur-[100px] md:blur-[200px]" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-accent-cyan/4 rounded-full blur-[80px] md:blur-[160px]" />
+        </motion.div>
 
         <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            {/* Left col — text */}
-            <div className="text-center lg:text-left">
+            {/* Left col — text — parallax layer 2 */}
+            <motion.div
+              style={reducedMotion ? {} : { y: titleY }}
+              className="text-center lg:text-left"
+            >
               {/* Eyebrow */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -131,8 +222,8 @@ export default function HomePage() {
               >
                 <span className="text-white">Offrez à vos clients</span>
                 <br />
-                <span className="bg-gradient-to-r from-accent-purple via-accent-cyan to-accent-purple bg-clip-text text-transparent">
-                  le transport qu'ils méritent.
+                <span className="bg-gradient-to-r from-[#8C52FF] via-[#00D4FF] to-[#8C52FF] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                  le transport qu&apos;ils méritent.
                 </span>
               </motion.h1>
 
@@ -143,7 +234,7 @@ export default function HomePage() {
                 className="font-body text-base md:text-lg lg:text-xl text-white/50 max-w-2xl lg:max-w-none mb-10"
               >
                 FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
-                pilotés par l'IA — ponctualité, qualité, traçabilité. Zéro friction.
+                pilotés par l&apos;IA — ponctualité, qualité, traçabilité. Zéro friction.
               </motion.p>
 
               {/* CTAs */}
@@ -171,6 +262,19 @@ export default function HomePage() {
                 </a>
               </motion.div>
 
+              {/* DashboardMockup — mobile only (below CTAs) */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                className="flex lg:hidden justify-center mb-10"
+              >
+                <div className="max-w-[300px] mx-auto">
+                  <DashboardMockup />
+                </div>
+              </motion.div>
+
               {/* Authority signals */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -186,10 +290,11 @@ export default function HomePage() {
                 <span className="w-px h-3 bg-white/10" />
                 <span>API disponible</span>
               </motion.div>
-            </div>
+            </motion.div>
 
-            {/* Right col — DashboardMockup */}
+            {/* Right col — DashboardMockup — parallax layer 3 (desktop only) */}
             <motion.div
+              style={reducedMotion ? {} : { y: mockupY }}
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -225,7 +330,7 @@ export default function HomePage() {
               </span>
             </h2>
             <p className="font-body text-base md:text-lg text-white/45 max-w-2xl mx-auto">
-              Vous investissez dans l'accueil, le design, l'expérience. Mais le premier et le dernier contact de votre client
+              Vous investissez dans l&apos;accueil, le design, l&apos;expérience. Mais le premier et le dernier contact de votre client
               avec votre ville — le trajet — échappe totalement à votre contrôle.
             </p>
           </motion.div>
@@ -236,7 +341,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
             >
               <Clock className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Expérience dégradée</div>
@@ -249,7 +354,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(-0.5deg)]"
             >
               <ShieldQuestion className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Zéro contrôle</div>
@@ -262,12 +367,12 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
             >
               <TrendingDown className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Revenu manqué</div>
               <h3 className="font-title text-lg font-semibold text-white mb-2">Le transport génère 0€ pour vous.</h3>
-              <p className="text-sm text-white/45">Vos clients prennent des VTC chaque jour. Mais c'est Uber qui encaisse, pas vous. Aucune commission, aucun partenariat.</p>
+              <p className="text-sm text-white/45">Vos clients prennent des VTC chaque jour. Mais c&apos;est Uber qui encaisse, pas vous. Aucune commission, aucun partenariat.</p>
             </motion.div>
           </div>
         </div>
@@ -277,57 +382,11 @@ export default function HomePage() {
 
 
       {/* ═══════════════════════════════════════════════════════════════
-          3. SOLUTION — Ce que FOREAS change
+          3. SOLUTION — Ce que FOREAS change (Horizontal Sticky Scroll)
           Le miroir positif : chaque douleur a sa réponse
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-14 md:mb-20"
-          >
-            <span className="inline-block text-xs font-mono uppercase tracking-widest text-accent-cyan/50 mb-4">
-              La solution
-            </span>
-            <h2 className="font-title text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-5">
-              Un réseau intelligent
-              <span className="block bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
-                au service de votre marque.
-              </span>
-            </h2>
-          </motion.div>
-
-          <div className="space-y-10 md:space-y-14">
-            <ValueProp
-              number="01"
-              icon={Brain}
-              title="Chauffeurs repositionnés en temps réel par l'IA"
-              desc="Ajnaya, notre IA, anticipe la demande et positionne les chauffeurs AVANT que vos clients appellent. Temps d'attente moyen visé : moins de 4 minutes. Pas de promesse vide — de la data en temps réel."
-            />
-            <ValueProp
-              number="02"
-              icon={BarChart3}
-              title="Qualité traçable, chauffeur par chauffeur"
-              desc="Chaque course est scorée. Ponctualité, propreté, avis client. Vous accédez à un dashboard partenaire avec vos métriques en temps réel. Plus jamais un trajet anonyme."
-              accent="accent-purple"
-            />
-            <ValueProp
-              number="03"
-              icon={Palette}
-              title="Votre marque, jusqu'au dernier kilomètre"
-              desc="Co-branding optionnel dans l'app. Votre client voit votre nom, pas le nôtre. Message de bienvenue personnalisé, itinéraire pré-configuré, suivi partagé."
-            />
-            <ValueProp
-              number="04"
-              icon={Wallet}
-              title="Un flux de revenus passif sur chaque course"
-              desc="Commission partenaire sur chaque trajet généré via votre établissement. Le transport passe d'un centre de coût à une ligne de revenu."
-              accent="accent-purple"
-            />
-          </div>
-        </div>
+      <section className="relative">
+        <HorizontalValueProps />
       </section>
 
       <GradientLine className="py-4" />
@@ -351,32 +410,40 @@ export default function HomePage() {
             <h2 className="font-title text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white">
               Conçu pour ceux qui
               <span className="block bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
-                ne transigent pas sur l'expérience.
+                ne transigent pas sur l&apos;expérience.
               </span>
             </h2>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <PartnerCategory
-              icon="🏨"
-              name="Hôtels & Résidences"
-              desc="Du palace au boutique-hôtel. Offrez un service navette IA à vos clients : arrivée aéroport, transferts, sorties. Votre conciergerie devient digitale."
-            />
-            <PartnerCategory
-              icon="🏠"
-              name="Airbnb & Locations courte durée"
-              desc="Vos voyageurs ne connaissent pas Paris. Intégrez un lien FOREAS dans votre livret d'accueil. Transport premium, zéro effort de votre côté."
-            />
-            <PartnerCategory
-              icon="🎩"
-              name="Conciergeries & Services premium"
-              desc="Vos clients veulent du sur-mesure. FOREAS fournit le transport avec la même exigence : ponctualité, discrétion, traçabilité complète."
-            />
-            <PartnerCategory
-              icon="🏢"
-              name="Entreprises & Événementiel"
-              desc="Séminaires, salons, déplacements corporate. API d'intégration, facturation centralisée, reporting complet. Le transport devient un service managé."
-            />
+            <TiltCard>
+              <PartnerCategory
+                icon="🏨"
+                name="Hôtels & Résidences"
+                desc="Du palace au boutique-hôtel. Offrez un service navette IA à vos clients : arrivée aéroport, transferts, sorties. Votre conciergerie devient digitale."
+              />
+            </TiltCard>
+            <TiltCard>
+              <PartnerCategory
+                icon="🏠"
+                name="Airbnb & Locations courte durée"
+                desc="Vos voyageurs ne connaissent pas Paris. Intégrez un lien FOREAS dans votre livret d'accueil. Transport premium, zéro effort de votre côté."
+              />
+            </TiltCard>
+            <TiltCard>
+              <PartnerCategory
+                icon="🎩"
+                name="Conciergeries & Services premium"
+                desc="Vos clients veulent du sur-mesure. FOREAS fournit le transport avec la même exigence : ponctualité, discrétion, traçabilité complète."
+              />
+            </TiltCard>
+            <TiltCard>
+              <PartnerCategory
+                icon="🏢"
+                name="Entreprises & Événementiel"
+                desc="Séminaires, salons, déplacements corporate. API d'intégration, facturation centralisée, reporting complet. Le transport devient un service managé."
+              />
+            </TiltCard>
           </div>
         </div>
       </section>
@@ -402,7 +469,7 @@ export default function HomePage() {
             <h2 className="font-title text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-5">
               Pas un simple service VTC.
               <span className="block bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
-                Un système d'intelligence.
+                Un système d&apos;intelligence.
               </span>
             </h2>
             <p className="font-body text-base md:text-lg text-white/45 max-w-2xl mx-auto">
@@ -424,7 +491,7 @@ export default function HomePage() {
                 </svg>
               </div>
               <h3 className="font-title text-lg font-semibold text-white mb-2">IA Prédictive</h3>
-              <p className="text-sm text-white/45">Trains, vols, événements, météo — Ajnaya anticipe la demande 15 à 30 minutes avant qu'elle se matérialise.</p>
+              <p className="text-sm text-white/45">Trains, vols, événements, météo — Ajnaya anticipe la demande 15 à 30 minutes avant qu&apos;elle se matérialise.</p>
             </motion.div>
 
             <motion.div

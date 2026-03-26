@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import GradientLine from '@/components/GradientLine'
 import Footer from '@/components/Footer'
 import { Smartphone, Fuel, Brain, BarChart3, CloudRain, Target } from 'lucide-react'
+import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS /chauffeurs — BIG DOMINO CHAUFFEUR
@@ -26,6 +27,7 @@ const FloatingParticles = dynamic(() => import('@/components/FloatingParticles')
 const AnimatedBar = dynamic(() => import('@/components/AnimatedBar'))
 const CircularGauge = dynamic(() => import('@/components/CircularGauge'))
 const PulsingRing = dynamic(() => import('@/components/PulsingRing'))
+const AjnayaNotification = dynamic(() => import('@/components/AjnayaNotification'))
 
 // ─── Dynamic Trial (mirrors /api/checkout) ───────────────────────────────────
 function getNextMonday18hParis(): Date {
@@ -94,7 +96,7 @@ function StickyMobileCTA() {
   )
 }
 
-// ─── Dualité Card (frustration vs désir) ─────────────────────────────────────
+// ─── Dualité Card (frustration vs désir) — Clip-path reveal ─────────────────
 function DualityBlock({
   frustration,
   desir,
@@ -104,8 +106,26 @@ function DualityBlock({
   desir: { title: string; desc: string }
   delay?: number
 }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 85%', 'center center'],
+  })
+
+  const frustrationClip = useTransform(
+    scrollYProgress,
+    [0, 1],
+    ['inset(0% 100% 0% 0%)', 'inset(0% 0% 0% 0%)']
+  )
+  const desirClip = useTransform(
+    scrollYProgress,
+    [0, 1],
+    ['inset(0% 0% 0% 100%)', 'inset(0% 0% 0% 0%)']
+  )
+
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
@@ -113,20 +133,26 @@ function DualityBlock({
       className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
     >
       {/* Frustration */}
-      <div className="relative p-6 md:p-8 rounded-2xl border border-red-500/10 bg-red-500/[0.03] overflow-hidden group">
+      <motion.div
+        style={{ clipPath: frustrationClip }}
+        className="relative p-6 md:p-8 rounded-2xl border border-red-500/10 bg-red-500/[0.03] overflow-hidden group"
+      >
         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500/60 to-transparent" />
         <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Frustration</div>
         <h3 className="font-title text-xl md:text-2xl font-semibold text-white mb-2">{frustration.title}</h3>
         <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{frustration.desc}</p>
-      </div>
+      </motion.div>
 
       {/* Désir */}
-      <div className="relative p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.03] overflow-hidden group">
+      <motion.div
+        style={{ clipPath: desirClip }}
+        className="relative p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.03] overflow-hidden group"
+      >
         <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-accent-cyan/60 to-transparent" />
         <div className="text-accent-cyan/60 text-xs font-mono uppercase tracking-widest mb-3">Désir</div>
         <h3 className="font-title text-xl md:text-2xl font-semibold text-white mb-2">{desir.title}</h3>
         <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{desir.desc}</p>
-      </div>
+      </motion.div>
     </motion.div>
   )
 }
@@ -166,7 +192,7 @@ function SectionTitle({ eyebrow, title, gradient, subtitle }: {
   )
 }
 
-// ─── Micro-detail Card ───────────────────────────────────────────────────────
+// ─── Micro-detail Card (for horizontal scroll) ─────────────────────────────
 function MicroDetail({ icon: Icon, title, desc, stat, delay = 0 }: {
   icon: React.ElementType
   title: string
@@ -175,20 +201,218 @@ function MicroDetail({ icon: Icon, title, desc, stat, delay = 0 }: {
   delay?: number
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-30px' }}
-      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
-      className="group p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-white/[0.02] hover:border-accent-cyan/20 transition-all"
-    >
+    <div className="group flex-shrink-0 w-[280px] md:w-[360px] p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-white/[0.03] backdrop-blur-sm hover:border-accent-cyan/20 transition-all">
       <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center mb-3 transition-shadow group-hover:shadow-[0_0_20px_rgba(0,212,255,0.2)]">
         <Icon className="w-5 h-5 text-accent-cyan" />
       </div>
       {stat && <div className="font-mono text-lg font-bold text-accent-cyan mb-1">{stat}</div>}
       <h4 className="font-title text-base md:text-lg font-semibold text-white mb-1.5">{title}</h4>
       <p className="font-body text-sm text-white/45 leading-relaxed">{desc}</p>
-    </motion.div>
+    </div>
+  )
+}
+
+// ─── Horizontal Scroll Section ──────────────────────────────────────────────
+function HorizontalMicroDetails() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
+  const cardWidth = isMobile ? 280 : 360
+  const gap = 24
+  const cardCount = 6
+  const totalWidth = cardCount * cardWidth + (cardCount - 1) * gap
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end'],
+  })
+
+  const x = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [0, -(totalWidth - (isMobile ? 320 : 800))]
+  )
+
+  return (
+    <div ref={containerRef} className="relative" style={{ height: '300vh' }}>
+      <div className="sticky top-0 h-screen flex items-center overflow-hidden">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 w-full">
+          <SectionTitle
+            eyebrow="Les problèmes qu'on n'avoue pas"
+            title="Tout ce qui te coûte"
+            gradient="sans que tu le voies."
+          />
+          <motion.div style={{ x }} className="flex gap-6">
+            <MicroDetail
+              icon={Smartphone}
+              title="3 apps ouvertes en permanence"
+              desc="Uber, Bolt, Heetch — tu switches toute la journée. Aucune ne te dit où aller ENTRE les courses."
+              stat="3 apps"
+              delay={0}
+            />
+            <MicroDetail
+              icon={Fuel}
+              title="15-20% de ton carburant = du vide"
+              desc="Tu roules sans passager. Pas parce que t'es mauvais, mais parce que personne ne te montre les zones chaudes en avance."
+              stat="15-20%"
+              delay={0.05}
+            />
+            <MicroDetail
+              icon={Brain}
+              title="La fatigue décisionnelle"
+              desc="Où aller ? Quelle app ? Attendre ou bouger ? 200 micro-décisions par jour qui épuisent ton cerveau avant ton corps."
+              stat="200+/jour"
+              delay={0.1}
+            />
+            <MicroDetail
+              icon={BarChart3}
+              title="Zéro visibilité sur tes vrais chiffres"
+              desc="Tu sais combien tu gagnes. Mais ton €/km réel ? Ton taux de vide ? Tes meilleurs créneaux ? Aucune app ne te le dit."
+              stat="0 data"
+              delay={0.15}
+            />
+            <MicroDetail
+              icon={CloudRain}
+              title="La météo change, pas ta stratégie"
+              desc="Quand il pleut, la demande explose à certains endroits. Tu le sais d'instinct, mais tu n'as pas les données pour en profiter."
+              delay={0.2}
+            />
+            <MicroDetail
+              icon={Target}
+              title="Tu subis la course au lieu de la choisir"
+              desc="Tu prends ce qui vient. Mais les chauffeurs qui gagnent +35% ne prennent pas ce qui vient — ils se positionnent."
+              stat="+35%"
+              delay={0.25}
+            />
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Scenario Timeline Block ────────────────────────────────────────────────
+function ScenarioTimeline({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {/* Central vertical line */}
+      <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-accent-cyan/30 to-transparent" />
+      <div className="space-y-12 md:space-y-16">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function ScenarioCard({
+  time,
+  timeColor,
+  title,
+  children,
+  index,
+}: {
+  time: string
+  timeColor: 'purple' | 'cyan' | 'green'
+  title: string
+  children: React.ReactNode
+  index: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 85%', 'center center'],
+  })
+  const clipPath = useTransform(
+    scrollYProgress,
+    [0, 1],
+    ['inset(20%)', 'inset(0%)']
+  )
+
+  const isEven = index % 2 === 1
+  const colorMap = {
+    purple: { bg: 'bg-accent-purple/10', border: 'border-accent-purple/20', text: 'text-accent-purple' },
+    cyan: { bg: 'bg-accent-cyan/10', border: 'border-accent-cyan/20', text: 'text-accent-cyan' },
+    green: { bg: 'bg-accent-green/10', border: 'border-accent-green/20', text: 'text-accent-green' },
+  }
+  const colors = colorMap[timeColor]
+
+  return (
+    <div
+      ref={ref}
+      className={`relative flex items-start gap-4 md:gap-0 ${isEven ? 'md:flex-row-reverse' : ''}`}
+    >
+      {/* Dot on the line */}
+      <div className="absolute left-4 md:left-1/2 top-6 -translate-x-1/2 z-10 flex flex-col items-center">
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${colors.bg} ${colors.border} border mb-2`}>
+          <span className={`font-mono text-xs ${colors.text}`}>{time}</span>
+        </span>
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-cyan" />
+        </span>
+      </div>
+
+      {/* Spacer for the line area */}
+      <div className="w-8 md:w-1/2 flex-shrink-0" />
+
+      {/* Card */}
+      <motion.div
+        style={{ clipPath }}
+        className={`flex-1 p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02] ${isEven ? 'md:mr-8' : 'md:ml-8'} ml-4 md:ml-0`}
+      >
+        <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
+          {title}
+        </h4>
+        <div className="font-body text-sm md:text-base text-white/50 leading-relaxed">
+          {children}
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+// ─── Price Ring SVG ─────────────────────────────────────────────────────────
+function PriceRingSVG({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg className="absolute w-48 h-48 md:w-56 md:h-56" viewBox="0 0 200 200">
+        <circle
+          cx="100" cy="100" r="80"
+          fill="none"
+          stroke="rgba(0,212,255,0.15)"
+          strokeWidth="2"
+        />
+        <circle
+          cx="100" cy="100" r="80"
+          fill="none"
+          stroke="url(#priceGradientCyan)"
+          strokeWidth="2"
+          strokeDasharray="180 320"
+          className="animate-[spin_8s_linear_infinite]"
+        />
+        <circle
+          cx="100" cy="100" r="80"
+          fill="none"
+          stroke="url(#priceGradientPurple)"
+          strokeWidth="2"
+          strokeDasharray="120 380"
+          strokeDashoffset="200"
+          className="animate-[spin_8s_linear_infinite_reverse]"
+        />
+        <defs>
+          <linearGradient id="priceGradientCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00D4FF" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#00D4FF" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="priceGradientPurple" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#8C52FF" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#8C52FF" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="relative z-10 flex flex-col items-center">
+        {children}
+      </div>
+    </div>
   )
 }
 
@@ -199,6 +423,47 @@ function MicroDetail({ icon: Icon, title, desc, stat, delay = 0 }: {
 
 export default function ChauffeursPage() {
   const trial = useTrialInfo()
+  const isMobile = useIsMobile()
+  const reducedMotion = useReducedMotion()
+
+  // ─── Hero parallax refs ────────────────────────────────────────────────────
+  const heroRef = useRef<HTMLElement>(null)
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  })
+
+  const heroGlowY = useTransform(heroProgress, [0, 1], [0, isMobile ? 25 : 50])
+  const heroTitleY = useTransform(heroProgress, [0, 1], [0, isMobile ? 50 : 100])
+  const heroPhoneY = useTransform(heroProgress, [0, 1], [0, isMobile ? 75 : 150])
+
+  // ─── Animated bar scroll-linked ────────────────────────────────────────────
+  const barRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: barProgress } = useScroll({
+    target: barRef,
+    offset: ['start 85%', 'center center'],
+  })
+  const barScale = useTransform(barProgress, [0, 1], [0, 1])
+
+  // ─── Gauge scroll-linked ──────────────────────────────────────────────────
+  const gaugeRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: gaugeProgress } = useScroll({
+    target: gaugeRef,
+    offset: ['start 85%', 'center center'],
+  })
+  const gaugeScale = useTransform(gaugeProgress, [0, 1], [0, 1])
+
+  // ─── Offer section clip-path reveal ───────────────────────────────────────
+  const offerRef = useRef<HTMLElement>(null)
+  const { scrollYProgress: offerProgress } = useScroll({
+    target: offerRef,
+    offset: ['start 90%', 'center center'],
+  })
+  const offerClip = useTransform(
+    offerProgress,
+    [0, 1],
+    ['circle(0% at 50% 50%)', 'circle(80% at 50% 50%)']
+  )
 
   return (
     <main className="min-h-screen bg-[#050508]">
@@ -206,20 +471,23 @@ export default function ChauffeursPage() {
       <StickyMobileCTA />
 
       {/* ═══════════════════════════════════════════════════════════════
-          1. ABOVE FOLD — Le Big Domino
+          1. ABOVE FOLD — Le Big Domino (PARALLAX MULTI-COUCHES)
           La SEULE croyance à abattre : "Je peux pas faire mieux,
           c'est le marché qui décide."
           Miroir parfait : ta plus grande douleur ↔ ton plus grand désir
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none" />
+      <section ref={heroRef} className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
+        {/* Background glow — parallax layer 1 */}
+        <motion.div
+          style={{ y: reducedMotion ? 0 : heroGlowY }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none"
+        />
         <FloatingParticles className="z-0" />
 
         <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left col — text */}
-            <div>
+            {/* Left col — text — parallax layer 2 */}
+            <motion.div style={{ y: reducedMotion ? 0 : heroTitleY }}>
               {/* Eyebrow */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -245,7 +513,7 @@ export default function ChauffeursPage() {
               >
                 <span className="text-white">Tu tournes à vide.</span>
                 <br />
-                <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
+                <span className="animate-gradient bg-gradient-to-r from-[#00D4FF] via-[#8C52FF] to-[#00D4FF] bg-[length:200%_100%] bg-clip-text text-transparent">
                   Ajnaya sait où aller.
                 </span>
               </motion.h1>
@@ -298,13 +566,14 @@ export default function ChauffeursPage() {
                 <span className="w-px h-3 bg-white/10" />
                 <span>Compatible Uber, Bolt, Heetch</span>
               </motion.div>
-            </div>
+            </motion.div>
 
-            {/* Right col — PhoneMockup */}
+            {/* Right col — PhoneMockup — parallax layer 3 */}
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              style={{ y: reducedMotion ? 0 : heroPhoneY }}
               className="flex justify-center lg:justify-end"
             >
               <PhoneMockup />
@@ -342,7 +611,7 @@ export default function ChauffeursPage() {
               delay={0}
             />
 
-            {/* Visual intercalé 1 — Mini phone avec notification */}
+            {/* Visual intercalé 1 — AjnayaNotification */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -350,19 +619,7 @@ export default function ChauffeursPage() {
               transition={{ duration: 0.6 }}
               className="flex flex-col items-center py-6"
             >
-              <div className="relative max-w-[180px]">
-                <PhoneMockup />
-                {/* Notification overlay */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.8 }}
-                  className="absolute -top-3 -right-4 px-3 py-1.5 rounded-full bg-accent-cyan/15 border border-accent-cyan/30 backdrop-blur-sm"
-                >
-                  <span className="text-[10px] font-mono text-accent-cyan whitespace-nowrap">3 Intercités dans 12 min</span>
-                </motion.div>
-              </div>
+              <AjnayaNotification />
             </motion.div>
 
             <DualityBlock
@@ -377,8 +634,12 @@ export default function ChauffeursPage() {
               delay={0.1}
             />
 
-            {/* Visual intercalé 2 — Barres comparatives 7€ vs 34€ */}
-            <AnimatedBar redValue={7} redLabel="Course par défaut" cyanValue={34} cyanLabel="Course stratégique Ajnaya" />
+            {/* Visual intercalé 2 — Barres comparatives 7€ vs 34€ (scroll-linked scaleX) */}
+            <div ref={barRef}>
+              <motion.div style={{ scaleX: barScale, transformOrigin: 'left' }}>
+                <AnimatedBar redValue={7} redLabel="Course par défaut" cyanValue={34} cyanLabel="Course stratégique Ajnaya" />
+              </motion.div>
+            </div>
 
             <DualityBlock
               frustration={{
@@ -392,17 +653,16 @@ export default function ChauffeursPage() {
               delay={0.2}
             />
 
-            {/* Visual intercalé 3 — Jauges circulaires CA vs km */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-30px' }}
-              transition={{ duration: 0.6 }}
-              className="flex justify-center gap-8 md:gap-12 py-6"
-            >
-              <CircularGauge value={33} max={100} label="CA/heure en hausse" color="#00D4FF" suffix="%" />
-              <CircularGauge value={40} max={100} label="km à vide réduits" color="#8C52FF" suffix="%" />
-            </motion.div>
+            {/* Visual intercalé 3 — Jauges circulaires CA vs km (scroll-linked) */}
+            <div ref={gaugeRef}>
+              <motion.div
+                style={{ scaleX: gaugeScale, transformOrigin: 'center' }}
+                className="flex justify-center gap-8 md:gap-12 py-6"
+              >
+                <CircularGauge value={33} max={100} label="CA/heure en hausse" color="#00D4FF" suffix="%" />
+                <CircularGauge value={40} max={100} label="km à vide réduits" color="#8C52FF" suffix="%" />
+              </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -432,62 +692,12 @@ export default function ChauffeursPage() {
 
 
       {/* ═══════════════════════════════════════════════════════════════
-          4. DOULEURS SECONDAIRES — On entre dans le détail
+          4. DOULEURS SECONDAIRES — Horizontal Sticky Scroll
           Multi-app chaos, fatigue, manque de visibilité
           Chaque micro-frustration = preuve qu'on connaît le métier
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28 bg-[#08080d]">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8">
-          <SectionTitle
-            eyebrow="Les problèmes qu'on n'avoue pas"
-            title="Tout ce qui te coûte"
-            gradient="sans que tu le voies."
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            <MicroDetail
-              icon={Smartphone}
-              title="3 apps ouvertes en permanence"
-              desc="Uber, Bolt, Heetch — tu switches toute la journée. Aucune ne te dit où aller ENTRE les courses."
-              stat="3 apps"
-              delay={0}
-            />
-            <MicroDetail
-              icon={Fuel}
-              title="15-20% de ton carburant = du vide"
-              desc="Tu roules sans passager. Pas parce que t'es mauvais, mais parce que personne ne te montre les zones chaudes en avance."
-              stat="15-20%"
-              delay={0.05}
-            />
-            <MicroDetail
-              icon={Brain}
-              title="La fatigue décisionnelle"
-              desc="Où aller ? Quelle app ? Attendre ou bouger ? 200 micro-décisions par jour qui épuisent ton cerveau avant ton corps."
-              stat="200+/jour"
-              delay={0.1}
-            />
-            <MicroDetail
-              icon={BarChart3}
-              title="Zéro visibilité sur tes vrais chiffres"
-              desc="Tu sais combien tu gagnes. Mais ton €/km réel ? Ton taux de vide ? Tes meilleurs créneaux ? Aucune app ne te le dit."
-              stat="0 data"
-              delay={0.15}
-            />
-            <MicroDetail
-              icon={CloudRain}
-              title="La météo change, pas ta stratégie"
-              desc="Quand il pleut, la demande explose à certains endroits. Tu le sais d'instinct, mais tu n'as pas les données pour en profiter."
-              delay={0.2}
-            />
-            <MicroDetail
-              icon={Target}
-              title="Tu subis la course au lieu de la choisir"
-              desc="Tu prends ce qui vient. Mais les chauffeurs qui gagnent +35% ne prennent pas ce qui vient — ils se positionnent."
-              stat="+35%"
-              delay={0.25}
-            />
-          </div>
-        </div>
+      <section className="relative bg-[#08080d]">
+        <HorizontalMicroDetails />
       </section>
 
       <GradientLine className="py-4" />
@@ -514,7 +724,7 @@ export default function ChauffeursPage() {
 
 
       {/* ═══════════════════════════════════════════════════════════════
-          6. DOULEURS TERTIAIRES — Micro-scénarios terrain
+          6. DOULEURS TERTIAIRES — Timeline Verticale
           On prouve qu'on connaît le métier dans les moindres détails
           Chaque bloc = un chauffeur qui se dit "il parle de MOI"
           ═══════════════════════════════════════════════════════════════ */}
@@ -526,117 +736,41 @@ export default function ChauffeursPage() {
             gradient="de ta journée."
           />
 
-          <div className="space-y-6">
+          <ScenarioTimeline>
             {/* Scenario 1 */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-purple/10 border border-accent-purple/20">
-                    <span className="font-mono text-xs text-accent-purple">06:30</span>
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
-                    Lundi matin, 6h30
-                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
-                  </h4>
-                  <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
-                    Tu te lèves. Tu ouvres Uber. Zéro visibilité. Où aller ? CDG ? Orly ? Gare du Nord ?
-                    Ajnaya te dit : <span className="text-accent-cyan">"3 vols arrivent à Orly T4 à 7h15, surge prévu +1.8x, 22 min de route."</span>
-                    Tu sais exactement où être et pourquoi.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+            <ScenarioCard time="06:30" timeColor="purple" title="Lundi matin, 6h30" index={0}>
+              <p>
+                Tu te lèves. Tu ouvres Uber. Zéro visibilité. Où aller ? CDG ? Orly ? Gare du Nord ?
+                Ajnaya te dit : <span className="text-accent-cyan">&quot;3 vols arrivent à Orly T4 à 7h15, surge prévu +1.8x, 22 min de route.&quot;</span>
+                Tu sais exactement où être et pourquoi.
+              </p>
+            </ScenarioCard>
 
             {/* Scenario 2 */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-cyan/10 border border-accent-cyan/20">
-                    <span className="font-mono text-xs text-accent-cyan">22:45</span>
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
-                    Mercredi soir, 22h45
-                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
-                  </h4>
-                  <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
-                    Match au Parc des Princes, 48 000 personnes sortent en 20 minutes. Les chauffeurs lambda foncent tous Porte d'Auteuil.
-                    Ajnaya te positionne <span className="text-accent-cyan">Porte de Saint-Cloud, côté Boulogne</span> — moins saturé, courses plus longues, clients moins stressés.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+            <ScenarioCard time="22:45" timeColor="cyan" title="Mercredi soir, 22h45" index={1}>
+              <p>
+                Match au Parc des Princes, 48 000 personnes sortent en 20 minutes. Les chauffeurs lambda foncent tous Porte d&apos;Auteuil.
+                Ajnaya te positionne <span className="text-accent-cyan">Porte de Saint-Cloud, côté Boulogne</span> — moins saturé, courses plus longues, clients moins stressés.
+              </p>
+            </ScenarioCard>
 
             {/* Scenario 3 */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-green/10 border border-accent-green/20">
-                    <span className="font-mono text-xs text-accent-green">13:00</span>
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
-                    Vendredi, 13h — pluie annoncée
-                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
-                  </h4>
-                  <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
-                    Météo France annonce de la pluie à 14h sur le 8ème. La demande VTC explose toujours 15 min après les premières gouttes.
-                    Ajnaya t'envoie : <span className="text-accent-cyan">"Positionne-toi Champs-Élysées dans 25 min. Surge prévu."</span>
-                    Tu es le premier sur zone.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+            <ScenarioCard time="13:00" timeColor="green" title="Vendredi, 13h — pluie annoncée" index={2}>
+              <p>
+                Météo France annonce de la pluie à 14h sur le 8ème. La demande VTC explose toujours 15 min après les premières gouttes.
+                Ajnaya t&apos;envoie : <span className="text-accent-cyan">&quot;Positionne-toi Champs-Élysées dans 25 min. Surge prévu.&quot;</span>
+                Tu es le premier sur zone.
+              </p>
+            </ScenarioCard>
 
             {/* Scenario 4 */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-purple/10 border border-accent-purple/20">
-                    <span className="font-mono text-xs text-accent-purple">23:30</span>
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
-                    Samedi, 23h30 — fin de spectacle
-                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
-                  </h4>
-                  <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
-                    Trois théâtres se vident simultanément dans le 9ème. Ajnaya croise les horaires de fin, la capacité des salles et la météo.
-                    Résultat : <span className="text-accent-cyan">elle te place Rue de Mogador, pas Boulevard Haussmann</span>. Moins de concurrence, mêmes clients.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+            <ScenarioCard time="23:30" timeColor="purple" title="Samedi, 23h30 — fin de spectacle" index={3}>
+              <p>
+                Trois théâtres se vident simultanément dans le 9ème. Ajnaya croise les horaires de fin, la capacité des salles et la météo.
+                Résultat : <span className="text-accent-cyan">elle te place Rue de Mogador, pas Boulevard Haussmann</span>. Moins de concurrence, mêmes clients.
+              </p>
+            </ScenarioCard>
+          </ScenarioTimeline>
         </div>
       </section>
 
@@ -674,9 +808,13 @@ export default function ChauffeursPage() {
       {/* ═══════════════════════════════════════════════════════════════
           10. OFFER — Le close. Trial dynamique Stripe.
           Urgence réelle (pas fake). Logique après l'émotion.
+          Price Ring + clip-path circle reveal.
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-[#050508]" />
+      <section ref={offerRef} className="relative py-32 lg:py-40 overflow-hidden">
+        <motion.div
+          style={{ clipPath: reducedMotion ? 'circle(80% at 50% 50%)' : offerClip }}
+          className="absolute inset-0 bg-[#050508]"
+        />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] md:w-[1000px] md:h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent rounded-full blur-[60px] md:blur-[120px] pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto px-6 lg:px-8">
@@ -694,14 +832,14 @@ export default function ChauffeursPage() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full border border-accent-green/20 bg-accent-green/5"
+                className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full border border-accent-green/20 bg-accent-green/5 animate-gradient bg-gradient-to-r from-accent-green/5 via-accent-cyan/5 to-accent-green/5 bg-[length:200%_100%]"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
                 </span>
                 <span className="text-sm font-medium text-accent-green">
-                  {trial.days} jour{trial.days > 1 ? 's' : ''} d'essai gratuit — jusqu'au {trial.dateLabel}
+                  {trial.days} jour{trial.days > 1 ? 's' : ''} d&apos;essai gratuit — jusqu&apos;au {trial.dateLabel}
                 </span>
               </motion.div>
             )}
@@ -715,15 +853,15 @@ export default function ChauffeursPage() {
             </h2>
 
             <p className="font-body text-lg text-white/60 max-w-xl mx-auto mb-4">
-              Pour le prix d'un café par jour.
+              Pour le prix d&apos;un café par jour.
             </p>
 
-            {/* Price anchor */}
+            {/* Price anchor — SVG ring */}
             <div className="flex items-center justify-center mb-10">
-              <PulsingRing color="#00D4FF">
+              <PriceRingSVG>
                 <span className="font-title text-5xl md:text-6xl font-bold text-accent-cyan">1,42€</span>
-                <span className="text-white/40 text-lg ml-1">/jour</span>
-              </PulsingRing>
+                <span className="text-white/40 text-lg">/jour</span>
+              </PriceRingSVG>
             </div>
 
             {/* CTA → Stripe Checkout via /tarifs2 */}
@@ -733,7 +871,7 @@ export default function ChauffeursPage() {
                 className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
-                <span className="relative">Commencer l'essai gratuit</span>
+                <span className="relative">Commencer l&apos;essai gratuit</span>
                 <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -749,7 +887,7 @@ export default function ChauffeursPage() {
 
             {/* Trust badges */}
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-white/40 text-sm">
-              <span>0€ débité aujourd'hui</span>
+              <span>0€ débité aujourd&apos;hui</span>
               <span>Annulation en 1 clic</span>
               <span>Compatible toutes apps VTC</span>
             </div>

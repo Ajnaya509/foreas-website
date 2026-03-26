@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Apple-grade gradient animation ── */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  animation: gradient-shift 6s ease infinite;
+  background-size: 200% 100%;
+}
+
+/* ── Red pulse border for problem cards ── */
+@keyframes red-pulse-border {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.1); }
+  50% { border-color: rgba(239, 68, 68, 0.25); }
+}
+.animate-red-pulse-border {
+  animation: red-pulse-border 3s ease-in-out infinite;
+}
+
 /* FOREAS Typography System */
 /* Genos - Titres et Logo */
 /* Genos Italic - Sous-titres et Taglines */
