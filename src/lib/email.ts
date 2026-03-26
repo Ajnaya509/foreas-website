@@ -17,9 +17,9 @@ function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string
 <body style="margin:0;padding:0;background-color:#050508;">
   <div style="max-width:600px;margin:0 auto;padding:0;">
 
-    <!-- ═══ HEADER IMAGE (croppé visuellement via max-height) ═══ -->
-    <div style="background-color:#000000;text-align:center;max-height:160px;overflow:hidden;">
-      <img src="https://7iphe7xxtq6glx0w.public.blob.vercel-storage.com/Capture%20d%E2%80%99e%CC%81cran%202026-03-26%20a%CC%80%2022.01.03.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;margin-top:-30%;" />
+    <!-- ═══ HEADER IMAGE ═══ -->
+    <div style="background-color:#000000;text-align:center;">
+      <img src="https://7iphe7xxtq6glx0w.public.blob.vercel-storage.com/Capture%20d%E2%80%99e%CC%81cran%202026-03-26%20a%CC%80%2022.01.03.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
     </div>
 
     <!-- ═══ MAIN CONTENT — Monochrome élégant ═══ -->
