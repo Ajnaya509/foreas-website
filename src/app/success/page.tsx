@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
@@ -65,7 +65,7 @@ function StepItem({ step, title, subtitle, status }: {
   )
 }
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const [data, setData] = useState<VerifyData | null>(null)
@@ -250,5 +250,17 @@ export default function SuccessPage() {
 
       <Footer />
     </main>
+  )
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-[#050508] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-2 border-accent-cyan/30 border-t-accent-cyan animate-spin" />
+      </main>
+    }>
+      <SuccessContent />
+    </Suspense>
   )
 }
