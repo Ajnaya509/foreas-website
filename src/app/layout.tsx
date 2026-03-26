@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Preloader from '@/components/Preloader'
+import AjnayaWidget from '@/components/AjnayaWidget'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -67,6 +68,7 @@ export default function RootLayout({
       <body className="bg-foreas-black text-foreas-light antialiased">
         <Preloader />
         {children}
+        <AjnayaWidget />
         <Analytics />
         <SpeedInsights />
       </body>
