@@ -595,43 +595,35 @@ export default function PartenairesPage() {
             gradient="sans le savoir."
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            <FeatureCard
-              icon={BarChart3}
-              title="Pas de benchmark interne"
-              desc="Impossible de comparer vos chauffeurs entre eux. Le meilleur et le pire génèrent un écart de 40% de CA — mais vous ne le voyez pas."
-              delay={0}
-            />
-            <FeatureCard
-              icon={Map}
-              title="Couverture zone déséquilibrée"
-              desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration IA, votre flotte se cannibalise elle-même."
-              delay={0.05}
-            />
-            <FeatureCard
-              icon={Clock}
-              title="Temps de réponse imprévisible"
-              desc="Votre client VIP attend 12 minutes. Inacceptable pour votre marque. Mais sans prédiction de demande, c'est la loterie."
-              delay={0.1}
-            />
-            <FeatureCard
-              icon={TrendingDown}
-              title="Commission plateforme élevée"
-              desc="Uber, Bolt prennent 20-25%. Sur 100 courses/jour, c'est des milliers d'euros qui ne reviennent jamais à votre flotte."
-              delay={0.15}
-            />
-            <FeatureCard
-              icon={MessageSquare}
-              title="Aucun outil de communication unifié"
-              desc="WhatsApp perso, appels, SMS — vous gérez votre flotte avec des outils de 2010. Aucune traçabilité, aucun historique structuré."
-              delay={0.2}
-            />
-            <FeatureCard
-              icon={Repeat}
-              title="Formation chronophage"
-              desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — l'IA compense l'inexpérience."
-              delay={0.25}
-            />
+          {/* Mobile : scroll horizontal natif / Desktop : grille 3 colonnes */}
+          <div className="md:hidden flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="snap-start flex-shrink-0 w-[280px]">
+              <FeatureCard icon={BarChart3} title="Pas de benchmark interne" desc="Impossible de comparer vos chauffeurs entre eux. Le meilleur et le pire génèrent un écart de 40% de CA — mais vous ne le voyez pas." />
+            </div>
+            <div className="snap-start flex-shrink-0 w-[280px]">
+              <FeatureCard icon={Map} title="Couverture zone déséquilibrée" desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration IA, votre flotte se cannibalise elle-même." />
+            </div>
+            <div className="snap-start flex-shrink-0 w-[280px]">
+              <FeatureCard icon={Clock} title="Temps de réponse imprévisible" desc="Votre client VIP attend 12 minutes. Inacceptable pour votre marque. Mais sans prédiction de demande, c'est la loterie." />
+            </div>
+            <div className="snap-start flex-shrink-0 w-[280px]">
+              <FeatureCard icon={TrendingDown} title="Commission plateforme élevée" desc="Uber, Bolt prennent 20-25%. Sur 100 courses/jour, c'est des milliers d'euros qui ne reviennent jamais à votre flotte." />
+            </div>
+            <div className="snap-start flex-shrink-0 w-[280px]">
+              <FeatureCard icon={MessageSquare} title="Aucun outil de communication unifié" desc="WhatsApp perso, appels, SMS — vous gérez votre flotte avec des outils de 2010. Aucune traçabilité, aucun historique structuré." />
+            </div>
+            <div className="snap-start flex-shrink-0 w-[280px]">
+              <FeatureCard icon={Repeat} title="Formation chronophage" desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — l'IA compense l'inexpérience." />
+            </div>
+          </div>
+
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            <FeatureCard icon={BarChart3} title="Pas de benchmark interne" desc="Impossible de comparer vos chauffeurs entre eux. Le meilleur et le pire génèrent un écart de 40% de CA — mais vous ne le voyez pas." delay={0} />
+            <FeatureCard icon={Map} title="Couverture zone déséquilibrée" desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration IA, votre flotte se cannibalise elle-même." delay={0.05} />
+            <FeatureCard icon={Clock} title="Temps de réponse imprévisible" desc="Votre client VIP attend 12 minutes. Inacceptable pour votre marque. Mais sans prédiction de demande, c'est la loterie." delay={0.1} />
+            <FeatureCard icon={TrendingDown} title="Commission plateforme élevée" desc="Uber, Bolt prennent 20-25%. Sur 100 courses/jour, c'est des milliers d'euros qui ne reviennent jamais à votre flotte." delay={0.15} />
+            <FeatureCard icon={MessageSquare} title="Aucun outil de communication unifié" desc="WhatsApp perso, appels, SMS — vous gérez votre flotte avec des outils de 2010. Aucune traçabilité, aucun historique structuré." delay={0.2} />
+            <FeatureCard icon={Repeat} title="Formation chronophage" desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — l'IA compense l'inexpérience." delay={0.25} />
           </div>
         </div>
       </section>
