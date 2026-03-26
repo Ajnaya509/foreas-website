@@ -8,9 +8,8 @@ import { useThrottledScroll } from '@/hooks/useDevicePerf'
 
 const navigation = [
   { name: 'Chauffeurs', href: '/chauffeurs' },
-  { name: 'Entreprises', href: '/entreprises' },
-  { name: 'Technologie', href: '/technologie' },
-  { name: 'Tarifs', href: '/tarifs' },
+  { name: 'Partenaires', href: '/partenaires' },
+  { name: 'Tarifs', href: '/tarifs2' },
 ]
 
 export default function Header() {
@@ -67,11 +66,11 @@ export default function Header() {
               Contact
             </Link>
             <Link
-              href="#telecharger"
+              href="/tarifs2"
               className="group relative inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white overflow-hidden rounded-full transition-all hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-accent-purple transition-all group-hover:bg-accent-purple/90" />
-              <span className="relative">Télécharger</span>
+              <span className="relative">Essai gratuit</span>
             </Link>
           </div>
 
@@ -119,11 +118,11 @@ export default function Header() {
                   className="pt-4"
                 >
                   <Link
-                    href="#telecharger"
+                    href="/tarifs2"
                     className="block w-full text-center px-6 py-4 text-base font-semibold text-white bg-accent-purple rounded-xl"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Télécharger l'app
+                    Essai gratuit
                   </Link>
                 </motion.div>
               </div>
