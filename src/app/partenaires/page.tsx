@@ -227,10 +227,10 @@ function TimelineScenario({
         )}
       </div>
 
-      {/* Central line + dot — CSS pulse animation */}
+      {/* Central line + dot — lightweight pulse (no animate-ping on mobile) */}
       <div className="relative flex flex-col items-center md:order-2">
         <div className="absolute inset-0 w-px bg-gradient-to-b from-accent-purple/40 via-accent-cyan/30 to-transparent left-1/2 -translate-x-1/2" />
-        <div className="relative z-10 mt-8 w-4 h-4 rounded-full bg-accent-cyan shadow-[0_0_12px_rgba(0,200,255,0.5)]">
+        <div className="relative z-10 mt-8 w-4 h-4 rounded-full bg-accent-cyan shadow-[0_0_12px_rgba(0,200,255,0.5)]" style={{ willChange: 'transform' }}>
           <span className="absolute inset-0 rounded-full bg-accent-cyan/40 animate-ping" />
         </div>
       </div>

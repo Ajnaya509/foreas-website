@@ -2,8 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Native smooth scroll (replaces Lenis) ── */
+/* ── Native smooth scroll ── */
 html { scroll-behavior: smooth; }
+
+/* ── iOS Safari GPU compositing fix ── */
+@supports (-webkit-touch-callout: none) {
+  .animate-ping { will-change: transform, opacity; }
+  motion, [data-framer-appear-id] { -webkit-transform: translateZ(0); }
+}
+
+/* ── Lightweight ping alternative for battery savings ── */
+@keyframes soft-ping {
+  0% { transform: scale(1); opacity: 0.6; }
+  75% { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
 
 /* ── Apple-grade gradient animation ── */
 @keyframes gradient-shift {
