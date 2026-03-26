@@ -53,11 +53,25 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       locale: 'fr',
-      subscription_data: { trial_end: trialEnd },
+      subscription_data: { trial_end: trialEnd, metadata: { plan } },
       payment_method_collection: 'always',
+      custom_fields: [
+        {
+          key: 'phone',
+          label: { type: 'custom', custom: 'Numéro de téléphone' },
+          type: 'numeric',
+          optional: false,
+        },
+        {
+          key: 'city',
+          label: { type: 'custom', custom: "Ville principale d'activité" },
+          type: 'text',
+          optional: false,
+        },
+      ],
       ...(isEmbedded
-        ? { ui_mode: 'embedded', return_url: `${origin}/tarifs?success=true&session_id={CHECKOUT_SESSION_ID}` }
-        : { success_url: `${origin}/tarifs?success=true`, cancel_url: `${origin}/tarifs?canceled=true` }),
+        ? { ui_mode: 'embedded', return_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` }
+        : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs2?canceled=true` }),
     }
     const session = await stripe.checkout.sessions.create(sessionParams)
     if (isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })

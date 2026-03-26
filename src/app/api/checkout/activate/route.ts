@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Subscription créée avec succès → redirect vers success
-    return NextResponse.redirect(`${origin}/tarifs?success=true`)
+    return NextResponse.redirect(`${origin}/success`)
   } catch (error: unknown) {
     const err = error as { message?: string }
     console.error('Activate error:', err.message)
