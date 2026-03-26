@@ -270,8 +270,8 @@ export default function AjnayaWidget() {
               className="relative w-[90px] h-[90px] flex items-center justify-center cursor-pointer group"
               aria-label="Ouvrir le chat Ajnaya"
             >
-              {/* Glow */}
-              <div className="absolute inset-3 rounded-full bg-accent-purple/20 blur-xl" style={{ animation: 'glowPulse 3s ease-in-out infinite' }} />
+              {/* Glow — blur-md on mobile, blur-xl on desktop */}
+              <div className="absolute inset-3 rounded-full bg-accent-purple/20 blur-md md:blur-xl" style={{ animation: 'glowPulse 3s ease-in-out infinite' }} />
 
               {/* Orbit ring 2 (outer, slower, reverse) */}
               <div className="absolute w-[80px] h-[80px] rounded-full border border-accent-purple/15" style={{ animation: 'orbitalSpin 18s linear infinite reverse' }}>

@@ -12,7 +12,6 @@
     "@mux/mux-player-react": "^3.11.4",
     "@stripe/react-stripe-js": "^5.6.0",
     "@stripe/stripe-js": "^8.8.0",
-    "@studio-freight/lenis": "^1.0.42",
     "@supabase/auth-js": "^2.100.0",
     "@supabase/functions-js": "^2.100.0",
     "@supabase/postgrest-js": "^2.100.0",

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Preloader from '@/components/Preloader'
-import SmoothScroll from '@/components/SmoothScroll'
 import GrainOverlay from '@/components/GrainOverlay'
 import AjnayaWidget from '@/components/AjnayaWidget'
 import { Analytics } from '@vercel/analytics/react'
@@ -69,9 +68,7 @@ export default function RootLayout({
       </head>
       <body className="bg-foreas-black text-foreas-light antialiased">
         <Preloader />
-        <SmoothScroll>
-          {children}
-        </SmoothScroll>
+        {children}
         <GrainOverlay />
         <AjnayaWidget />
         <Analytics />

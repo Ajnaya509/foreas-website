@@ -22,7 +22,15 @@ const FleetMapMockup = dynamic(() => import('@/components/FleetMapMockup'))
 const AnimatedBar = dynamic(() => import('@/components/AnimatedBar'))
 const CircularGauge = dynamic(() => import('@/components/CircularGauge'))
 
-// ─── Dualité Card — Clip-path reveal ────────────────────────────────────────
+// ─── whileInView shared transition ──────────────────────────────────────────
+const fadeInUp = {
+  initial: { opacity: 0, y: 30 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: '-100px' as const },
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+}
+
+// ─── Dualité Card — whileInView fade-in (no clip-path scroll) ───────────────
 function DualityBlock({
   frustration,
   desir,
@@ -32,25 +40,19 @@ function DualityBlock({
   desir: { title: string; desc: string }
   delay?: number
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start 85%', 'center center'],
-  })
-  const frustrationClip = useTransform(scrollYProgress, [0, 1], ['inset(0% 100% 0% 0%)', 'inset(0%)'])
-  const desirClip = useTransform(scrollYProgress, [0, 1], ['inset(0% 0% 0% 100%)', 'inset(0%)'])
-
   return (
     <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, margin: '-100px' }}
+      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
       className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
     >
       <motion.div
-        style={{ clipPath: frustrationClip }}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.8, delay: delay + 0.1, ease: [0.16, 1, 0.3, 1] }}
         className="relative p-6 md:p-8 rounded-2xl border border-red-500/10 bg-red-500/[0.03] overflow-hidden"
       >
         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500/60 to-transparent" />
@@ -59,7 +61,10 @@ function DualityBlock({
         <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{frustration.desc}</p>
       </motion.div>
       <motion.div
-        style={{ clipPath: desirClip }}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.8, delay: delay + 0.2, ease: [0.16, 1, 0.3, 1] }}
         className="relative p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.03] overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-accent-cyan/60 to-transparent" />
@@ -71,23 +76,19 @@ function DualityBlock({
   )
 }
 
-// ─── Scroll-linked AnimatedBar wrapper ──────────────────────────────────────
+// ─── AnimatedBar wrapper — whileInView only (no scroll-linked scaleX) ───────
 function ScrollLinkedBar({ redValue, redLabel, cyanValue, cyanLabel }: {
   redValue: number; redLabel: string; cyanValue: number; cyanLabel: string
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start 90%', 'center center'],
-  })
-  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
-
   return (
-    <div ref={ref} className="relative overflow-hidden">
-      <motion.div style={{ scaleX, transformOrigin: 'left' }}>
-        <AnimatedBar redValue={redValue} redLabel={redLabel} cyanValue={cyanValue} cyanLabel={cyanLabel} />
-      </motion.div>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, margin: '-100px' }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <AnimatedBar redValue={redValue} redLabel={redLabel} cyanValue={cyanValue} cyanLabel={cyanLabel} />
+    </motion.div>
   )
 }
 
@@ -97,10 +98,7 @@ function SectionTitle({ eyebrow, title, gradient, subtitle }: {
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      {...fadeInUp}
       className="text-center mb-12 md:mb-16"
     >
       {eyebrow && (
@@ -160,51 +158,76 @@ function Metric({ value, label, desc }: { value: string; label: string; desc: st
   )
 }
 
-// ─── Timeline Scenario Card ─────────────────────────────────────────────────
+// ─── CSS keyframes for icon micro-animations ────────────────────────────────
+const iconKeyframeStyle = (
+  <style jsx global>{`
+    @keyframes barChartPulse {
+      0%, 100% { transform: scaleY(0.7); }
+      50% { transform: scaleY(1); }
+    }
+    .animate-bar-chart {
+      animation: barChartPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+      transform-origin: bottom;
+    }
+    @keyframes handshakeBounce {
+      0%, 90%, 100% { transform: translateY(0); }
+      93% { transform: translateY(-3px); }
+      96% { transform: translateY(0); }
+    }
+    .animate-handshake {
+      animation: handshakeBounce 5s ease infinite;
+    }
+  `}</style>
+)
+
+// ─── Timeline Scenario Card — whileInView fade-in (no clip-path scroll) ─────
 function TimelineScenario({
   icon: Icon,
   iconBg,
   title,
   children,
   index,
+  isMobile,
 }: {
   icon: React.ElementType
   iconBg: string
   title: string
   children: React.ReactNode
   index: number
+  isMobile: boolean
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start 85%', 'center center'],
-  })
-  const clipPath = useTransform(scrollYProgress, [0, 1], ['inset(20%)', 'inset(0%)'])
   const isLeft = index % 2 === 0
 
+  const cardContent = (
+    <div className="flex items-start gap-4">
+      <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
+        <Icon className="w-6 h-6 text-white/80" />
+      </div>
+      <div>
+        <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{title}</h4>
+        <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{children}</p>
+      </div>
+    </div>
+  )
+
   return (
-    <div ref={ref} className="relative grid grid-cols-[24px_1fr] md:grid-cols-[1fr_48px_1fr] gap-4 md:gap-6">
+    <div className="relative grid grid-cols-[24px_1fr] md:grid-cols-[1fr_48px_1fr] gap-4 md:gap-6">
       {/* Desktop left content (even) / empty (odd) */}
       <div className={`hidden md:block ${isLeft ? '' : 'order-3'}`}>
         {isLeft && (
           <motion.div
-            style={{ clipPath }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
           >
-            <div className="flex items-start gap-4">
-              <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
-                <Icon className="w-6 h-6 text-white/80" />
-              </div>
-              <div>
-                <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{title}</h4>
-                <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{children}</p>
-              </div>
-            </div>
+            {cardContent}
           </motion.div>
         )}
       </div>
 
-      {/* Central line + dot */}
+      {/* Central line + dot — CSS pulse animation */}
       <div className="relative flex flex-col items-center md:order-2">
         <div className="absolute inset-0 w-px bg-gradient-to-b from-accent-purple/40 via-accent-cyan/30 to-transparent left-1/2 -translate-x-1/2" />
         <div className="relative z-10 mt-8 w-4 h-4 rounded-full bg-accent-cyan shadow-[0_0_12px_rgba(0,200,255,0.5)]">
@@ -216,36 +239,26 @@ function TimelineScenario({
       <div className={`${isLeft ? 'hidden md:block order-3' : 'md:order-1'}`}>
         {!isLeft && (
           <motion.div
-            style={{ clipPath }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="hidden md:block p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
           >
-            <div className="flex items-start gap-4">
-              <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
-                <Icon className="w-6 h-6 text-white/80" />
-              </div>
-              <div>
-                <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{title}</h4>
-                <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{children}</p>
-              </div>
-            </div>
+            {cardContent}
           </motion.div>
         )}
       </div>
 
-      {/* Mobile-only card — always right of the line */}
+      {/* Mobile-only card — whileInView fade-in */}
       <motion.div
-        style={{ clipPath }}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="md:hidden p-6 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
       >
-        <div className="flex items-start gap-4">
-          <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
-            <Icon className="w-6 h-6 text-white/80" />
-          </div>
-          <div>
-            <h4 className="font-title text-lg font-semibold text-white mb-2">{title}</h4>
-            <p className="font-body text-sm text-white/50 leading-relaxed">{children}</p>
-          </div>
-        </div>
+        {cardContent}
       </motion.div>
     </div>
   )
@@ -260,128 +273,215 @@ export default function PartenairesPage() {
   const isMobile = useIsMobile()
   const reducedMotion = useReducedMotion()
 
-  // ─── Hero parallax ────────────────────────────────────────────────────────
+  // ─── Hero parallax — desktop only (0 useScroll on mobile) ────────────────
   const heroRef = useRef<HTMLElement>(null)
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   })
-  const parallaxMult = reducedMotion ? 0 : isMobile ? 0.5 : 1
+  // On mobile or reduced motion: transforms resolve to 0 (static)
+  const parallaxMult = (isMobile || reducedMotion) ? 0 : 1
   const glowY = useTransform(heroProgress, [0, 1], [0, 50 * parallaxMult])
   const titleY = useTransform(heroProgress, [0, 1], [0, 100 * parallaxMult])
   const mockupY = useTransform(heroProgress, [0, 1], [0, 150 * parallaxMult])
 
   return (
     <main className="min-h-screen bg-[#050508]">
+      {iconKeyframeStyle}
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════
-          1. HERO — Le Big Domino Partenaire (Parallax)
+          1. HERO — Le Big Domino Partenaire (Parallax desktop only)
           Croyance à abattre : "Gérer une flotte, c'est du chaos,
           et aucun outil ne peut vraiment m'aider."
           ═══════════════════════════════════════════════════════════════ */}
       <section ref={heroRef} className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
-        <motion.div
-          style={{ y: glowY }}
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none"
-        />
+        {/* Glow — parallax on desktop, static on mobile */}
+        {isMobile ? (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] pointer-events-none" />
+        ) : (
+          <motion.div
+            style={{ y: glowY }}
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[150px] pointer-events-none"
+          />
+        )}
 
         <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left col — text */}
-            <motion.div style={{ y: titleY }}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="mb-6 md:mb-8"
-              >
-                <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-purple/80 border border-accent-purple/15 rounded-full">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-purple opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-purple" />
+            {isMobile ? (
+              <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="mb-6 md:mb-8"
+                >
+                  <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-purple/80 border border-accent-purple/15 rounded-full">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-purple opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-purple" />
+                    </span>
+                    Pour gestionnaires de flottes
                   </span>
-                  Pour gestionnaires de flottes
-                </span>
-              </motion.div>
+                </motion.div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
-              >
-                <span className="text-white">Votre flotte tourne.</span>
-                <br />
-                <span className="bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
-                  Mais tourne-t-elle bien ?
-                </span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="font-body text-base md:text-lg text-white/50 max-w-lg mb-8 md:mb-10"
-              >
-                FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par l&apos;IA.
-                Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-              >
-                <a
-                  href="/contact"
-                  className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className="font-title text-4xl font-semibold leading-[1.05] tracking-tight mb-6"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
-                  <span className="relative">Demander une démo flotte</span>
-                  <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
-                <a
-                  href="#douleurs"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+                  <span className="text-white">Votre flotte tourne.</span>
+                  <br />
+                  <span className="bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
+                    Mais tourne-t-elle bien ?
+                  </span>
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="font-body text-base text-white/50 max-w-lg mb-8"
                 >
-                  Voir les résultats
-                </a>
-              </motion.div>
+                  FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par l&apos;IA.
+                  Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
+                </motion.p>
 
-              {/* FleetMapMockup — mobile: below CTAs */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-10 flex justify-center lg:hidden"
-              >
-                <div className="max-w-[280px] mx-auto">
-                  <FleetMapMockup />
-                </div>
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                  className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+                >
+                  <a
+                    href="/contact"
+                    className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
+                    <span className="relative">Demander une démo flotte</span>
+                    <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                  <a
+                    href="#douleurs"
+                    className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+                  >
+                    Voir les résultats
+                  </a>
+                </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
-              >
-                <span>Dashboard temps réel</span>
-                <span className="w-px h-3 bg-white/10" />
-                <span>IA par chauffeur</span>
-                <span className="w-px h-3 bg-white/10" />
-                <span>ROI mesurable</span>
-              </motion.div>
-            </motion.div>
+                {/* FleetMapMockup — mobile: below CTAs */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="mt-10 flex justify-center"
+                >
+                  <div className="max-w-[280px] mx-auto">
+                    <FleetMapMockup />
+                  </div>
+                </motion.div>
 
-            {/* Right col — FleetMapMockup (desktop parallax) */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
+                >
+                  <span>Dashboard temps réel</span>
+                  <span className="w-px h-3 bg-white/10" />
+                  <span>IA par chauffeur</span>
+                  <span className="w-px h-3 bg-white/10" />
+                  <span>ROI mesurable</span>
+                </motion.div>
+              </div>
+            ) : (
+              /* Desktop: parallax title */
+              <motion.div style={{ y: titleY }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="mb-6 md:mb-8"
+                >
+                  <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-purple/80 border border-accent-purple/15 rounded-full">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-purple opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-purple" />
+                    </span>
+                    Pour gestionnaires de flottes
+                  </span>
+                </motion.div>
+
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
+                >
+                  <span className="text-white">Votre flotte tourne.</span>
+                  <br />
+                  <span className="bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
+                    Mais tourne-t-elle bien ?
+                  </span>
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="font-body text-base md:text-lg text-white/50 max-w-lg mb-8 md:mb-10"
+                >
+                  FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par l&apos;IA.
+                  Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                  className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+                >
+                  <a
+                    href="/contact"
+                    className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
+                    <span className="relative">Demander une démo flotte</span>
+                    <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                  <a
+                    href="#douleurs"
+                    className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+                  >
+                    Voir les résultats
+                  </a>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
+                >
+                  <span>Dashboard temps réel</span>
+                  <span className="w-px h-3 bg-white/10" />
+                  <span>IA par chauffeur</span>
+                  <span className="w-px h-3 bg-white/10" />
+                  <span>ROI mesurable</span>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Right col — FleetMapMockup (desktop parallax only) */}
             <motion.div
-              style={{ y: mockupY }}
+              style={isMobile ? undefined : { y: mockupY }}
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -419,7 +519,7 @@ export default function PartenairesPage() {
               delay={0}
             />
 
-            {/* Visual intercalé 1 — Barres comparatives idle vs productif (scroll-linked) */}
+            {/* Visual intercalé 1 — Barres comparatives idle vs productif (whileInView) */}
             <ScrollLinkedBar redValue={25} redLabel="Temps improductif (avant)" cyanValue={75} cyanLabel="Temps productif (avec FOREAS)" />
 
             <DualityBlock
@@ -466,10 +566,10 @@ export default function PartenairesPage() {
               delay={0.2}
             />
 
-            {/* Visual intercalé 3 — Jauges circulaires */}
+            {/* Visual intercalé 3 — Jauges circulaires (whileInView wrapper) */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true, margin: '-30px' }}
               transition={{ duration: 0.6 }}
               className="flex justify-center gap-8 md:gap-12 py-6"
@@ -541,7 +641,7 @@ export default function PartenairesPage() {
 
       {/* ═══════════════════════════════════════════════════════════════
           4. LA SOLUTION FOREAS FLEET — Ce qui change
-          Micro-animations on icons
+          Icon micro-animations: CSS-based (no permanent RAF loops)
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
@@ -553,7 +653,7 @@ export default function PartenairesPage() {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            {/* Feature 1 — Brain pulse */}
+            {/* Feature 1 — Brain pulse (CSS animate-pulse) */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -571,7 +671,7 @@ export default function PartenairesPage() {
               </p>
             </motion.div>
 
-            {/* Feature 2 — BarChart3 scaleY animation */}
+            {/* Feature 2 — BarChart3 scaleY (CSS keyframe, no framer-motion infinite) */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -580,13 +680,9 @@ export default function PartenairesPage() {
               className="p-6 md:p-8 rounded-2xl border border-accent-purple/10 bg-accent-purple/[0.02]"
             >
               <div className="w-12 h-12 mb-4 rounded-xl bg-accent-purple/10 flex items-center justify-center">
-                <motion.div
-                  animate={{ scaleY: [0.7, 1, 0.7] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ originY: 1 }}
-                >
+                <div className="animate-bar-chart">
                   <BarChart3 className="w-6 h-6 text-accent-purple" />
-                </motion.div>
+                </div>
               </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Dashboard fleet en temps réel</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
@@ -595,7 +691,7 @@ export default function PartenairesPage() {
               </p>
             </motion.div>
 
-            {/* Feature 3 — Target slow rotation */}
+            {/* Feature 3 — Target slow rotation (CSS animate-spin) */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -613,7 +709,7 @@ export default function PartenairesPage() {
               </p>
             </motion.div>
 
-            {/* Feature 4 — Handshake bounce */}
+            {/* Feature 4 — Handshake bounce (CSS keyframe, no framer-motion infinite) */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -622,12 +718,9 @@ export default function PartenairesPage() {
               className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
             >
               <div className="w-12 h-12 mb-4 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
-                <motion.div
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 4.5, ease: [0.16, 1, 0.3, 1] }}
-                >
+                <div className="animate-handshake">
                   <Handshake className="w-6 h-6 text-accent-cyan" />
-                </motion.div>
+                </div>
               </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Pipeline partenaires intégré</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
@@ -644,6 +737,8 @@ export default function PartenairesPage() {
 
       {/* ═══════════════════════════════════════════════════════════════
           5. SCÉNARIOS TERRAIN — Vertical Timeline
+          whileInView fade-in (no clip-path scroll)
+          Dots: CSS ping animation, Line: static gradient
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-20 md:py-28">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
@@ -653,7 +748,7 @@ export default function PartenairesPage() {
             gradient="que vous reconnaîtrez."
           />
 
-          {/* Central gradient line */}
+          {/* Central gradient line — static */}
           <div className="relative">
             <div className="absolute left-[11px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-accent-purple/40 via-accent-cyan/20 to-transparent" />
 
@@ -663,6 +758,7 @@ export default function PartenairesPage() {
                 iconBg="bg-accent-purple/10"
                 title="Lundi matin — 3 chauffeurs appellent en même temps"
                 index={0}
+                isMobile={isMobile}
               >
                 &quot;Chef, je suis où ?&quot; &quot;Y&apos;a rien à Roissy.&quot; &quot;J&apos;ai fait 2h sans course.&quot;
                 <span className="text-accent-cyan"> Avec FOREAS : chacun a ses instructions personnalisées dans l&apos;app. Vous ne recevez plus ces appels.</span>
@@ -673,6 +769,7 @@ export default function PartenairesPage() {
                 iconBg="bg-accent-cyan/10"
                 title="Nouveau chauffeur — il ne connaît pas Paris"
                 index={1}
+                isMobile={isMobile}
               >
                 D&apos;habitude, il met 3 semaines à être autonome. Pendant ce temps, il tourne, il perd, vous perdez.
                 <span className="text-accent-cyan"> Avec Ajnaya, il reçoit les mêmes recommandations qu&apos;un chauffeur de 5 ans d&apos;expérience. Productif dès J1.</span>
@@ -683,6 +780,7 @@ export default function PartenairesPage() {
                 iconBg="bg-accent-green/10"
                 title="Fin de mois — vous faites les comptes"
                 index={2}
+                isMobile={isMobile}
               >
                 Excel, screenshots Uber, WhatsApp — vous reconstituez la performance de chaque chauffeur à la main.
                 <span className="text-accent-cyan"> FOREAS génère automatiquement vos rapports : CA par chauffeur, €/h net, zones couvertes, comparatifs.</span>
@@ -709,8 +807,13 @@ export default function PartenairesPage() {
           Pricing partenaire à définir → pas de Stripe ici
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-[#050508]" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] md:w-[1000px] md:h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent rounded-full blur-[60px] md:blur-[120px] pointer-events-none" />
+        {/* Opaque bg on mobile instead of backdrop-blur */}
+        <div className={`absolute inset-0 ${isMobile ? 'bg-[#050508]' : 'bg-[#050508]'}`} />
+        <div className={`absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none rounded-full ${
+          isMobile
+            ? 'w-[400px] h-[300px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent blur-[60px]'
+            : 'w-[1000px] h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent blur-[120px]'
+        }`} />
 
         <div className="relative max-w-4xl mx-auto px-6 lg:px-8">
           <motion.div

@@ -29,6 +29,14 @@ const CircularGauge = dynamic(() => import('@/components/CircularGauge'))
 const PulsingRing = dynamic(() => import('@/components/PulsingRing'))
 const AjnayaNotification = dynamic(() => import('@/components/AjnayaNotification'))
 
+// ─── Shared animation presets ────────────────────────────────────────────────
+const fadeInView = {
+  initial: { opacity: 0, y: 30 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: '-100px' as const },
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+} as const
+
 // ─── Dynamic Trial (mirrors /api/checkout) ───────────────────────────────────
 function getNextMonday18hParis(): Date {
   const now = new Date()
@@ -96,7 +104,8 @@ function StickyMobileCTA() {
   )
 }
 
-// ─── Dualité Card (frustration vs désir) — Clip-path reveal ─────────────────
+// ─── Dualité Card (frustration vs désir) — whileInView reveal ────────────────
+// OPTIMIZATION B: Replaced useScroll/useTransform clip-path with simple whileInView
 function DualityBlock({
   frustration,
   desir,
@@ -106,35 +115,20 @@ function DualityBlock({
   desir: { title: string; desc: string }
   delay?: number
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start 85%', 'center center'],
-  })
-
-  const frustrationClip = useTransform(
-    scrollYProgress,
-    [0, 1],
-    ['inset(0% 100% 0% 0%)', 'inset(0% 0% 0% 0%)']
-  )
-  const desirClip = useTransform(
-    scrollYProgress,
-    [0, 1],
-    ['inset(0% 0% 0% 100%)', 'inset(0% 0% 0% 0%)']
-  )
-
   return (
     <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, margin: '-100px' }}
+      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
       className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
     >
       {/* Frustration */}
       <motion.div
-        style={{ clipPath: frustrationClip }}
+        initial={{ opacity: 0, x: -30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.8, delay: delay + 0.1, ease: [0.16, 1, 0.3, 1] }}
         className="relative p-6 md:p-8 rounded-2xl border border-red-500/10 bg-red-500/[0.03] overflow-hidden group"
       >
         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500/60 to-transparent" />
@@ -145,7 +139,10 @@ function DualityBlock({
 
       {/* Désir */}
       <motion.div
-        style={{ clipPath: desirClip }}
+        initial={{ opacity: 0, x: 30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.8, delay: delay + 0.15, ease: [0.16, 1, 0.3, 1] }}
         className="relative p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.03] overflow-hidden group"
       >
         <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-accent-cyan/60 to-transparent" />
@@ -201,7 +198,7 @@ function MicroDetail({ icon: Icon, title, desc, stat, delay = 0 }: {
   delay?: number
 }) {
   return (
-    <div className="group flex-shrink-0 w-[280px] md:w-[360px] p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-white/[0.03] backdrop-blur-sm hover:border-accent-cyan/20 transition-all">
+    <div className="group flex-shrink-0 w-[280px] md:w-[360px] p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-[#0a0a12]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all">
       <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center mb-3 transition-shadow group-hover:shadow-[0_0_20px_rgba(0,212,255,0.2)]">
         <Icon className="w-5 h-5 text-accent-cyan" />
       </div>
@@ -212,11 +209,89 @@ function MicroDetail({ icon: Icon, title, desc, stat, delay = 0 }: {
   )
 }
 
-// ─── Horizontal Scroll Section ──────────────────────────────────────────────
+// ─── Micro-details cards data ────────────────────────────────────────────────
+const microDetailsCards = [
+  {
+    icon: Smartphone,
+    title: '3 apps ouvertes en permanence',
+    desc: 'Uber, Bolt, Heetch — tu switches toute la journée. Aucune ne te dit où aller ENTRE les courses.',
+    stat: '3 apps',
+  },
+  {
+    icon: Fuel,
+    title: '15-20% de ton carburant = du vide',
+    desc: 'Tu roules sans passager. Pas parce que t\'es mauvais, mais parce que personne ne te montre les zones chaudes en avance.',
+    stat: '15-20%',
+  },
+  {
+    icon: Brain,
+    title: 'La fatigue décisionnelle',
+    desc: 'Où aller ? Quelle app ? Attendre ou bouger ? 200 micro-décisions par jour qui épuisent ton cerveau avant ton corps.',
+    stat: '200+/jour',
+  },
+  {
+    icon: BarChart3,
+    title: 'Zéro visibilité sur tes vrais chiffres',
+    desc: 'Tu sais combien tu gagnes. Mais ton €/km réel ? Ton taux de vide ? Tes meilleurs créneaux ? Aucune app ne te le dit.',
+    stat: '0 data',
+  },
+  {
+    icon: CloudRain,
+    title: 'La météo change, pas ta stratégie',
+    desc: 'Quand il pleut, la demande explose à certains endroits. Tu le sais d\'instinct, mais tu n\'as pas les données pour en profiter.',
+  },
+  {
+    icon: Target,
+    title: 'Tu subis la course au lieu de la choisir',
+    desc: 'Tu prends ce qui vient. Mais les chauffeurs qui gagnent +35% ne prennent pas ce qui vient — ils se positionnent.',
+    stat: '+35%',
+  },
+] as const
+
+// ─── Horizontal Scroll Section — OPTIMIZATION C: Desktop sticky, Mobile native scroll ──
 function HorizontalMicroDetails() {
-  const containerRef = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
-  const cardWidth = isMobile ? 280 : 360
+
+  // Mobile: native CSS horizontal scroll (no useScroll, no sticky)
+  if (isMobile) {
+    return (
+      <div className="py-20">
+        <div className="max-w-5xl mx-auto px-6">
+          <SectionTitle
+            eyebrow="Les problèmes qu'on n'avoue pas"
+            title="Tout ce qui te coûte"
+            gradient="sans que tu le voies."
+          />
+          <div
+            className="flex gap-4 overflow-x-auto pb-4"
+            style={{
+              scrollSnapType: 'x mandatory',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            {microDetailsCards.map((card, i) => (
+              <div key={i} className="scroll-snap-align-start flex-shrink-0 w-[280px]">
+                <MicroDetail
+                  icon={card.icon}
+                  title={card.title}
+                  desc={card.desc}
+                  stat={'stat' in card ? (card as { stat: string }).stat : undefined}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Desktop: sticky horizontal scroll with useScroll (1 of max 2 useScroll on page)
+  return <HorizontalMicroDetailsDesktop />
+}
+
+function HorizontalMicroDetailsDesktop() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const cardWidth = 360
   const gap = 24
   const cardCount = 6
   const totalWidth = cardCount * cardWidth + (cardCount - 1) * gap
@@ -229,7 +304,7 @@ function HorizontalMicroDetails() {
   const x = useTransform(
     scrollYProgress,
     [0, 1],
-    [0, -(totalWidth - (isMobile ? 320 : 800))]
+    [0, -(totalWidth - 800)]
   )
 
   return (
@@ -241,48 +316,18 @@ function HorizontalMicroDetails() {
             title="Tout ce qui te coûte"
             gradient="sans que tu le voies."
           />
-          <motion.div style={{ x }} className="flex gap-6">
-            <MicroDetail
-              icon={Smartphone}
-              title="3 apps ouvertes en permanence"
-              desc="Uber, Bolt, Heetch — tu switches toute la journée. Aucune ne te dit où aller ENTRE les courses."
-              stat="3 apps"
-              delay={0}
-            />
-            <MicroDetail
-              icon={Fuel}
-              title="15-20% de ton carburant = du vide"
-              desc="Tu roules sans passager. Pas parce que t'es mauvais, mais parce que personne ne te montre les zones chaudes en avance."
-              stat="15-20%"
-              delay={0.05}
-            />
-            <MicroDetail
-              icon={Brain}
-              title="La fatigue décisionnelle"
-              desc="Où aller ? Quelle app ? Attendre ou bouger ? 200 micro-décisions par jour qui épuisent ton cerveau avant ton corps."
-              stat="200+/jour"
-              delay={0.1}
-            />
-            <MicroDetail
-              icon={BarChart3}
-              title="Zéro visibilité sur tes vrais chiffres"
-              desc="Tu sais combien tu gagnes. Mais ton €/km réel ? Ton taux de vide ? Tes meilleurs créneaux ? Aucune app ne te le dit."
-              stat="0 data"
-              delay={0.15}
-            />
-            <MicroDetail
-              icon={CloudRain}
-              title="La météo change, pas ta stratégie"
-              desc="Quand il pleut, la demande explose à certains endroits. Tu le sais d'instinct, mais tu n'as pas les données pour en profiter."
-              delay={0.2}
-            />
-            <MicroDetail
-              icon={Target}
-              title="Tu subis la course au lieu de la choisir"
-              desc="Tu prends ce qui vient. Mais les chauffeurs qui gagnent +35% ne prennent pas ce qui vient — ils se positionnent."
-              stat="+35%"
-              delay={0.25}
-            />
+          <motion.div style={{ x, willChange: 'transform' }} className="flex gap-6">
+            {microDetailsCards.map((card, i) => (
+              <div key={i} style={{ willChange: 'transform' }}>
+                <MicroDetail
+                  icon={card.icon}
+                  title={card.title}
+                  desc={card.desc}
+                  stat={'stat' in card ? (card as { stat: string }).stat : undefined}
+                  delay={i * 0.05}
+                />
+              </div>
+            ))}
           </motion.div>
         </div>
       </div>
@@ -290,11 +335,11 @@ function HorizontalMicroDetails() {
   )
 }
 
-// ─── Scenario Timeline Block ────────────────────────────────────────────────
+// ─── Scenario Timeline Block — OPTIMIZATION E: CSS pulse, whileInView cards ──
 function ScenarioTimeline({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative">
-      {/* Central vertical line */}
+      {/* Central vertical line — static gradient (not animated) */}
       <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-accent-cyan/30 to-transparent" />
       <div className="space-y-12 md:space-y-16">
         {children}
@@ -316,17 +361,6 @@ function ScenarioCard({
   children: React.ReactNode
   index: number
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start 85%', 'center center'],
-  })
-  const clipPath = useTransform(
-    scrollYProgress,
-    [0, 1],
-    ['inset(20%)', 'inset(0%)']
-  )
-
   const isEven = index % 2 === 1
   const colorMap = {
     purple: { bg: 'bg-accent-purple/10', border: 'border-accent-purple/20', text: 'text-accent-purple' },
@@ -337,10 +371,9 @@ function ScenarioCard({
 
   return (
     <div
-      ref={ref}
       className={`relative flex items-start gap-4 md:gap-0 ${isEven ? 'md:flex-row-reverse' : ''}`}
     >
-      {/* Dot on the line */}
+      {/* Dot on the line — CSS animation for pulse (not framer-motion) */}
       <div className="absolute left-4 md:left-1/2 top-6 -translate-x-1/2 z-10 flex flex-col items-center">
         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${colors.bg} ${colors.border} border mb-2`}>
           <span className={`font-mono text-xs ${colors.text}`}>{time}</span>
@@ -354,9 +387,12 @@ function ScenarioCard({
       {/* Spacer for the line area */}
       <div className="w-8 md:w-1/2 flex-shrink-0" />
 
-      {/* Card */}
+      {/* Card — simple whileInView fade-in (not clip-path) */}
       <motion.div
-        style={{ clipPath }}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className={`flex-1 p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02] ${isEven ? 'md:mr-8' : 'md:ml-8'} ml-4 md:ml-0`}
       >
         <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
@@ -426,45 +462,6 @@ export default function ChauffeursPage() {
   const isMobile = useIsMobile()
   const reducedMotion = useReducedMotion()
 
-  // ─── Hero parallax refs ────────────────────────────────────────────────────
-  const heroRef = useRef<HTMLElement>(null)
-  const { scrollYProgress: heroProgress } = useScroll({
-    target: heroRef,
-    offset: ['start start', 'end start'],
-  })
-
-  const heroGlowY = useTransform(heroProgress, [0, 1], [0, isMobile ? 25 : 50])
-  const heroTitleY = useTransform(heroProgress, [0, 1], [0, isMobile ? 50 : 100])
-  const heroPhoneY = useTransform(heroProgress, [0, 1], [0, isMobile ? 75 : 150])
-
-  // ─── Animated bar scroll-linked ────────────────────────────────────────────
-  const barRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress: barProgress } = useScroll({
-    target: barRef,
-    offset: ['start 85%', 'center center'],
-  })
-  const barScale = useTransform(barProgress, [0, 1], [0, 1])
-
-  // ─── Gauge scroll-linked ──────────────────────────────────────────────────
-  const gaugeRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress: gaugeProgress } = useScroll({
-    target: gaugeRef,
-    offset: ['start 85%', 'center center'],
-  })
-  const gaugeScale = useTransform(gaugeProgress, [0, 1], [0, 1])
-
-  // ─── Offer section clip-path reveal ───────────────────────────────────────
-  const offerRef = useRef<HTMLElement>(null)
-  const { scrollYProgress: offerProgress } = useScroll({
-    target: offerRef,
-    offset: ['start 90%', 'center center'],
-  })
-  const offerClip = useTransform(
-    offerProgress,
-    [0, 1],
-    ['circle(0% at 50% 50%)', 'circle(80% at 50% 50%)']
-  )
-
   return (
     <main className="min-h-screen bg-[#050508]">
       <Header />
@@ -476,111 +473,12 @@ export default function ChauffeursPage() {
           c'est le marché qui décide."
           Miroir parfait : ta plus grande douleur ↔ ton plus grand désir
           ═══════════════════════════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
-        {/* Background glow — parallax layer 1 */}
-        <motion.div
-          style={{ y: reducedMotion ? 0 : heroGlowY }}
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none"
-        />
-        <FloatingParticles className="z-0" />
-
-        <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left col — text — parallax layer 2 */}
-            <motion.div style={{ y: reducedMotion ? 0 : heroTitleY }}>
-              {/* Eyebrow */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="mb-6 md:mb-8"
-              >
-                <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/15 rounded-full">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
-                  </span>
-                  Pour chauffeurs VTC
-                </span>
-              </motion.div>
-
-              {/* Hero headline — Big Domino statement */}
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
-              >
-                <span className="text-white">Tu tournes à vide.</span>
-                <br />
-                <span className="animate-gradient bg-gradient-to-r from-[#00D4FF] via-[#8C52FF] to-[#00D4FF] bg-[length:200%_100%] bg-clip-text text-transparent">
-                  Ajnaya sait où aller.
-                </span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="font-body text-base md:text-lg text-white/50 max-w-lg mb-8 md:mb-10"
-              >
-                Le premier système qui voit la demande avant qu'elle arrive
-                et te repositionne en avance.
-              </motion.p>
-
-              {/* CTAs */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-              >
-                <a
-                  href="/tarifs2"
-                  className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
-                  <span className="relative">Essayer gratuitement</span>
-                  <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
-                <a
-                  href="#douleur"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
-                >
-                  Voir pourquoi ça marche
-                </a>
-              </motion.div>
-
-              {/* Trust signal */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
-              >
-                <span>0€ débité</span>
-                <span className="w-px h-3 bg-white/10" />
-                <span>Annulation en 1 clic</span>
-                <span className="w-px h-3 bg-white/10" />
-                <span>Compatible Uber, Bolt, Heetch</span>
-              </motion.div>
-            </motion.div>
-
-            {/* Right col — PhoneMockup — parallax layer 3 */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              style={{ y: reducedMotion ? 0 : heroPhoneY }}
-              className="flex justify-center lg:justify-end"
-            >
-              <PhoneMockup />
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      {/* OPTIMIZATION A: Desktop parallax hero vs Mobile static hero */}
+      {isMobile ? (
+        <MobileHero />
+      ) : (
+        <DesktopParallaxHero reducedMotion={reducedMotion} />
+      )}
 
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -634,12 +532,16 @@ export default function ChauffeursPage() {
               delay={0.1}
             />
 
-            {/* Visual intercalé 2 — Barres comparatives 7€ vs 34€ (scroll-linked scaleX) */}
-            <div ref={barRef}>
-              <motion.div style={{ scaleX: barScale, transformOrigin: 'left' }}>
-                <AnimatedBar redValue={7} redLabel="Course par défaut" cyanValue={34} cyanLabel="Course stratégique Ajnaya" />
-              </motion.div>
-            </div>
+            {/* Visual intercalé 2 — Barres comparatives 7€ vs 34€ (whileInView) */}
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              whileInView={{ opacity: 1, scaleX: 1 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: 'left' }}
+            >
+              <AnimatedBar redValue={7} redLabel="Course par défaut" cyanValue={34} cyanLabel="Course stratégique Ajnaya" />
+            </motion.div>
 
             <DualityBlock
               frustration={{
@@ -653,16 +555,17 @@ export default function ChauffeursPage() {
               delay={0.2}
             />
 
-            {/* Visual intercalé 3 — Jauges circulaires CA vs km (scroll-linked) */}
-            <div ref={gaugeRef}>
-              <motion.div
-                style={{ scaleX: gaugeScale, transformOrigin: 'center' }}
-                className="flex justify-center gap-8 md:gap-12 py-6"
-              >
-                <CircularGauge value={33} max={100} label="CA/heure en hausse" color="#00D4FF" suffix="%" />
-                <CircularGauge value={40} max={100} label="km à vide réduits" color="#8C52FF" suffix="%" />
-              </motion.div>
-            </div>
+            {/* Visual intercalé 3 — Jauges circulaires CA vs km (whileInView) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="flex justify-center gap-8 md:gap-12 py-6"
+            >
+              <CircularGauge value={33} max={100} label="CA/heure en hausse" color="#00D4FF" suffix="%" />
+              <CircularGauge value={40} max={100} label="km à vide réduits" color="#8C52FF" suffix="%" />
+            </motion.div>
           </div>
         </div>
       </section>
@@ -808,11 +711,14 @@ export default function ChauffeursPage() {
       {/* ═══════════════════════════════════════════════════════════════
           10. OFFER — Le close. Trial dynamique Stripe.
           Urgence réelle (pas fake). Logique après l'émotion.
-          Price Ring + clip-path circle reveal.
+          whileInView reveal (no clip-path scroll).
           ═══════════════════════════════════════════════════════════════ */}
-      <section ref={offerRef} className="relative py-32 lg:py-40 overflow-hidden">
+      <section className="relative py-32 lg:py-40 overflow-hidden">
         <motion.div
-          style={{ clipPath: reducedMotion ? 'circle(80% at 50% 50%)' : offerClip }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 bg-[#050508]"
         />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] md:w-[1000px] md:h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent rounded-full blur-[60px] md:blur-[120px] pointer-events-none" />
@@ -897,5 +803,234 @@ export default function ChauffeursPage() {
 
       <Footer />
     </main>
+  )
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HERO VARIANTS — OPTIMIZATION A
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Mobile Hero — static, no useScroll, no useTransform, no sticky
+function MobileHero() {
+  return (
+    <section className="relative pt-28 pb-20 overflow-hidden">
+      {/* Background glow — static */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] pointer-events-none" />
+      <FloatingParticles className="z-0" />
+
+      <div className="relative max-w-6xl mx-auto px-6">
+        {/* Eyebrow */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mb-6"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/15 rounded-full">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
+            </span>
+            Pour chauffeurs VTC
+          </span>
+        </motion.div>
+
+        {/* Hero headline — Big Domino statement */}
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="font-title text-4xl font-semibold leading-[1.05] tracking-tight mb-6"
+        >
+          <span className="text-white">Tu tournes à vide.</span>
+          <br />
+          <span className="animate-gradient bg-gradient-to-r from-[#00D4FF] via-[#8C52FF] to-[#00D4FF] bg-[length:200%_100%] bg-clip-text text-transparent">
+            Ajnaya sait où aller.
+          </span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="font-body text-base text-white/50 max-w-lg mb-8"
+        >
+          Le premier système qui voit la demande avant qu'elle arrive
+          et te repositionne en avance.
+        </motion.p>
+
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+        >
+          <a
+            href="/tarifs2"
+            className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
+            <span className="relative">Essayer gratuitement</span>
+            <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </a>
+          <a
+            href="#douleur"
+            className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+          >
+            Voir pourquoi ça marche
+          </a>
+        </motion.div>
+
+        {/* Trust signal */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
+        >
+          <span>0€ débité</span>
+          <span className="w-px h-3 bg-white/10" />
+          <span>Annulation en 1 clic</span>
+          <span className="w-px h-3 bg-white/10" />
+          <span>Compatible Uber, Bolt, Heetch</span>
+        </motion.div>
+
+        {/* PhoneMockup below CTAs on mobile */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="flex justify-center mt-12"
+        >
+          <PhoneMockup />
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+// Desktop Hero — parallax with useScroll/useTransform (1 of max 2 useScroll on page)
+function DesktopParallaxHero({ reducedMotion }: { reducedMotion: boolean }) {
+  const heroRef = useRef<HTMLElement>(null)
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  })
+
+  const heroGlowY = useTransform(heroProgress, [0, 1], [0, 50])
+  const heroTitleY = useTransform(heroProgress, [0, 1], [0, 100])
+  const heroPhoneY = useTransform(heroProgress, [0, 1], [0, 150])
+
+  return (
+    <section ref={heroRef} className="relative pt-36 pb-28 overflow-hidden">
+      {/* Background glow — parallax layer 1 */}
+      <motion.div
+        style={{ y: reducedMotion ? 0 : heroGlowY, willChange: 'transform' }}
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[150px] pointer-events-none"
+      />
+      <FloatingParticles className="z-0" />
+
+      <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* Left col — text — parallax layer 2 */}
+          <motion.div style={{ y: reducedMotion ? 0 : heroTitleY, willChange: 'transform' }}>
+            {/* Eyebrow */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="mb-8"
+            >
+              <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/15 rounded-full">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
+                </span>
+                Pour chauffeurs VTC
+              </span>
+            </motion.div>
+
+            {/* Hero headline — Big Domino statement */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="font-title text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
+            >
+              <span className="text-white">Tu tournes à vide.</span>
+              <br />
+              <span className="animate-gradient bg-gradient-to-r from-[#00D4FF] via-[#8C52FF] to-[#00D4FF] bg-[length:200%_100%] bg-clip-text text-transparent">
+                Ajnaya sait où aller.
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="font-body text-lg text-white/50 max-w-lg mb-10"
+            >
+              Le premier système qui voit la demande avant qu'elle arrive
+              et te repositionne en avance.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+            >
+              <a
+                href="/tarifs2"
+                className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
+                <span className="relative">Essayer gratuitement</span>
+                <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+              <a
+                href="#douleur"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+              >
+                Voir pourquoi ça marche
+              </a>
+            </motion.div>
+
+            {/* Trust signal */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
+            >
+              <span>0€ débité</span>
+              <span className="w-px h-3 bg-white/10" />
+              <span>Annulation en 1 clic</span>
+              <span className="w-px h-3 bg-white/10" />
+              <span>Compatible Uber, Bolt, Heetch</span>
+            </motion.div>
+          </motion.div>
+
+          {/* Right col — PhoneMockup — parallax layer 3 */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            style={{ y: reducedMotion ? 0 : heroPhoneY, willChange: 'transform' }}
+            className="flex justify-center lg:justify-end"
+          >
+            <PhoneMockup />
+          </motion.div>
+        </div>
+      </div>
+    </section>
   )
 }

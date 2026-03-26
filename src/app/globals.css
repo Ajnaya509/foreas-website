@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Native smooth scroll (replaces Lenis) ── */
+html { scroll-behavior: smooth; }
+
 /* ── Apple-grade gradient animation ── */
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
