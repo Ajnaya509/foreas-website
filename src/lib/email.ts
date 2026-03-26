@@ -4,77 +4,94 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string; trialEnd: string }) {
   const firstName = name ? name.split(' ')[0] : 'Chauffeur'
+  // Genos = titres (font-weight 600), Genos italic = taglines, Montserrat = body
+  // Fallback: sans-serif sur les clients qui ne supportent pas Google Fonts
   return `
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#050508;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Genos:ital,wght@0,400;0,600;0,700;1,400;1,500&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background-color:#050508;">
   <div style="max-width:600px;margin:0 auto;padding:0;">
 
-    <!-- Header band -->
-    <div style="background-color:#0c0c16;padding:32px 24px 24px;text-align:center;border-bottom:1px solid #1a1a2e;">
-      <div style="font-size:32px;font-weight:800;color:#ffffff;letter-spacing:3px;margin-bottom:4px;">FOREAS/</div>
-      <div style="font-size:11px;color:#6b6b80;letter-spacing:2px;text-transform:uppercase;">Intelligence Mobilit\u00e9</div>
+    <!-- ═══ HEADER ═══ -->
+    <div style="background-color:#08080d;padding:36px 24px 28px;text-align:center;">
+      <!-- Logo FOREAS/ en Genos 700 -->
+      <div style="font-family:'Genos',sans-serif;font-size:38px;font-weight:700;color:#ffffff;letter-spacing:4px;margin-bottom:6px;">FOREAS/</div>
+      <!-- Tagline en Genos italic -->
+      <div style="font-family:'Genos',sans-serif;font-style:italic;font-size:14px;font-weight:400;color:#7a7a90;letter-spacing:1px;">Toujours plus loin.</div>
+      <!-- Gradient line cyan → violet → cyan -->
+      <div style="margin-top:20px;height:2px;background:linear-gradient(90deg, #00D4FF, #8C52FF, #00D4FF);border-radius:1px;"></div>
     </div>
 
-    <!-- Main content -->
-    <div style="padding:40px 28px;">
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <div style="background-color:#050508;padding:40px 28px;">
 
-      <!-- Green check badge -->
-      <div style="text-align:center;margin-bottom:24px;">
-        <div style="display:inline-block;width:56px;height:56px;border-radius:50%;background-color:#0d2d1f;border:2px solid #10B981;line-height:56px;text-align:center;">
-          <span style="font-size:28px;color:#10B981;">\u2713</span>
+      <!-- Check badge -->
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="display:inline-block;width:60px;height:60px;border-radius:50%;background-color:#0d2d1f;border:2px solid #10B981;line-height:60px;text-align:center;">
+          <span style="font-size:30px;color:#10B981;">&#10003;</span>
         </div>
       </div>
 
-      <!-- Title -->
-      <h1 style="font-size:26px;font-weight:700;color:#ffffff;text-align:center;margin:0 0 8px;line-height:1.3;">
+      <!-- Titre en Genos 600 -->
+      <h1 style="font-family:'Genos',sans-serif;font-size:30px;font-weight:600;color:#ffffff;text-align:center;margin:0 0 6px;line-height:1.2;">
         Bienvenue, ${firstName} !
       </h1>
-      <p style="font-size:15px;color:#8888a0;text-align:center;margin:0 0 32px;line-height:1.5;">
-        Ton essai gratuit est activ\u00e9. 0\u20ac d\u00e9bit\u00e9 aujourd\u2019hui.
+      <!-- Sous-titre en Montserrat -->
+      <p style="font-family:'Montserrat',sans-serif;font-size:14px;color:#7a7a90;text-align:center;margin:0 0 36px;line-height:1.6;">
+        Ton essai gratuit est activ&eacute;. 0&euro; d&eacute;bit&eacute; aujourd&rsquo;hui.
       </p>
 
-      <!-- Plan card -->
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
-        <tr><td style="background-color:#0e0e18;border:1px solid #1a1a2e;border-radius:16px;padding:24px;">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td style="padding-bottom:16px;border-bottom:1px solid #1a1a2e;">
-                <div style="font-size:12px;color:#6b6b80;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Ton plan</div>
-                <div style="font-size:20px;font-weight:700;color:#ffffff;">${plan}</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding-top:16px;">
-                <table cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td style="width:8px;height:8px;border-radius:50%;background-color:#00D4FF;"></td>
-                    <td style="padding-left:10px;font-size:14px;color:#00D4FF;">Essai gratuit jusqu\u2019au ${trialEnd}</td>
-                  </tr>
-                </table>
-                <div style="margin-top:8px;">
+      <!-- ═══ PLAN CARD ═══ -->
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;">
+        <tr><td style="background-color:#0a0a14;border:1px solid #1a1a2e;border-radius:16px;padding:0;overflow:hidden;">
+          <!-- Card gradient top accent -->
+          <div style="height:3px;background:linear-gradient(90deg, #00D4FF, #8C52FF, #00D4FF);"></div>
+          <div style="padding:24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding-bottom:18px;border-bottom:1px solid #1a1a2e;">
+                  <!-- Label en Montserrat uppercase -->
+                  <div style="font-family:'Montserrat',sans-serif;font-size:11px;color:#5a5a6e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Ton plan</div>
+                  <!-- Plan name en Genos 600 -->
+                  <div style="font-family:'Genos',sans-serif;font-size:24px;font-weight:600;color:#ffffff;">${plan}</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top:18px;">
                   <table cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td style="width:8px;height:8px;border-radius:50%;background-color:#10B981;"></td>
-                      <td style="padding-left:10px;font-size:14px;color:#10B981;">0\u20ac d\u00e9bit\u00e9 aujourd\u2019hui</td>
+                      <td style="width:8px;height:8px;border-radius:50%;background-color:#00D4FF;"></td>
+                      <td style="padding-left:12px;font-family:'Montserrat',sans-serif;font-size:13px;color:#00D4FF;">Essai gratuit jusqu&rsquo;au ${trialEnd}</td>
                     </tr>
                   </table>
-                </div>
-              </td>
-            </tr>
-          </table>
+                  <div style="margin-top:10px;">
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="width:8px;height:8px;border-radius:50%;background-color:#10B981;"></td>
+                        <td style="padding-left:12px;font-family:'Montserrat',sans-serif;font-size:13px;color:#10B981;">0&euro; d&eacute;bit&eacute; aujourd&rsquo;hui</td>
+                      </tr>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
         </td></tr>
       </table>
 
-      <!-- CTA Button — solid color fallback for Gmail -->
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;">
+      <!-- ═══ CTA BUTTON ═══ -->
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
         <tr><td align="center">
-          <table cellpadding="0" cellspacing="0" border="0">
+          <table cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:400px;">
             <tr>
               <td align="center" style="background-color:#8C52FF;border-radius:14px;padding:0;">
-                <a href="https://foreas.xyz/download" style="display:inline-block;padding:18px 48px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;letter-spacing:0.3px;">
-                  T\u00e9l\u00e9charger l\u2019app FOREAS \u2192
+                <a href="https://foreas.xyz/download" style="display:block;padding:18px 32px;color:#ffffff;font-family:'Genos',sans-serif;font-size:18px;font-weight:600;text-decoration:none;text-align:center;letter-spacing:0.5px;">
+                  T&eacute;l&eacute;charger l&rsquo;app FOREAS &rarr;
                 </a>
               </td>
             </tr>
@@ -82,51 +99,59 @@ function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string
         </td></tr>
       </table>
 
-      <!-- Store links -->
-      <p style="text-align:center;font-size:13px;color:#4a4a5e;margin:0 0 36px;">
+      <!-- Store links en Montserrat -->
+      <p style="text-align:center;font-family:'Montserrat',sans-serif;font-size:12px;color:#4a4a5e;margin:0 0 40px;">
         <a href="https://apps.apple.com/app/foreas/id000000000" style="color:#00D4FF;text-decoration:none;">App Store</a>
-        <span style="color:#2a2a3a;"> &nbsp;\u00b7&nbsp; </span>
+        <span style="color:#2a2a3a;"> &nbsp;&middot;&nbsp; </span>
         <a href="https://play.google.com/store/apps/details?id=com.foreas.app" style="color:#00D4FF;text-decoration:none;">Google Play</a>
       </p>
 
-      <!-- Next steps -->
+      <!-- ═══ NEXT STEPS ═══ -->
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:36px;">
-        <tr><td style="background-color:#0e0e18;border:1px solid #1a1a2e;border-radius:16px;padding:20px 24px;">
-          <div style="font-size:13px;font-weight:600;color:#8888a0;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">Prochaines \u00e9tapes</div>
-          <table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
-            <tr>
-              <td style="width:24px;vertical-align:top;padding-right:12px;padding-bottom:12px;">
-                <div style="width:24px;height:24px;border-radius:50%;background-color:#0d2d1f;color:#10B981;font-size:12px;font-weight:700;text-align:center;line-height:24px;">1</div>
-              </td>
-              <td style="font-size:14px;color:#c0c0d0;padding-bottom:12px;">T\u00e9l\u00e9charge l\u2019app et connecte-toi</td>
-            </tr>
-            <tr>
-              <td style="width:24px;vertical-align:top;padding-right:12px;padding-bottom:12px;">
-                <div style="width:24px;height:24px;border-radius:50%;background-color:#0d1a2e;color:#00D4FF;font-size:12px;font-weight:700;text-align:center;line-height:24px;">2</div>
-              </td>
-              <td style="font-size:14px;color:#c0c0d0;padding-bottom:12px;">Active les notifications pour recevoir les alertes Ajnaya</td>
-            </tr>
-            <tr>
-              <td style="width:24px;vertical-align:top;padding-right:12px;">
-                <div style="width:24px;height:24px;border-radius:50%;background-color:#1a0d2e;color:#8C52FF;font-size:12px;font-weight:700;text-align:center;line-height:24px;">3</div>
-              </td>
-              <td style="font-size:14px;color:#c0c0d0;">Commence ta premi\u00e8re journ\u00e9e avec l\u2019IA</td>
-            </tr>
-          </table>
+        <tr><td style="background-color:#0a0a14;border:1px solid #1a1a2e;border-radius:16px;padding:0;overflow:hidden;">
+          <div style="height:3px;background:linear-gradient(90deg, #00D4FF, #8C52FF, #00D4FF);"></div>
+          <div style="padding:22px 24px;">
+            <!-- Section title en Genos -->
+            <div style="font-family:'Genos',sans-serif;font-size:16px;font-weight:600;color:#8888a0;letter-spacing:1px;margin-bottom:16px;">PROCHAINES &Eacute;TAPES</div>
+            <table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+              <tr>
+                <td style="width:28px;vertical-align:top;padding-right:14px;padding-bottom:14px;">
+                  <div style="width:28px;height:28px;border-radius:50%;background-color:#0d2d1f;color:#10B981;font-family:'Genos',sans-serif;font-size:14px;font-weight:600;text-align:center;line-height:28px;">1</div>
+                </td>
+                <td style="font-family:'Montserrat',sans-serif;font-size:14px;color:#c0c0d0;padding-bottom:14px;line-height:1.5;">T&eacute;l&eacute;charge l&rsquo;app et connecte-toi</td>
+              </tr>
+              <tr>
+                <td style="width:28px;vertical-align:top;padding-right:14px;padding-bottom:14px;">
+                  <div style="width:28px;height:28px;border-radius:50%;background-color:#0d1a2e;color:#00D4FF;font-family:'Genos',sans-serif;font-size:14px;font-weight:600;text-align:center;line-height:28px;">2</div>
+                </td>
+                <td style="font-family:'Montserrat',sans-serif;font-size:14px;color:#c0c0d0;padding-bottom:14px;line-height:1.5;">Active les notifications Ajnaya</td>
+              </tr>
+              <tr>
+                <td style="width:28px;vertical-align:top;padding-right:14px;">
+                  <div style="width:28px;height:28px;border-radius:50%;background-color:#1a0d2e;color:#8C52FF;font-family:'Genos',sans-serif;font-size:14px;font-weight:600;text-align:center;line-height:28px;">3</div>
+                </td>
+                <td style="font-family:'Montserrat',sans-serif;font-size:14px;color:#c0c0d0;line-height:1.5;">Commence ta premi&egrave;re journ&eacute;e avec l&rsquo;IA</td>
+              </tr>
+            </table>
+          </div>
         </td></tr>
       </table>
 
     </div>
 
-    <!-- Footer -->
-    <div style="background-color:#0a0a14;padding:24px 28px;border-top:1px solid #1a1a2e;text-align:center;">
-      <p style="font-size:13px;color:#5a5a70;margin:0 0 8px;line-height:1.5;">
-        Des questions ? R\u00e9ponds \u00e0 cet email ou contacte
+    <!-- ═══ FOOTER ═══ -->
+    <div style="background-color:#08080d;padding:28px;text-align:center;">
+      <!-- Gradient line footer -->
+      <div style="height:1px;background:linear-gradient(90deg, transparent, #8C52FF, transparent);margin-bottom:20px;"></div>
+      <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:#5a5a70;margin:0 0 10px;line-height:1.6;">
+        Des questions ? &Eacute;cris-nous &agrave;
         <a href="mailto:contact@foreas.xyz" style="color:#00D4FF;text-decoration:none;">contact@foreas.xyz</a>
       </p>
-      <p style="font-size:11px;color:#3a3a4a;margin:0;">
-        FOREAS Labs \u00b7 Paris \u00b7
-        <a href="https://foreas.xyz/unsubscribe" style="color:#3a3a4a;text-decoration:underline;">Se d\u00e9sabonner</a>
+      <!-- Tagline en Genos italic -->
+      <p style="font-family:'Genos',sans-serif;font-style:italic;font-size:13px;color:#3a3a4a;margin:0 0 12px;">Toujours plus loin.</p>
+      <p style="font-family:'Montserrat',sans-serif;font-size:10px;color:#2a2a3a;margin:0;">
+        FOREAS Labs &middot; Paris &middot;
+        <a href="https://foreas.xyz/unsubscribe" style="color:#2a2a3a;text-decoration:underline;">Se d&eacute;sabonner</a>
       </p>
     </div>
 
