@@ -61,7 +61,7 @@ function ValueProp({ number, title, desc, accent = 'accent-cyan', icon: Icon }: 
   number: string; title: string; desc: string; accent?: string; icon?: React.ElementType
 }) {
   return (
-    <div className="group flex-shrink-0 w-[300px] md:w-[400px] p-5 md:p-7 rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm hover:border-accent-cyan/20 transition-all scroll-snap-align-start">
+    <div className="group flex-shrink-0 w-[300px] md:w-[400px] p-5 md:p-7 rounded-2xl border border-white/[0.08] bg-[#0a0a12]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all snap-start">
       <div className="mb-4">
         {Icon ? (
           <div className={`w-10 h-10 rounded-full bg-${accent}/10 flex items-center justify-center`}>
@@ -156,11 +156,8 @@ function HorizontalValueProps() {
         <div className="max-w-5xl mx-auto px-6">
           {sectionHeading}
           <div
-            className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6"
-            style={{
-              scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch',
-            }}
+            className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory"
+            style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {cards}
           </div>

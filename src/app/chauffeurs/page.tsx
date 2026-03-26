@@ -263,14 +263,11 @@ function HorizontalMicroDetails() {
             gradient="sans que tu le voies."
           />
           <div
-            className="flex gap-4 overflow-x-auto pb-4"
-            style={{
-              scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch',
-            }}
+            className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory"
+            style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {microDetailsCards.map((card, i) => (
-              <div key={i} className="scroll-snap-align-start flex-shrink-0 w-[280px]">
+              <div key={i} className="snap-start flex-shrink-0 w-[280px]">
                 <MicroDetail
                   icon={card.icon}
                   title={card.title}
