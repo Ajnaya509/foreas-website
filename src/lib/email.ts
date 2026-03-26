@@ -17,14 +17,9 @@ function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string
 <body style="margin:0;padding:0;background-color:#050508;">
   <div style="max-width:600px;margin:0 auto;padding:0;">
 
-    <!-- ═══ HEADER ═══ -->
-    <div style="background-color:#08080d;padding:36px 24px 28px;text-align:center;">
-      <!-- Logo FOREAS/ en Genos 700 -->
-      <div style="font-family:'Genos',sans-serif;font-size:38px;font-weight:700;color:#ffffff;letter-spacing:4px;margin-bottom:6px;">FOREAS/</div>
-      <!-- Tagline en Genos italic -->
-      <div style="font-family:'Genos',sans-serif;font-style:italic;font-size:14px;font-weight:400;color:#7a7a90;letter-spacing:1px;">Toujours plus loin.</div>
-      <!-- Gradient line cyan → violet → cyan -->
-      <div style="margin-top:20px;height:2px;background:linear-gradient(90deg, #00D4FF, #8C52FF, #00D4FF);border-radius:1px;"></div>
+    <!-- ═══ HEADER IMAGE ═══ -->
+    <div style="background-color:#000000;text-align:center;">
+      <img src="https://7iphe7xxtq6glx0w.public.blob.vercel-storage.com/Capture%20d%E2%80%99e%CC%81cran%202026-03-26%20a%CC%80%2022.01.03.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
     </div>
 
     <!-- ═══ MAIN CONTENT ═══ -->
