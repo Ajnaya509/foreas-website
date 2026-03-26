@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOREAS — Community Manager IA Automatisé</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Genos:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050508;
+    color: #fff;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  h1 {
+    font-family: 'Genos', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-family: 'Genos', sans-serif;
+    font-style: italic;
+    font-size: 1.2rem;
+    text-align: center;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 48px;
+  }
+
+  /* Section titles */
+  .section-title {
+    font-family: 'Genos', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.90);
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .section-subtitle {
+    font-family: 'Genos', sans-serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.50);
+    margin-bottom: 24px;
+  }
+
+  /* Cost Grid */
+  .cost-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .cost-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .cost-card:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+  }
+
+  .cost-card .icon { font-size: 2rem; margin-bottom: 12px; }
+  .cost-card .name {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 4px;
+  }
+  .cost-card .role {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .cost-card .price {
+    font-family: 'Genos', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #4facfe;
+  }
+  .cost-card .period {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* Total cost bar */
+  .total-bar {
+    background: linear-gradient(135deg, rgba(79,172,254,0.08) 0%, rgba(0,242,195,0.08) 100%);
+    border: 1px solid rgba(79,172,254,0.2);
+    border-radius: 16px;
+    padding: 28px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .total-bar .label {
+    font-family: 'Genos', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .total-bar .amount {
+    font-family: 'Genos', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4facfe, #00f2c3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .total-bar .versus {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.45);
+    text-align: right;
+  }
+
+  .total-bar .versus strong {
+    color: rgba(255,255,255,0.7);
+  }
+
+  /* Publication volume */
+  .pub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+
+  .pub-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 20px 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pub-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .pub-card.instagram::before { background: linear-gradient(90deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+  .pub-card.tiktok::before { background: linear-gradient(90deg, #00f2ea, #ff0050); }
+  .pub-card.linkedin::before { background: #0077b5; }
+  .pub-card.x::before { background: #fff; }
+  .pub-card.youtube::before { background: #ff0000; }
+  .pub-card.facebook::before { background: #1877f2; }
+
+  .pub-card .platform {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 4px;
+  }
+
+  .pub-card .format {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.40);
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+
+  .pub-card .count {
+    font-family: 'Genos', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .pub-card .unit {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.40);
+    margin-top: 4px;
+  }
+
+  .pub-card .breakdown {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.30);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* Monthly totals */
+  .monthly-totals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+
+  .monthly-stat {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .monthly-stat .value {
+    font-family: 'Genos', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #4facfe;
+  }
+
+  .monthly-stat .label {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.50);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Brain Architecture */
+  .brain-section {
+    margin-bottom: 48px;
+  }
+
+  .brain-diagram {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 32px;
+    position: relative;
+  }
+
+  .brain-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+  }
+
+  .brain-step {
+    width: 100%;
+    max-width: 700px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 20px 24px;
+    position: relative;
+  }
+
+  .brain-step .step-num {
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: #050508;
+    border: 1px solid rgba(79,172,254,0.3);
+    border-radius: 20px;
+    padding: 2px 12px;
+    font-family: 'Genos', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4facfe;
+  }
+
+  .brain-step .step-title {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.90);
+    margin-bottom: 6px;
+    margin-top: 4px;
+  }
+
+  .brain-step .step-desc {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+  }
+
+  .brain-arrow {
+    width: 2px;
+    height: 28px;
+    background: linear-gradient(180deg, rgba(79,172,254,0.3), rgba(79,172,254,0.1));
+    position: relative;
+  }
+
+  .brain-arrow::after {
+    content: '▼';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: rgba(79,172,254,0.4);
+  }
+
+  /* Feedback loop */
+  .loop-indicator {
+    width: 100%;
+    max-width: 700px;
+    border: 1px dashed rgba(0,242,195,0.25);
+    border-radius: 14px;
+    padding: 16px 24px;
+    text-align: center;
+    background: rgba(0,242,195,0.03);
+  }
+
+  .loop-indicator .loop-title {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #00f2c3;
+    margin-bottom: 4px;
+  }
+
+  .loop-indicator .loop-desc {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.5;
+  }
+
+  /* Data signals */
+  .signals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    margin-bottom: 48px;
+  }
+
+  .signal-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .signal-card .signal-name {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.80);
+    margin-bottom: 4px;
+  }
+
+  .signal-card .signal-desc {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.5;
+  }
+
+  .signal-card .signal-impact {
+    margin-top: 8px;
+    font-size: 0.65rem;
+    font-family: 'Genos', sans-serif;
+    font-weight: 500;
+    color: #00f2c3;
+  }
+
+  /* Evolution timeline */
+  .evolution {
+    margin-bottom: 48px;
+  }
+
+  .evo-timeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .evo-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+  }
+
+  .evo-card .month {
+    font-family: 'Genos', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #4facfe;
+    margin-bottom: 4px;
+  }
+
+  .evo-card .evo-title {
+    font-family: 'Genos', sans-serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 12px;
+  }
+
+  .evo-card .evo-detail {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.50);
+    line-height: 1.6;
+  }
+
+  .evo-card .evo-metric {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-family: 'Genos', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .evo-card .evo-metric .up { color: #00f2c3; }
+  .evo-card .evo-metric .label {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.40);
+    font-weight: 400;
+  }
+
+  /* Comparison */
+  .comparison {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 48px;
+  }
+
+  .comp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+  }
+
+  .comp-col .comp-header {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .comp-col.human .comp-header { color: rgba(255,255,255,0.50); }
+  .comp-col.ai .comp-header { color: #4facfe; }
+
+  .comp-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.55);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .comp-item .comp-val { font-family: 'Genos', sans-serif; font-weight: 600; }
+  .comp-col.human .comp-val { color: rgba(255,255,255,0.60); }
+  .comp-col.ai .comp-val { color: #00f2c3; }
+
+  /* Footer */
+  .dashboard-footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .dashboard-footer .logo {
+    font-family: 'Genos', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 4px;
+  }
+
+  .dashboard-footer .tagline {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.20);
+    margin-top: 4px;
+  }
+
+  @media (max-width: 768px) {
+    h1 { font-size: 2rem; }
+    .comp-grid { grid-template-columns: 1fr; }
+    .total-bar { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Community Manager IA Autonome</h1>
+  <p class="subtitle">Ce que FOREAS obtient pour ~97€/mois — zéro effort humain quotidien</p>
+
+  <!-- COST BREAKDOWN -->
+  <h2 class="section-title">Stack & coûts mensuels</h2>
+  <p class="section-subtitle">Chaque brique est remplaçable — aucun vendor lock-in</p>
+
+  <div class="cost-grid">
+    <div class="cost-card">
+      <div class="icon">🧠</div>
+      <div class="name">Claude API</div>
+      <div class="role">Rédaction, scripts, adaptation ton par réseau, analyse feedback</div>
+      <div class="price">~25€</div>
+      <div class="period">/mois</div>
+    </div>
+    <div class="cost-card">
+      <div class="icon">🎬</div>
+      <div class="name">Creatomate</div>
+      <div class="role">Rendu vidéo motion design, templates, assemblage final</div>
+      <div class="price">~30€</div>
+      <div class="period">/mois (75 rendus)</div>
+    </div>
+    <div class="cost-card">
+      <div class="icon">🎙️</div>
+      <div class="name">ElevenLabs</div>
+      <div class="role">Voix off IA, narration vidéos, voix Ajnaya</div>
+      <div class="price">~5€</div>
+      <div class="period">/mois (Starter)</div>
+    </div>
+    <div class="cost-card">
+      <div class="icon">🎨</div>
+      <div class="name">Canva Pro</div>
+      <div class="role">Templates image, posts statiques, stories</div>
+      <div class="price">~12€</div>
+      <div class="period">/mois</div>
+    </div>
+    <div class="cost-card">
+      <div class="icon">🎥</div>
+      <div class="name">Kling 3.0 / fal.ai</div>
+      <div class="role">Clips vidéo IA génératives, ambiances cinématiques</div>
+      <div class="price">~10€</div>
+      <div class="period">/mois (~350 clips 8s)</div>
+    </div>
+    <div class="cost-card">
+      <div class="icon">⚡</div>
+      <div class="name">n8n Cloud</div>
+      <div class="role">Orchestration, scheduling, publication multi-plateforme</div>
+      <div class="price">~15€</div>
+      <div class="period">/mois (Starter)</div>
+    </div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="total-bar">
+    <div>
+      <div class="label">Investissement mensuel total</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="amount">~97€/mois</div>
+      <div class="versus">vs <strong>1 800–3 500€/mois</strong> pour un community manager humain freelance</div>
+    </div>
+  </div>
+
+  <!-- PUBLICATION VOLUME -->
+  <h2 class="section-title">Volume de publications — par réseau</h2>
+  <p class="section-subtitle">30 jours, 100% automatisé, contenu unique par plateforme</p>
+
+  <div class="pub-grid">
+    <div class="pub-card instagram">
+      <div class="platform">Instagram</div>
+      <div class="format">Reels + Feed + Stories</div>
+      <div class="count">60</div>
+      <div class="unit">publications/mois</div>
+      <div class="breakdown">15 Reels vidéo · 15 posts image · 30 stories</div>
+    </div>
+    <div class="pub-card tiktok">
+      <div class="platform">TikTok</div>
+      <div class="format">Vidéos courtes 15-30s</div>
+      <div class="count">30</div>
+      <div class="unit">publications/mois</div>
+      <div class="breakdown">1 vidéo/jour · clips IA + motion design</div>
+    </div>
+    <div class="pub-card linkedin">
+      <div class="platform">LinkedIn</div>
+      <div class="format">Posts pro + articles courts</div>
+      <div class="count">20</div>
+      <div class="unit">publications/mois</div>
+      <div class="breakdown">12 posts texte+image · 8 vidéos carrousel</div>
+    </div>
+    <div class="pub-card x">
+      <div class="platform">X (Twitter)</div>
+      <div class="format">Threads + posts + clips</div>
+      <div class="count">45</div>
+      <div class="unit">publications/mois</div>
+      <div class="breakdown">30 posts · 10 threads · 5 vidéos</div>
+    </div>
+    <div class="pub-card youtube">
+      <div class="platform">YouTube</div>
+      <div class="format">Shorts + vidéos courtes</div>
+      <div class="count">20</div>
+      <div class="unit">publications/mois</div>
+      <div class="breakdown">15 Shorts · 5 vidéos 1-2min</div>
+    </div>
+    <div class="pub-card facebook">
+      <div class="platform">Facebook</div>
+      <div class="format">Posts + Reels + groupe</div>
+      <div class="count">30</div>
+      <div class="unit">publications/mois</div>
+      <div class="breakdown">15 posts image · 15 Reels cross-post</div>
+    </div>
+  </div>
+
+  <!-- MONTHLY TOTALS -->
+  <div class="monthly-totals">
+    <div class="monthly-stat">
+      <div class="value">205</div>
+      <div class="label">publications / mois</div>
+    </div>
+    <div class="monthly-stat">
+      <div class="value">~7</div>
+      <div class="label">publications / jour</div>
+    </div>
+    <div class="monthly-stat">
+      <div class="value">6</div>
+      <div class="label">réseaux couverts</div>
+    </div>
+    <div class="monthly-stat">
+      <div class="value">0h</div>
+      <div class="label">effort quotidien</div>
+    </div>
+    <div class="monthly-stat">
+      <div class="value">0,47€</div>
+      <div class="label">coût par publication</div>
+    </div>
+  </div>
+
+  <!-- BRAIN ARCHITECTURE -->
+  <h2 class="section-title">Le Cerveau d'Optimisation Continue</h2>
+  <p class="section-subtitle">Boucle de rétroaction autonome — chaque publication rend la suivante meilleure</p>
+
+  <div class="brain-diagram">
+    <div class="brain-flow">
+      <div class="brain-step">
+        <span class="step-num">COLLECTE</span>
+        <div class="step-title">Aspiration des métriques par réseau</div>
+        <div class="step-desc">n8n récupère automatiquement via les APIs de chaque plateforme : vues, likes, partages, commentaires, saves, watch time, taux de complétion vidéo, clics lien bio, nouveaux followers, heure de pic d'engagement. Stocké dans Supabase (table analytics_social).</div>
+      </div>
+      <div class="brain-arrow"></div>
+      <div class="brain-step">
+        <span class="step-num">ANALYSE</span>
+        <div class="step-title">Pattern detection par Claude API</div>
+        <div class="step-desc">Chaque semaine, Claude analyse l'ensemble des données collectées et identifie : quel type de contenu performe le mieux (vidéo vs image, question vs statement, stat vs story), quels horaires maximisent l'engagement par plateforme, quels mots-clés et accroches déclenchent le plus d'interactions, quel ton fonctionne (inspirant vs informatif vs provoc).</div>
+      </div>
+      <div class="brain-arrow"></div>
+      <div class="brain-step">
+        <span class="step-num">SCORING</span>
+        <div class="step-title">Score de performance par catégorie de contenu</div>
+        <div class="step-desc">Chaque publication reçoit un score composite (engagement_rate × reach × conversion_bio_click). Les contenus sont classés par archétype : "stat chauffeur", "actu VTC", "behind the scenes", "feature Ajnaya", "témoignage", "provoc marché". Le cerveau identifie les archétypes gagnants et les perdants.</div>
+      </div>
+      <div class="brain-arrow"></div>
+      <div class="brain-step">
+        <span class="step-num">ADAPTATION</span>
+        <div class="step-title">Mise à jour automatique du prompt system</div>
+        <div class="step-desc">Le rapport d'analyse met à jour les instructions du community manager IA : augmenter la fréquence des archétypes gagnants, réduire ou éliminer les perdants, ajuster les horaires de publication, affiner le ton et les accroches. Le prompt system évolue chaque semaine sans intervention humaine.</div>
+      </div>
+      <div class="brain-arrow"></div>
+      <div class="brain-step">
+        <span class="step-num">GÉNÉRATION</span>
+        <div class="step-title">Contenu optimisé publié automatiquement</div>
+        <div class="step-desc">La semaine suivante, le contenu généré intègre tous les apprentissages. Le cycle recommence. Chaque itération affine la compréhension de l'audience FOREAS et maximise la portée organique.</div>
+      </div>
+      <div class="brain-arrow"></div>
+      <div class="loop-indicator">
+        <div class="loop-title">↻ Boucle infinie d'amélioration</div>
+        <div class="loop-desc">Le système ne stagne jamais. Plus il publie, plus il apprend. Plus il apprend, mieux il performe. Effet composé sur la portée organique.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNALS CAPTURED -->
+  <h2 class="section-title">Signaux captés par le cerveau</h2>
+  <p class="section-subtitle">Chaque métrique oriente la prochaine décision éditoriale</p>
+
+  <div class="signals-grid">
+    <div class="signal-card">
+      <div class="signal-name">Watch time moyen</div>
+      <div class="signal-desc">Durée moyenne de visionnage par vidéo. Détecte si l'accroche retient ou si le contenu perd l'audience.</div>
+      <div class="signal-impact">→ Ajuste la durée et le hook des 3 premières secondes</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-name">Taux de save/bookmark</div>
+      <div class="signal-desc">Le signal le plus fort sur Instagram et TikTok. Indique un contenu à haute valeur perçue.</div>
+      <div class="signal-impact">→ Amplifie les formats "valeur actionnable"</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-name">Ratio partage/vue</div>
+      <div class="signal-desc">Mesure la viralité intrinsèque. Un partage vaut 10x un like en portée organique.</div>
+      <div class="signal-impact">→ Priorise les contenus "shareables" (stats choc, comparaisons)</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-name">Heure de pic</div>
+      <div class="signal-desc">Identifie les fenêtres d'engagement max par plateforme, par jour de semaine.</div>
+      <div class="signal-impact">→ Ajuste le scheduling automatiquement</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-name">Sentiment commentaires</div>
+      <div class="signal-desc">Analyse NLP des commentaires pour détecter enthousiasme, scepticisme, questions récurrentes.</div>
+      <div class="signal-impact">→ Génère du contenu qui répond aux objections détectées</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-name">Taux de clic bio</div>
+      <div class="signal-desc">Conversion sociale → site/app. Le KPI business ultime du community management.</div>
+      <div class="signal-impact">→ Optimise les CTA et le placement du lien</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-name">Croissance followers</div>
+      <div class="signal-desc">Vélocité de gain par réseau. Corrélée aux types de contenu publiés la semaine précédente.</div>
+      <div class="signal-impact">→ Identifie les "growth triggers" par plateforme</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-name">Cross-plateforme</div>
+      <div class="signal-desc">Même contenu adapté : compare les performances entre réseaux pour identifier où chaque format performe le mieux.</div>
+      <div class="signal-impact">→ Route chaque format vers son réseau optimal</div>
+    </div>
+  </div>
+
+  <!-- EVOLUTION OVER TIME -->
+  <h2 class="section-title">Courbe d'apprentissage — Mois 1 à 6</h2>
+  <p class="section-subtitle">L'effet composé de l'optimisation continue</p>
+
+  <div class="evo-timeline">
+    <div class="evo-card">
+      <div class="month">Mois 1</div>
+      <div class="evo-title">Calibration</div>
+      <div class="evo-detail">Le système publie avec des templates génériques FOREAS. Il collecte les premières données. Les performances sont moyennes — c'est normal, il apprend.</div>
+      <div class="evo-metric">
+        <span class="label">Engagement rate moyen</span><br>
+        <span class="up">~1.5%</span>
+      </div>
+    </div>
+    <div class="evo-card">
+      <div class="month">Mois 2</div>
+      <div class="evo-title">Premiers patterns</div>
+      <div class="evo-detail">Le cerveau a identifié les 3 archétypes gagnants, les 2 perdants, et les meilleurs horaires. Le prompt system a été mis à jour 4 fois.</div>
+      <div class="evo-metric">
+        <span class="label">Engagement rate moyen</span><br>
+        <span class="up">~2.8% (+87%)</span>
+      </div>
+    </div>
+    <div class="evo-card">
+      <div class="month">Mois 3-4</div>
+      <div class="evo-title">Accélération</div>
+      <div class="evo-detail">Le contenu est de plus en plus ciblé. Les accroches sont optimisées par A/B testing automatique. La portée organique augmente exponentiellement grâce aux signaux algo positifs.</div>
+      <div class="evo-metric">
+        <span class="label">Engagement rate moyen</span><br>
+        <span class="up">~4.5% (+200%)</span>
+      </div>
+    </div>
+    <div class="evo-card">
+      <div class="month">Mois 5-6</div>
+      <div class="evo-title">Maturité</div>
+      <div class="evo-detail">Le système connaît parfaitement l'audience FOREAS. Chaque publication est quasi-optimale. Le coût d'acquisition organique est proche de zéro. Le cerveau détecte les tendances émergentes avant les concurrents.</div>
+      <div class="evo-metric">
+        <span class="label">Engagement rate moyen</span><br>
+        <span class="up">~6-8% (top 1% industrie)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARISON -->
+  <div class="comparison">
+    <h2 class="section-title" style="border:none;margin-bottom:0;">Comparaison directe</h2>
+    <div class="comp-grid">
+      <div class="comp-col human">
+        <div class="comp-header">👤 CM Humain Freelance</div>
+        <div class="comp-item"><span>Coût mensuel</span><span class="comp-val">1 800 – 3 500€</span></div>
+        <div class="comp-item"><span>Publications/mois</span><span class="comp-val">30 – 60</span></div>
+        <div class="comp-item"><span>Réseaux couverts</span><span class="comp-val">2 – 3</span></div>
+        <div class="comp-item"><span>Vidéos/mois</span><span class="comp-val">4 – 8</span></div>
+        <div class="comp-item"><span>Horaires optimisés</span><span class="comp-val">Au feeling</span></div>
+        <div class="comp-item"><span>Apprentissage</span><span class="comp-val">Manuel, lent</span></div>
+        <div class="comp-item"><span>Disponibilité</span><span class="comp-val">Lun-Ven, 9h-18h</span></div>
+        <div class="comp-item"><span>Scalabilité</span><span class="comp-val">Linéaire (+ de personnes = + de coût)</span></div>
+      </div>
+      <div class="comp-col ai">
+        <div class="comp-header">🤖 CM IA FOREAS</div>
+        <div class="comp-item"><span>Coût mensuel</span><span class="comp-val">~97€</span></div>
+        <div class="comp-item"><span>Publications/mois</span><span class="comp-val">205+</span></div>
+        <div class="comp-item"><span>Réseaux couverts</span><span class="comp-val">6</span></div>
+        <div class="comp-item"><span>Vidéos/mois</span><span class="comp-val">50+</span></div>
+        <div class="comp-item"><span>Horaires optimisés</span><span class="comp-val">Data-driven, auto-ajusté</span></div>
+        <div class="comp-item"><span>Apprentissage</span><span class="comp-val">Continu, automatique</span></div>
+        <div class="comp-item"><span>Disponibilité</span><span class="comp-val">24/7, jours fériés inclus</span></div>
+        <div class="comp-item"><span>Scalabilité</span><span class="comp-val">Quasi-gratuite (+ de contenu ≠ + de coût)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-footer">
+    <div class="logo">FOREAS</div>
+    <div class="tagline">Community Manager IA Autonome — Architecture v1.0</div>
+  </div>
+
+</div>
+</body>
+</html>

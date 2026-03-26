@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import GradientLine from '@/components/GradientLine'
 import Footer from '@/components/Footer'
+import { Smartphone, Fuel, Brain, BarChart3, CloudRain, Target } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS /chauffeurs — BIG DOMINO CHAUFFEUR
@@ -20,6 +21,11 @@ const AjnayaChatScroll = dynamic(() => import('@/components/AjnayaChatScroll'))
 const AppDemo = dynamic(() => import('@/components/AppDemo'))
 const RevenueSimulator = dynamic(() => import('@/components/RevenueSimulator'))
 const Testimonials = dynamic(() => import('@/components/Testimonials'))
+const PhoneMockup = dynamic(() => import('@/components/PhoneMockup'))
+const FloatingParticles = dynamic(() => import('@/components/FloatingParticles'))
+const AnimatedBar = dynamic(() => import('@/components/AnimatedBar'))
+const CircularGauge = dynamic(() => import('@/components/CircularGauge'))
+const PulsingRing = dynamic(() => import('@/components/PulsingRing'))
 
 // ─── Dynamic Trial (mirrors /api/checkout) ───────────────────────────────────
 function getNextMonday18hParis(): Date {
@@ -161,10 +167,11 @@ function SectionTitle({ eyebrow, title, gradient, subtitle }: {
 }
 
 // ─── Micro-detail Card ───────────────────────────────────────────────────────
-function MicroDetail({ icon, title, desc, delay = 0 }: {
-  icon: string
+function MicroDetail({ icon: Icon, title, desc, stat, delay = 0 }: {
+  icon: React.ElementType
   title: string
   desc: string
+  stat?: string
   delay?: number
 }) {
   return (
@@ -173,9 +180,12 @@ function MicroDetail({ icon, title, desc, delay = 0 }: {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
-      className="p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-white/[0.02] hover:border-accent-purple/20 transition-colors"
+      className="group p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-white/[0.02] hover:border-accent-cyan/20 transition-all"
     >
-      <div className="text-2xl mb-3">{icon}</div>
+      <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center mb-3 transition-shadow group-hover:shadow-[0_0_20px_rgba(0,212,255,0.2)]">
+        <Icon className="w-5 h-5 text-accent-cyan" />
+      </div>
+      {stat && <div className="font-mono text-lg font-bold text-accent-cyan mb-1">{stat}</div>}
       <h4 className="font-title text-base md:text-lg font-semibold text-white mb-1.5">{title}</h4>
       <p className="font-body text-sm text-white/45 leading-relaxed">{desc}</p>
     </motion.div>
@@ -204,86 +214,102 @@ export default function ChauffeursPage() {
       <section className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
         {/* Background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none" />
+        <FloatingParticles className="z-0" />
 
-        <div className="relative max-w-5xl mx-auto px-6 lg:px-8">
-          {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-center mb-6 md:mb-8"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/15 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
-              </span>
-              Pour chauffeurs VTC
-            </span>
-          </motion.div>
+        <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left col — text */}
+            <div>
+              {/* Eyebrow */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mb-6 md:mb-8"
+              >
+                <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/15 rounded-full">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
+                  </span>
+                  Pour chauffeurs VTC
+                </span>
+              </motion.div>
 
-          {/* Hero headline — Big Domino statement */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="font-title text-center text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
-          >
-            <span className="text-white">Tu tournes à vide.</span>
-            <br />
-            <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
-              Ajnaya sait où aller.
-            </span>
-          </motion.h1>
+              {/* Hero headline — Big Domino statement */}
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
+              >
+                <span className="text-white">Tu tournes à vide.</span>
+                <br />
+                <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
+                  Ajnaya sait où aller.
+                </span>
+              </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="font-body text-center text-base md:text-lg text-white/50 max-w-lg mx-auto mb-8 md:mb-10"
-          >
-            Le premier système qui voit la demande avant qu'elle arrive
-            et te repositionne en avance.
-          </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="font-body text-base md:text-lg text-white/50 max-w-lg mb-8 md:mb-10"
+              >
+                Le premier système qui voit la demande avant qu'elle arrive
+                et te repositionne en avance.
+              </motion.p>
 
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
-          >
-            <a
-              href="/tarifs2"
-              className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              {/* CTAs */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+              >
+                <a
+                  href="/tarifs2"
+                  className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
+                  <span className="relative">Essayer gratuitement</span>
+                  <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+                <a
+                  href="#douleur"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+                >
+                  Voir pourquoi ça marche
+                </a>
+              </motion.div>
+
+              {/* Trust signal */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
+              >
+                <span>0€ débité</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>Annulation en 1 clic</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>Compatible Uber, Bolt, Heetch</span>
+              </motion.div>
+            </div>
+
+            {/* Right col — PhoneMockup */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex justify-center lg:justify-end"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
-              <span className="relative">Essayer gratuitement</span>
-              <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </a>
-            <a
-              href="#douleur"
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
-            >
-              Voir pourquoi ça marche
-            </a>
-          </motion.div>
-
-          {/* Trust signal */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
-          >
-            <span>0€ débité</span>
-            <span className="w-px h-3 bg-white/10" />
-            <span>Annulation en 1 clic</span>
-            <span className="w-px h-3 bg-white/10" />
-            <span>Compatible Uber, Bolt, Heetch</span>
-          </motion.div>
+              <PhoneMockup />
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -294,7 +320,8 @@ export default function ChauffeursPage() {
           Frustration vs Désir — le miroir parfait
           ═══════════════════════════════════════════════════════════════ */}
       <section id="douleur" className="relative py-20 md:py-28 bg-[#08080d]">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8">
+        <FloatingParticles count={12} className="z-0" />
+        <div className="relative max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="Ce que tu vis chaque jour"
             title="La réalité du terrain."
@@ -315,6 +342,29 @@ export default function ChauffeursPage() {
               delay={0}
             />
 
+            {/* Visual intercalé 1 — Mini phone avec notification */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center py-6"
+            >
+              <div className="relative max-w-[180px]">
+                <PhoneMockup />
+                {/* Notification overlay */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.8 }}
+                  className="absolute -top-3 -right-4 px-3 py-1.5 rounded-full bg-accent-cyan/15 border border-accent-cyan/30 backdrop-blur-sm"
+                >
+                  <span className="text-[10px] font-mono text-accent-cyan whitespace-nowrap">3 Intercités dans 12 min</span>
+                </motion.div>
+              </div>
+            </motion.div>
+
             <DualityBlock
               frustration={{
                 title: 'Tu acceptes une course à 7€ par défaut.',
@@ -327,6 +377,9 @@ export default function ChauffeursPage() {
               delay={0.1}
             />
 
+            {/* Visual intercalé 2 — Barres comparatives 7€ vs 34€ */}
+            <AnimatedBar redValue={7} redLabel="Course par défaut" cyanValue={34} cyanLabel="Course stratégique Ajnaya" />
+
             <DualityBlock
               frustration={{
                 title: 'Tu finis ta journée à 22h, épuisé, avec 180€.',
@@ -338,6 +391,18 @@ export default function ChauffeursPage() {
               }}
               delay={0.2}
             />
+
+            {/* Visual intercalé 3 — Jauges circulaires CA vs km */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.6 }}
+              className="flex justify-center gap-8 md:gap-12 py-6"
+            >
+              <CircularGauge value={33} max={100} label="CA/heure en hausse" color="#00D4FF" suffix="%" />
+              <CircularGauge value={40} max={100} label="km à vide réduits" color="#8C52FF" suffix="%" />
+            </motion.div>
           </div>
         </div>
       </section>
@@ -381,39 +446,44 @@ export default function ChauffeursPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             <MicroDetail
-              icon="📱"
+              icon={Smartphone}
               title="3 apps ouvertes en permanence"
               desc="Uber, Bolt, Heetch — tu switches toute la journée. Aucune ne te dit où aller ENTRE les courses."
+              stat="3 apps"
               delay={0}
             />
             <MicroDetail
-              icon="⛽"
+              icon={Fuel}
               title="15-20% de ton carburant = du vide"
               desc="Tu roules sans passager. Pas parce que t'es mauvais, mais parce que personne ne te montre les zones chaudes en avance."
+              stat="15-20%"
               delay={0.05}
             />
             <MicroDetail
-              icon="🧠"
+              icon={Brain}
               title="La fatigue décisionnelle"
               desc="Où aller ? Quelle app ? Attendre ou bouger ? 200 micro-décisions par jour qui épuisent ton cerveau avant ton corps."
+              stat="200+/jour"
               delay={0.1}
             />
             <MicroDetail
-              icon="📊"
+              icon={BarChart3}
               title="Zéro visibilité sur tes vrais chiffres"
               desc="Tu sais combien tu gagnes. Mais ton €/km réel ? Ton taux de vide ? Tes meilleurs créneaux ? Aucune app ne te le dit."
+              stat="0 data"
               delay={0.15}
             />
             <MicroDetail
-              icon="🌧️"
+              icon={CloudRain}
               title="La météo change, pas ta stratégie"
               desc="Quand il pleut, la demande explose à certains endroits. Tu le sais d'instinct, mais tu n'as pas les données pour en profiter."
               delay={0.2}
             />
             <MicroDetail
-              icon="🎯"
+              icon={Target}
               title="Tu subis la course au lieu de la choisir"
               desc="Tu prends ce qui vient. Mais les chauffeurs qui gagnent +35% ne prennent pas ce qui vient — ils se positionnent."
+              stat="+35%"
               delay={0.25}
             />
           </div>
@@ -466,11 +536,16 @@ export default function ChauffeursPage() {
               className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
             >
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center text-xl">
-                  🌅
+                <div className="flex-shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-purple/10 border border-accent-purple/20">
+                    <span className="font-mono text-xs text-accent-purple">06:30</span>
+                  </span>
                 </div>
                 <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">Lundi matin, 6h30</h4>
+                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                    Lundi matin, 6h30
+                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
+                  </h4>
                   <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
                     Tu te lèves. Tu ouvres Uber. Zéro visibilité. Où aller ? CDG ? Orly ? Gare du Nord ?
                     Ajnaya te dit : <span className="text-accent-cyan">"3 vols arrivent à Orly T4 à 7h15, surge prévu +1.8x, 22 min de route."</span>
@@ -489,11 +564,16 @@ export default function ChauffeursPage() {
               className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
             >
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent-cyan/10 flex items-center justify-center text-xl">
-                  🏟️
+                <div className="flex-shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-cyan/10 border border-accent-cyan/20">
+                    <span className="font-mono text-xs text-accent-cyan">22:45</span>
+                  </span>
                 </div>
                 <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">Mercredi soir, 22h45</h4>
+                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                    Mercredi soir, 22h45
+                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
+                  </h4>
                   <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
                     Match au Parc des Princes, 48 000 personnes sortent en 20 minutes. Les chauffeurs lambda foncent tous Porte d'Auteuil.
                     Ajnaya te positionne <span className="text-accent-cyan">Porte de Saint-Cloud, côté Boulogne</span> — moins saturé, courses plus longues, clients moins stressés.
@@ -511,11 +591,16 @@ export default function ChauffeursPage() {
               className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
             >
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent-green/10 flex items-center justify-center text-xl">
-                  🌧️
+                <div className="flex-shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-green/10 border border-accent-green/20">
+                    <span className="font-mono text-xs text-accent-green">13:00</span>
+                  </span>
                 </div>
                 <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">Vendredi, 13h — pluie annoncée</h4>
+                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                    Vendredi, 13h — pluie annoncée
+                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
+                  </h4>
                   <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
                     Météo France annonce de la pluie à 14h sur le 8ème. La demande VTC explose toujours 15 min après les premières gouttes.
                     Ajnaya t'envoie : <span className="text-accent-cyan">"Positionne-toi Champs-Élysées dans 25 min. Surge prévu."</span>
@@ -534,11 +619,16 @@ export default function ChauffeursPage() {
               className="relative p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
             >
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center text-xl">
-                  🎭
+                <div className="flex-shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-purple/10 border border-accent-purple/20">
+                    <span className="font-mono text-xs text-accent-purple">23:30</span>
+                  </span>
                 </div>
                 <div>
-                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2">Samedi, 23h30 — fin de spectacle</h4>
+                  <h4 className="font-title text-lg md:text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                    Samedi, 23h30 — fin de spectacle
+                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" /></span>
+                  </h4>
                   <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">
                     Trois théâtres se vident simultanément dans le 9ème. Ajnaya croise les horaires de fin, la capacité des salles et la météo.
                     Résultat : <span className="text-accent-cyan">elle te place Rue de Mogador, pas Boulevard Haussmann</span>. Moins de concurrence, mêmes clients.
@@ -629,9 +719,11 @@ export default function ChauffeursPage() {
             </p>
 
             {/* Price anchor */}
-            <div className="flex items-baseline justify-center gap-1 mb-10">
-              <span className="font-title text-5xl md:text-6xl font-bold text-accent-cyan">1,42€</span>
-              <span className="text-white/40 text-lg">/jour</span>
+            <div className="flex items-center justify-center mb-10">
+              <PulsingRing color="#00D4FF">
+                <span className="font-title text-5xl md:text-6xl font-bold text-accent-cyan">1,42€</span>
+                <span className="text-white/40 text-lg ml-1">/jour</span>
+              </PulsingRing>
             </div>
 
             {/* CTA → Stripe Checkout via /tarifs2 */}

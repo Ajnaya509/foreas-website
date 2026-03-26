@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOREAS — Growth Engine M+6 Projection</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Genos:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Montserrat:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #050508; color: #fff; font-family: 'Montserrat', system-ui, sans-serif; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+  h1 { font-family: 'Genos', sans-serif; font-size: 2.6rem; font-weight: 700; text-align: center; margin-bottom: 6px; background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { font-family: 'Genos', sans-serif; font-style: italic; font-size: 1.1rem; text-align: center; color: rgba(255,255,255,0.45); margin-bottom: 48px; }
+  .st { font-family: 'Genos', sans-serif; font-size: 1.5rem; font-weight: 600; color: rgba(255,255,255,0.90); margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .ss { font-family: 'Genos', sans-serif; font-style: italic; font-size: 0.95rem; color: rgba(255,255,255,0.45); margin-bottom: 24px; }
+
+  /* Conversion Funnel */
+  .funnel { margin-bottom: 48px; }
+  .funnel-steps { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .funnel-step {
+    padding: 18px 28px;
+    border-radius: 14px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .funnel-step:hover { transform: scale(1.02); }
+
+  .f-arrow { width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 10px solid rgba(255,255,255,0.1); margin: 4px 0; }
+
+  .funnel-step .f-stage { font-family: 'Genos', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+  .funnel-step .f-vol { font-family: 'Genos', sans-serif; font-size: 2rem; font-weight: 700; }
+  .funnel-step .f-rate { font-size: 0.7rem; color: rgba(255,255,255,0.40); margin-top: 2px; }
+  .funnel-step .f-desc { font-size: 0.75rem; color: rgba(255,255,255,0.50); margin-top: 6px; max-width: 500px; line-height: 1.5; }
+
+  /* Interconnected system */
+  .ecosystem { margin-bottom: 48px; }
+  .eco-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .eco-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 22px;
+    position: relative;
+  }
+  .eco-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+  .eco-card.cm::before { background: linear-gradient(90deg, #f09433, #cc2366); }
+  .eco-card.sales::before { background: linear-gradient(90deg, #4facfe, #00f2c3); }
+  .eco-card.email::before { background: #4a90d9; }
+  .eco-card.churn::before { background: linear-gradient(90deg, #ff6b6b, #ffd700); }
+  .eco-card.retention::before { background: #00f2c3; }
+  .eco-card.ads::before { background: linear-gradient(90deg, #8a2be2, #4facfe); }
+
+  .eco-card .ec-icon { font-size: 1.8rem; margin-bottom: 10px; }
+  .eco-card .ec-name { font-family: 'Genos', sans-serif; font-weight: 600; font-size: 1.15rem; color: rgba(255,255,255,0.90); margin-bottom: 4px; }
+  .eco-card .ec-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .eco-card .ec-tools span { font-size: 0.6rem; padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
+  .eco-card .ec-desc { font-size: 0.78rem; color: rgba(255,255,255,0.55); line-height: 1.7; }
+  .eco-card .ec-flow { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: rgba(79,172,254,0.8); line-height: 1.6; }
+
+  /* Optimization levels */
+  .opt-section { margin-bottom: 48px; }
+  .opt-timeline {
+    position: relative;
+    padding-left: 32px;
+  }
+  .opt-timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #4facfe, #00f2c3, #ffd700);
+  }
+  .opt-item {
+    position: relative;
+    margin-bottom: 28px;
+    padding: 20px 24px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+  }
+  .opt-item::before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 24px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #4facfe;
+    background: #050508;
+  }
+  .opt-item .oi-level { font-family: 'Genos', sans-serif; font-weight: 700; font-size: 1.1rem; color: #4facfe; margin-bottom: 2px; }
+  .opt-item .oi-title { font-family: 'Genos', sans-serif; font-weight: 600; font-size: 1rem; color: rgba(255,255,255,0.85); margin-bottom: 8px; }
+  .opt-item .oi-desc { font-size: 0.78rem; color: rgba(255,255,255,0.55); line-height: 1.7; }
+  .opt-item .oi-metric { margin-top: 10px; font-family: 'Genos', sans-serif; font-size: 1rem; font-weight: 600; color: #00f2c3; }
+
+  /* M+6 Projection */
+  .projection { margin-bottom: 48px; }
+  .proj-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .proj-table th {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.70);
+    background: rgba(255,255,255,0.04);
+    padding: 14px 12px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .proj-table td {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.60);
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.01);
+  }
+  .proj-table td.label-col {
+    text-align: left;
+    font-weight: 500;
+    color: rgba(255,255,255,0.70);
+    font-size: 0.75rem;
+  }
+  .proj-table tr:last-child td { border-bottom: none; }
+  .proj-table .highlight { font-family: 'Genos', sans-serif; font-weight: 700; font-size: 1rem; }
+  .proj-table .green { color: #00f2c3; }
+  .proj-table .blue { color: #4facfe; }
+  .proj-table .gold { color: #ffd700; }
+  .proj-table .red { color: #ff6b6b; }
+
+  /* Scenario cards */
+  .scenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 48px; }
+  .scenario-card {
+    border-radius: 16px;
+    padding: 26px;
+    position: relative;
+  }
+  .scenario-card.conservative { background: rgba(79,172,254,0.05); border: 1px solid rgba(79,172,254,0.15); }
+  .scenario-card.moderate { background: rgba(0,242,195,0.05); border: 1px solid rgba(0,242,195,0.15); }
+  .scenario-card.aggressive { background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.15); }
+
+  .scenario-card .sc-tag { font-family: 'Genos', sans-serif; font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px; }
+  .scenario-card.conservative .sc-tag { color: #4facfe; }
+  .scenario-card.moderate .sc-tag { color: #00f2c3; }
+  .scenario-card.aggressive .sc-tag { color: #ffd700; }
+
+  .scenario-card .sc-title { font-family: 'Genos', sans-serif; font-weight: 700; font-size: 1.3rem; color: rgba(255,255,255,0.90); margin-bottom: 4px; }
+  .scenario-card .sc-budget { font-size: 0.8rem; color: rgba(255,255,255,0.50); margin-bottom: 16px; }
+
+  .sc-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .sc-metric { text-align: center; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; }
+  .sc-metric .sm-val { font-family: 'Genos', sans-serif; font-size: 1.4rem; font-weight: 700; }
+  .sc-metric .sm-lbl { font-size: 0.65rem; color: rgba(255,255,255,0.40); margin-top: 2px; }
+
+  .scenario-card.conservative .sm-val { color: #4facfe; }
+  .scenario-card.moderate .sm-val { color: #00f2c3; }
+  .scenario-card.aggressive .sm-val { color: #ffd700; }
+
+  .sc-detail { font-size: 0.75rem; color: rgba(255,255,255,0.50); line-height: 1.7; }
+
+  /* Budget split */
+  .budget-split { margin-bottom: 48px; }
+  .bs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .bs-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+  }
+  .bs-card .bs-pct { font-family: 'Genos', sans-serif; font-size: 1.8rem; font-weight: 700; color: #4facfe; }
+  .bs-card .bs-name { font-family: 'Genos', sans-serif; font-weight: 600; font-size: 0.95rem; color: rgba(255,255,255,0.80); margin-top: 4px; }
+  .bs-card .bs-desc { font-size: 0.68rem; color: rgba(255,255,255,0.40); margin-top: 6px; line-height: 1.5; }
+  .bs-card .bs-cac { margin-top: 8px; font-family: 'Genos', sans-serif; font-size: 0.8rem; font-weight: 500; color: #00f2c3; }
+
+  /* Churn scoring */
+  .churn-section { margin-bottom: 48px; }
+  .churn-signals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .cs-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .cs-card .cs-signal { font-family: 'Genos', sans-serif; font-weight: 600; font-size: 0.95rem; color: rgba(255,255,255,0.80); margin-bottom: 4px; }
+  .cs-card .cs-weight { font-family: 'Genos', sans-serif; font-size: 0.75rem; font-weight: 500; margin-bottom: 6px; }
+  .cs-card .cs-weight.high { color: #ff6b6b; }
+  .cs-card .cs-weight.med { color: #ffd700; }
+  .cs-card .cs-weight.low { color: #4facfe; }
+  .cs-card .cs-desc { font-size: 0.7rem; color: rgba(255,255,255,0.45); line-height: 1.5; }
+  .cs-card .cs-action { margin-top: 8px; font-size: 0.68rem; color: #00f2c3; line-height: 1.4; }
+
+  /* Final summary */
+  .final-box {
+    background: linear-gradient(135deg, rgba(79,172,254,0.06), rgba(0,242,195,0.06));
+    border: 1px solid rgba(79,172,254,0.15);
+    border-radius: 20px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .final-box .fb-title { font-family: 'Genos', sans-serif; font-size: 1.8rem; font-weight: 700; color: rgba(255,255,255,0.90); margin-bottom: 16px; }
+  .final-metrics { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-bottom: 20px; }
+  .final-metric .fm-val { font-family: 'Genos', sans-serif; font-size: 2.4rem; font-weight: 700; }
+  .final-metric .fm-val.green { color: #00f2c3; }
+  .final-metric .fm-val.gold { color: #ffd700; }
+  .final-metric .fm-val.blue { color: #4facfe; }
+  .final-metric .fm-lbl { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
+  .final-box .fb-note { font-size: 0.8rem; color: rgba(255,255,255,0.50); line-height: 1.6; max-width: 700px; margin: 0 auto; }
+
+  .footer { text-align: center; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .footer .logo { font-family: 'Genos', sans-serif; font-weight: 700; font-size: 1.3rem; color: rgba(255,255,255,0.25); letter-spacing: 4px; }
+
+  @media (max-width: 768px) {
+    h1 { font-size: 2rem; }
+    .funnel-step { width: 100% !important; }
+    .sc-metrics { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>FOREAS Growth Engine — Vision M+6</h1>
+<p class="subtitle">Écosystème commercial complet auto-apprenant · Projection avec 30-50% budget ads/influenceurs</p>
+
+<!-- ============================================ -->
+<!-- SECTION 1: CONVERSION LOGIC -->
+<!-- ============================================ -->
+
+<h2 class="st">1. La logique de conversion — comment ça marche concrètement</h2>
+<p class="ss">De l'impression au chauffeur actif, chaque étape est mesurée et optimisée</p>
+
+<div class="funnel">
+  <div class="funnel-steps">
+    <div class="funnel-step" style="width:95%;background:rgba(138,43,226,0.08);border:1px solid rgba(138,43,226,0.15);">
+      <div class="f-stage" style="color:#8a2be2;">IMPRESSIONS</div>
+      <div class="f-vol" style="color:#8a2be2;">100 000</div>
+      <div class="f-rate">Ads + posts organiques + influenceurs · portée totale mensuelle</div>
+      <div class="f-desc">Chaque personne exposée à FOREAS via Instagram, TikTok, LinkedIn, YouTube, Google Ads, ou recommandation. Le community manager IA génère les impressions organiques (gratuit), les ads amplifient (payant), les influenceurs VTC créent la preuve sociale.</div>
+    </div>
+    <div class="f-arrow"></div>
+    <div class="funnel-step" style="width:80%;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.15);">
+      <div class="f-stage" style="color:#4facfe;">CLICS / VISITES</div>
+      <div class="f-vol" style="color:#4facfe;">5 000</div>
+      <div class="f-rate">Taux de clic ~5% · site foreas.xyz + pages stores</div>
+      <div class="f-desc">Le chauffeur clique → arrive sur la landing page ou la page App Store/Play Store. Le cerveau d'optimisation du CM analyse en continu quels visuels, accroches et CTA génèrent le plus de clics. Les ads retargetent ceux qui visitent sans convertir.</div>
+    </div>
+    <div class="f-arrow"></div>
+    <div class="funnel-step" style="width:65%;background:rgba(0,180,255,0.08);border:1px solid rgba(0,180,255,0.15);">
+      <div class="f-stage" style="color:#00b4ff;">LEADS IDENTIFIÉS</div>
+      <div class="f-vol" style="color:#00b4ff;">1 500</div>
+      <div class="f-rate">30% des visiteurs laissent un signal : like, commentaire, email, SMS, appel</div>
+      <div class="f-desc"><strong>C'est ici que le CM et le Sales Engine se connectent.</strong> Un like Instagram = le profil est identifié → Apollo enrichit → ajouté au CRM ActiveCampaign. Un commentaire = encore plus fort. Une visite site avec email = lead chaud direct. Tout converge vers une seule base Supabase.</div>
+    </div>
+    <div class="f-arrow"></div>
+    <div class="funnel-step" style="width:50%;background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.15);">
+      <div class="f-stage" style="color:#ffa500;">LEADS CONTACTÉS</div>
+      <div class="f-vol" style="color:#ffa500;">800</div>
+      <div class="f-rate">53% des leads identifiés sont contactables (email + téléphone)</div>
+      <div class="f-desc">ActiveCampaign envoie la séquence email automatique (3-5 emails sur 10 jours). En parallèle, Ajnaya appelle les leads scorés >60. Les leads froids reçoivent du contenu nurturing. Les leads chauds reçoivent un appel + SMS en 24h.</div>
+    </div>
+    <div class="f-arrow"></div>
+    <div class="funnel-step" style="width:35%;background:rgba(0,242,195,0.08);border:1px solid rgba(0,242,195,0.15);">
+      <div class="f-stage" style="color:#00f2c3;">TÉLÉCHARGEMENTS</div>
+      <div class="f-vol" style="color:#00f2c3;">250</div>
+      <div class="f-rate">Taux de conversion lead→download ~31%</div>
+      <div class="f-desc">Le chauffeur télécharge l'app. Mais télécharger ≠ convertir. L'onboarding doit être parfait. Si le chauffeur ne complète pas son profil en 48h → Ajnaya rappelle pour accompagner. SMS de bienvenue avec tips. Push notification J+1 "Votre premier trajet optimisé vous attend".</div>
+    </div>
+    <div class="f-arrow"></div>
+    <div class="funnel-step" style="width:22%;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.15);">
+      <div class="f-stage" style="color:#ffd700;">CHAUFFEURS ACTIFS</div>
+      <div class="f-vol" style="color:#ffd700;">150</div>
+      <div class="f-rate">60% des downloads deviennent actifs (≥3 sessions/semaine)</div>
+      <div class="f-desc">Un chauffeur actif = revenus récurrents (abo ou usage) + données collectées + preuve sociale + bouche-à-oreille. Le NPS à J+30 prédit la rétention à 6 mois. Le churn scoring (via Supabase) identifie ceux qui ralentissent avant qu'ils partent.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 2: ECOSYSTEM INTERCONNECTÉ -->
+<!-- ============================================ -->
+
+<h2 class="st">2. L'écosystème interconnecté — tout parle à tout</h2>
+<p class="ss">Community Manager ↔ Sales Engine ↔ ActiveCampaign ↔ Churn Scoring ↔ Rétention vocale</p>
+
+<div class="ecosystem">
+  <div class="eco-grid">
+    <div class="eco-card cm">
+      <div class="ec-icon">📱</div>
+      <div class="ec-name">Community Manager IA</div>
+      <div class="ec-tools"><span>Canva</span><span>Creatomate</span><span>Claude</span><span>n8n</span></div>
+      <div class="ec-desc">Publie 205 posts/mois sur 6 réseaux. Capte les likes, commentaires, DMs, follows. Identifie les chauffeurs VTC engagés via analyse de profil.</div>
+      <div class="ec-flow">→ Profils engagés envoyés à Apollo pour enrichissement → Leads ajoutés à ActiveCampaign → Scoring déclenche séquence email ou appel Ajnaya</div>
+    </div>
+
+    <div class="eco-card sales">
+      <div class="ec-icon">📞</div>
+      <div class="ec-name">Ajnaya Sales (Voice)</div>
+      <div class="ec-tools"><span>ElevenLabs</span><span>Twilio</span><span>RAG</span><span>n8n</span></div>
+      <div class="ec-desc">Appels sortants B2C (chauffeurs) et B2B (flottes, assureurs, smart cities). 20-50 appels/jour. Pitch personnalisé. Gestion objections. Prise de RDV.</div>
+      <div class="ec-flow">→ Transcripts analysés par Claude → Objections détectées nourrissent le RAG → Résultats poussés dans ActiveCampaign → Tags automatiques (chaud/tiède/froid)</div>
+    </div>
+
+    <div class="eco-card email">
+      <div class="ec-icon">📧</div>
+      <div class="ec-name">ActiveCampaign</div>
+      <div class="ec-tools"><span>ActiveCampaign API</span><span>n8n</span><span>Claude</span></div>
+      <div class="ec-desc">CRM central. Séquences email automatisées. Lead scoring dynamique. Segmentation par comportement (ouvre email, clique, visite site, interagit social). Nurturing long-terme pour les leads froids.</div>
+      <div class="ec-flow">→ Lead score >70 → déclenche appel Ajnaya · Score >90 → SMS direct avec lien download · Lead inactif 30j → séquence de réactivation · Lead B2B qualifié → calendrier démo Cal.com</div>
+    </div>
+
+    <div class="eco-card churn">
+      <div class="ec-icon">⚠️</div>
+      <div class="ec-name">Churn Scoring (Supabase)</div>
+      <div class="ec-tools"><span>Supabase</span><span>Claude API</span><span>n8n</span></div>
+      <div class="ec-desc">Analyse en temps réel l'activité des chauffeurs inscrits. Détecte les signaux de décrochage avant le churn : baisse de sessions, désactivation notifications, non-utilisation d'Ajnaya, feedback négatif.</div>
+      <div class="ec-flow">→ Score churn >60% → Ajnaya appelle le chauffeur "On a remarqué que vous n'avez pas utilisé l'app cette semaine, tout va bien ?" · Score >80% → offre spéciale ou feature preview exclusive</div>
+    </div>
+
+    <div class="eco-card retention">
+      <div class="ec-icon">🔄</div>
+      <div class="ec-name">Rétention Vocale Ajnaya</div>
+      <div class="ec-tools"><span>ElevenLabs</span><span>Twilio</span><span>Supabase</span></div>
+      <div class="ec-desc">Ajnaya rappelle les chauffeurs à risque. Pas un robot froid — une conversation personnalisée basée sur l'historique complet du chauffeur (via Supabase). Propose des solutions concrètes, annonce des features à venir, recueille du feedback.</div>
+      <div class="ec-flow">→ Feedback recueilli → alimente le produit (si 40% demandent une feature, elle monte en priorité) · Chauffeur re-engagé → tag "saved" dans Supabase · Calcul LTV actualisé</div>
+    </div>
+
+    <div class="eco-card ads">
+      <div class="ec-icon">🎯</div>
+      <div class="ec-name">Ads + Influenceurs</div>
+      <div class="ec-tools"><span>Meta Ads</span><span>Google Ads</span><span>TikTok Ads</span><span>Influenceurs VTC</span></div>
+      <div class="ec-desc">Amplifie les meilleurs contenus organiques du CM (les posts à haut engagement deviennent des ads). Retarget les visiteurs site. Lookalike audiences basées sur les chauffeurs actifs. Influenceurs VTC pour la preuve sociale.</div>
+      <div class="ec-flow">→ Le cerveau d'optimisation du CM identifie les posts gagnants → n8n les transforme automatiquement en campagnes ads · Budget réalloué dynamiquement vers les canaux avec le meilleur CAC</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 3: OPTIMIZATION DEPTH -->
+<!-- ============================================ -->
+
+<h2 class="st">3. Jusqu'où l'optimisation peut aller</h2>
+<p class="ss">5 niveaux d'affinement — du basique au quasi-parfait</p>
+
+<div class="opt-section">
+  <div class="opt-timeline">
+    <div class="opt-item">
+      <div class="oi-level">NIVEAU 1 — Semaine 1-2</div>
+      <div class="oi-title">Templates statiques, pitch générique</div>
+      <div class="oi-desc">Le système démarre avec des scripts d'appel, emails et posts standards. Le RAG contient la doc produit de base. Les horaires de publication et d'appel sont fixés manuellement. C'est le mode "cold start" — ça fonctionne, mais c'est générique.</div>
+      <div class="oi-metric">Taux de conversion lead→actif : ~3-5%</div>
+    </div>
+    <div class="opt-item">
+      <div class="oi-level">NIVEAU 2 — Semaine 3-6</div>
+      <div class="oi-title">A/B testing automatique, premiers patterns</div>
+      <div class="oi-desc">Claude analyse les 200+ interactions (appels, emails, posts) et identifie : quels arguments convertissent (ex: "temps mort" > "CA"), quels horaires marchent, quels profils de chauffeurs sont réceptifs. Le prompt system est mis à jour. Le RAG intègre les vraies objections rencontrées et les meilleures réponses.</div>
+      <div class="oi-metric">Taux de conversion lead→actif : ~7-10%</div>
+    </div>
+    <div class="opt-item">
+      <div class="oi-level">NIVEAU 3 — Mois 2-3</div>
+      <div class="oi-title">Personnalisation par segment, scoring prédictif</div>
+      <div class="oi-desc">Le système segmente automatiquement : chauffeur solo IDF vs province, flotte vs indépendant, novice vs expérimenté. Chaque segment a son propre script d'appel, sa séquence email, et son contenu social optimisé. Le scoring prédit la probabilité de conversion avant même le premier contact. Les leads à faible score sont nurturés longtemps, les leads à haut score sont appelés immédiatement.</div>
+      <div class="oi-metric">Taux de conversion lead→actif : ~12-18%</div>
+    </div>
+    <div class="opt-item">
+      <div class="oi-level">NIVEAU 4 — Mois 3-5</div>
+      <div class="oi-title">Multi-touch attribution, budget dynamique</div>
+      <div class="oi-desc">Le système sait exactement quel enchaînement de touchpoints convertit le mieux (ex: "Reel Instagram → email J+2 → appel Ajnaya J+5" convertit à 22% vs "email seul" à 4%). Le budget ads est réalloué automatiquement vers les canaux et créatifs avec le meilleur CAC. Les influenceurs sont scorés par ROI réel (pas par followers).</div>
+      <div class="oi-metric">Taux de conversion lead→actif : ~18-25% · CAC divisé par 3</div>
+    </div>
+    <div class="opt-item">
+      <div class="oi-level">NIVEAU 5 — Mois 5-6+</div>
+      <div class="oi-title">Intelligence conversationnelle, effet réseau</div>
+      <div class="oi-desc">Ajnaya connaît les 50 objections les plus fréquentes et a une réponse optimale pour chacune (testée sur 1000+ conversations). Le RAG est devenu une base de connaissance commerciale propriétaire quasi-imbattable. Les chauffeurs actifs deviennent des ambassadeurs (referral program) — l'acquisition organique dépasse l'acquisition payante. Le churn scoring est si précis qu'il intercepte 80% des churns avant qu'ils se produisent.</div>
+      <div class="oi-metric">Taux de conversion lead→actif : ~25-35% · Churn réduit à <5%/mois</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 4: CHURN SCORING -->
+<!-- ============================================ -->
+
+<h2 class="st">4. Churn Scoring — les signaux que Supabase capte</h2>
+<p class="ss">Détection prédictive du décrochage via les données réelles d'usage</p>
+
+<div class="churn-section">
+  <div class="churn-signals">
+    <div class="cs-card">
+      <div class="cs-signal">Sessions en baisse</div>
+      <div class="cs-weight high">Poids critique (30%)</div>
+      <div class="cs-desc">Passage de 5 sessions/semaine à 2 puis 0. Le signal le plus fiable de churn imminent.</div>
+      <div class="cs-action">→ Ajnaya appelle à J+3 d'inactivité</div>
+    </div>
+    <div class="cs-card">
+      <div class="cs-signal">Ajnaya ignorée</div>
+      <div class="cs-weight high">Poids critique (25%)</div>
+      <div class="cs-desc">Le chauffeur ouvre l'app mais n'utilise plus les recommandations Ajnaya. Perte de confiance dans l'IA.</div>
+      <div class="cs-action">→ Push "Nouvelle intelligence zone" + appel personnalisé</div>
+    </div>
+    <div class="cs-card">
+      <div class="cs-signal">Notifications désactivées</div>
+      <div class="cs-weight med">Poids moyen (15%)</div>
+      <div class="cs-desc">Premier signe de déconnexion émotionnelle. Le chauffeur ne veut plus être dérangé par l'app.</div>
+      <div class="cs-action">→ Email "Vos résultats de la semaine" avec stats concrètes</div>
+    </div>
+    <div class="cs-card">
+      <div class="cs-signal">Feedback négatif</div>
+      <div class="cs-weight med">Poids moyen (15%)</div>
+      <div class="cs-desc">Rating in-app < 3/5, commentaire négatif, ou signalement de bug non résolu.</div>
+      <div class="cs-action">→ Ticket prioritaire + appel Ajnaya "On a vu votre retour, voici ce qu'on fait"</div>
+    </div>
+    <div class="cs-card">
+      <div class="cs-signal">Pas de paiement</div>
+      <div class="cs-weight high">Poids critique (10%)</div>
+      <div class="cs-desc">Échec de paiement ou non-renouvellement d'abonnement.</div>
+      <div class="cs-action">→ SMS "Un souci avec votre compte ?" + offre rétention (-30% 1 mois)</div>
+    </div>
+    <div class="cs-card">
+      <div class="cs-signal">Horaires erratiques</div>
+      <div class="cs-weight low">Poids faible (5%)</div>
+      <div class="cs-desc">Changement brutal de pattern d'activité. Peut indiquer un changement de plateforme ou de vie.</div>
+      <div class="cs-action">→ Ajnaya adapte ses recommandations au nouveau pattern</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 5: M+6 PROJECTION TABLE -->
+<!-- ============================================ -->
+
+<h2 class="st">5. Projection mois par mois — M1 à M6</h2>
+<p class="ss">Scénario modéré (40% du budget total en ads + influenceurs)</p>
+
+<div class="projection">
+  <table class="proj-table">
+    <thead>
+      <tr>
+        <th style="text-align:left;">Métrique</th>
+        <th>M1</th>
+        <th>M2</th>
+        <th>M3</th>
+        <th>M4</th>
+        <th>M5</th>
+        <th>M6</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="label-col">Budget total/mois</td>
+        <td><span class="highlight red">800€</span></td>
+        <td><span class="highlight red">1 200€</span></td>
+        <td><span class="highlight red">1 800€</span></td>
+        <td><span class="highlight red">2 200€</span></td>
+        <td><span class="highlight red">2 500€</span></td>
+        <td><span class="highlight red">3 000€</span></td>
+      </tr>
+      <tr>
+        <td class="label-col">→ dont Ads + Influenceurs</td>
+        <td>320€</td>
+        <td>500€</td>
+        <td>800€</td>
+        <td>1 000€</td>
+        <td>1 200€</td>
+        <td>1 500€</td>
+      </tr>
+      <tr>
+        <td class="label-col">→ dont Stack IA (CM + Sales)</td>
+        <td>480€</td>
+        <td>700€</td>
+        <td>1 000€</td>
+        <td>1 200€</td>
+        <td>1 300€</td>
+        <td>1 500€</td>
+      </tr>
+      <tr>
+        <td class="label-col">Impressions totales</td>
+        <td><span class="highlight blue">15k</span></td>
+        <td><span class="highlight blue">40k</span></td>
+        <td><span class="highlight blue">85k</span></td>
+        <td><span class="highlight blue">140k</span></td>
+        <td><span class="highlight blue">200k</span></td>
+        <td><span class="highlight blue">300k</span></td>
+      </tr>
+      <tr>
+        <td class="label-col">Leads identifiés</td>
+        <td>120</td>
+        <td>350</td>
+        <td>700</td>
+        <td>1 100</td>
+        <td>1 500</td>
+        <td>2 200</td>
+      </tr>
+      <tr>
+        <td class="label-col">Appels Ajnaya passés</td>
+        <td>80</td>
+        <td>250</td>
+        <td>500</td>
+        <td>750</td>
+        <td>900</td>
+        <td>1 200</td>
+      </tr>
+      <tr>
+        <td class="label-col">Taux conversion lead→actif</td>
+        <td>5%</td>
+        <td>9%</td>
+        <td>15%</td>
+        <td>20%</td>
+        <td>24%</td>
+        <td>28%</td>
+      </tr>
+      <tr>
+        <td class="label-col">Nouveaux chauffeurs actifs/mois</td>
+        <td><span class="highlight green">6</span></td>
+        <td><span class="highlight green">32</span></td>
+        <td><span class="highlight green">105</span></td>
+        <td><span class="highlight green">220</span></td>
+        <td><span class="highlight green">360</span></td>
+        <td><span class="highlight green">616</span></td>
+      </tr>
+      <tr>
+        <td class="label-col">Chauffeurs actifs cumulés</td>
+        <td><span class="highlight green">6</span></td>
+        <td><span class="highlight green">36</span></td>
+        <td><span class="highlight green">134</span></td>
+        <td><span class="highlight green">336</span></td>
+        <td><span class="highlight green">665</span></td>
+        <td><span class="highlight green">1 220</span></td>
+      </tr>
+      <tr>
+        <td class="label-col">Churn mensuel</td>
+        <td>-</td>
+        <td>2</td>
+        <td>7</td>
+        <td>18</td>
+        <td>31</td>
+        <td>61</td>
+      </tr>
+      <tr>
+        <td class="label-col">CAC moyen</td>
+        <td><span class="highlight gold">133€</span></td>
+        <td><span class="highlight gold">38€</span></td>
+        <td><span class="highlight gold">17€</span></td>
+        <td><span class="highlight gold">10€</span></td>
+        <td><span class="highlight gold">7€</span></td>
+        <td><span class="highlight gold">4,90€</span></td>
+      </tr>
+      <tr>
+        <td class="label-col">ARR cumulé (abo 12,97€/sem)</td>
+        <td><span class="highlight green">4 046€</span></td>
+        <td><span class="highlight green">24 278€</span></td>
+        <td><span class="highlight green">90 370€</span></td>
+        <td><span class="highlight green">226 598€</span></td>
+        <td><span class="highlight green">448 476€</span></td>
+        <td><span class="highlight green">822 768€</span></td>
+      </tr>
+      <tr>
+        <td class="label-col">Conversations IA dans le RAG</td>
+        <td>80</td>
+        <td>330</td>
+        <td>830</td>
+        <td>1 580</td>
+        <td>2 480</td>
+        <td>3 680</td>
+      </tr>
+      <tr>
+        <td class="label-col">Démos B2B planifiées (cumulé)</td>
+        <td>0</td>
+        <td>2</td>
+        <td>6</td>
+        <td>12</td>
+        <td>20</td>
+        <td>35</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 6: SCENARIOS -->
+<!-- ============================================ -->
+
+<h2 class="st">6. Trois scénarios à M+6</h2>
+<p class="ss">Conservateur · Modéré · Agressif — selon le budget ads/influenceurs</p>
+
+<div class="scenarios">
+  <div class="scenario-card conservative">
+    <div class="sc-tag">CONSERVATEUR — 30% ADS</div>
+    <div class="sc-title">Croissance organique prioritaire</div>
+    <div class="sc-budget">Budget total M6 : ~1 800€/mois · dont 540€ ads</div>
+    <div class="sc-metrics">
+      <div class="sc-metric"><div class="sm-val">650</div><div class="sm-lbl">Chauffeurs actifs M6</div></div>
+      <div class="sc-metric"><div class="sm-val">438k€</div><div class="sm-lbl">ARR annualisé</div></div>
+      <div class="sc-metric"><div class="sm-val">6,50€</div><div class="sm-lbl">CAC moyen M6</div></div>
+      <div class="sc-metric"><div class="sm-val">15</div><div class="sm-lbl">Démos B2B</div></div>
+    </div>
+    <div class="sc-detail">L'organique (CM IA) fait le gros du travail. Les ads amplifient seulement les meilleurs contenus. Croissance plus lente mais CAC ultra-bas. Idéal si cash limité. Le système apprend plus lentement (moins de volume) mais reste profitable dès M2.</div>
+  </div>
+
+  <div class="scenario-card moderate">
+    <div class="sc-tag">MODÉRÉ — 40% ADS</div>
+    <div class="sc-title">Équilibre croissance / profitabilité</div>
+    <div class="sc-budget">Budget total M6 : ~3 000€/mois · dont 1 500€ ads</div>
+    <div class="sc-metrics">
+      <div class="sc-metric"><div class="sm-val">1 220</div><div class="sm-lbl">Chauffeurs actifs M6</div></div>
+      <div class="sc-metric"><div class="sm-val">823k€</div><div class="sm-lbl">ARR annualisé</div></div>
+      <div class="sc-metric"><div class="sm-val">4,90€</div><div class="sm-lbl">CAC moyen M6</div></div>
+      <div class="sc-metric"><div class="sm-val">35</div><div class="sm-lbl">Démos B2B</div></div>
+    </div>
+    <div class="sc-detail">Le sweet spot. Assez de volume pour que le système apprenne vite (3 680 conversations IA en 6 mois). Le CAC baisse rapidement grâce à l'optimisation. Profitable dès M2-M3. Le volume de données attire les premiers contrats B2B licensing. Avec un mix 60% hebdo (56€/mois) + 40% annuel (~500€/an), le MRR M6 atteint ~68k€.</div>
+  </div>
+
+  <div class="scenario-card aggressive">
+    <div class="sc-tag">AGRESSIF — 50% ADS + INFLUENCEURS</div>
+    <div class="sc-title">Blitz de marché</div>
+    <div class="sc-budget">Budget total M6 : ~5 000€/mois · dont 2 500€ ads + 1 000€ influenceurs</div>
+    <div class="sc-metrics">
+      <div class="sc-metric"><div class="sm-val">2 800</div><div class="sm-lbl">Chauffeurs actifs M6</div></div>
+      <div class="sc-metric"><div class="sm-val">1,89M€</div><div class="sm-lbl">ARR annualisé</div></div>
+      <div class="sc-metric"><div class="sm-val">3,80€</div><div class="sm-lbl">CAC moyen M6</div></div>
+      <div class="sc-metric"><div class="sm-val">60+</div><div class="sm-lbl">Démos B2B</div></div>
+    </div>
+    <div class="sc-detail">Maximum de données, maximum d'apprentissage, maximum de vitesse. Le système atteint le Niveau 5 d'optimisation en 4 mois au lieu de 6. Les 2 800 chauffeurs actifs génèrent assez de données pour que le licensing B2B devienne crédible immédiatement. Le referral organique commence à dépasser l'acquisition payante dès M5. Le CAC tend vers zéro sur l'organique pur. ARR potentiel : ~1,89M€.</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 7: BUDGET ALLOCATION -->
+<!-- ============================================ -->
+
+<h2 class="st">7. Répartition optimale du budget ads + influenceurs</h2>
+<p class="ss">Basé sur les CAC observés dans le secteur mobilité/VTC 2025-2026</p>
+
+<div class="budget-split">
+  <div class="bs-grid">
+    <div class="bs-card">
+      <div class="bs-pct">35%</div>
+      <div class="bs-name">Meta Ads</div>
+      <div class="bs-desc">Instagram + Facebook. Reels sponsorisés. Retargeting visiteurs site. Lookalike chauffeurs actifs.</div>
+      <div class="bs-cac">CAC estimé : 5-12€</div>
+    </div>
+    <div class="bs-card">
+      <div class="bs-pct">25%</div>
+      <div class="bs-name">TikTok Ads</div>
+      <div class="bs-desc">Spark Ads (boost posts organiques performants). Audience chauffeurs + auto-entrepreneurs.</div>
+      <div class="bs-cac">CAC estimé : 3-8€</div>
+    </div>
+    <div class="bs-card">
+      <div class="bs-pct">20%</div>
+      <div class="bs-name">Influenceurs VTC</div>
+      <div class="bs-desc">5-10 micro-influenceurs chauffeurs (2k-20k followers). Témoignages authentiques. Affiliation 10% par inscription.</div>
+      <div class="bs-cac">CAC estimé : 2-6€ (le meilleur)</div>
+    </div>
+    <div class="bs-card">
+      <div class="bs-pct">10%</div>
+      <div class="bs-name">Google Ads</div>
+      <div class="bs-desc">Search "application VTC", "optimiser revenus chauffeur". Intent élevé. Landing page dédiée.</div>
+      <div class="bs-cac">CAC estimé : 8-18€</div>
+    </div>
+    <div class="bs-card">
+      <div class="bs-pct">10%</div>
+      <div class="bs-name">LinkedIn Ads</div>
+      <div class="bs-desc">B2B uniquement. Ciblage fleet managers, directeurs transport, innovation mobilité.</div>
+      <div class="bs-cac">CAC B2B : 30-80€ (mais LTV x100)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- FINAL SUMMARY -->
+<!-- ============================================ -->
+
+<div class="final-box">
+  <div class="fb-title">FOREAS à M+6 — Scénario Modéré (40% ads)</div>
+  <div class="final-metrics">
+    <div class="final-metric">
+      <div class="fm-val green">1 220</div>
+      <div class="fm-lbl">Chauffeurs actifs</div>
+    </div>
+    <div class="final-metric">
+      <div class="fm-val gold">823k€</div>
+      <div class="fm-lbl">ARR annualisé</div>
+    </div>
+    <div class="final-metric">
+      <div class="fm-val blue">4,90€</div>
+      <div class="fm-lbl">CAC moyen</div>
+    </div>
+    <div class="final-metric">
+      <div class="fm-val green">3 680</div>
+      <div class="fm-lbl">Conversations IA dans le RAG</div>
+    </div>
+    <div class="final-metric">
+      <div class="fm-val gold">35</div>
+      <div class="fm-lbl">Démos B2B planifiées</div>
+    </div>
+  </div>
+  <div class="fb-note">
+    Budget total investi sur 6 mois : ~11 500€ · ARR généré : 823k€ · ROI : x71<br>
+    Pricing : 12,97€/semaine (~56€/mois) ou ~500€/an (-26% vs hebdo). Mix estimé : 60% hebdo / 40% annuel.<br>
+    Le système s'auto-améliore chaque semaine. Le CAC baisse pendant que le volume monte.<br>
+    À M+6, l'organique (CM IA + referral) représente >50% des acquisitions → le budget ads devient un accélérateur, pas une dépendance.<br>
+    Les 3 680 conversations IA constituent un actif propriétaire défendable pour le licensing B2B.
+  </div>
+</div>
+
+<div class="footer">
+  <div class="logo">FOREAS</div>
+  <div style="font-size:0.7rem;color:rgba(255,255,255,0.18);margin-top:4px;">Growth Engine — Projection M+6 · Architecture v1.0</div>
+</div>
+
+</div>
+</body>
+</html>

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import GradientLine from '@/components/GradientLine'
 import Footer from '@/components/Footer'
+import { BarChart3, Map, Clock, TrendingDown, MessageSquare, Repeat, Brain, Target, Handshake } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS /partenaires — BIG DOMINO PARTENAIRE FLOTTES
@@ -15,6 +16,9 @@ import Footer from '@/components/Footer'
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const Testimonials = dynamic(() => import('@/components/Testimonials'))
+const FleetMapMockup = dynamic(() => import('@/components/FleetMapMockup'))
+const AnimatedBar = dynamic(() => import('@/components/AnimatedBar'))
+const CircularGauge = dynamic(() => import('@/components/CircularGauge'))
 
 // ─── Dualité Card ────────────────────────────────────────────────────────────
 function DualityBlock({
@@ -83,8 +87,8 @@ function SectionTitle({ eyebrow, title, gradient, subtitle }: {
 }
 
 // ─── Feature Card ────────────────────────────────────────────────────────────
-function FeatureCard({ icon, title, desc, delay = 0 }: {
-  icon: string; title: string; desc: string; delay?: number
+function FeatureCard({ icon: Icon, title, desc, delay = 0 }: {
+  icon: React.ElementType; title: string; desc: string; delay?: number
 }) {
   return (
     <motion.div
@@ -92,9 +96,11 @@ function FeatureCard({ icon, title, desc, delay = 0 }: {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
-      className="p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-white/[0.02] hover:border-accent-purple/20 transition-colors"
+      className="group p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-white/[0.02] hover:border-accent-purple/20 transition-all"
     >
-      <div className="text-2xl mb-3">{icon}</div>
+      <div className="w-10 h-10 rounded-xl bg-accent-purple/10 flex items-center justify-center mb-3 transition-shadow group-hover:shadow-[0_0_20px_rgba(140,82,255,0.2)]">
+        <Icon className="w-5 h-5 text-accent-purple" />
+      </div>
       <h4 className="font-title text-base md:text-lg font-semibold text-white mb-1.5">{title}</h4>
       <p className="font-body text-sm text-white/45 leading-relaxed">{desc}</p>
     </motion.div>
@@ -135,81 +141,96 @@ export default function PartenairesPage() {
       <section className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] md:w-[1200px] md:h-[700px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] md:blur-[150px] pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-6 md:mb-8"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-purple/80 border border-accent-purple/15 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-purple opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-purple" />
-              </span>
-              Pour gestionnaires de flottes
-            </span>
-          </motion.div>
+        <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left col — text */}
+            <div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mb-6 md:mb-8"
+              >
+                <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-purple/80 border border-accent-purple/15 rounded-full">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-purple opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-purple" />
+                  </span>
+                  Pour gestionnaires de flottes
+                </span>
+              </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
-          >
-            <span className="text-white">Votre flotte tourne.</span>
-            <br />
-            <span className="bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
-              Mais tourne-t-elle bien ?
-            </span>
-          </motion.h1>
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
+              >
+                <span className="text-white">Votre flotte tourne.</span>
+                <br />
+                <span className="bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
+                  Mais tourne-t-elle bien ?
+                </span>
+              </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="font-body text-base md:text-lg text-white/50 max-w-lg mx-auto mb-8 md:mb-10"
-          >
-            FOREAS transforme votre flotte VTC en machine d'efficacité pilotée par l'IA.
-            Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
-          </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="font-body text-base md:text-lg text-white/50 max-w-lg mb-8 md:mb-10"
+              >
+                FOREAS transforme votre flotte VTC en machine d'efficacité pilotée par l'IA.
+                Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
+              </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
-          >
-            <a
-              href="/contact"
-              className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+              >
+                <a
+                  href="/contact"
+                  className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
+                  <span className="relative">Demander une démo flotte</span>
+                  <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+                <a
+                  href="#douleurs"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+                >
+                  Voir les résultats
+                </a>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
+              >
+                <span>Dashboard temps réel</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>IA par chauffeur</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>ROI mesurable</span>
+              </motion.div>
+            </div>
+
+            {/* Right col — FleetMapMockup */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex justify-center lg:justify-end"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
-              <span className="relative">Demander une démo flotte</span>
-              <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </a>
-            <a
-              href="#douleurs"
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
-            >
-              Voir les résultats
-            </a>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
-          >
-            <span>Dashboard temps réel</span>
-            <span className="w-px h-3 bg-white/10" />
-            <span>IA par chauffeur</span>
-            <span className="w-px h-3 bg-white/10" />
-            <span>ROI mesurable</span>
-          </motion.div>
+              <FleetMapMockup />
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -239,6 +260,9 @@ export default function PartenairesPage() {
               delay={0}
             />
 
+            {/* Visual intercalé 1 — Barres comparatives idle vs productif */}
+            <AnimatedBar redValue={25} redLabel="Temps improductif (avant)" cyanValue={75} cyanLabel="Temps productif (avec FOREAS)" />
+
             <DualityBlock
               frustration={{
                 title: 'Vous n\'avez aucune visibilité sur la performance réelle.',
@@ -251,6 +275,26 @@ export default function PartenairesPage() {
               delay={0.1}
             />
 
+            {/* Visual intercalé 2 — Mini métriques fleet */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.6 }}
+              className="flex justify-center gap-4 md:gap-6 py-4"
+            >
+              {[
+                { label: '€/h net', value: '28€', color: 'text-accent-cyan' },
+                { label: 'Taux occupation', value: '82%', color: 'text-accent-purple' },
+                { label: 'Rétention', value: '+40%', color: 'text-accent-green' },
+              ].map((m, i) => (
+                <div key={i} className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.05] text-center">
+                  <div className={`font-mono text-lg font-bold ${m.color}`}>{m.value}</div>
+                  <div className="text-[10px] text-white/40">{m.label}</div>
+                </div>
+              ))}
+            </motion.div>
+
             <DualityBlock
               frustration={{
                 title: 'Le turnover vous coûte une fortune.',
@@ -262,6 +306,18 @@ export default function PartenairesPage() {
               }}
               delay={0.2}
             />
+
+            {/* Visual intercalé 3 — Jauges circulaires */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.6 }}
+              className="flex justify-center gap-8 md:gap-12 py-6"
+            >
+              <CircularGauge value={40} max={100} label="Rétention améliorée" color="#10B981" suffix="%" />
+              <CircularGauge value={60} max={100} label="Coût turnover réduit" color="#8C52FF" suffix="%" />
+            </motion.div>
           </div>
         </div>
       </section>
@@ -282,37 +338,37 @@ export default function PartenairesPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             <FeatureCard
-              icon="📊"
+              icon={BarChart3}
               title="Pas de benchmark interne"
               desc="Impossible de comparer vos chauffeurs entre eux. Le meilleur et le pire génèrent un écart de 40% de CA — mais vous ne le voyez pas."
               delay={0}
             />
             <FeatureCard
-              icon="🗺️"
+              icon={Map}
               title="Couverture zone déséquilibrée"
               desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration IA, votre flotte se cannibalise elle-même."
               delay={0.05}
             />
             <FeatureCard
-              icon="⏱️"
+              icon={Clock}
               title="Temps de réponse imprévisible"
               desc="Votre client VIP attend 12 minutes. Inacceptable pour votre marque. Mais sans prédiction de demande, c'est la loterie."
               delay={0.1}
             />
             <FeatureCard
-              icon="💸"
+              icon={TrendingDown}
               title="Commission plateforme élevée"
               desc="Uber, Bolt prennent 20-25%. Sur 100 courses/jour, c'est des milliers d'euros qui ne reviennent jamais à votre flotte."
               delay={0.15}
             />
             <FeatureCard
-              icon="📱"
+              icon={MessageSquare}
               title="Aucun outil de communication unifié"
               desc="WhatsApp perso, appels, SMS — vous gérez votre flotte avec des outils de 2010. Aucune traçabilité, aucun historique structuré."
               delay={0.2}
             />
             <FeatureCard
-              icon="🔄"
+              icon={Repeat}
               title="Formation chronophage"
               desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — l'IA compense l'inexpérience."
               delay={0.25}
@@ -345,7 +401,9 @@ export default function PartenairesPage() {
               transition={{ duration: 0.7 }}
               className="p-6 md:p-8 rounded-2xl border border-accent-cyan/10 bg-accent-cyan/[0.02]"
             >
-              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-cyan/10 flex items-center justify-center text-xl">🧠</div>
+              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
+                <Brain className="w-6 h-6 text-accent-cyan" />
+              </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Ajnaya individuelle par chauffeur</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
                 Chaque chauffeur reçoit des recommandations personnalisées selon sa position, son historique,
@@ -361,7 +419,9 @@ export default function PartenairesPage() {
               transition={{ duration: 0.7 }}
               className="p-6 md:p-8 rounded-2xl border border-accent-purple/10 bg-accent-purple/[0.02]"
             >
-              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-purple/10 flex items-center justify-center text-xl">📈</div>
+              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-purple/10 flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-accent-purple" />
+              </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Dashboard fleet en temps réel</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
                 Vue d'ensemble de votre flotte : position de chaque chauffeur, €/h en cours, taux d'occupation,
@@ -377,7 +437,9 @@ export default function PartenairesPage() {
               transition={{ duration: 0.7 }}
               className="p-6 md:p-8 rounded-2xl border border-accent-green/10 bg-accent-green/[0.02]"
             >
-              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-green/10 flex items-center justify-center text-xl">🎯</div>
+              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-green/10 flex items-center justify-center">
+                <Target className="w-6 h-6 text-accent-green" />
+              </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Orchestration zone intelligente</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
                 Plus jamais 5 chauffeurs sur la même zone et zéro sur une autre. L'IA distribue votre couverture
@@ -393,7 +455,9 @@ export default function PartenairesPage() {
               transition={{ duration: 0.7 }}
               className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02]"
             >
-              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-cyan/10 flex items-center justify-center text-xl">🤝</div>
+              <div className="w-12 h-12 mb-4 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
+                <Handshake className="w-6 h-6 text-accent-cyan" />
+              </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Pipeline partenaires intégré</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
                 Accédez aux courses Private Hunter — hôtels, Airbnb, conciergeries. Un flux de clients premium

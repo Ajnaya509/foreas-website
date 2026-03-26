@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import GradientLine from '@/components/GradientLine'
 import Footer from '@/components/Footer'
+import { Clock, ShieldQuestion, TrendingDown, Brain, BarChart3, Palette, Wallet } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS HOME GÉNÉRALE — BIG DOMINO B2B / AUTORITÉ
@@ -15,6 +16,7 @@ import Footer from '@/components/Footer'
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const Testimonials = dynamic(() => import('@/components/Testimonials'))
+const DashboardMockup = dynamic(() => import('@/components/DashboardMockup'))
 
 // ─── Animated Counter ────────────────────────────────────────────────────────
 function AnimatedStat({ value, label, suffix = '' }: { value: string; label: string; suffix?: string }) {
@@ -40,18 +42,20 @@ function PartnerCategory({ icon, name, desc }: { icon: string; name: string; des
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="p-6 md:p-8 rounded-2xl border border-white/[0.05] bg-white/[0.02] hover:border-accent-purple/20 transition-all group"
+      className="p-[1px] rounded-2xl bg-gradient-to-r from-white/[0.05] to-white/[0.05] hover:from-accent-purple/30 hover:to-accent-cyan/30 transition-all duration-500"
     >
-      <div className="text-3xl mb-4">{icon}</div>
-      <h3 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{name}</h3>
-      <p className="font-body text-sm text-white/45 leading-relaxed">{desc}</p>
+      <div className="p-6 md:p-8 rounded-[15px] bg-[#08080d] h-full group">
+        <div className="text-3xl mb-4">{icon}</div>
+        <h3 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{name}</h3>
+        <p className="font-body text-sm text-white/45 leading-relaxed">{desc}</p>
+      </div>
     </motion.div>
   )
 }
 
 // ─── Value Prop Block ────────────────────────────────────────────────────────
-function ValueProp({ number, title, desc, accent = 'accent-cyan' }: {
-  number: string; title: string; desc: string; accent?: string
+function ValueProp({ number, title, desc, accent = 'accent-cyan', icon: Icon }: {
+  number: string; title: string; desc: string; accent?: string; icon?: React.ElementType
 }) {
   return (
     <motion.div
@@ -61,7 +65,15 @@ function ValueProp({ number, title, desc, accent = 'accent-cyan' }: {
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       className="relative pl-8 md:pl-10 border-l border-white/10"
     >
-      <div className={`absolute left-0 top-0 -translate-x-1/2 w-3 h-3 rounded-full bg-${accent}`} />
+      <div className="absolute left-0 top-0 -translate-x-1/2">
+        {Icon ? (
+          <div className={`w-10 h-10 rounded-full bg-${accent}/10 flex items-center justify-center`}>
+            <Icon className={`w-5 h-5 text-${accent}`} />
+          </div>
+        ) : (
+          <div className={`w-3 h-3 rounded-full bg-${accent}`} />
+        )}
+      </div>
       <span className="font-mono text-xs text-white/30 uppercase tracking-widest">{number}</span>
       <h3 className="font-title text-xl md:text-2xl font-semibold text-white mt-2 mb-3">{title}</h3>
       <p className="font-body text-sm md:text-base text-white/50 leading-relaxed">{desc}</p>
@@ -90,87 +102,102 @@ export default function HomePage() {
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] md:w-[800px] md:h-[800px] bg-accent-purple/6 rounded-full blur-[100px] md:blur-[200px] pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-accent-cyan/4 rounded-full blur-[80px] md:blur-[160px] pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto px-6 lg:px-8 text-center">
-          {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-6 md:mb-8"
-          >
-            <span className="inline-flex items-center gap-3 px-5 py-2.5 text-xs font-medium tracking-wider uppercase border border-white/10 rounded-full text-white/50">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
-              </span>
-              Intelligence Mobilité · Paris
-            </span>
-          </motion.div>
+        <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            {/* Left col — text */}
+            <div className="text-center lg:text-left">
+              {/* Eyebrow */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-6 md:mb-8"
+              >
+                <span className="inline-flex items-center gap-3 px-5 py-2.5 text-xs font-medium tracking-wider uppercase border border-white/10 rounded-full text-white/50">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
+                  </span>
+                  Intelligence Mobilité · Paris
+                </span>
+              </motion.div>
 
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
-          >
-            <span className="text-white">Offrez à vos clients</span>
-            <br />
-            <span className="bg-gradient-to-r from-accent-purple via-accent-cyan to-accent-purple bg-clip-text text-transparent">
-              le transport qu'ils méritent.
-            </span>
-          </motion.h1>
+              {/* Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                className="font-title text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
+              >
+                <span className="text-white">Offrez à vos clients</span>
+                <br />
+                <span className="bg-gradient-to-r from-accent-purple via-accent-cyan to-accent-purple bg-clip-text text-transparent">
+                  le transport qu'ils méritent.
+                </span>
+              </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            className="font-body text-base md:text-lg lg:text-xl text-white/50 max-w-2xl mx-auto mb-10"
-          >
-            FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
-            pilotés par l'IA — ponctualité, qualité, traçabilité. Zéro friction.
-          </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.35 }}
+                className="font-body text-base md:text-lg lg:text-xl text-white/50 max-w-2xl lg:max-w-none mb-10"
+              >
+                FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
+                pilotés par l'IA — ponctualité, qualité, traçabilité. Zéro friction.
+              </motion.p>
 
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
-          >
-            <a
-              href="/contact"
-              className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              {/* CTAs */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
+              >
+                <a
+                  href="/contact"
+                  className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
+                  <span className="relative">Devenir partenaire</span>
+                  <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+                <a
+                  href="/chauffeurs"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
+                >
+                  Je suis chauffeur
+                </a>
+              </motion.div>
+
+              {/* Authority signals */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-white/25 text-xs"
+              >
+                <span>Paris & Île-de-France</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>IA temps réel</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>Chauffeurs certifiés</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>API disponible</span>
+              </motion.div>
+            </div>
+
+            {/* Right col — DashboardMockup */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="hidden lg:flex justify-center lg:justify-end"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
-              <span className="relative">Devenir partenaire</span>
-              <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </a>
-            <a
-              href="/chauffeurs"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
-            >
-              Je suis chauffeur
-            </a>
-          </motion.div>
-
-          {/* Authority signals */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-white/25 text-xs"
-          >
-            <span>Paris & Île-de-France</span>
-            <span className="w-px h-3 bg-white/10" />
-            <span>IA temps réel</span>
-            <span className="w-px h-3 bg-white/10" />
-            <span>Chauffeurs certifiés</span>
-            <span className="w-px h-3 bg-white/10" />
-            <span>API disponible</span>
-          </motion.div>
+              <DashboardMockup />
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -211,6 +238,7 @@ export default function HomePage() {
               transition={{ delay: 0 }}
               className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03]"
             >
+              <Clock className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Expérience dégradée</div>
               <h3 className="font-title text-lg font-semibold text-white mb-2">Votre client attend 15 min sous la pluie.</h3>
               <p className="text-sm text-white/45">Il vient de quitter votre hôtel 5 étoiles. Son VTC est en retard. Sa première note Google mentionne le transport.</p>
@@ -223,6 +251,7 @@ export default function HomePage() {
               transition={{ delay: 0.1 }}
               className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03]"
             >
+              <ShieldQuestion className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Zéro contrôle</div>
               <h3 className="font-title text-lg font-semibold text-white mb-2">Vous ne savez pas qui conduit vos clients.</h3>
               <p className="text-sm text-white/45">Pas de suivi, pas de qualité garantie, pas de data. Le chauffeur est un inconnu. Votre marque en dépend pourtant.</p>
@@ -235,6 +264,7 @@ export default function HomePage() {
               transition={{ delay: 0.2 }}
               className="p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.03]"
             >
+              <TrendingDown className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Revenu manqué</div>
               <h3 className="font-title text-lg font-semibold text-white mb-2">Le transport génère 0€ pour vous.</h3>
               <p className="text-sm text-white/45">Vos clients prennent des VTC chaque jour. Mais c'est Uber qui encaisse, pas vous. Aucune commission, aucun partenariat.</p>
@@ -272,22 +302,26 @@ export default function HomePage() {
           <div className="space-y-10 md:space-y-14">
             <ValueProp
               number="01"
+              icon={Brain}
               title="Chauffeurs repositionnés en temps réel par l'IA"
               desc="Ajnaya, notre IA, anticipe la demande et positionne les chauffeurs AVANT que vos clients appellent. Temps d'attente moyen visé : moins de 4 minutes. Pas de promesse vide — de la data en temps réel."
             />
             <ValueProp
               number="02"
+              icon={BarChart3}
               title="Qualité traçable, chauffeur par chauffeur"
               desc="Chaque course est scorée. Ponctualité, propreté, avis client. Vous accédez à un dashboard partenaire avec vos métriques en temps réel. Plus jamais un trajet anonyme."
               accent="accent-purple"
             />
             <ValueProp
               number="03"
+              icon={Palette}
               title="Votre marque, jusqu'au dernier kilomètre"
               desc="Co-branding optionnel dans l'app. Votre client voit votre nom, pas le nôtre. Message de bienvenue personnalisé, itinéraire pré-configuré, suivi partagé."
             />
             <ValueProp
               number="04"
+              icon={Wallet}
               title="Un flux de revenus passif sur chaque course"
               desc="Commission partenaire sur chaque trajet généré via votre établissement. Le transport passe d'un centre de coût à une ligne de revenu."
               accent="accent-purple"

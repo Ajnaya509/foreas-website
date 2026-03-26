@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOREAS — Ajnaya Sales Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Genos:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050508;
+    color: #fff;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+  h1 {
+    font-family: 'Genos', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-family: 'Genos', sans-serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    text-align: center;
+    color: rgba(255,255,255,0.50);
+    margin-bottom: 48px;
+  }
+
+  .section-title {
+    font-family: 'Genos', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.90);
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .section-sub {
+    font-family: 'Genos', sans-serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 24px;
+  }
+
+  /* Apollo Status */
+  .apollo-status {
+    background: linear-gradient(135deg, rgba(79,172,254,0.06) 0%, rgba(138,43,226,0.06) 100%);
+    border: 1px solid rgba(79,172,254,0.15);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-bottom: 48px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .apollo-status .live-dot {
+    width: 10px; height: 10px;
+    background: #00f2c3;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(0,242,195,0.6);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .apollo-status .status-text {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .apollo-credits {
+    display: flex;
+    gap: 24px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .credit-item {
+    text-align: center;
+  }
+
+  .credit-item .val {
+    font-family: 'Genos', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #4facfe;
+  }
+
+  .credit-item .lbl {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.40);
+  }
+
+  /* Pipeline Architecture */
+  .pipeline {
+    margin-bottom: 48px;
+  }
+
+  .pipe-flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .pipe-stage {
+    width: 100%;
+    max-width: 800px;
+    border-radius: 16px;
+    padding: 24px 28px;
+    position: relative;
+  }
+
+  .pipe-stage.source {
+    background: rgba(138,43,226,0.06);
+    border: 1px solid rgba(138,43,226,0.15);
+  }
+  .pipe-stage.enrich {
+    background: rgba(79,172,254,0.06);
+    border: 1px solid rgba(79,172,254,0.15);
+  }
+  .pipe-stage.outreach {
+    background: rgba(255,165,0,0.06);
+    border: 1px solid rgba(255,165,0,0.15);
+  }
+  .pipe-stage.voice {
+    background: rgba(0,242,195,0.06);
+    border: 1px solid rgba(0,242,195,0.15);
+  }
+  .pipe-stage.convert {
+    background: rgba(255,215,0,0.06);
+    border: 1px solid rgba(255,215,0,0.15);
+  }
+  .pipe-stage.report {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .pipe-tag {
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: #050508;
+    border-radius: 20px;
+    padding: 2px 14px;
+    font-family: 'Genos', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .pipe-stage.source .pipe-tag { color: #8a2be2; border: 1px solid rgba(138,43,226,0.3); }
+  .pipe-stage.enrich .pipe-tag { color: #4facfe; border: 1px solid rgba(79,172,254,0.3); }
+  .pipe-stage.outreach .pipe-tag { color: #ffa500; border: 1px solid rgba(255,165,0,0.3); }
+  .pipe-stage.voice .pipe-tag { color: #00f2c3; border: 1px solid rgba(0,242,195,0.3); }
+  .pipe-stage.convert .pipe-tag { color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
+  .pipe-stage.report .pipe-tag { color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15); }
+
+  .pipe-title {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: rgba(255,255,255,0.90);
+    margin-bottom: 4px;
+    margin-top: 6px;
+  }
+
+  .pipe-tools {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .tool-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.65);
+  }
+
+  .pipe-desc {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.7;
+  }
+
+  .pipe-arrow {
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+    position: relative;
+  }
+  .pipe-arrow::after {
+    content: '▼';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: rgba(255,255,255,0.25);
+  }
+
+  /* Channels grid */
+  .channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+
+  .channel-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .channel-card .ch-name {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 4px;
+  }
+
+  .channel-card .ch-type {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.40);
+    margin-bottom: 10px;
+  }
+
+  .channel-card .ch-desc {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.50);
+    line-height: 1.6;
+  }
+
+  .channel-card .ch-auto {
+    margin-top: 10px;
+    font-family: 'Genos', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #00f2c3;
+  }
+
+  /* Targets */
+  .targets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+
+  .target-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .target-card .tg-segment {
+    font-family: 'Genos', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.90);
+    margin-bottom: 2px;
+  }
+
+  .target-card .tg-sub {
+    font-family: 'Genos', sans-serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.50);
+    margin-bottom: 12px;
+  }
+
+  .target-card .tg-approach {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .target-card .tg-pitch {
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.6;
+    font-style: italic;
+    border-left: 2px solid rgba(79,172,254,0.3);
+  }
+
+  .target-card .tg-volume {
+    margin-top: 12px;
+    font-family: 'Genos', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4facfe;
+  }
+
+  /* ROI */
+  .roi-section {
+    margin-bottom: 48px;
+  }
+
+  .roi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .roi-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .roi-card .roi-val {
+    font-family: 'Genos', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .roi-card .roi-val.cost { color: #ff6b6b; }
+  .roi-card .roi-val.rev { color: #00f2c3; }
+  .roi-card .roi-val.ratio { color: #ffd700; }
+
+  .roi-card .roi-lbl {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.45);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .roi-breakdown {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .roi-breakdown .rb-title {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.80);
+    margin-bottom: 14px;
+  }
+
+  .rb-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.8rem;
+  }
+
+  .rb-line .rb-item { color: rgba(255,255,255,0.55); }
+  .rb-line .rb-cost {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    color: rgba(255,255,255,0.70);
+  }
+
+  /* Telegram report */
+  .telegram-mock {
+    max-width: 420px;
+    margin: 0 auto 48px;
+    background: #1c2733;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .tg-header {
+    background: #17212b;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tg-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4facfe, #00f2c3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Genos', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #050508;
+  }
+
+  .tg-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #fff;
+  }
+
+  .tg-status {
+    font-size: 0.7rem;
+    color: #4facfe;
+  }
+
+  .tg-messages {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tg-msg {
+    background: #182533;
+    border-radius: 12px 12px 12px 4px;
+    padding: 12px 14px;
+    max-width: 95%;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.6;
+  }
+
+  .tg-msg .tg-time {
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.30);
+    text-align: right;
+    margin-top: 6px;
+  }
+
+  .tg-msg strong { color: #fff; }
+  .tg-msg .green { color: #00f2c3; }
+  .tg-msg .blue { color: #4facfe; }
+  .tg-msg .gold { color: #ffd700; }
+  .tg-msg .red { color: #ff6b6b; }
+
+  .tg-msg-user {
+    background: #2b5278;
+    border-radius: 12px 12px 4px 12px;
+    align-self: flex-end;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.90);
+  }
+
+  /* Data flywheel */
+  .flywheel {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  .fly-steps {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+
+  .fly-step {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 18px;
+    text-align: center;
+    min-width: 140px;
+  }
+
+  .fly-step .fs-icon { font-size: 1.5rem; margin-bottom: 6px; }
+  .fly-step .fs-name {
+    font-family: 'Genos', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.80);
+  }
+  .fly-step .fs-desc {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.40);
+    margin-top: 2px;
+  }
+
+  .fly-arrow {
+    font-size: 1.2rem;
+    color: rgba(79,172,254,0.4);
+  }
+
+  .fly-loop {
+    margin-top: 20px;
+    font-family: 'Genos', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #00f2c3;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer .logo {
+    font-family: 'Genos', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 4px;
+  }
+  .footer .tag {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.18);
+    margin-top: 4px;
+  }
+
+  @media (max-width: 768px) {
+    h1 { font-size: 2rem; }
+    .apollo-status { flex-direction: column; text-align: center; }
+    .apollo-credits { margin-left: 0; justify-content: center; }
+    .fly-steps { flex-direction: column; }
+    .fly-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Ajnaya Sales Engine</h1>
+  <p class="subtitle">Machine de prospection autonome — Voice AI + Apollo.io + n8n + Telegram</p>
+
+  <!-- APOLLO LIVE STATUS -->
+  <div class="apollo-status">
+    <div class="live-dot"></div>
+    <div>
+      <div class="status-text">Apollo.io connecté — Chandler Milien</div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.40)">milien.chandlerpro@gmail.com · 0 crédits utilisés</div>
+    </div>
+    <div class="apollo-credits">
+      <div class="credit-item">
+        <div class="val">105</div>
+        <div class="lbl">Leads dispo</div>
+      </div>
+      <div class="credit-item">
+        <div class="val">160</div>
+        <div class="lbl">Direct Dial</div>
+      </div>
+      <div class="credit-item">
+        <div class="val">5 000</div>
+        <div class="lbl">Crédits IA</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <h2 class="section-title">Pipeline Ajnaya Sales — de A à Z</h2>
+  <p class="section-sub">6 étapes, 100% automatisées, zéro intervention humaine requise</p>
+
+  <div class="pipeline">
+    <div class="pipe-flow">
+
+      <div class="pipe-stage source">
+        <span class="pipe-tag">ÉTAPE 1 — SOURCE</span>
+        <div class="pipe-title">Identification des cibles via Apollo.io</div>
+        <div class="pipe-tools">
+          <span class="tool-badge">Apollo Search</span>
+          <span class="tool-badge">Apollo Enrich</span>
+          <span class="tool-badge">n8n Cron</span>
+        </div>
+        <div class="pipe-desc">
+          n8n interroge Apollo.io automatiquement pour identifier les cibles : <strong>B2C</strong> (chauffeurs VTC via LinkedIn titres "chauffeur VTC", "driver", "chauffeur privé") et <strong>B2B</strong> (flottes VTC, sociétés de transport, assureurs mobilité, collectivités smart city, constructeurs). Apollo enrichit chaque profil : nom, email, téléphone direct, entreprise, taille, secteur. Les leads sont scorés et stockés dans Supabase.
+        </div>
+      </div>
+
+      <div class="pipe-arrow"></div>
+
+      <div class="pipe-stage enrich">
+        <span class="pipe-tag">ÉTAPE 2 — ENRICHISSEMENT</span>
+        <div class="pipe-title">Contextualisation par Claude API</div>
+        <div class="pipe-tools">
+          <span class="tool-badge">Claude API</span>
+          <span class="tool-badge">Supabase</span>
+        </div>
+        <div class="pipe-desc">
+          Claude analyse chaque lead et génère un <strong>pitch personnalisé</strong> : adapté au secteur, à la taille de l'entreprise, au rôle du contact, à sa localisation. Pour les chauffeurs : focus CA et temps gagné. Pour les B2B : focus data, API, licensing, intégration. Chaque script d'appel est unique et stocké avec le lead.
+        </div>
+      </div>
+
+      <div class="pipe-arrow"></div>
+
+      <div class="pipe-stage outreach">
+        <span class="pipe-tag">ÉTAPE 3 — OUTREACH MULTI-CANAL</span>
+        <div class="pipe-title">Séquences email + LinkedIn + SMS automatisées</div>
+        <div class="pipe-tools">
+          <span class="tool-badge">Apollo Sequences</span>
+          <span class="tool-badge">n8n</span>
+          <span class="tool-badge">Twilio SMS</span>
+        </div>
+        <div class="pipe-desc">
+          Avant l'appel, une séquence de warm-up prépare le terrain : <strong>J0</strong> email personnalisé, <strong>J2</strong> connexion LinkedIn avec message, <strong>J4</strong> SMS court "Avez-vous vu notre email ?". Le lead arrive à l'appel déjà exposé à FOREAS. Taux de décrochage et conversion x3 vs appel froid.
+        </div>
+      </div>
+
+      <div class="pipe-arrow"></div>
+
+      <div class="pipe-stage voice">
+        <span class="pipe-tag">ÉTAPE 4 — APPEL VOCAL AJNAYA</span>
+        <div class="pipe-title">ElevenLabs + Twilio — Ajnaya appelle et vend</div>
+        <div class="pipe-tools">
+          <span class="tool-badge">ElevenLabs Agents</span>
+          <span class="tool-badge">Twilio Voice</span>
+          <span class="tool-badge">RAG</span>
+        </div>
+        <div class="pipe-desc">
+          n8n déclenche l'appel via Twilio → ElevenLabs prend le relais avec la voix d'Ajnaya. L'agent vocal dispose du <strong>RAG complet FOREAS</strong> (features, tarifs, stats, témoignages, FAQ, objections) et du <strong>pitch personnalisé</strong> généré à l'étape 2. Ajnaya mène la conversation, répond aux questions, gère les objections, et propose l'inscription ou un rendez-vous démo. Chaque appel est <strong>transcrit et analysé</strong>.
+        </div>
+      </div>
+
+      <div class="pipe-arrow"></div>
+
+      <div class="pipe-stage convert">
+        <span class="pipe-tag">ÉTAPE 5 — CONVERSION</span>
+        <div class="pipe-title">Onboarding automatisé post-appel</div>
+        <div class="pipe-tools">
+          <span class="tool-badge">Twilio SMS</span>
+          <span class="tool-badge">n8n</span>
+          <span class="tool-badge">Supabase</span>
+        </div>
+        <div class="pipe-desc">
+          Si le lead est chaud → SMS immédiat avec lien de téléchargement. Si tiède → relance J+2 par Ajnaya. Si B2B intéressé → calendrier de démo envoyé automatiquement (Cal.com). Le lead est taggé dans Supabase avec son statut et son score de conversion. Les chauffeurs inscrits qui ne complètent pas l'onboarding sont rappelés à J+3.
+        </div>
+      </div>
+
+      <div class="pipe-arrow"></div>
+
+      <div class="pipe-stage report">
+        <span class="pipe-tag">ÉTAPE 6 — REPORTING TELEGRAM</span>
+        <div class="pipe-title">Rapport quotidien sur mesure dans ton bot</div>
+        <div class="pipe-tools">
+          <span class="tool-badge">Telegram Bot</span>
+          <span class="tool-badge">Claude API</span>
+          <span class="tool-badge">Supabase</span>
+        </div>
+        <div class="pipe-desc">
+          Chaque soir, ton bot Telegram t'envoie un rapport structuré : leads contactés, appels passés, taux de décrochage, conversions, objections principales, revenus estimés, et recommandations pour la semaine suivante. Tu peux répondre au bot pour ajuster les cibles, le ton, ou les volumes.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CIBLES B2B -->
+  <h2 class="section-title">Cibles B2B — Apollo.io Prospection</h2>
+  <p class="section-sub">Segments prioritaires identifiables et contactables automatiquement</p>
+
+  <div class="targets-grid">
+    <div class="target-card">
+      <div class="tg-segment">Flottes VTC</div>
+      <div class="tg-sub">50-500 chauffeurs · France + Europe</div>
+      <div class="tg-approach">Pitch : optimisation flotte temps réel, réduction temps mort global, dashboard manager, data de performance par chauffeur. ROI mesurable dès le 1er mois.</div>
+      <div class="tg-pitch">"Vos chauffeurs perdent en moyenne 2h/jour en temps mort. FOREAS réduit ça de 35%. Sur 100 chauffeurs, c'est 200h récupérées par jour."</div>
+      <div class="tg-volume">~2 400 entreprises identifiables sur Apollo</div>
+    </div>
+    <div class="target-card">
+      <div class="tg-segment">Assureurs Mobilité</div>
+      <div class="tg-sub">Départements innovation · Actuariat</div>
+      <div class="tg-approach">Pitch : données comportementales chauffeur (freinage, accélération, zones à risque, horaires) pour le scoring et la tarification dynamique. Licensing data FOREAS.</div>
+      <div class="tg-pitch">"Nous collectons 47 signaux comportementaux par trajet. Ces données valent plus que n'importe quel questionnaire déclaratif."</div>
+      <div class="tg-volume">~180 contacts décideurs identifiables</div>
+    </div>
+    <div class="target-card">
+      <div class="tg-segment">Smart Cities</div>
+      <div class="tg-sub">Métropoles · Collectivités · Agences mobilité</div>
+      <div class="tg-approach">Pitch : heatmaps de mobilité urbaine en temps réel, prédiction de congestion, données d'usage anonymisées pour la planification transport.</div>
+      <div class="tg-pitch">"FOREAS génère la carte de mobilité la plus fine du marché. Sans capteurs à installer. Sans budget infra."</div>
+      <div class="tg-volume">~320 contacts décideurs en France</div>
+    </div>
+    <div class="target-card">
+      <div class="tg-segment">Constructeurs Auto</div>
+      <div class="tg-sub">Renault · Stellantis · Tesla · BYD · départements fleet</div>
+      <div class="tg-approach">Pitch : intégration embarquée Ajnaya dans les véhicules fleet, données d'usage réel pour l'amélioration produit, partenariat distribution.</div>
+      <div class="tg-pitch">"Ajnaya transforme n'importe quel véhicule en cockpit intelligent. Intégrable en OEM."</div>
+      <div class="tg-volume">~90 contacts innovation/fleet identifiables</div>
+    </div>
+  </div>
+
+  <!-- CANAUX OUTREACH -->
+  <h2 class="section-title">Canaux de prospection — automatisés</h2>
+  <p class="section-sub">Chaque canal se renforce mutuellement</p>
+
+  <div class="channels-grid">
+    <div class="channel-card">
+      <div class="ch-name">📞 Appels Ajnaya</div>
+      <div class="ch-type">Sortants via Twilio + ElevenLabs</div>
+      <div class="ch-desc">Ajnaya appelle les leads pré-qualifiés avec un pitch personnalisé. Gère objections, prend RDV, envoie SMS de suivi. Voix naturelle, latence 75ms.</div>
+      <div class="ch-auto">100% automatisé · ~20 appels/jour</div>
+    </div>
+    <div class="channel-card">
+      <div class="ch-name">📞 Appels entrants</div>
+      <div class="ch-type">Numéro dédié FOREAS (+33)</div>
+      <div class="ch-desc">Ajnaya répond 24/7 aux appels entrants. Qualification, information, inscription, redirection vers commercial humain si besoin (B2B enterprise).</div>
+      <div class="ch-auto">100% automatisé · 24/7 · 365j</div>
+    </div>
+    <div class="channel-card">
+      <div class="ch-name">📧 Séquences Email</div>
+      <div class="ch-type">Apollo Emailer + Claude API</div>
+      <div class="ch-desc">Séquences de 3-5 emails personnalisés par Claude. A/B testing automatique des sujets et accroches. Warm-up avant appel.</div>
+      <div class="ch-auto">100% automatisé · 50 emails/jour</div>
+    </div>
+    <div class="channel-card">
+      <div class="ch-name">💬 SMS Twilio</div>
+      <div class="ch-type">Follow-up et micro-nudges</div>
+      <div class="ch-desc">SMS court post-email ou post-appel. Lien direct téléchargement app ou calendrier démo. Taux d'ouverture ~98%.</div>
+      <div class="ch-auto">100% automatisé · post-contact</div>
+    </div>
+  </div>
+
+  <!-- ROI -->
+  <h2 class="section-title">ROI — Projection conservatrice Mois 1</h2>
+  <p class="section-sub">Basé sur des taux de conversion B2B/B2C standard du marché</p>
+
+  <div class="roi-grid">
+    <div class="roi-card">
+      <div class="roi-val cost">~260€</div>
+      <div class="roi-lbl">Coût mensuel total<br>(Twilio + ElevenLabs + Apollo + n8n + Claude)</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-val rev">~600</div>
+      <div class="roi-lbl">Leads contactés / mois<br>(appels + emails + SMS)</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-val rev">~45</div>
+      <div class="roi-lbl">Conversions chauffeurs<br>(taux conservateur 7.5%)</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-val ratio">x117</div>
+      <div class="roi-lbl">ROI si abo 12,97€/sem<br>(45 × 56€/mois × 12 = 30 348€ ARR)</div>
+    </div>
+  </div>
+
+  <div class="roi-breakdown">
+    <div class="rb-title">Détail des coûts mensuels</div>
+    <div class="rb-line"><span class="rb-item">ElevenLabs Scale (agents + RAG)</span><span class="rb-cost">99€</span></div>
+    <div class="rb-line"><span class="rb-item">Twilio (numéro + minutes sortantes + SMS)</span><span class="rb-cost">~45€</span></div>
+    <div class="rb-line"><span class="rb-item">Apollo.io (plan gratuit + upgrade si besoin)</span><span class="rb-cost">0–49€</span></div>
+    <div class="rb-line"><span class="rb-item">Claude API (enrichissement + pitchs + analyse)</span><span class="rb-cost">~30€</span></div>
+    <div class="rb-line"><span class="rb-item">n8n Cloud (orchestration)</span><span class="rb-cost">~15€</span></div>
+    <div class="rb-line"><span class="rb-item">Supabase (stockage leads + analytics)</span><span class="rb-cost">0€ (free tier)</span></div>
+    <div class="rb-line" style="border-top:1px solid rgba(255,255,255,0.10);padding-top:12px;margin-top:8px;">
+      <span class="rb-item" style="font-weight:600;color:rgba(255,255,255,0.80);">TOTAL</span>
+      <span class="rb-cost" style="font-size:1.1rem;color:#4facfe;">~189–260€/mois</span>
+    </div>
+    <div class="rb-line" style="border:none;">
+      <span class="rb-item">vs 1 commercial SDR humain</span>
+      <span class="rb-cost" style="color:rgba(255,255,255,0.40);">3 000–5 000€/mois</span>
+    </div>
+  </div>
+
+  <!-- TELEGRAM MOCK -->
+  <h2 class="section-title" style="margin-top:48px;">Rapport Telegram — ce que tu reçois chaque soir</h2>
+  <p class="section-sub">Ton bot résume tout, tu décides en 10 secondes</p>
+
+  <div class="telegram-mock">
+    <div class="tg-header">
+      <div class="tg-avatar">A</div>
+      <div>
+        <div class="tg-name">Ajnaya Sales Bot</div>
+        <div class="tg-status">en ligne</div>
+      </div>
+    </div>
+    <div class="tg-messages">
+      <div class="tg-msg">
+        <strong>📊 Rapport Sales — Lundi 16 mars 2026</strong><br><br>
+        <strong>Appels sortants :</strong> 22 passés · <span class="green">14 décrochés</span> · <span class="blue">6 intéressés</span> · <span class="gold">3 inscrits</span><br><br>
+        <strong>Emails :</strong> 48 envoyés · 31 ouverts (64%) · <span class="blue">8 clics</span><br><br>
+        <strong>SMS :</strong> 14 envoyés · <span class="blue">4 réponses</span><br><br>
+        <strong>Conversions du jour :</strong> <span class="green">3 chauffeurs inscrits</span> + <span class="gold">1 démo B2B planifiée</span> (FlotteMax, 120 véhicules)<br><br>
+        <strong>Top objection :</strong> "J'utilise déjà Waze, c'est quoi la différence ?" → <span style="color:rgba(255,255,255,0.45)">Ajnaya a converti 2/4 avec l'argument prédiction de demande</span><br><br>
+        <strong>💰 Revenus estimés :</strong> <span class="green">+297€ ARR</span> (3 × 99€)<br>
+        <strong>📈 Coût d'acquisition :</strong> <span class="blue">~3,90€/chauffeur</span>
+        <div class="tg-time">21:00</div>
+      </div>
+
+      <div class="tg-msg">
+        <strong>🧠 Recommandation Ajnaya :</strong><br><br>
+        Les chauffeurs IDF décrochent mieux entre 11h-13h (pause déjeuner). Je recommande de concentrer les appels sur ce créneau demain.<br><br>
+        Le pitch "réduction temps mort" convertit 2.3x mieux que "augmentation CA". Je bascule le script par défaut.
+        <div class="tg-time">21:00</div>
+      </div>
+
+      <div class="tg-msg-user">ok, pousse le volume à 30 appels demain et ajoute les chauffeurs Lyon</div>
+
+      <div class="tg-msg">
+        ✅ <strong>Volume mis à jour :</strong> 30 appels/jour<br>
+        ✅ <strong>Zone ajoutée :</strong> Lyon métropole (47 nouveaux leads Apollo identifiés)<br><br>
+        Je lance la séquence warm-up email ce soir pour les leads Lyon. Premiers appels Lyon demain 11h.
+        <div class="tg-time">21:02</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA FLYWHEEL -->
+  <h2 class="section-title">La boucle d'intelligence — chaque appel rend le suivant meilleur</h2>
+  <p class="section-sub">Effet composé sur le taux de conversion</p>
+
+  <div class="flywheel">
+    <div class="fly-steps">
+      <div class="fly-step">
+        <div class="fs-icon">📞</div>
+        <div class="fs-name">Appel</div>
+        <div class="fs-desc">Ajnaya pitch le lead</div>
+      </div>
+      <span class="fly-arrow">→</span>
+      <div class="fly-step">
+        <div class="fs-icon">📝</div>
+        <div class="fs-name">Transcript</div>
+        <div class="fs-desc">Conversation transcrite</div>
+      </div>
+      <span class="fly-arrow">→</span>
+      <div class="fly-step">
+        <div class="fs-icon">🧠</div>
+        <div class="fs-name">Analyse</div>
+        <div class="fs-desc">Claude détecte patterns</div>
+      </div>
+      <span class="fly-arrow">→</span>
+      <div class="fly-step">
+        <div class="fs-icon">🎯</div>
+        <div class="fs-name">Optimise</div>
+        <div class="fs-desc">Script & RAG mis à jour</div>
+      </div>
+      <span class="fly-arrow">→</span>
+      <div class="fly-step">
+        <div class="fs-icon">📈</div>
+        <div class="fs-name">Convertit+</div>
+        <div class="fs-desc">Taux ↑ semaine après semaine</div>
+      </div>
+    </div>
+    <div class="fly-loop">↻ Boucle infinie — le système ne stagne jamais</div>
+  </div>
+
+  <div class="footer">
+    <div class="logo">FOREAS</div>
+    <div class="tag">Ajnaya Sales Engine — Architecture v1.0</div>
+  </div>
+
+</div>
+</body>
+</html>
