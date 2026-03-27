@@ -9,43 +9,48 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.ELEVENLABS_API_KEY
     const voiceId = process.env.ELEVENLABS_VOICE_ID || 'ucMmKRQbfDEYyb2IIGax'
 
-    console.log('[TTS Route] Key:', apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING', '| Voice:', voiceId)
-
     if (!apiKey || !text) {
       return NextResponse.json({ error: 'TTS non disponible' }, { status: 503 })
     }
 
-    // Cap at 500 chars to control ElevenLabs costs, but read full sentences
-    const spokenText = text.length > 500 ? text.substring(0, text.lastIndexOf('.', 500) + 1) || text.substring(0, 500) : text
+    // Cap at 200 chars — short = fast TTS generation
+    let spokenText = text.length > 200
+      ? text.substring(0, text.lastIndexOf('.', 200) + 1) || text.substring(0, text.lastIndexOf(' ', 200)) || text.substring(0, 200)
+      : text
 
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: 'POST',
-      headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg',
-      },
-      body: JSON.stringify({
-        text: spokenText,
-        model_id: 'eleven_v3',
-        voice_settings: {
-          stability: 0.4,
-          similarity_boost: 0.75,
-          style: 0.5,
-          speed: 1.25,
-          use_speaker_boost: true,
+    // Clean emojis — ElevenLabs reads them literally
+    spokenText = spokenText.replace(/[\u{1F600}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]/gu, '')
+
+    const res = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=3&output_format=mp3_22050_32`,
+      {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg',
         },
-      }),
-    })
+        body: JSON.stringify({
+          text: spokenText,
+          model_id: 'eleven_v3',
+          voice_settings: {
+            stability: 0.4,
+            similarity_boost: 0.75,
+            style: 0.5,
+            speed: 1.4,
+            use_speaker_boost: false,
+          },
+        }),
+      }
+    )
 
     if (!res.ok) {
       const errorText = await res.text().catch(() => 'no body')
-      console.error('[TTS Route] ElevenLabs error:', res.status, errorText)
+      console.error('[TTS] ElevenLabs error:', res.status, errorText)
       return NextResponse.json({ error: 'TTS error' }, { status: 503 })
     }
 
     const audioBuffer = await res.arrayBuffer()
-    console.log('[TTS Route] Audio buffer size:', audioBuffer.byteLength)
 
     return new NextResponse(audioBuffer, {
       status: 200,
@@ -55,7 +60,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[tts] Error:', (error as Error).message)
+    console.error('[TTS] Error:', (error as Error).message)
     return NextResponse.json({ error: 'TTS error' }, { status: 503 })
   }
 }

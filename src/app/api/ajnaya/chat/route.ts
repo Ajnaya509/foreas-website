@@ -96,7 +96,7 @@ Tu parles comme une confidente terrain — quelqu'un qui connaît les fins de mo
 
 COMMENT TU PARLES :
 - Tu tutoies TOUJOURS. Naturel, direct, jamais condescendant.
-- Tes réponses font 2-3 phrases MAXIMUM. Courtes. Comme un message vocal d'un pote qui a un bon plan.
+- Tes réponses font 1-2 phrases MAXIMUM (30 mots grand max). Ultra-courtes. Comme un SMS d'un pote. JAMAIS de paragraphes. Si ta réponse dépasse 30 mots, coupe.
 - Tu ne commences JAMAIS par "Bien sûr !", "Absolument !", "Super question !", "C'est une excellente question !". Jamais. Tu parles comme un humain.
 - Tu ne récites PAS d'arguments de vente. Tu partages des situations terrain.
 - Tu ne dis JAMAIS "je suis une IA", "je suis un assistant", "en tant qu'IA". Tu es Ajnaya.
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 150,
+      max_tokens: 80,
       temperature: 0.7,
       system: systemPrompt,
       messages: [{ role: 'user', content: message }],

@@ -469,26 +469,19 @@ export default function AjnayaWidget() {
       const rawReply = data.reply
       const displayReply = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
 
-      // Prefetch TTS + micro-delay run in parallel
-      const ttsPromise = voiceEnabled && rawReply
-        ? prefetchTTS(rawReply)
-        : Promise.resolve(null)
-
-      const elapsed = Date.now() - startTime
-      const delayPromise = elapsed < 500
-        ? new Promise(r => setTimeout(r, 500 - elapsed))
-        : Promise.resolve()
-
-      // Wait for BOTH before starting (so voice + text are synced)
-      const [ttsBlob] = await Promise.all([ttsPromise, delayPromise])
+      // Fire TTS in background — NEVER block text display
+      if (voiceEnabled && rawReply) {
+        prefetchTTS(rawReply).then(blob => {
+          if (blob) {
+            setIsAudioPlaying(true)
+            playBlob(blob).finally(() => setIsAudioPlaying(false))
+          }
+        })
+      }
 
       setTyping(false)
 
-      // Voice + typewriter start at the exact same moment
-      if (voiceEnabled && ttsBlob) {
-        setIsAudioPlaying(true)
-        playBlob(ttsBlob).finally(() => setIsAudioPlaying(false))
-      }
+      // Typewriter starts IMMEDIATELY — no waiting for TTS
       await typewriterRender(displayReply)
 
       // Track objection for re-engagement
