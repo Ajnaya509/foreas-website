@@ -472,18 +472,16 @@ export default function AjnayaWidget() {
 
       setTyping(false)
 
-      // Typewriter progressive rendering
+      // TTS + typewriter in parallel (voice starts while text appears)
+      if (voiceEnabled && data.reply) {
+        setIsAudioPlaying(true)
+        speakText(data.reply).finally(() => setIsAudioPlaying(false))
+      }
       await typewriterRender(data.reply)
 
       // Track objection for re-engagement
       if (/cher|arnaque|confiance|réfléchir|nul/i.test(text)) {
         lastObjectionRef.current = text
-      }
-
-      // TTS after typewriter completes
-      if (voiceEnabled && data.reply) {
-        setIsAudioPlaying(true)
-        speakText(data.reply).finally(() => setIsAudioPlaying(false))
       }
     } catch {
       // Fallback to pre-scripted responses with human delay

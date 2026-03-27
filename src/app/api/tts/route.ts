@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'TTS non disponible' }, { status: 503 })
     }
 
-    // Truncate to first sentence if > 200 chars
-    const shortText = text.length > 200 ? (text.split('.')[0] + '.') : text
+    // Cap at 500 chars to control ElevenLabs costs, but read full sentences
+    const spokenText = text.length > 500 ? text.substring(0, text.lastIndexOf('.', 500) + 1) || text.substring(0, 500) : text
 
     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
@@ -26,13 +26,17 @@ export async function POST(request: NextRequest) {
         'Accept': 'audio/mpeg',
       },
       body: JSON.stringify({
-        text: shortText,
+        text: spokenText,
         model_id: 'eleven_multilingual_v2',
         voice_settings: {
-          stability: 0.55,
+          stability: 0.35,          // Lower = more expressive/emotional
           similarity_boost: 0.8,
-          style: 0.3,
+          style: 0.55,              // Higher = more emotion/style
+          speed: 1.15,              // Slightly faster diction
+          use_speaker_boost: true,
         },
+        // Emotional context trick — not spoken, influences prosody
+        next_text: ', dit-elle avec empathie et conviction.',
       }),
     })
 

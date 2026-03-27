@@ -26,13 +26,12 @@ export async function speakText(text: string): Promise<void> {
   stopSpeaking()
 
   try {
-    const shortText = text.length > 200 ? text.split('.')[0] + '.' : text
-    console.log('[TTS] Requesting:', shortText.substring(0, 60))
+    console.log('[TTS] Requesting:', text.substring(0, 60))
 
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: shortText }),
+      body: JSON.stringify({ text }),
     })
 
     if (!res.ok) {
