@@ -9,6 +9,8 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.ELEVENLABS_API_KEY
     const voiceId = process.env.ELEVENLABS_VOICE_ID || 'ucMmKRQbfDEYyb2IIGax'
 
+    console.log('[TTS Route] Key:', apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING', '| Voice:', voiceId)
+
     if (!apiKey || !text) {
       return NextResponse.json({ error: 'TTS non disponible' }, { status: 503 })
     }
@@ -35,11 +37,13 @@ export async function POST(request: NextRequest) {
     })
 
     if (!res.ok) {
-      console.error('[tts] ElevenLabs error:', res.status, await res.text().catch(() => ''))
+      const errorText = await res.text().catch(() => 'no body')
+      console.error('[TTS Route] ElevenLabs error:', res.status, errorText)
       return NextResponse.json({ error: 'TTS error' }, { status: 503 })
     }
 
     const audioBuffer = await res.arrayBuffer()
+    console.log('[TTS Route] Audio buffer size:', audioBuffer.byteLength)
 
     return new NextResponse(audioBuffer, {
       status: 200,

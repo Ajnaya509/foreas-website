@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import { X, Send, Mic, Volume2, VolumeX } from 'lucide-react'
 import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from '@/lib/ajnaya-analytics'
-import { speakText, stopSpeaking } from '@/lib/tts'
+import { speakText, stopSpeaking, unlockAudio } from '@/lib/tts'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
 const WELCOME_MESSAGES: Record<string, string> = {
@@ -372,6 +372,8 @@ export default function AjnayaWidget() {
 
   // ─── Main send handler ────────────────────────────────────────────────────
   const handleSend = useCallback(async (overrideText?: string) => {
+    unlockAudio()
+    const startTime = Date.now()
     const text = (overrideText || input).trim()
     if (!text) return
 
@@ -420,6 +422,24 @@ export default function AjnayaWidget() {
     // Typing indicator
     setTyping(true)
 
+    // Helper: typewriter word-by-word rendering
+    const typewriterRender = async (fullText: string) => {
+      const replyTs = new Date().toISOString()
+      const words = fullText.split(' ')
+      // Add empty message placeholder
+      setMessages(prev => [...prev, { role: 'ajnaya' as const, text: '', timestamp: replyTs }])
+      for (let i = 0; i < words.length; i++) {
+        const partial = words.slice(0, i + 1).join(' ')
+        setMessages(prev => {
+          const updated = [...prev]
+          updated[updated.length - 1] = { role: 'ajnaya' as const, text: partial, timestamp: replyTs }
+          return updated
+        })
+        await new Promise(r => setTimeout(r, 35 + Math.random() * 25))
+      }
+      analyticsMessages.current.push({ role: 'ajnaya', text: fullText, timestamp: replyTs })
+    }
+
     try {
       const res = await fetch('/api/ajnaya/chat', {
         method: 'POST',
@@ -440,35 +460,42 @@ export default function AjnayaWidget() {
       if (!res.ok) throw new Error('API error')
 
       const data = await res.json()
-      setTyping(false)
 
       if (data.error) throw new Error(data.error)
 
       if (data.prospectId && !prospectId) setProspectId(data.prospectId)
 
-      const replyTs = new Date().toISOString()
-      const ajnayaMsg = { role: 'ajnaya' as const, text: data.reply, timestamp: replyTs }
-      setMessages(prev => [...prev, ajnayaMsg])
-      analyticsMessages.current.push({ role: 'ajnaya', text: data.reply, timestamp: replyTs })
+      // Human delay — wait at least 1.2-2s so it doesn't feel instant
+      const elapsed = Date.now() - startTime
+      const minDelay = 1200 + Math.random() * 800
+      if (elapsed < minDelay) await new Promise(r => setTimeout(r, minDelay - elapsed))
+
+      setTyping(false)
+
+      // Typewriter progressive rendering
+      await typewriterRender(data.reply)
 
       // Track objection for re-engagement
       if (/cher|arnaque|confiance|réfléchir|nul/i.test(text)) {
         lastObjectionRef.current = text
       }
 
-      // TTS
+      // TTS after typewriter completes
       if (voiceEnabled && data.reply) {
         setIsAudioPlaying(true)
         speakText(data.reply).finally(() => setIsAudioPlaying(false))
       }
     } catch {
+      // Fallback to pre-scripted responses with human delay
+      const elapsed = Date.now() - startTime
+      const minDelay = 1500
+      if (elapsed < minDelay) await new Promise(r => setTimeout(r, minDelay - elapsed))
+
       setTyping(false)
-      // Fallback to pre-scripted responses
+
       const { key, reply } = matchResponse(text)
       if (key !== 'default') intentsRef.current.push(key)
-      const replyTs = new Date().toISOString()
-      setMessages(prev => [...prev, { role: 'ajnaya' as const, text: reply, timestamp: replyTs }])
-      analyticsMessages.current.push({ role: 'ajnaya', text: reply, timestamp: replyTs })
+      await typewriterRender(reply)
     }
   }, [input, messageCount, hasAskedPhone, pathname, sessionId, prospectId, scrollSection, heatScore, messages, voiceEnabled])
 
@@ -481,6 +508,7 @@ export default function AjnayaWidget() {
 
   // ─── Microphone (Web Speech API) ──────────────────────────────────────────
   const toggleMic = () => {
+    unlockAudio()
     if (isListening) {
       recognitionRef.current?.stop()
       setIsListening(false)
