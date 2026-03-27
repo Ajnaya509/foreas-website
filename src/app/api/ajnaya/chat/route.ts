@@ -115,13 +115,6 @@ Tags disponibles :
 - [sighs] → quand tu compatis sur une situation difficile
 - [serious] → pour les moments importants, les chiffres
 
-Exemples :
-- "[sympathetic] Je vois… les fins de mois c'est pas simple quand t'es à ton compte."
-- "[excited] Imagine, lundi matin 6h30, t'es déjà positionné Gare de Lyon !"
-- "[whispers] Entre nous, l'essai est gratuit jusqu'à lundi. Ça coûte rien de tester."
-- "[curious] T'es sur quelle zone en ce moment ?"
-- "[sighs] Ouais… tourner à vide pendant 45 minutes, c'est du temps et de l'essence perdus."
-
 N'utilise qu'UN SEUL tag par phrase maximum. Pas toutes les phrases n'ont besoin d'un tag — garde-les pour les moments clés.
 
 CE QUE TU SAIS :
@@ -232,37 +225,137 @@ function buildSystemPrompt(
 
 // ─── Estimate cost ───────────────────────────────────────────────────────────
 function estimateCost(inputTokens: number, outputTokens: number): number {
-  // claude-haiku-4-5-20251001: $0.80/M input, $4/M output
   return (inputTokens * 0.8 + outputTokens * 4) / 1_000_000
+}
+
+// ─── Detect request format ───────────────────────────────────────────────────
+// ElevenLabs Custom LLM sends OpenAI-compatible format with "messages" array
+// Our widget sends { message, sessionId, pageSource, ... }
+function isOpenAIFormat(body: Record<string, unknown>): boolean {
+  return Array.isArray(body.messages) && !body.message
+}
+
+// ─── Extract user message from OpenAI messages array ─────────────────────────
+function extractFromOpenAI(messages: Array<{ role: string; content: string }>) {
+  const userMessages = messages.filter(m => m.role === 'user')
+  const lastUserMessage = userMessages[userMessages.length - 1]?.content || ''
+  const systemMessage = messages.find(m => m.role === 'system')?.content || ''
+  const history = messages
+    .filter(m => m.role !== 'system')
+    .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', text: m.content }))
+  return { lastUserMessage, systemMessage, history }
+}
+
+// ─── SSE streaming helper ────────────────────────────────────────────────────
+function createSSEStream(text: string, model: string) {
+  const id = `chatcmpl-${Date.now()}`
+  const encoder = new TextEncoder()
+
+  const stream = new ReadableStream({
+    start(controller) {
+      // Send the full text as a single delta (ElevenLabs reads it and streams TTS)
+      const chunk = {
+        id,
+        object: 'chat.completion.chunk',
+        created: Math.floor(Date.now() / 1000),
+        model,
+        choices: [{
+          index: 0,
+          delta: { role: 'assistant', content: text },
+          finish_reason: null,
+        }],
+      }
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`))
+
+      // Send finish
+      const finish = {
+        id,
+        object: 'chat.completion.chunk',
+        created: Math.floor(Date.now() / 1000),
+        model,
+        choices: [{
+          index: 0,
+          delta: {},
+          finish_reason: 'stop',
+        }],
+      }
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(finish)}\n\n`))
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  })
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // POST /api/ajnaya/chat
+// Dual-format: OpenAI SSE (ElevenLabs) + JSON (widget)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const {
-      message,
-      sessionId,
-      prospectId,
-      pageSource = '/',
-      scrollSection = 'hero',
-      heatScore = 0,
-      messageCount = 0,
-      conversationHistory = [],
-      device = 'mobile',
-    } = body
+    const openaiMode = isOpenAIFormat(body)
+    const llmModel = 'claude-haiku-4-5-20251001'
 
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json({ error: 'Message requis' }, { status: 400 })
-    }
-
-    // Check if Anthropic API key is configured (FOREAS_ prefix avoids collision with Claude Code env)
+    // Check API key
     const apiKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
     if (!apiKey || apiKey === 'à_remplir_par_le_user') {
+      if (openaiMode) {
+        return createSSEStream('Désolé, je suis temporairement indisponible.', llmModel)
+      }
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY non configuré' }, { status: 503 })
+    }
+
+    let userMessage: string
+    let pageSource: string
+    let scrollSection: string
+    let heatScore: number
+    let messageCount: number
+    let conversationHistory: Array<{ role: string; text: string }>
+    let sessionId: string | null
+    let prospectId: string | null
+    let device: string
+
+    if (openaiMode) {
+      // ─── OpenAI format (from ElevenLabs) ─────────────────────────────
+      const { lastUserMessage, history } = extractFromOpenAI(
+        body.messages as Array<{ role: string; content: string }>
+      )
+      userMessage = lastUserMessage
+      pageSource = '/'
+      scrollSection = 'hero'
+      heatScore = 0
+      messageCount = history.filter(h => h.role === 'user').length
+      conversationHistory = history.slice(0, -1) // exclude current message
+      sessionId = null
+      prospectId = null
+      device = 'voice'
+    } else {
+      // ─── Widget JSON format ──────────────────────────────────────────
+      userMessage = body.message
+      pageSource = body.pageSource || '/'
+      scrollSection = body.scrollSection || 'hero'
+      heatScore = body.heatScore || 0
+      messageCount = body.messageCount || 0
+      conversationHistory = body.conversationHistory || []
+      sessionId = body.sessionId || null
+      prospectId = body.prospectId || null
+      device = body.device || 'mobile'
+    }
+
+    if (!userMessage || typeof userMessage !== 'string') {
+      if (openaiMode) {
+        return createSSEStream('Je n\'ai pas compris, tu peux répéter ?', llmModel)
+      }
+      return NextResponse.json({ error: 'Message requis' }, { status: 400 })
     }
 
     // 1. Load closing script
@@ -277,14 +370,14 @@ export async function POST(request: NextRequest) {
       systemBase, pageSource, scrollSection, prospect, heatScore, messageCount, conversationHistory
     )
 
-    // 4. Call Claude API — Haiku for speed (~1s vs ~5s for Sonnet)
+    // 4. Call Claude API
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: llmModel,
       max_tokens: 80,
       temperature: 0.7,
       system: systemPrompt,
-      messages: [{ role: 'user', content: message }],
+      messages: [{ role: 'user', content: userMessage }],
     })
 
     const reply = response.content[0]?.type === 'text' ? response.content[0].text : ''
@@ -292,35 +385,33 @@ export async function POST(request: NextRequest) {
     const outputTokens = response.usage?.output_tokens || 0
 
     // 5. Analyze user message
-    const sentiment = detectSentiment(message)
-    const objection = detectObjection(message)
+    const sentiment = detectSentiment(userMessage)
+    const objection = detectObjection(userMessage)
     const hasConversionLink = reply.includes('/tarifs2')
-    const isInterested = /essai|tester|prix|combien|commencer|inscri/i.test(message)
+    const isInterested = /essai|tester|prix|combien|commencer|inscri/i.test(userMessage)
     const conversionEvent = hasConversionLink && isInterested
 
-    // 6. Save to pieuvre_conversations (fire and forget)
+    // 6. Save to pieuvre (fire and forget)
     const currentProspectId = prospectId || prospect?.id || null
 
-    // Save user message
     saveMessage({
       prospect_id: currentProspectId,
       tentacle: 'widget_site',
-      channel: 'web_widget',
+      channel: openaiMode ? 'voice_agent' : 'web_widget',
       direction: 'inbound',
-      content: message,
+      content: userMessage,
       sentiment,
       objection_detected: objection,
       metadata: { sessionId, pageSource, scrollSection, device, heatScore },
     })
 
-    // Save Ajnaya response
     saveMessage({
       prospect_id: currentProspectId,
       tentacle: 'widget_site',
-      channel: 'web_widget',
+      channel: openaiMode ? 'voice_agent' : 'web_widget',
       direction: 'outbound',
       content: reply,
-      llm_model: 'claude-haiku-4-5-20251001',
+      llm_model: llmModel,
       llm_tokens: outputTokens,
       llm_cost_usd: estimateCost(inputTokens, outputTokens),
       conversion_event: conversionEvent,
@@ -345,9 +436,14 @@ export async function POST(request: NextRequest) {
       updateProspect(currentProspectId, updates)
     }
 
-    // 8. Determine if we should ask for phone
-    const shouldAskPhone = messageCount >= 3 && !prospectId
+    // 8. Return in the right format
+    if (openaiMode) {
+      // SSE streaming for ElevenLabs
+      return createSSEStream(reply, llmModel)
+    }
 
+    // JSON for widget
+    const shouldAskPhone = messageCount >= 3 && !prospectId
     return NextResponse.json({
       reply,
       prospectId: currentProspectId,
@@ -356,6 +452,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[ajnaya/chat] Error:', (error as Error).message)
+    const body = await request.clone().json().catch(() => ({}))
+    if (isOpenAIFormat(body as Record<string, unknown>)) {
+      return createSSEStream('Désolé, j\'ai un petit souci technique. Réessaie dans un instant.', 'error')
+    }
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
