@@ -472,12 +472,16 @@ export default function AjnayaWidget() {
 
       setTyping(false)
 
+      // Strip audio tags [excited], [whispers] etc. for display, keep for TTS
+      const rawReply = data.reply
+      const displayReply = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
+
       // TTS + typewriter in parallel (voice starts while text appears)
-      if (voiceEnabled && data.reply) {
+      if (voiceEnabled && rawReply) {
         setIsAudioPlaying(true)
-        speakText(data.reply).finally(() => setIsAudioPlaying(false))
+        speakText(rawReply).finally(() => setIsAudioPlaying(false))
       }
-      await typewriterRender(data.reply)
+      await typewriterRender(displayReply)
 
       // Track objection for re-engagement
       if (/cher|arnaque|confiance|réfléchir|nul/i.test(text)) {

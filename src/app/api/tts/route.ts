@@ -27,16 +27,14 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         text: spokenText,
-        model_id: 'eleven_multilingual_v2',
+        model_id: 'eleven_v3',
         voice_settings: {
-          stability: 0.35,          // Lower = more expressive/emotional
-          similarity_boost: 0.8,
-          style: 0.55,              // Higher = more emotion/style
-          speed: 1.15,              // Slightly faster diction
+          stability: 0.4,
+          similarity_boost: 0.75,
+          style: 0.5,
+          speed: 1.12,
           use_speaker_boost: true,
         },
-        // Emotional context trick — not spoken, influences prosody
-        next_text: ', dit-elle avec empathie et conviction.',
       }),
     })
 
