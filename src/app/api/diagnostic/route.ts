@@ -5,11 +5,20 @@ export const runtime = 'nodejs'
 export async function GET() {
   const results: Record<string, unknown> = {}
 
-  // Test 1: Anthropic API key
-  const anthropicKey = process.env.ANTHROPIC_API_KEY
+  // Test 0: List all env vars containing key words
+  const envKeys = Object.keys(process.env).filter(k =>
+    /anthropic|elevenlabs|supabase|stripe|resend/i.test(k)
+  )
+  results.env_keys_found = envKeys
+
+  // Test 1: Anthropic API key (FOREAS_ prefix avoids Claude Code env collision)
+  const anthropicKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
   results.anthropic_key_present = !!anthropicKey
   results.anthropic_key_prefix = anthropicKey ? anthropicKey.substring(0, 15) + '...' : 'MISSING'
+  results.anthropic_key_length = anthropicKey?.length ?? 0
+  results.anthropic_key_typeof = typeof anthropicKey
   results.anthropic_key_is_placeholder = anthropicKey === 'à_remplir_par_le_user'
+  results.anthropic_base_url = process.env.ANTHROPIC_BASE_URL || 'NOT SET'
 
   // Test 2: ElevenLabs
   results.elevenlabs_key_present = !!process.env.ELEVENLABS_API_KEY

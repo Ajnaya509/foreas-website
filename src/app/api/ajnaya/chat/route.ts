@@ -238,8 +238,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message requis' }, { status: 400 })
     }
 
-    // Check if Anthropic API key is configured
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    // Check if Anthropic API key is configured (FOREAS_ prefix avoids collision with Claude Code env)
+    const apiKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
     if (!apiKey || apiKey === 'à_remplir_par_le_user') {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY non configuré' }, { status: 503 })
     }
