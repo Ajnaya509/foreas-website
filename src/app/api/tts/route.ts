@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           text: spokenText,
-          model_id: 'eleven_v3',
+          model_id: 'eleven_multilingual_v2',
           voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.75,
-            style: 0.5,
-            speed: 1.4,
-            use_speaker_boost: false,
+            stability: 0.35,
+            similarity_boost: 0.8,
+            style: 0.55,
+            speed: 1.3,
+            use_speaker_boost: true,
           },
         }),
       }
