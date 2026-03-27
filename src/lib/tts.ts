@@ -22,62 +22,43 @@ export function unlockAudio() {
   }
 }
 
-export async function speakText(text: string): Promise<void> {
-  stopSpeaking()
-
+// Prefetch TTS blob without playing — call this early to overlap with delays
+export async function prefetchTTS(text: string): Promise<Blob | null> {
   try {
-    console.log('[TTS] Requesting:', text.substring(0, 60))
-
+    console.log('[TTS] Prefetching:', text.substring(0, 60))
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
-
-    if (!res.ok) {
-      console.warn('[TTS] API error:', res.status)
-      return
-    }
-
+    if (!res.ok) { console.warn('[TTS] Prefetch error:', res.status); return null }
     const blob = await res.blob()
-    console.log('[TTS] Blob:', blob.size, 'bytes, type:', blob.type)
+    console.log('[TTS] Prefetched:', blob.size, 'bytes')
+    return blob.size < 100 ? null : blob
+  } catch (e) { console.warn('[TTS] Prefetch failed:', e); return null }
+}
 
-    if (blob.size < 100) {
-      console.warn('[TTS] Blob too small')
-      return
-    }
+// Play a pre-fetched blob immediately
+export async function playBlob(blob: Blob): Promise<void> {
+  stopSpeaking()
+  const url = URL.createObjectURL(blob)
+  currentAudio = new Audio(url)
+  currentAudio.volume = 0.85
 
-    const url = URL.createObjectURL(blob)
-    currentAudio = new Audio(url)
-    currentAudio.volume = 0.85
-
-    return new Promise<void>((resolve) => {
-      if (!currentAudio) return resolve()
-
-      currentAudio.onended = () => {
-        URL.revokeObjectURL(url)
-        currentAudio = null
-        resolve()
-      }
-      currentAudio.onerror = (e) => {
-        console.warn('[TTS] Playback error:', e)
-        URL.revokeObjectURL(url)
-        currentAudio = null
-        resolve()
-      }
-
-      currentAudio.play().then(() => {
-        console.log('[TTS] Playing')
-      }).catch((e) => {
-        console.warn('[TTS] Play blocked:', e.message)
-        URL.revokeObjectURL(url)
-        currentAudio = null
-        resolve()
-      })
+  return new Promise<void>((resolve) => {
+    if (!currentAudio) return resolve()
+    currentAudio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; resolve() }
+    currentAudio.onerror = (e) => { console.warn('[TTS] Playback error:', e); URL.revokeObjectURL(url); currentAudio = null; resolve() }
+    currentAudio.play().then(() => console.log('[TTS] Playing')).catch((e) => {
+      console.warn('[TTS] Play blocked:', e.message); URL.revokeObjectURL(url); currentAudio = null; resolve()
     })
-  } catch (e) {
-    console.warn('[TTS] Error:', e)
-  }
+  })
+}
+
+// Convenience: fetch + play in one call (used for simple cases like phone reply)
+export async function speakText(text: string): Promise<void> {
+  const blob = await prefetchTTS(text)
+  if (blob) await playBlob(blob)
 }
 
 export function stopSpeaking() {

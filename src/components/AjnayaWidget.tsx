@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import { X, Send, Mic, Volume2, VolumeX } from 'lucide-react'
 import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from '@/lib/ajnaya-analytics'
-import { speakText, stopSpeaking, unlockAudio } from '@/lib/tts'
+import { speakText, stopSpeaking, unlockAudio, prefetchTTS, playBlob } from '@/lib/tts'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
 const WELCOME_MESSAGES: Record<string, string> = {
@@ -465,21 +465,30 @@ export default function AjnayaWidget() {
 
       if (data.prospectId && !prospectId) setProspectId(data.prospectId)
 
-      // Human delay — wait at least 1.2-2s so it doesn't feel instant
+      // Strip audio tags for display, keep for TTS
+      const rawReply = data.reply
+      const displayReply = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
+
+      // Start TTS prefetch NOW (overlaps with human delay)
+      let ttsBlob: Blob | null = null
+      const ttsFetch = voiceEnabled && rawReply
+        ? prefetchTTS(rawReply).then(b => { ttsBlob = b })
+        : Promise.resolve()
+
+      // Human delay (TTS downloads in parallel)
       const elapsed = Date.now() - startTime
       const minDelay = 1200 + Math.random() * 800
       if (elapsed < minDelay) await new Promise(r => setTimeout(r, minDelay - elapsed))
 
+      // Wait for TTS if not ready yet
+      await ttsFetch
+
       setTyping(false)
 
-      // Strip audio tags [excited], [whispers] etc. for display, keep for TTS
-      const rawReply = data.reply
-      const displayReply = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
-
-      // TTS + typewriter in parallel (voice starts while text appears)
-      if (voiceEnabled && rawReply) {
+      // Voice + typewriter start TOGETHER
+      if (voiceEnabled && ttsBlob) {
         setIsAudioPlaying(true)
-        speakText(rawReply).finally(() => setIsAudioPlaying(false))
+        playBlob(ttsBlob).finally(() => setIsAudioPlaying(false))
       }
       await typewriterRender(displayReply)
 
