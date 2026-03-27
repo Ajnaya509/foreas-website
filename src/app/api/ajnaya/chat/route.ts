@@ -232,8 +232,8 @@ function buildSystemPrompt(
 
 // ─── Estimate cost ───────────────────────────────────────────────────────────
 function estimateCost(inputTokens: number, outputTokens: number): number {
-  // claude-sonnet-4-20250514: $3/M input, $15/M output
-  return (inputTokens * 3 + outputTokens * 15) / 1_000_000
+  // claude-haiku-4-5-20251001: $0.80/M input, $4/M output
+  return (inputTokens * 0.8 + outputTokens * 4) / 1_000_000
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -277,11 +277,11 @@ export async function POST(request: NextRequest) {
       systemBase, pageSource, scrollSection, prospect, heatScore, messageCount, conversationHistory
     )
 
-    // 4. Call Claude API
+    // 4. Call Claude API — Haiku for speed (~1s vs ~5s for Sonnet)
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 150,
       temperature: 0.7,
       system: systemPrompt,
       messages: [{ role: 'user', content: message }],
@@ -320,7 +320,7 @@ export async function POST(request: NextRequest) {
       channel: 'web_widget',
       direction: 'outbound',
       content: reply,
-      llm_model: 'claude-sonnet-4-20250514',
+      llm_model: 'claude-haiku-4-5-20251001',
       llm_tokens: outputTokens,
       llm_cost_usd: estimateCost(inputTokens, outputTokens),
       conversion_event: conversionEvent,
