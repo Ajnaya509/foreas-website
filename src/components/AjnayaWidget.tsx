@@ -435,7 +435,7 @@ export default function AjnayaWidget() {
           updated[updated.length - 1] = { role: 'ajnaya' as const, text: partial, timestamp: replyTs }
           return updated
         })
-        await new Promise(r => setTimeout(r, 35 + Math.random() * 25))
+        await new Promise(r => setTimeout(r, 20 + Math.random() * 15))
       }
       analyticsMessages.current.push({ role: 'ajnaya', text: fullText, timestamp: replyTs })
     }
@@ -469,38 +469,37 @@ export default function AjnayaWidget() {
       const rawReply = data.reply
       const displayReply = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
 
-      // Start TTS prefetch NOW (overlaps with human delay)
+      // Start TTS prefetch immediately (overlaps with micro-delay)
       let ttsBlob: Blob | null = null
       const ttsFetch = voiceEnabled && rawReply
         ? prefetchTTS(rawReply).then(b => { ttsBlob = b })
         : Promise.resolve()
 
-      // Human delay (TTS downloads in parallel)
+      // Micro-delay only if API was very fast (< 500ms feels bot-like)
       const elapsed = Date.now() - startTime
-      const minDelay = 1200 + Math.random() * 800
-      if (elapsed < minDelay) await new Promise(r => setTimeout(r, minDelay - elapsed))
-
-      // Wait for TTS if not ready yet
-      await ttsFetch
+      if (elapsed < 500) await new Promise(r => setTimeout(r, 500 - elapsed))
 
       setTyping(false)
 
-      // Voice + typewriter start TOGETHER
-      if (voiceEnabled && ttsBlob) {
-        setIsAudioPlaying(true)
-        playBlob(ttsBlob).finally(() => setIsAudioPlaying(false))
-      }
+      // Don't block text on TTS — start typewriter immediately
+      // TTS plays as soon as blob arrives (may be slight delay, that's OK)
+      const ttsPlay = ttsFetch.then(() => {
+        if (ttsBlob) {
+          setIsAudioPlaying(true)
+          return playBlob(ttsBlob).finally(() => setIsAudioPlaying(false))
+        }
+      })
       await typewriterRender(displayReply)
+      await ttsPlay
 
       // Track objection for re-engagement
       if (/cher|arnaque|confiance|réfléchir|nul/i.test(text)) {
         lastObjectionRef.current = text
       }
     } catch {
-      // Fallback to pre-scripted responses with human delay
+      // Fallback — micro-delay only
       const elapsed = Date.now() - startTime
-      const minDelay = 1500
-      if (elapsed < minDelay) await new Promise(r => setTimeout(r, minDelay - elapsed))
+      if (elapsed < 500) await new Promise(r => setTimeout(r, 500 - elapsed))
 
       setTyping(false)
 
