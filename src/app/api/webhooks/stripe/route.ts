@@ -4,10 +4,14 @@ import { sendWelcomeEmail } from '@/lib/email'
 
 export const runtime = 'nodejs'
 
-const STRIPE_KEY = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
-const WEBHOOK_SECRET = (process.env.STRIPE_WEBHOOK_SECRET || '').replace(/\s/g, '')
+function getStripeClient() {
+  const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
+  return new Stripe(key, { apiVersion: '2025-02-24.acacia' })
+}
 
-const stripe = new Stripe(STRIPE_KEY, { apiVersion: '2025-02-24.acacia' })
+function getWebhookSecret() {
+  return (process.env.STRIPE_WEBHOOK_SECRET || '').replace(/\s/g, '')
+}
 
 // Prix → plan mapping
 const PLAN_MAP: Record<string, { name: string; cycle: string }> = {
@@ -52,14 +56,16 @@ export async function POST(request: Request) {
     const body = await request.text()
     const sig = request.headers.get('stripe-signature')
 
-    if (!sig || !WEBHOOK_SECRET) {
+    const webhookSecret = getWebhookSecret()
+    if (!sig || !webhookSecret) {
       console.warn('[webhook] Signature ou secret manquant')
       return NextResponse.json({ received: true })
     }
 
+    const stripe = getStripeClient()
     let event: Stripe.Event
     try {
-      event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET)
+      event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
     } catch (err) {
       console.error('[webhook] Vérification signature échouée:', (err as Error).message)
       return NextResponse.json({ error: 'Signature invalide' }, { status: 400 })

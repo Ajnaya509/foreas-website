@@ -263,11 +263,11 @@ function HorizontalMicroDetails() {
             gradient="sans que tu le voies."
           />
           <div
-            className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory"
+            className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory scrollbar-hide"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {microDetailsCards.map((card, i) => (
-              <div key={i} className="snap-start flex-shrink-0 w-[280px]">
+              <div key={i} className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
                 <MicroDetail
                   icon={card.icon}
                   title={card.title}
@@ -483,7 +483,7 @@ export default function ChauffeursPage() {
           "On sait exactement ce que tu vis."
           Frustration vs Désir — le miroir parfait
           ═══════════════════════════════════════════════════════════════ */}
-      <section id="douleur" className="relative py-20 md:py-28 bg-[#08080d]">
+      <section id="douleur" data-section="duality" className="relative py-20 md:py-28 bg-[#08080d]">
         <FloatingParticles count={12} className="z-0" />
         <div className="relative max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
@@ -596,7 +596,7 @@ export default function ChauffeursPage() {
           Multi-app chaos, fatigue, manque de visibilité
           Chaque micro-frustration = preuve qu'on connaît le métier
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative bg-[#08080d]">
+      <section data-section="features" className="relative bg-[#08080d]">
         <HorizontalMicroDetails />
       </section>
 
@@ -628,7 +628,7 @@ export default function ChauffeursPage() {
           On prouve qu'on connaît le métier dans les moindres détails
           Chaque bloc = un chauffeur qui se dit "il parle de MOI"
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28">
+      <section data-section="scenarios" className="relative py-20 md:py-28">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="On connaît ton quotidien"
@@ -710,7 +710,7 @@ export default function ChauffeursPage() {
           Urgence réelle (pas fake). Logique après l'émotion.
           whileInView reveal (no clip-path scroll).
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-32 lg:py-40 overflow-hidden">
+      <section data-section="offer" className="relative py-32 lg:py-40 overflow-hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -811,7 +811,7 @@ export default function ChauffeursPage() {
 // Mobile Hero — static, no useScroll, no useTransform, no sticky
 function MobileHero() {
   return (
-    <section className="relative pt-28 pb-20 overflow-hidden">
+    <section data-section="hero" className="relative pt-28 pb-20 overflow-hidden">
       {/* Background glow — static */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] pointer-events-none" />
       <FloatingParticles className="z-0" />
@@ -924,7 +924,7 @@ function DesktopParallaxHero({ reducedMotion }: { reducedMotion: boolean }) {
   const heroPhoneY = useTransform(heroProgress, [0, 1], [0, 150])
 
   return (
-    <section ref={heroRef} className="relative pt-36 pb-28 overflow-hidden">
+    <section ref={heroRef} data-section="hero" className="relative pt-36 pb-28 overflow-hidden">
       {/* Background glow — parallax layer 1 */}
       <motion.div
         style={{ y: reducedMotion ? 0 : heroGlowY, willChange: 'transform' }}

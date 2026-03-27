@@ -6,14 +6,15 @@ const PRICE_IDS: Record<string, string> = {
   annual: process.env.STRIPE_PRICE_ANNUAL || 'price_1Szy2YK89oTss0Sb9pQyBWXt',
 }
 
-// Sanitize key: strip invisible chars introduced by Vercel copy-paste (\r\n etc.)
-const STRIPE_KEY = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
-
-const stripe = new Stripe(STRIPE_KEY, {
-  apiVersion: '2025-02-24.acacia',
-  timeout: 8000,
-  maxNetworkRetries: 1,
-})
+// Lazy init to avoid build-time error when STRIPE_SECRET_KEY is not set
+function getStripe() {
+  const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
+  return new Stripe(key, {
+    apiVersion: '2025-02-24.acacia',
+    timeout: 8000,
+    maxNetworkRetries: 1,
+  })
+}
 
 function getNextMonday18hParis(): number {
   const now = new Date()
@@ -36,9 +37,10 @@ function getNextMonday18hParis(): number {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!STRIPE_KEY) {
+    if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json({ error: 'Clé Stripe non configurée' }, { status: 500 })
     }
+    const stripe = getStripe()
     const body = await request.json()
     const { plan, mode } = body
     if (!plan || !PRICE_IDS[plan]) {
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
       type: err.type,
       code: err.code,
       statusCode: err.statusCode,
-      keyPrefix: STRIPE_KEY.substring(0, 14),
+      keyPrefix: (process.env.STRIPE_SECRET_KEY || '').substring(0, 14),
     }))
     return NextResponse.json({ error: err.message || 'Erreur serveur', type: err.type }, { status: 500 })
   }
@@ -96,8 +98,8 @@ export async function GET() {
   const trialDays = Math.round((trialEnd * 1000 - now.getTime()) / (24 * 60 * 60 * 1000))
   return NextResponse.json({
     status: 'ok',
-    hasKey: !!STRIPE_KEY,
-    keyPrefix: STRIPE_KEY.substring(0, 14),
+    hasKey: !!process.env.STRIPE_SECRET_KEY,
+    keyPrefix: (process.env.STRIPE_SECRET_KEY || '').substring(0, 14),
     billing: { nextMonday18hParis: trialDate.toISOString(), trialDays, rule: 'Lundi 18h Paris = sacré.' },
   })
 }

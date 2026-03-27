@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
-import { X, Send, Mic, Volume2 } from 'lucide-react'
+import { X, Send, Mic, Volume2, VolumeX } from 'lucide-react'
 import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from '@/lib/ajnaya-analytics'
+import { speakText, stopSpeaking } from '@/lib/tts'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
 const WELCOME_MESSAGES: Record<string, string> = {
@@ -15,7 +16,7 @@ const WELCOME_MESSAGES: Record<string, string> = {
 }
 const DEFAULT_WELCOME = "Salut ! Je suis Ajnaya, l'IA FOREAS. En quoi je peux t'aider ?"
 
-// ─── Pre-scripted responses ───────────────────────────────────────────────────
+// ─── Pre-scripted fallback responses ──────────────────────────────────────────
 const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
   { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: "L'abonnement commence à 1,42€/jour avec essai gratuit, 0€ débité. Tous les détails sont sur /tarifs2." },
   { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit jusqu'au prochain lundi 18h. 0€ prélevé. Annulation en 1 clic." },
@@ -39,6 +40,68 @@ function matchResponse(text: string): { key: string; reply: string } {
   return { key: 'default', reply: DEFAULT_REPLY }
 }
 
+// ─── Render message with clickable links ─────────────────────────────────────
+function renderMessageWithLinks(text: string) {
+  // Parse [text](url) markdown links
+  const parts = text.split(/(\[[^\]]+\]\([^)]+\))/)
+  return parts.map((part, i) => {
+    const match = part.match(/\[([^\]]+)\]\(([^)]+)\)/)
+    if (match) {
+      return (
+        <a
+          key={i}
+          href={match[2]}
+          className="text-accent-cyan underline hover:text-white transition-colors"
+          onClick={(e) => {
+            // Track conversion if link is /tarifs2
+            if (match[2].includes('/tarifs2')) {
+              trackConversion()
+            }
+            // Navigate in same tab
+            if (match[2].startsWith('/')) {
+              e.preventDefault()
+              window.location.href = match[2]
+            }
+          }}
+        >
+          {match[1]}
+        </a>
+      )
+    }
+    // Also detect bare /tarifs2 or /contact links
+    return part.split(/(\/tarifs2|\/contact)/).map((seg, j) => {
+      if (seg === '/tarifs2' || seg === '/contact') {
+        return (
+          <a
+            key={`${i}-${j}`}
+            href={seg}
+            className="text-accent-cyan underline hover:text-white transition-colors"
+            onClick={() => { if (seg === '/tarifs2') trackConversion() }}
+          >
+            {seg}
+          </a>
+        )
+      }
+      return seg
+    })
+  })
+}
+
+// ─── Conversion tracking (updates pieuvre_scripts stats) ─────────────────────
+async function trackConversion() {
+  try {
+    // Fire and forget — update script conversion stats
+    await fetch('/api/ajnaya/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: '__conversion_event__', sessionId: getSessionId(), pageSource: window.location.pathname }),
+    }).catch(() => {})
+  } catch { /* silent */ }
+}
+
+// ─── Phone number regex ──────────────────────────────────────────────────────
+const PHONE_REGEX = /^(\+33|0)[0-9\s.\-]{8,}$/
+
 // ─── Mini Hologram (header version) ───────────────────────────────────────────
 function MiniHologram() {
   return (
@@ -51,6 +114,21 @@ function MiniHologram() {
   )
 }
 
+// ─── Audio Equalizer ─────────────────────────────────────────────────────────
+function AudioEqualizer() {
+  return (
+    <div className="flex items-end gap-[2px] h-3 ml-2">
+      {[0, 0.15, 0.3].map((delay, i) => (
+        <div
+          key={i}
+          className="w-[3px] rounded-full bg-accent-cyan/60"
+          style={{ animation: `equalizer 0.8s ease-in-out ${delay}s infinite` }}
+        />
+      ))}
+    </div>
+  )
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // WIDGET COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -58,7 +136,7 @@ function MiniHologram() {
 export default function AjnayaWidget() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'ajnaya'; text: string }>>([])
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'ajnaya'; text: string; timestamp?: string }>>([])
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
   const [hasStickyBelow, setHasStickyBelow] = useState(false)
@@ -66,6 +144,17 @@ export default function AjnayaWidget() {
   const [labelVisible, setLabelVisible] = useState(true)
   const [labelDismissed, setLabelDismissed] = useState(false)
   const [labelCycleCount, setLabelCycleCount] = useState(0)
+
+  // New states for LLM integration
+  const [prospectId, setProspectId] = useState<string | null>(null)
+  const [voiceEnabled, setVoiceEnabled] = useState(true)
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [scrollSection, setScrollSection] = useState('hero')
+  const [heatScore, setHeatScore] = useState(0)
+  const [messageCount, setMessageCount] = useState(0)
+  const [hasAskedPhone, setHasAskedPhone] = useState(false)
+  const [customLabel, setCustomLabel] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const openedAtRef = useRef<number>(0)
@@ -75,9 +164,61 @@ export default function AjnayaWidget() {
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ctaTrackingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const labelDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const reengageTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const customLabelTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const heatSectionTracked = useRef<Set<string>>(new Set())
+  const openTimeRef = useRef<number>(0)
+  const openTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
+  const lastObjectionRef = useRef<string | null>(null)
 
   const isTuPage = pathname === '/chauffeurs' || pathname === '/tarifs2'
   const placeholder = isTuPage ? 'Écris un message...' : 'Écrivez un message...'
+  const sessionId = getSessionId()
+
+  // ─── Scroll section tracking ──────────────────────────────────────────────
+  useEffect(() => {
+    const sections = ['hero', 'duality', 'features', 'scenarios', 'testimonials', 'pricing', 'offer', 'problem', 'solution', 'partners']
+    const handleScroll = () => {
+      for (const section of [...sections].reverse()) {
+        const el = document.querySelector(`[data-section="${section}"]`)
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          if (rect.top < window.innerHeight * 0.6) {
+            setScrollSection(section)
+            break
+          }
+        }
+      }
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // ─── Heat score from scroll section ───────────────────────────────────────
+  useEffect(() => {
+    if ((scrollSection === 'pricing' || scrollSection === 'offer') && !heatSectionTracked.current.has(scrollSection)) {
+      heatSectionTracked.current.add(scrollSection)
+      setHeatScore(s => s + 5)
+    }
+  }, [scrollSection])
+
+  // ─── Heat score from time spent with widget open ──────────────────────────
+  useEffect(() => {
+    if (isOpen) {
+      openTimeRef.current = 0
+      openTimerRef.current = setInterval(() => {
+        openTimeRef.current += 1
+        if (openTimeRef.current === 60) {
+          setHeatScore(s => s + 3)
+        }
+      }, 1000)
+    } else {
+      if (openTimerRef.current) clearInterval(openTimerRef.current)
+    }
+    return () => { if (openTimerRef.current) clearInterval(openTimerRef.current) }
+  }, [isOpen])
 
   // ─── Label rotation ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -134,8 +275,10 @@ export default function AjnayaWidget() {
       openedAtRef.current = Date.now()
       sentRef.current = false
       const welcome = WELCOME_MESSAGES[pathname] || DEFAULT_WELCOME
-      setMessages([{ role: 'ajnaya', text: welcome }])
-      analyticsMessages.current = [{ role: 'ajnaya', text: welcome, timestamp: new Date().toISOString() }]
+      const ts = new Date().toISOString()
+      setMessages([{ role: 'ajnaya', text: welcome, timestamp: ts }])
+      analyticsMessages.current = [{ role: 'ajnaya', text: welcome, timestamp: ts }]
+      setHeatScore(s => s + 3) // Widget opened
     }
   }, [isOpen, pathname, messages.length])
 
@@ -153,7 +296,7 @@ export default function AjnayaWidget() {
     if (sentRef.current || analyticsMessages.current.length <= 1) return
     sentRef.current = true
     sendWidgetAnalytics({
-      session_id: getSessionId(),
+      session_id: sessionId,
       page_source: pathname,
       device: getDevice(),
       messages: analyticsMessages.current,
@@ -161,7 +304,7 @@ export default function AjnayaWidget() {
       cta_clicked_after: ctaUrl,
       conversation_duration_ms: Date.now() - openedAtRef.current,
     })
-  }, [pathname])
+  }, [pathname, sessionId])
 
   useEffect(() => {
     if (!isOpen || messages.length <= 1) return
@@ -192,28 +335,185 @@ export default function AjnayaWidget() {
     ctaTrackingTimer.current = setTimeout(() => document.removeEventListener('click', handler), 60000)
   }, [sendAnalytics])
 
-  // ─── Actions ────────────────────────────────────────────────────────────────
-  const handleClose = () => { setIsOpen(false); sendAnalytics(); startCtaTracking() }
+  // ─── Handle close with re-engagement ──────────────────────────────────────
+  const handleClose = useCallback(() => {
+    setIsOpen(false)
+    stopSpeaking()
+    setIsAudioPlaying(false)
+    sendAnalytics()
+    startCtaTracking()
 
-  const handleSend = () => {
-    const text = input.trim()
+    // Re-engagement after 25s if conversation happened without conversion
+    if (messageCount > 0) {
+      if (reengageTimer.current) clearTimeout(reengageTimer.current)
+      reengageTimer.current = setTimeout(() => {
+        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.text || ''
+        let reLabel: string
+        if (/prix|tarif|combien|co[uû]t/i.test(lastUserMsg)) {
+          reLabel = 'Tu avais une question sur le prix…'
+        } else if (lastObjectionRef.current) {
+          reLabel = 'Je peux t\'aider à décider…'
+        } else {
+          reLabel = 'Tu veux que je te montre un exemple concret ?'
+        }
+        setCustomLabel(reLabel)
+        setLabelDismissed(false)
+        setLabelVisible(true)
+        setLabelCycleCount(0)
+
+        // Reset custom label after 10s
+        if (customLabelTimer.current) clearTimeout(customLabelTimer.current)
+        customLabelTimer.current = setTimeout(() => {
+          setCustomLabel(null)
+        }, 10000)
+      }, 25000)
+    }
+  }, [messageCount, messages, sendAnalytics, startCtaTracking])
+
+  // ─── Main send handler ────────────────────────────────────────────────────
+  const handleSend = useCallback(async (overrideText?: string) => {
+    const text = (overrideText || input).trim()
     if (!text) return
+
     setInput('')
-    const userMsg = { role: 'user' as const, text }
+    const newMessageCount = messageCount + 1
+    setMessageCount(newMessageCount)
+
+    const ts = new Date().toISOString()
+    const userMsg = { role: 'user' as const, text, timestamp: ts }
     setMessages(prev => [...prev, userMsg])
-    analyticsMessages.current.push({ ...userMsg, timestamp: new Date().toISOString() })
-    const { key, reply } = matchResponse(text)
-    if (key !== 'default') intentsRef.current.push(key)
-    setTyping(true)
-    setTimeout(() => {
+    analyticsMessages.current.push({ role: 'user', text, timestamp: ts })
+
+    // Heat score
+    if (/prix|tarif|coût|combien|essai|gratuit/i.test(text)) setHeatScore(s => s + 5)
+    else setHeatScore(s => s + 2)
+
+    // Phone number interception
+    if (PHONE_REGEX.test(text.replace(/[\s.\-()]/g, '').trim()) && !hasAskedPhone) {
+      const cleaned = text.replace(/[\s.\-()]/g, '')
+      setTyping(true)
+
+      try {
+        const res = await fetch('/api/ajnaya/prospect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleaned, source: 'widget_site', pageSource: pathname }),
+        })
+        const data = await res.json()
+        if (data.prospectId) setProspectId(data.prospectId)
+      } catch { /* silent */ }
+
       setTyping(false)
-      const ajnayaMsg = { role: 'ajnaya' as const, text: reply }
+      setHasAskedPhone(true)
+      const replyTs = new Date().toISOString()
+      const phoneReply = { role: 'ajnaya' as const, text: "Parfait ! Je t'envoie un récap sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)", timestamp: replyTs }
+      setMessages(prev => [...prev, phoneReply])
+      analyticsMessages.current.push({ role: 'ajnaya', text: phoneReply.text, timestamp: replyTs })
+
+      if (voiceEnabled) {
+        setIsAudioPlaying(true)
+        speakText("Parfait ! Je t'envoie un récap sur WhatsApp.").finally(() => setIsAudioPlaying(false))
+      }
+      return
+    }
+
+    // Typing indicator
+    setTyping(true)
+
+    try {
+      const res = await fetch('/api/ajnaya/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          sessionId,
+          prospectId,
+          pageSource: pathname,
+          scrollSection,
+          heatScore,
+          messageCount: newMessageCount,
+          conversationHistory: messages.slice(-10).map(m => ({ role: m.role, text: m.text })),
+          device: window.innerWidth < 768 ? 'mobile' : 'desktop',
+        }),
+      })
+
+      if (!res.ok) throw new Error('API error')
+
+      const data = await res.json()
+      setTyping(false)
+
+      if (data.error) throw new Error(data.error)
+
+      if (data.prospectId && !prospectId) setProspectId(data.prospectId)
+
+      const replyTs = new Date().toISOString()
+      const ajnayaMsg = { role: 'ajnaya' as const, text: data.reply, timestamp: replyTs }
       setMessages(prev => [...prev, ajnayaMsg])
-      analyticsMessages.current.push({ ...ajnayaMsg, timestamp: new Date().toISOString() })
-    }, 800 + Math.random() * 700)
+      analyticsMessages.current.push({ role: 'ajnaya', text: data.reply, timestamp: replyTs })
+
+      // Track objection for re-engagement
+      if (/cher|arnaque|confiance|réfléchir|nul/i.test(text)) {
+        lastObjectionRef.current = text
+      }
+
+      // TTS
+      if (voiceEnabled && data.reply) {
+        setIsAudioPlaying(true)
+        speakText(data.reply).finally(() => setIsAudioPlaying(false))
+      }
+    } catch {
+      setTyping(false)
+      // Fallback to pre-scripted responses
+      const { key, reply } = matchResponse(text)
+      if (key !== 'default') intentsRef.current.push(key)
+      const replyTs = new Date().toISOString()
+      setMessages(prev => [...prev, { role: 'ajnaya' as const, text: reply, timestamp: replyTs }])
+      analyticsMessages.current.push({ role: 'ajnaya', text: reply, timestamp: replyTs })
+    }
+  }, [input, messageCount, hasAskedPhone, pathname, sessionId, prospectId, scrollSection, heatScore, messages, voiceEnabled])
+
+  // ─── Voice toggle ─────────────────────────────────────────────────────────
+  const toggleVoice = () => {
+    if (voiceEnabled) stopSpeaking()
+    setVoiceEnabled(!voiceEnabled)
+    setIsAudioPlaying(false)
+  }
+
+  // ─── Microphone (Web Speech API) ──────────────────────────────────────────
+  const toggleMic = () => {
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+      return
+    }
+
+    const SpeechRecognition = (window as unknown as Record<string, unknown>).SpeechRecognition || (window as unknown as Record<string, unknown>).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      alert('Ton navigateur ne supporte pas la reconnaissance vocale.')
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition = new (SpeechRecognition as any)()
+    recognition.lang = 'fr-FR'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+
+    recognition.onstart = () => setIsListening(true)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript
+      if (transcript) handleSend(transcript)
+    }
+    recognition.onend = () => setIsListening(false)
+    recognition.onerror = () => setIsListening(false)
+
+    recognitionRef.current = recognition
+    recognition.start()
   }
 
   const bubbleBottom = hasStickyBelow ? 96 : 24
+  const currentLabelText = customLabel || LABEL_PHRASES[labelIndex]
 
   return (
     <>
@@ -246,14 +546,14 @@ export default function AjnayaWidget() {
                   <div className="relative bg-black/70 backdrop-blur-sm border border-white/[0.08] rounded-xl px-4 py-2.5 min-w-[180px]">
                     <AnimatePresence mode="wait">
                       <motion.span
-                        key={labelIndex}
+                        key={customLabel || labelIndex}
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.4 }}
                         className="block font-body text-sm text-white/60"
                       >
-                        {LABEL_PHRASES[labelIndex]}
+                        {currentLabelText}
                       </motion.span>
                     </AnimatePresence>
                     {/* Triangle pointer → right on desktop, down on mobile */}
@@ -323,8 +623,11 @@ export default function AjnayaWidget() {
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-cyan/[0.08] text-accent-cyan/60 border border-accent-cyan/15 font-mono">IA</span>
               </div>
               <div className="flex items-center">
-                <button className="p-1.5 cursor-not-allowed" title="Bientôt disponible">
-                  <Volume2 className="w-[18px] h-[18px] text-white/20" />
+                <button onClick={toggleVoice} className="p-1.5" title={voiceEnabled ? 'Désactiver la voix' : 'Activer la voix'}>
+                  {voiceEnabled
+                    ? <Volume2 className="w-[18px] h-[18px] text-accent-cyan/70 hover:text-accent-cyan transition-colors" />
+                    : <VolumeX className="w-[18px] h-[18px] text-white/20 hover:text-white/40 transition-colors" />
+                  }
                 </button>
                 <button onClick={handleClose} className="p-1.5 ml-3 rounded-lg hover:bg-white/5 transition-colors">
                   <X className="w-[18px] h-[18px] text-white/30 hover:text-white transition-colors" />
@@ -343,22 +646,28 @@ export default function AjnayaWidget() {
                   transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div
-                    className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed font-body ${
-                      msg.role === 'ajnaya'
-                        ? 'text-white/75'
-                        : 'text-white/80 ml-auto'
-                    }`}
-                    style={msg.role === 'ajnaya' ? {
-                      background: 'rgba(0,212,255,0.04)',
-                      border: '1px solid rgba(0,212,255,0.08)',
-                      borderRadius: '16px 16px 16px 4px',
-                    } : {
-                      background: 'rgba(140,82,255,0.12)',
-                      borderRadius: '16px 16px 4px 16px',
-                    }}
-                  >
-                    {msg.text}
+                  <div className="flex items-end gap-1">
+                    <div
+                      className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed font-body ${
+                        msg.role === 'ajnaya'
+                          ? 'text-white/75'
+                          : 'text-white/80 ml-auto'
+                      }`}
+                      style={msg.role === 'ajnaya' ? {
+                        background: 'rgba(0,212,255,0.04)',
+                        border: '1px solid rgba(0,212,255,0.08)',
+                        borderRadius: '16px 16px 16px 4px',
+                      } : {
+                        background: 'rgba(140,82,255,0.12)',
+                        borderRadius: '16px 16px 4px 16px',
+                      }}
+                    >
+                      {msg.role === 'ajnaya' ? renderMessageWithLinks(msg.text) : msg.text}
+                    </div>
+                    {/* Audio equalizer on last Ajnaya message */}
+                    {msg.role === 'ajnaya' && i === messages.length - 1 && isAudioPlaying && (
+                      <AudioEqualizer />
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -378,8 +687,12 @@ export default function AjnayaWidget() {
 
             {/* ─── Input ─── */}
             <div className="flex-shrink-0 px-3 py-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)' }}>
-              <button className="flex-shrink-0 p-1 cursor-not-allowed" title="Bientôt disponible">
-                <Mic className="w-5 h-5 text-white/15" />
+              <button
+                onClick={toggleMic}
+                className="flex-shrink-0 p-1"
+                title={isListening ? 'Arrêter' : 'Parler'}
+              >
+                <Mic className={`w-5 h-5 ${isListening ? 'text-red-400 animate-pulse' : 'text-white/30 hover:text-white/50 transition-colors'}`} />
               </button>
               <input
                 type="text"
@@ -390,7 +703,7 @@ export default function AjnayaWidget() {
                 className="flex-1 bg-transparent text-sm text-white/80 placeholder:text-white/25 focus:outline-none font-body"
               />
               <button
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 disabled={!input.trim()}
                 className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
                   input.trim()
@@ -418,6 +731,10 @@ export default function AjnayaWidget() {
         @keyframes typingDot {
           0%, 100% { transform: scale(0.6); opacity: 0.4; }
           50% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes equalizer {
+          0%, 100% { height: 4px; }
+          50% { height: 12px; }
         }
       `}</style>
     </>

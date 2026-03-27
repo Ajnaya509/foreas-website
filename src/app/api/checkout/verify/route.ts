@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const STRIPE_KEY = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
-const stripe = new Stripe(STRIPE_KEY, { apiVersion: '2025-02-24.acacia' })
+function getStripe() {
+  const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
+  return new Stripe(key, { apiVersion: '2025-02-24.acacia' })
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'session_id manquant' }, { status: 400 })
     }
 
+    const stripe = getStripe()
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['subscription', 'customer'],
     })

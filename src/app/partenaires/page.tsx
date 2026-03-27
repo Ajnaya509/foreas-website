@@ -295,7 +295,7 @@ export default function PartenairesPage() {
           Croyance à abattre : "Gérer une flotte, c'est du chaos,
           et aucun outil ne peut vraiment m'aider."
           ═══════════════════════════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
+      <section ref={heroRef} data-section="hero" className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
         {/* Glow — parallax on desktop, static on mobile */}
         {isMobile ? (
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-accent-purple/8 via-accent-cyan/4 to-transparent rounded-full blur-[80px] pointer-events-none" />
@@ -497,7 +497,7 @@ export default function PartenairesPage() {
       {/* ═══════════════════════════════════════════════════════════════
           2. DOULEUR PRIMAIRE — La réalité fleet
           ═══════════════════════════════════════════════════════════════ */}
-      <section id="douleurs" className="relative py-20 md:py-28 bg-[#08080d]">
+      <section id="douleurs" data-section="duality" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="Ce que vous vivez au quotidien"
@@ -596,23 +596,23 @@ export default function PartenairesPage() {
           />
 
           {/* Mobile : scroll horizontal natif / Desktop : grille 3 colonnes */}
-          <div className="md:hidden flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="snap-start flex-shrink-0 w-[280px]">
+          <div className="md:hidden flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
               <FeatureCard icon={BarChart3} title="Pas de benchmark interne" desc="Impossible de comparer vos chauffeurs entre eux. Le meilleur et le pire génèrent un écart de 40% de CA — mais vous ne le voyez pas." />
             </div>
-            <div className="snap-start flex-shrink-0 w-[280px]">
+            <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
               <FeatureCard icon={Map} title="Couverture zone déséquilibrée" desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration IA, votre flotte se cannibalise elle-même." />
             </div>
-            <div className="snap-start flex-shrink-0 w-[280px]">
+            <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
               <FeatureCard icon={Clock} title="Temps de réponse imprévisible" desc="Votre client VIP attend 12 minutes. Inacceptable pour votre marque. Mais sans prédiction de demande, c'est la loterie." />
             </div>
-            <div className="snap-start flex-shrink-0 w-[280px]">
+            <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
               <FeatureCard icon={TrendingDown} title="Commission plateforme élevée" desc="Uber, Bolt prennent 20-25%. Sur 100 courses/jour, c'est des milliers d'euros qui ne reviennent jamais à votre flotte." />
             </div>
-            <div className="snap-start flex-shrink-0 w-[280px]">
+            <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
               <FeatureCard icon={MessageSquare} title="Aucun outil de communication unifié" desc="WhatsApp perso, appels, SMS — vous gérez votre flotte avec des outils de 2010. Aucune traçabilité, aucun historique structuré." />
             </div>
-            <div className="snap-start flex-shrink-0 w-[280px]">
+            <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
               <FeatureCard icon={Repeat} title="Formation chronophage" desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — l'IA compense l'inexpérience." />
             </div>
           </div>
@@ -635,7 +635,7 @@ export default function PartenairesPage() {
           4. LA SOLUTION FOREAS FLEET — Ce qui change
           Icon micro-animations: CSS-based (no permanent RAF loops)
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28 bg-[#08080d]">
+      <section data-section="solution" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="FOREAS Fleet"
@@ -732,7 +732,7 @@ export default function PartenairesPage() {
           whileInView fade-in (no clip-path scroll)
           Dots: CSS ping animation, Line: static gradient
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28">
+      <section data-section="scenarios" className="relative py-20 md:py-28">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="En conditions réelles"

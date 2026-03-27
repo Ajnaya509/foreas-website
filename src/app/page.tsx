@@ -215,7 +215,7 @@ export default function HomePage() {
 
       {isMobile ? (
         /* ── MOBILE HERO: static, simple whileInView fade-in, zero useScroll ── */
-        <section className="relative pt-28 pb-24 overflow-hidden">
+        <section data-section="hero" className="relative pt-28 pb-24 overflow-hidden">
           {/* Background glows — static on mobile */}
           <div className="pointer-events-none">
             <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-purple/6 rounded-full blur-[100px]" />
@@ -326,7 +326,7 @@ export default function HomePage() {
         </section>
       ) : (
         /* ── DESKTOP HERO: parallax with useScroll + useTransform + will-change ── */
-        <section ref={heroRef} className="relative pt-40 pb-32 overflow-hidden">
+        <section ref={heroRef} data-section="hero" className="relative pt-40 pb-32 overflow-hidden">
           {/* Background glows — parallax layer 1 */}
           <motion.div
             style={reducedMotion ? {} : { y: glowY, willChange: 'transform' }}
@@ -445,7 +445,7 @@ export default function HomePage() {
           2. PROBLÈME B2B — La douleur du partenaire
           "Vos clients méritent mieux que ce qu'ils ont aujourd'hui."
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28 bg-[#08080d]">
+      <section data-section="problem" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -519,7 +519,7 @@ export default function HomePage() {
           3. SOLUTION — Ce que FOREAS change (Horizontal Sticky Scroll)
           Le miroir positif : chaque douleur a sa réponse
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative">
+      <section data-section="solution" className="relative">
         <HorizontalValueProps />
       </section>
 
@@ -530,7 +530,7 @@ export default function HomePage() {
           4. QUI SONT NOS PARTENAIRES — Catégories cibles
           Hôtels, Airbnb, conciergeries, entreprises
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 md:py-28 bg-[#08080d]">
+      <section data-section="partners" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
