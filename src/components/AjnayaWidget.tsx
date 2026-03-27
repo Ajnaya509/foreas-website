@@ -469,28 +469,27 @@ export default function AjnayaWidget() {
       const rawReply = data.reply
       const displayReply = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
 
-      // Start TTS prefetch immediately (overlaps with micro-delay)
-      let ttsBlob: Blob | null = null
-      const ttsFetch = voiceEnabled && rawReply
-        ? prefetchTTS(rawReply).then(b => { ttsBlob = b })
+      // Prefetch TTS + micro-delay run in parallel
+      const ttsPromise = voiceEnabled && rawReply
+        ? prefetchTTS(rawReply)
+        : Promise.resolve(null)
+
+      const elapsed = Date.now() - startTime
+      const delayPromise = elapsed < 500
+        ? new Promise(r => setTimeout(r, 500 - elapsed))
         : Promise.resolve()
 
-      // Micro-delay only if API was very fast (< 500ms feels bot-like)
-      const elapsed = Date.now() - startTime
-      if (elapsed < 500) await new Promise(r => setTimeout(r, 500 - elapsed))
+      // Wait for BOTH before starting (so voice + text are synced)
+      const [ttsBlob] = await Promise.all([ttsPromise, delayPromise])
 
       setTyping(false)
 
-      // Don't block text on TTS — start typewriter immediately
-      // TTS plays as soon as blob arrives (may be slight delay, that's OK)
-      const ttsPlay = ttsFetch.then(() => {
-        if (ttsBlob) {
-          setIsAudioPlaying(true)
-          return playBlob(ttsBlob).finally(() => setIsAudioPlaying(false))
-        }
-      })
+      // Voice + typewriter start at the exact same moment
+      if (voiceEnabled && ttsBlob) {
+        setIsAudioPlaying(true)
+        playBlob(ttsBlob).finally(() => setIsAudioPlaying(false))
+      }
       await typewriterRender(displayReply)
-      await ttsPlay
 
       // Track objection for re-engagement
       if (/cher|arnaque|confiance|réfléchir|nul/i.test(text)) {
