@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'TTS non disponible' }, { status: 503 })
     }
 
-    // Cap at 200 chars — short = fast TTS generation
-    let spokenText = text.length > 200
-      ? text.substring(0, text.lastIndexOf('.', 200) + 1) || text.substring(0, text.lastIndexOf(' ', 200)) || text.substring(0, 200)
+    // Cap at 1000 chars — ElevenLabs supports up to 5000
+    let spokenText = text.length > 1000
+      ? text.substring(0, text.lastIndexOf('.', 1000) + 1) || text.substring(0, text.lastIndexOf(' ', 1000)) || text.substring(0, 1000)
       : text
 
     // Clean emojis — ElevenLabs reads them literally
