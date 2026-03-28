@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             stability: 0.35,
             similarity_boost: 0.8,
             style: 0.55,
-            speed: 1.2,
+            speed: 1.15,
             use_speaker_boost: true,
           },
         }),
