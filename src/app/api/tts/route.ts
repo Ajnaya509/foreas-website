@@ -21,6 +21,15 @@ export async function POST(request: NextRequest) {
     // Clean emojis — ElevenLabs reads them literally
     spokenText = spokenText.replace(/[\u{1F600}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]/gu, '')
 
+    // Strip markdown formatting — ElevenLabs reads asterisks/underscores
+    spokenText = spokenText
+      .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
+      .replace(/\*(.+?)\*/g, '$1')       // *italic*
+      .replace(/__(.+?)__/g, '$1')       // __bold__
+      .replace(/_(.+?)_/g, '$1')         // _italic_
+      .replace(/~~(.+?)~~/g, '$1')       // ~~strikethrough~~
+      .replace(/`(.+?)`/g, '$1')         // `code`
+
     // Expand abbreviations for natural speech
     spokenText = spokenText
       .replace(/\bmin\b/gi, 'minutes')
