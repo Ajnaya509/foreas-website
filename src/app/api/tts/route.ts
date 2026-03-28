@@ -21,6 +21,17 @@ export async function POST(request: NextRequest) {
     // Clean emojis — ElevenLabs reads them literally
     spokenText = spokenText.replace(/[\u{1F600}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]/gu, '')
 
+    // Expand abbreviations for natural speech
+    spokenText = spokenText
+      .replace(/\bmin\b/gi, 'minutes')
+      .replace(/\bh\b/gi, 'heures')
+      .replace(/\bkm\b/gi, 'kilomètres')
+      .replace(/\b€\/h\b/gi, 'euros de l\'heure')
+      .replace(/\b€\/km\b/gi, 'euros du kilomètre')
+      .replace(/\bCA\b/g, 'chiffre d\'affaires')
+      .replace(/\brdv\b/gi, 'rendez-vous')
+      .replace(/\bnb\b/gi, 'nombre')
+
     const res = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=3&output_format=mp3_22050_32`,
       {
@@ -37,7 +48,7 @@ export async function POST(request: NextRequest) {
             stability: 0.35,
             similarity_boost: 0.8,
             style: 0.55,
-            speed: 1.2,
+            speed: 1.1,
             use_speaker_boost: true,
           },
         }),
