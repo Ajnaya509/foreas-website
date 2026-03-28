@@ -32,11 +32,15 @@ export async function POST(request: NextRequest) {
 
     // Expand abbreviations for natural speech
     spokenText = spokenText
+      .replace(/(\d+),(\d+)\s*€/g, '$1 euros $2')           // 12,97€ → 12 euros 97
+      .replace(/(\d+)\s*€\s*\/\s*semaine/gi, '$1 euros par semaine')  // 12€/semaine
+      .replace(/(\d+)\s*€\s*\/\s*mois/gi, '$1 euros par mois')
+      .replace(/(\d+)\s*€/g, '$1 euros')                    // 499€ → 499 euros
+      .replace(/\b€\/h\b/gi, 'euros de l\'heure')
+      .replace(/\b€\/km\b/gi, 'euros du kilomètre')
       .replace(/\bmin\b/gi, 'minutes')
       .replace(/\bh\b/gi, 'heures')
       .replace(/\bkm\b/gi, 'kilomètres')
-      .replace(/\b€\/h\b/gi, 'euros de l\'heure')
-      .replace(/\b€\/km\b/gi, 'euros du kilomètre')
       .replace(/\bCA\b/g, 'chiffre d\'affaires')
       .replace(/\brdv\b/gi, 'rendez-vous')
       .replace(/\bnb\b/gi, 'nombre')
@@ -57,7 +61,7 @@ export async function POST(request: NextRequest) {
             stability: 0.35,
             similarity_boost: 0.8,
             style: 0.55,
-            speed: 1.1,
+            speed: 1.2,
             use_speaker_boost: true,
           },
         }),
