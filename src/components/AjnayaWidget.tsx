@@ -18,6 +18,7 @@ const DEFAULT_WELCOME = "Salut ! Je suis Ajnaya, l'IA FOREAS. En quoi je peux t'
 
 // ─── Pre-scripted fallback responses ──────────────────────────────────────────
 const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
+  { pattern: /^(salut|bonjour|bonsoir|yo|hey|coucou|hello|allo|allô|slt|bjr|cc|bj|bsr|wesh|oui|ok|d'accord|parfait|super|top|merci|svp|stp)[\s!.,?]*$/i, key: 'greeting', reply: "Salut ! Moi c'est Ajnaya, l'IA FOREAS pour les chauffeurs VTC. T'es sur quelle zone en ce moment ?" },
   { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: "L'abonnement commence à 1,42€/jour avec essai gratuit, 0€ débité. Tous les détails sont sur /tarifs2." },
   { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit jusqu'au prochain lundi 18h. 0€ prélevé. Annulation en 1 clic." },
   { pattern: /comment ça marche|fonctionnement|comment|fonctionne/i, key: 'how', reply: 'Je croise trains, vols, événements, météo et habitudes locales en temps réel pour te dire où te positionner 15 min avant la demande.' },
@@ -25,7 +26,7 @@ const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
   { pattern: /partenaire|flotte|entreprise|h[oô]tel|airbnb/i, key: 'b2b', reply: 'Pour les partenaires, on propose un accompagnement sur mesure avec dashboard dédié. Le mieux : prenez contact via /contact.' },
   { pattern: /zone|carte|map|o[uù]/i, key: 'coverage', reply: "Je couvre Paris et l'Île-de-France. Les zones chaudes changent en temps réel selon les événements, la météo et les transports." },
 ]
-const DEFAULT_REPLY = 'Bonne question ! Pour aller plus loin, explore le site ou essaie l\'app gratuitement sur /tarifs2.'
+const DEFAULT_REPLY = "Je suis pas sûre de comprendre ta question — essaie de me demander par exemple : 'C'est quoi le prix ?' ou 'Comment ça marche ?'"
 
 const LABEL_PHRASES = [
   'Demande à Ajnaya →',
@@ -154,6 +155,8 @@ export default function AjnayaWidget() {
   const [heatScore, setHeatScore] = useState(0)
   const [messageCount, setMessageCount] = useState(0)
   const [hasAskedPhone, setHasAskedPhone] = useState(false)
+  const [phonePromptPending, setPhonePromptPending] = useState(false)
+  const [phoneCaptureDone, setPhoneCaptureDone] = useState(false)
   const [customLabel, setCustomLabel] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -390,23 +393,35 @@ export default function AjnayaWidget() {
     if (/prix|tarif|coût|combien|essai|gratuit/i.test(text)) setHeatScore(s => s + 5)
     else setHeatScore(s => s + 2)
 
-    // Phone number interception
-    if (PHONE_REGEX.test(text.replace(/[\s.\-()]/g, '').trim()) && !hasAskedPhone) {
+    // Phone number interception — capture + Identity Bridge hash server-side
+    if (PHONE_REGEX.test(text.replace(/[\s.\-()]/g, '').trim()) && !phoneCaptureDone) {
       const cleaned = text.replace(/[\s.\-()]/g, '')
       setTyping(true)
 
       try {
-        const res = await fetch('/api/ajnaya/prospect', {
+        // Create/retrieve prospect first if needed
+        if (!prospectId) {
+          const res = await fetch('/api/ajnaya/prospect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: cleaned, source: 'widget_site', pageSource: pathname }),
+          })
+          const data = await res.json()
+          if (data.prospectId) setProspectId(data.prospectId)
+        }
+
+        // Identity Bridge — hash happens server-side only
+        await fetch('/api/identity/capture', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: cleaned, source: 'widget_site', pageSource: pathname }),
+          body: JSON.stringify({ phone_raw: cleaned, prospect_id: prospectId, canal: 'widget' }),
         })
-        const data = await res.json()
-        if (data.prospectId) setProspectId(data.prospectId)
       } catch { /* silent */ }
 
       setTyping(false)
       setHasAskedPhone(true)
+      setPhoneCaptureDone(true)
+      setPhonePromptPending(false)
       const replyTs = new Date().toISOString()
       const phoneReply = { role: 'ajnaya' as const, text: "Parfait ! Je t'envoie un récap sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)", timestamp: replyTs }
       setMessages(prev => [...prev, phoneReply])
@@ -484,6 +499,20 @@ export default function AjnayaWidget() {
       // Typewriter starts IMMEDIATELY — no waiting for TTS
       await typewriterRender(displayReply)
 
+      // Identity Bridge — after 2nd message, ask for phone number
+      if (newMessageCount === 2 && !phoneCaptureDone) {
+        setPhonePromptPending(true)
+        await new Promise(r => setTimeout(r, 600))
+        const phoneAskTs = new Date().toISOString()
+        const phoneAskMsg = "Pour aller plus loin, tu peux me laisser ton numéro ? Je t'envoie un récap WhatsApp avec tout ce que tu as besoin de savoir."
+        setMessages(prev => [...prev, { role: 'ajnaya' as const, text: phoneAskMsg, timestamp: phoneAskTs }])
+        analyticsMessages.current.push({ role: 'ajnaya', text: phoneAskMsg, timestamp: phoneAskTs })
+        if (voiceEnabled) {
+          setIsAudioPlaying(true)
+          speakText("Pour aller plus loin, tu peux me laisser ton numéro ?").finally(() => setIsAudioPlaying(false))
+        }
+      }
+
       // Track objection for re-engagement
       if (/cher|arnaque|confiance|réfléchir|nul/i.test(text)) {
         lastObjectionRef.current = text
@@ -498,8 +527,18 @@ export default function AjnayaWidget() {
       const { key, reply } = matchResponse(text)
       if (key !== 'default') intentsRef.current.push(key)
       await typewriterRender(reply)
+
+      // Identity Bridge fallback path
+      if (newMessageCount === 2 && !phoneCaptureDone) {
+        setPhonePromptPending(true)
+        await new Promise(r => setTimeout(r, 600))
+        const phoneAskTs = new Date().toISOString()
+        const phoneAskMsg = "Pour aller plus loin, tu peux me laisser ton numéro ? Je t'envoie un récap WhatsApp avec tout ce que tu as besoin de savoir."
+        setMessages(prev => [...prev, { role: 'ajnaya' as const, text: phoneAskMsg, timestamp: phoneAskTs }])
+        analyticsMessages.current.push({ role: 'ajnaya', text: phoneAskMsg, timestamp: phoneAskTs })
+      }
     }
-  }, [input, messageCount, hasAskedPhone, pathname, sessionId, prospectId, scrollSection, heatScore, messages, voiceEnabled])
+  }, [input, messageCount, hasAskedPhone, phoneCaptureDone, pathname, sessionId, prospectId, scrollSection, heatScore, messages, voiceEnabled])
 
   // ─── Voice toggle ─────────────────────────────────────────────────────────
   const toggleVoice = () => {
