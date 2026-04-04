@@ -3,6 +3,9 @@ import './globals.css'
 import Preloader from '@/components/Preloader'
 import GrainOverlay from '@/components/GrainOverlay'
 import AjnayaWidget from '@/components/AjnayaWidget'
+import { ConsentBanner } from '@/components/ConsentBanner'
+import { TikTokPixel } from '@/components/TikTokPixel'
+import { MetaPixel } from '@/components/MetaPixel'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -67,10 +70,14 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-foreas-black text-foreas-light antialiased">
+        {/* Tracking pixels — chargement conditionnel au consentement RGPD */}
+        <TikTokPixel />
+        <MetaPixel />
         <Preloader />
         {children}
         <GrainOverlay />
         <AjnayaWidget />
+        <ConsentBanner />
         <Analytics />
         <SpeedInsights />
       </body>

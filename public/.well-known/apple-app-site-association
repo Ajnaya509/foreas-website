@@ -1,0 +1,37 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "[TEAM_ID].com.foreas.driver",
+        "paths": [
+          "/go",
+          "/go/*",
+          "/airbnb",
+          "/airbnb/*",
+          "/surge",
+          "/surge/*",
+          "/premium",
+          "/premium/*",
+          "/optimisation",
+          "/optimisation/*",
+          "/revenus",
+          "/revenus/*",
+          "/flotte",
+          "/flotte/*",
+          "/charges",
+          "/charges/*",
+          "/aeroport",
+          "/aeroport/*",
+          "/evenements",
+          "/evenements/*",
+          "/clients",
+          "/clients/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["[TEAM_ID].com.foreas.driver"]
+  }
+}
