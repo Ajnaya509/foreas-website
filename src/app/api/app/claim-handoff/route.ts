@@ -60,10 +60,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'token_expired' }, { status: 410 })
     }
 
-    // Mark as used (single-use enforcement)
+    // Resolve client IP (Vercel forwards real IP in x-forwarded-for)
+    const forwardedFor = req.headers.get('x-forwarded-for')
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown'
+
+    // Mark as used (single-use enforcement) + log origin IP
     await supabase
       .from('handoff_tokens')
-      .update({ used_at: new Date().toISOString() })
+      .update({
+        used_at: new Date().toISOString(),
+        used_from_ip: clientIp,
+      })
       .eq('token', token)
 
     // Return state + a partial identity display id (never full hash)
