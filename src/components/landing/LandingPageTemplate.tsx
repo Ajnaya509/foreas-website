@@ -33,7 +33,7 @@ export interface LandingContent {
 function useLandingTracking(topicSlug: string) {
   const searchParams = useSearchParams()
   const tracked = useRef(false)
-  const scrollTimeout = useRef<ReturnType<typeof setTimeout>>()
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const maxScroll = useRef(0)
   const startTime = useRef(Date.now())
 
