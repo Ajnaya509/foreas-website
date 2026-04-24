@@ -7,7 +7,9 @@ export async function POST(request: NextRequest) {
     const { text } = await request.json()
 
     const apiKey = process.env.ELEVENLABS_API_KEY
-    const voiceId = process.env.ELEVENLABS_VOICE_ID || 'ucMmKRQbfDEYyb2IIGax'
+    // KORALY — voix unique Ajnaya (cf. FOREAS-SHARED/AJNAYA_NORTH_STAR.md §2.1)
+    // Aucun fallback vers une autre voice_id : rupture d'identité interdite.
+    const voiceId = process.env.ELEVENLABS_VOICE_ID || 'MNKK2Wl2wbbsEPQTHZGt'
 
     if (!apiKey || !text) {
       return NextResponse.json({ error: 'TTS non disponible' }, { status: 503 })

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { sendWelcomeEmail } from '@/lib/email'
+import { sendCAPIEvent } from '@/lib/meta-capi'
 
 export const runtime = 'nodejs'
 
@@ -127,7 +128,51 @@ export async function POST(request: Request) {
         })
       }
 
-      // 3. TODO: SMS via Twilio
+      // 3. Meta CAPI — StartTrial (trial) + Subscribe (conversion signal)
+      //    Signal crucial pour optimiser campagnes CTWA Meta Advantage+
+      const purchaseValue = subscription?.items.data[0]?.price?.unit_amount
+        ? subscription.items.data[0].price.unit_amount / 100
+        : 0
+      const currency = subscription?.items.data[0]?.price?.currency?.toUpperCase() || 'EUR'
+      const nameParts = (session.customer_details?.name || '').split(' ')
+      const capiUserData = {
+        email: session.customer_details?.email || undefined,
+        phone: phone || undefined,
+        firstName: nameParts[0] || undefined,
+        lastName: nameParts.slice(1).join(' ') || undefined,
+        city: city || undefined,
+        country: 'FR',
+        externalId: session.customer as string | undefined,
+      }
+      // Fire-and-forget — jamais bloquer le webhook Stripe
+      Promise.allSettled([
+        sendCAPIEvent({
+          eventName: 'StartTrial',
+          userData: capiUserData,
+          customData: {
+            value: purchaseValue,
+            currency,
+            contentName: planInfo.name,
+            orderId: session.subscription as string,
+          },
+          eventSourceUrl: session.url || 'https://foreas.xyz/tarifs2',
+          actionSource: 'website',
+        }),
+        sendCAPIEvent({
+          eventName: 'Subscribe',
+          userData: capiUserData,
+          customData: {
+            value: purchaseValue,
+            currency,
+            contentName: planInfo.name,
+            orderId: session.subscription as string,
+          },
+          eventSourceUrl: session.url || 'https://foreas.xyz/tarifs2',
+          actionSource: 'website',
+        }),
+      ]).catch(() => {})
+
+      // 4. TODO: SMS via Twilio
       // if (phone) {
       //   await twilioClient.messages.create({
       //     body: `Bienvenue sur FOREAS ! Télécharge l'app : https://foreas.xyz/download`,

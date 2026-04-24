@@ -1,8 +1,33 @@
 # SITE WEB & SEO — Contexte Projet
 ## Session Cowork : Site Vitrine FOREAS, Conversion, SEO
-### Dernière mise à jour : 29 mars 2026
+### Dernière mise à jour : 24 avril 2026
 
 > Pour le contexte global de l'écosystème FOREAS, voir : `/Users/chandlermilien/Documents/Claude/Projects/FOREAS_GLOBAL_CONTEXT.md`
+
+---
+
+## ⚡ RÈGLE CROSS-FIL FOREAS-SHARED (lecture obligatoire)
+
+**Ce repo est l'un des 3 fils Claude Code qui construisent Ajnaya (site / app / pieuvre). Il existe une source de vérité partagée.**
+
+### AVANT toute action cross-impact :
+1. Lire `/Users/chandlermilien/FOREAS-SHARED/AJNAYA_STATE.md` (état actuel du système)
+2. Parcourir `/Users/chandlermilien/FOREAS-SHARED/AJNAYA_CHANGELOG.md` — au moins les 7 derniers jours
+3. Consulter `/Users/chandlermilien/FOREAS-SHARED/AJNAYA_CONTRACTS.md` pour tout schéma / endpoint / event partagé
+4. Respecter `/Users/chandlermilien/FOREAS-SHARED/AJNAYA_NORTH_STAR.md` — règles non-négociables
+
+### APRÈS toute modification touchant un autre canal :
+1. Ajouter une entrée datée dans `AJNAYA_CHANGELOG.md` (format : `[YYYY-MM-DD HH:MM] — [FIL SITE] — [TITRE] — [IMPACT] — [ROLLBACK]`)
+2. Mettre à jour `AJNAYA_STATE.md` si l'état réel change
+3. Bumper `AJNAYA_CONTRACTS.md` (version) si un schéma évolue
+
+**Qualifie "cross-impact"** : changement qui touche une table Supabase partagée, un endpoint utilisé par plus d'un canal, l'identité/mémoire/voix/prompt Ajnaya, ou une feature visible par l'utilisateur final.
+
+**Anti-patterns interdits** (voir `AJNAYA_NORTH_STAR.md` §4) :
+- Créer un endpoint Ajnaya parallèle sans passer par le Responder Pieuvre
+- Dupliquer un prompt dans du code au lieu de le lire depuis `ajnaya_prompt_versions` / `pieuvre_scripts`
+- Stocker une identité ailleurs que dans `identity_bridge`
+- Utiliser une voice_id différente de Koraly `MNKK2Wl2wbbsEPQTHZGt`
 
 ---
 
