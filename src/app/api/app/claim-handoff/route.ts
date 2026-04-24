@@ -73,12 +73,17 @@ export async function POST(req: NextRequest) {
       })
       .eq('token', token)
 
-    // Return state + a partial identity display id (never full hash)
+    // Return full identity_id UUID (app needs it to match identity_bridge + canal_memory rows)
+    // Not sensitive — it's a server-generated UUID, not a hash of personal data.
+    // Conformité AJNAYA_CONTRACTS.md §4 — state contient last_messages, intent, heat_score,
+    // objection, pending_question, url_pre_landing, prompt_for_next_canal.
     return NextResponse.json({
       ok: true,
-      state: data.state,
-      identity_id: (data.identity_id as string).slice(0, 8),
+      identity_id: data.identity_id,
+      display_id: (data.identity_id as string).slice(0, 8), // pour UI d'affichage
       source_canal: data.source_canal,
+      target_canal: data.target_canal,
+      state: data.state,
     })
   } catch (err) {
     console.error('[claim-handoff]', (err as Error).message)
