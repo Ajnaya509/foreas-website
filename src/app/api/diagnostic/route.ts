@@ -32,6 +32,38 @@ export async function GET() {
   results.stripe_key_present = !!process.env.STRIPE_SECRET_KEY
   results.stripe_webhook_present = !!process.env.STRIPE_WEBHOOK_SECRET
 
+  // Test 4b: Pieuvre Brain (audit Site2026v38)
+  results.pieuvre_brain_enabled = process.env.PIEUVRE_BRAIN_ENABLED || 'UNSET'
+  results.pieuvre_brain_enabled_eq_true = process.env.PIEUVRE_BRAIN_ENABLED === 'true'
+  results.pieuvre_url_present = !!process.env.PIEUVRE_RESPOND_URL
+  results.pieuvre_url_endswith_webhook = (process.env.PIEUVRE_RESPOND_URL || '').endsWith('/webhook/ajnaya-respond')
+  results.pieuvre_url_length = (process.env.PIEUVRE_RESPOND_URL || '').length
+  results.pieuvre_secret_present = !!process.env.PIEUVRE_RESPOND_SECRET
+  results.pieuvre_secret_length = (process.env.PIEUVRE_RESPOND_SECRET || '').length
+  results.pieuvre_timeout = process.env.PIEUVRE_RESPOND_TIMEOUT_MS || 'UNSET'
+
+  // Test 4c: Live Pieuvre call
+  if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
+    try {
+      const { callPieuvreBrain } = await import('@/lib/pieuvre-client')
+      const t0 = Date.now()
+      const r = await callPieuvreBrain({
+        tentacle: 'widget_site', canal: 'web', identity_id: null,
+        session_id: 'diag-' + Date.now(),
+        message: { role: 'user', text: 'diagnostic ping', type: 'text' },
+        context: { page_source: '/', scroll_section: '', heat_score: 0, history_last_10: [] },
+        meta: { device: 'desktop', utm: {}, user_agent: 'diagnostic' },
+      })
+      results.pieuvre_live_call = r ? 'OK' : 'NULL (check Vercel logs for [pieuvre-client] warnings)'
+      results.pieuvre_live_latency_ms = Date.now() - t0
+      results.pieuvre_live_reply_preview = r?.reply?.text?.substring(0, 80) || null
+    } catch (e) {
+      results.pieuvre_live_call = 'EXCEPTION: ' + (e as Error).message
+    }
+  } else {
+    results.pieuvre_live_call = 'SKIPPED — PIEUVRE_BRAIN_ENABLED not "true"'
+  }
+
   // Test 5: Try importing Anthropic SDK
   try {
     const Anthropic = (await import('@anthropic-ai/sdk')).default
