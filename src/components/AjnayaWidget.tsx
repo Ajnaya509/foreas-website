@@ -148,6 +148,8 @@ export default function AjnayaWidget() {
 
   // New states for LLM integration
   const [prospectId, setProspectId] = useState<string | null>(null)
+  const [identityId, setIdentityId] = useState<string | null>(null)       // identity_bridge.id
+  const [whatsappHandoffUrl, setWhatsappHandoffUrl] = useState<string | null>(null) // wa.me URL after handoff
   const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isListening, setIsListening] = useState(false)
@@ -398,8 +400,10 @@ export default function AjnayaWidget() {
       const cleaned = text.replace(/[\s.\-()]/g, '')
       setTyping(true)
 
+      let capturedIdentityId: string | null = null
+
       try {
-        // Create/retrieve prospect first if needed
+        // 1. Create/retrieve prospect first if needed
         if (!prospectId) {
           const res = await fetch('/api/ajnaya/prospect', {
             method: 'POST',
@@ -410,26 +414,60 @@ export default function AjnayaWidget() {
           if (data.prospectId) setProspectId(data.prospectId)
         }
 
-        // Identity Bridge — hash happens server-side only
-        await fetch('/api/identity/capture', {
+        // 2. Identity Bridge — hash via Edge Function hash-identity (server-side only)
+        const captureRes = await fetch('/api/identity/capture', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone_raw: cleaned, prospect_id: prospectId, canal: 'widget' }),
+          body: JSON.stringify({ phone_raw: cleaned, prospect_id: prospectId, canal: 'widget', page_source: pathname }),
         })
-      } catch { /* silent */ }
+        if (captureRes.ok) {
+          const captureData = await captureRes.json()
+          if (captureData.identity_id) {
+            capturedIdentityId = captureData.identity_id
+            setIdentityId(captureData.identity_id)
+          }
+        }
+
+        // 3. Issue WhatsApp handoff — build wa.me URL carrying conversation state
+        if (capturedIdentityId) {
+          const lastAjnayaMsg = [...messages].reverse().find(m => m.role === 'ajnaya')?.text || ''
+          const handoffRes = await fetch('/api/app/issue-handoff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              identity_id: capturedIdentityId,
+              target_canal: 'whatsapp',
+              source_canal: 'widget',
+              state: {
+                last_messages: messages.slice(-6).map(m => ({ role: m.role, text: m.text })),
+                intent: 'phone_captured',
+                heat_score: heatScore,
+                url_pre_landing: pathname,
+                prompt_for_next_canal: `Salut ! Tu discutais avec Ajnaya sur le site FOREAS (${pathname}). Je reprends là où on en était. ${lastAjnayaMsg ? `On parlait de : "${lastAjnayaMsg.slice(0, 80)}"` : 'Une question ?'}`,
+              },
+            }),
+          })
+          if (handoffRes.ok) {
+            const handoffData = await handoffRes.json()
+            if (handoffData.ok && handoffData.deeplink) {
+              setWhatsappHandoffUrl(handoffData.deeplink)
+            }
+          }
+        }
+      } catch { /* silent — never block UX */ }
 
       setTyping(false)
       setHasAskedPhone(true)
       setPhoneCaptureDone(true)
       setPhonePromptPending(false)
       const replyTs = new Date().toISOString()
-      const phoneReply = { role: 'ajnaya' as const, text: "Parfait ! Je t'envoie un récap sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)", timestamp: replyTs }
+      const phoneReply = { role: 'ajnaya' as const, text: "Parfait ! Clique sur le bouton ci-dessous pour continuer sur WhatsApp — je t'y retrouve avec tout le contexte. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)", timestamp: replyTs }
       setMessages(prev => [...prev, phoneReply])
       analyticsMessages.current.push({ role: 'ajnaya', text: phoneReply.text, timestamp: replyTs })
 
       if (voiceEnabled) {
         setIsAudioPlaying(true)
-        speakText("Parfait ! Je t'envoie un récap sur WhatsApp.").finally(() => setIsAudioPlaying(false))
+        speakText("Parfait ! Je t'attends sur WhatsApp.").finally(() => setIsAudioPlaying(false))
       }
       return
     }
@@ -753,6 +791,33 @@ export default function AjnayaWidget() {
               )}
               <div ref={messagesEndRef} />
             </div>
+
+            {/* ─── WhatsApp handoff CTA (affiché après capture téléphone) ─── */}
+            <AnimatePresence>
+              {whatsappHandoffUrl && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+                  className="flex-shrink-0 px-3 pb-2"
+                >
+                  <a
+                    href={whatsappHandoffUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-sm font-semibold font-body text-white transition-all duration-200 active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', boxShadow: '0 4px 20px rgba(37,211,102,0.25)' }}
+                  >
+                    {/* WhatsApp icon (inline SVG — no external dep) */}
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    Continuer sur WhatsApp →
+                  </a>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* ─── Input ─── */}
             <div className="flex-shrink-0 px-3 py-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)' }}>

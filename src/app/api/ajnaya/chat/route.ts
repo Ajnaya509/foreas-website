@@ -360,7 +360,80 @@ export async function POST(request: NextRequest) {
       systemBase, pageSource, scrollSection, prospect, heatScore, messageCount, conversationHistory
     )
 
-    // 4. Call Claude API
+    // 4a. PIEUVRE BRAIN (feature flag) — routes through N8N Pieuvre Responder when enabled
+    //     PIEUVRE_BRAIN_ENABLED=true → call Pieuvre, on null fallback to Haiku below
+    if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
+      try {
+        const { callPieuvreBrain } = await import('@/lib/pieuvre-client')
+        const pieuvreResult = await callPieuvreBrain({
+          tentacle: 'widget_site',
+          canal: openaiMode ? 'voice_agent' : 'web',
+          identity_id: null, // Pieuvre will resolve/create from canal_memory
+          session_id: sessionId || 'unknown',
+          message: { role: 'user', text: userMessage, type: openaiMode ? 'voice' : 'text' },
+          context: {
+            page_source: pageSource,
+            scroll_section: scrollSection,
+            heat_score: heatScore,
+            history_last_10: conversationHistory.slice(-10).map(h => ({ role: h.role, text: h.text })),
+          },
+          meta: {
+            device,
+            utm: {},
+            user_agent: '',
+          },
+        })
+
+        if (pieuvreResult) {
+          // ── Pieuvre answered ── save logs fire-and-forget
+          const currentProspectIdP = prospectId || pieuvreResult.prospect_id || null
+          saveMessage({
+            prospect_id: currentProspectIdP,
+            tentacle: 'widget_site',
+            channel: openaiMode ? 'voice_agent' : 'web_widget',
+            direction: 'inbound',
+            content: userMessage,
+            sentiment: detectSentiment(userMessage),
+            objection_detected: detectObjection(userMessage),
+            metadata: {
+              sessionId,
+              pageSource,
+              scrollSection,
+              device,
+              heatScore,
+              identity_id: pieuvreResult.identity_id,
+            },
+          })
+          saveMessage({
+            prospect_id: currentProspectIdP,
+            tentacle: 'widget_site',
+            channel: openaiMode ? 'voice_agent' : 'web_widget',
+            direction: 'outbound',
+            content: pieuvreResult.reply.text,
+            llm_model: pieuvreResult.reply.llm_model,
+            llm_cost_usd: pieuvreResult.metadata?.cost_usd || 0,
+            metadata: { sessionId, latency_ms: pieuvreResult.metadata?.latency_ms },
+          })
+
+          if (openaiMode) return createSSEStream(pieuvreResult.reply.text, pieuvreResult.reply.llm_model)
+
+          const shouldAskPhoneP = pieuvreResult.should_capture_phone ?? (messageCount >= 3 && !prospectId)
+          return NextResponse.json({
+            reply: pieuvreResult.reply.text,
+            prospectId: currentProspectIdP,
+            identityId: pieuvreResult.identity_id,
+            shouldAskPhone: shouldAskPhoneP,
+            conversionEvent: false,
+            suggest_handoff: pieuvreResult.suggest_handoff ?? null,
+          })
+        }
+        // null → fall through to Haiku direct path below
+      } catch (pieuvreErr) {
+        console.warn('[ajnaya/chat] Pieuvre branch error, falling back to Haiku:', (pieuvreErr as Error).message)
+      }
+    }
+
+    // 4b. Call Claude API (Haiku direct — default path or Pieuvre fallback)
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
       model: llmModel,

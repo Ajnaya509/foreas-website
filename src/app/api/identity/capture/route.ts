@@ -9,6 +9,8 @@ export const runtime = 'nodejs'
  *
  * Conformité : /Users/chandlermilien/FOREAS-SHARED/AJNAYA_CONTRACTS.md §1
  * Règle : SHA-256 **uniquement server-side** (jamais côté client).
+ * Hash canonique : Edge Function `hash-identity` (garantit cohérence cross-canal).
+ * Fallback : crypto.createHash local si Edge Function indisponible.
  * Matching key : phone_hash. Si une row existe déjà → merge au lieu de créer.
  *
  * Écrit aussi un premier fragment dans canal_memory pour que le Responder Pieuvre
@@ -42,13 +44,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid_phone' }, { status: 400 })
     }
 
-    // SHA-256 server-side uniquement
-    const phone_hash = crypto.createHash('sha256').update(phone_e164).digest('hex')
-
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+
+    // ── SHA-256 canonique via Edge Function hash-identity (cross-canal cohérence garantie)
+    // Fallback : crypto local si Edge Function indisponible (hash identique pour même input)
+    let phone_hash: string
+    try {
+      const { data: hashData, error: hashError } = await supabase.functions.invoke<{
+        phone_hash: string
+        normalized: { phone: string }
+      }>('hash-identity', { body: { phone: phone_e164 } })
+
+      if (hashError || !hashData?.phone_hash) {
+        throw new Error(hashError?.message || 'no phone_hash in response')
+      }
+      phone_hash = hashData.phone_hash
+    } catch (edgeFnErr) {
+      // Edge Function down/unreachable — fallback to local crypto
+      console.warn('[identity/capture] hash-identity fallback:', (edgeFnErr as Error).message)
+      phone_hash = crypto.createHash('sha256').update(phone_e164).digest('hex')
+    }
 
     // 1. Chercher une row identity_bridge existante avec ce phone_hash
     const { data: existing } = await supabase
@@ -157,10 +175,14 @@ export async function POST(request: NextRequest) {
         .eq('id', prospect_id)
     }
 
-    // 4. Émettre event bus pour que la Pieuvre puisse déclencher la "variable reward"
+    // 4. Émettre event bus — colonnes v1.1 (identity_id + canal_source directs)
     await supabase.from('pieuvre_analytics_events').insert({
       event_name: 'widget.phone_captured',
+      identity_id,                         // v1.1 direct column
+      canal_source: canal,                 // v1.1 direct column
+      processed: false,
       meta: {
+        // rétrocompat 7j (consumers legacy lisent meta.identity_id)
         identity_id,
         canal,
         page_source: page_source || null,
