@@ -95,20 +95,17 @@ export async function POST(req: NextRequest) {
 
     const webFallback = `https://foreas.xyz/go?deeplink=${token}`
 
-    // Emit analytics event (v1.1 columns)
-    await supabase.from('pieuvre_analytics_events').insert({
-      event_name: 'widget.handoff_issued',
-      identity_id,
-      canal_source: source_canal,
-      processed: false,
-      meta: {
-        token,
-        target_canal,
-        source_canal,
+    // Emit analytics event (v1.1 columns) — fire-and-forget, never block response
+    try {
+      await supabase.from('pieuvre_analytics_events').insert({
+        event_name: 'widget.handoff_issued',
         identity_id,
-      },
-      ts: Date.now(),
-    }).catch(() => {}) // fire-and-forget, never block
+        canal_source: source_canal,
+        processed: false,
+        meta: { token, target_canal, source_canal, identity_id },
+        ts: Date.now(),
+      })
+    } catch { /* silent — analytics never blocks handoff */ }
 
     return NextResponse.json({ ok: true, token, deeplink, webFallback })
   } catch (err) {
