@@ -70,11 +70,17 @@ export interface PieuvreResponse {
 export async function callPieuvreBrain(
   payload: PieuvrePayload
 ): Promise<PieuvreResponse | null> {
-  const baseUrl = (process.env.PIEUVRE_RESPOND_URL || '').replace(/\/$/, '')
-  if (!baseUrl) {
+  const rawUrl = (process.env.PIEUVRE_RESPOND_URL || '').replace(/\/$/, '')
+  if (!rawUrl) {
     // Pieuvre URL not configured — silent skip, fall back to Haiku
     return null
   }
+  // Accept both forms: base URL or full webhook URL — append path only if missing.
+  // Site2026v38 fix: PIEUVRE_RESPOND_URL was stored as full webhook URL on Vercel,
+  // causing double-path 404 → silent fallback to Haiku for all production traffic.
+  const fetchUrl = rawUrl.endsWith('/webhook/ajnaya-respond')
+    ? rawUrl
+    : `${rawUrl}/webhook/ajnaya-respond`
 
   const timeoutMs = parseInt(process.env.PIEUVRE_RESPOND_TIMEOUT_MS || '5000', 10)
   const sharedSecret = process.env.PIEUVRE_RESPOND_SECRET || ''
@@ -84,7 +90,7 @@ export async function callPieuvreBrain(
   const tid = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    const res = await fetch(`${baseUrl}/webhook/ajnaya-respond`, {
+    const res = await fetch(fetchUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
