@@ -40,7 +40,7 @@ const solutions = [
 
 export default function EntreprisesPage() {
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#050508]">
       <Header />
 
       {/* Hero */}
@@ -99,7 +99,7 @@ export default function EntreprisesPage() {
       </section>
 
       {/* Solutions Grid */}
-      <section id="solutions" className="py-16 md:py-24 bg-[#070A14]">
+      <section id="solutions" className="py-16 md:py-24 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -135,7 +135,7 @@ export default function EntreprisesPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 md:py-24 bg-[#060610]">
+      <section className="py-16 md:py-24 bg-[#050508]">
         <div className="max-w-2xl mx-auto px-6 lg:px-8 text-center">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}

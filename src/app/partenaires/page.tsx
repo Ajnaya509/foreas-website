@@ -286,7 +286,7 @@ export default function PartenairesPage() {
   const mockupY = useTransform(heroProgress, [0, 1], [0, 150 * parallaxMult])
 
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#050508]">
       {iconKeyframeStyle}
       <Header />
 
@@ -345,7 +345,7 @@ export default function PartenairesPage() {
                   transition={{ duration: 0.6, delay: 0.4 }}
                   className="font-body text-base text-white/50 max-w-lg mb-8"
                 >
-                  FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par Ajnaya.
+                  FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par l&apos;IA.
                   Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
                 </motion.p>
 
@@ -392,9 +392,9 @@ export default function PartenairesPage() {
                   transition={{ delay: 0.8 }}
                   className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
                 >
-                  <span>Tableau de bord temps réel</span>
+                  <span>Dashboard temps réel</span>
                   <span className="w-px h-3 bg-white/10" />
-                  <span>Ajnaya par chauffeur</span>
+                  <span>IA par chauffeur</span>
                   <span className="w-px h-3 bg-white/10" />
                   <span>ROI mesurable</span>
                 </motion.div>
@@ -436,7 +436,7 @@ export default function PartenairesPage() {
                   transition={{ duration: 0.6, delay: 0.4 }}
                   className="font-body text-base md:text-lg text-white/50 max-w-lg mb-8 md:mb-10"
                 >
-                  FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par Ajnaya.
+                  FOREAS transforme votre flotte VTC en machine d&apos;efficacité pilotée par l&apos;IA.
                   Plus de revenus par chauffeur. Moins de vide. Zéro gaspillage.
                 </motion.p>
 
@@ -470,9 +470,9 @@ export default function PartenairesPage() {
                   transition={{ delay: 0.8 }}
                   className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-white/30 text-xs"
                 >
-                  <span>Tableau de bord temps réel</span>
+                  <span>Dashboard temps réel</span>
                   <span className="w-px h-3 bg-white/10" />
-                  <span>Ajnaya par chauffeur</span>
+                  <span>IA par chauffeur</span>
                   <span className="w-px h-3 bg-white/10" />
                   <span>ROI mesurable</span>
                 </motion.div>
@@ -497,7 +497,7 @@ export default function PartenairesPage() {
       {/* ═══════════════════════════════════════════════════════════════
           2. DOULEUR PRIMAIRE — La réalité fleet
           ═══════════════════════════════════════════════════════════════ */}
-      <section id="douleurs" data-section="duality" className="relative py-20 md:py-28 bg-[#070A14]">
+      <section id="douleurs" data-section="duality" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="Ce que vous vivez au quotidien"
@@ -601,7 +601,7 @@ export default function PartenairesPage() {
               <FeatureCard icon={BarChart3} title="Pas de benchmark interne" desc="Impossible de comparer vos chauffeurs entre eux. Le meilleur et le pire génèrent un écart de 40% de CA — mais vous ne le voyez pas." />
             </div>
             <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
-              <FeatureCard icon={Map} title="Couverture zone déséquilibrée" desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration Ajnaya, votre flotte se cannibalise elle-même." />
+              <FeatureCard icon={Map} title="Couverture zone déséquilibrée" desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration IA, votre flotte se cannibalise elle-même." />
             </div>
             <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
               <FeatureCard icon={Clock} title="Temps de réponse imprévisible" desc="Votre client VIP attend 12 minutes. Inacceptable pour votre marque. Mais sans prédiction de demande, c'est la loterie." />
@@ -613,17 +613,17 @@ export default function PartenairesPage() {
               <FeatureCard icon={MessageSquare} title="Aucun outil de communication unifié" desc="WhatsApp perso, appels, SMS — vous gérez votre flotte avec des outils de 2010. Aucune traçabilité, aucun historique structuré." />
             </div>
             <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px]">
-              <FeatureCard icon={Repeat} title="Formation chronophage" desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — Ajnaya compense l'inexpérience." />
+              <FeatureCard icon={Repeat} title="Formation chronophage" desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — l'IA compense l'inexpérience." />
             </div>
           </div>
 
           <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             <FeatureCard icon={BarChart3} title="Pas de benchmark interne" desc="Impossible de comparer vos chauffeurs entre eux. Le meilleur et le pire génèrent un écart de 40% de CA — mais vous ne le voyez pas." delay={0} />
-            <FeatureCard icon={Map} title="Couverture zone déséquilibrée" desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration Ajnaya, votre flotte se cannibalise elle-même." delay={0.05} />
+            <FeatureCard icon={Map} title="Couverture zone déséquilibrée" desc="3 chauffeurs au même endroit, zéro dans une zone qui explose. Sans orchestration IA, votre flotte se cannibalise elle-même." delay={0.05} />
             <FeatureCard icon={Clock} title="Temps de réponse imprévisible" desc="Votre client VIP attend 12 minutes. Inacceptable pour votre marque. Mais sans prédiction de demande, c'est la loterie." delay={0.1} />
             <FeatureCard icon={TrendingDown} title="Commission plateforme élevée" desc="Uber, Bolt prennent 20-25%. Sur 100 courses/jour, c'est des milliers d'euros qui ne reviennent jamais à votre flotte." delay={0.15} />
             <FeatureCard icon={MessageSquare} title="Aucun outil de communication unifié" desc="WhatsApp perso, appels, SMS — vous gérez votre flotte avec des outils de 2010. Aucune traçabilité, aucun historique structuré." delay={0.2} />
-            <FeatureCard icon={Repeat} title="Formation chronophage" desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — Ajnaya compense l'inexpérience." delay={0.25} />
+            <FeatureCard icon={Repeat} title="Formation chronophage" desc="Chaque nouveau chauffeur met 3 semaines à connaître Paris. Avec Ajnaya, il est productif dès le jour 1 — l'IA compense l'inexpérience." delay={0.25} />
           </div>
         </div>
       </section>
@@ -635,12 +635,12 @@ export default function PartenairesPage() {
           4. LA SOLUTION FOREAS FLEET — Ce qui change
           Icon micro-animations: CSS-based (no permanent RAF loops)
           ═══════════════════════════════════════════════════════════════ */}
-      <section data-section="solution" className="relative py-20 md:py-28 bg-[#070A14]">
+      <section data-section="solution" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="FOREAS Fleet"
             title="Votre flotte,"
-            gradient="augmentée par Ajnaya."
+            gradient="augmentée par l'IA."
             subtitle="Chaque chauffeur devient plus rentable. Votre opération devient prévisible."
           />
 
@@ -696,7 +696,7 @@ export default function PartenairesPage() {
               </div>
               <h3 className="font-title text-xl font-semibold text-white mb-3">Orchestration zone intelligente</h3>
               <p className="font-body text-sm text-white/50 leading-relaxed">
-                Plus jamais 5 chauffeurs sur la même zone et zéro sur une autre. Ajnaya distribue votre couverture
+                Plus jamais 5 chauffeurs sur la même zone et zéro sur une autre. L&apos;IA distribue votre couverture
                 en fonction de la demande prédite, pas de l&apos;habitude de vos chauffeurs.
               </p>
             </motion.div>
@@ -800,7 +800,7 @@ export default function PartenairesPage() {
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
         {/* Opaque bg on mobile instead of backdrop-blur */}
-        <div className={`absolute inset-0 ${isMobile ? 'bg-[#060610]' : 'bg-[#060610]'}`} />
+        <div className={`absolute inset-0 ${isMobile ? 'bg-[#050508]' : 'bg-[#050508]'}`} />
         <div className={`absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none rounded-full ${
           isMobile
             ? 'w-[400px] h-[300px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent blur-[60px]'
@@ -818,7 +818,7 @@ export default function PartenairesPage() {
             <h2 className="font-title text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white mb-6">
               Votre flotte mérite
               <span className="block bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
-                ton copilote Ajnaya.
+                un copilote IA.
               </span>
             </h2>
 

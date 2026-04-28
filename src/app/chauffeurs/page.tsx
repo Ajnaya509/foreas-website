@@ -198,7 +198,7 @@ function MicroDetail({ icon: Icon, title, desc, stat, delay = 0 }: {
   delay?: number
 }) {
   return (
-    <div className="group flex-shrink-0 w-[280px] md:w-[360px] p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-[#070A14]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all">
+    <div className="group flex-shrink-0 w-[280px] md:w-[360px] p-5 md:p-6 rounded-2xl border border-white/[0.05] bg-[#0a0a12]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all">
       <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center mb-3 transition-shadow group-hover:shadow-[0_0_20px_rgba(0,212,255,0.2)]">
         <Icon className="w-5 h-5 text-accent-cyan" />
       </div>
@@ -460,7 +460,7 @@ export default function ChauffeursPage() {
   const reducedMotion = useReducedMotion()
 
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#050508]">
       <Header />
       <StickyMobileCTA />
 
@@ -483,7 +483,7 @@ export default function ChauffeursPage() {
           "On sait exactement ce que tu vis."
           Frustration vs Désir — le miroir parfait
           ═══════════════════════════════════════════════════════════════ */}
-      <section id="douleur" data-section="duality" className="relative py-20 md:py-28 bg-[#070A14]">
+      <section id="douleur" data-section="duality" className="relative py-20 md:py-28 bg-[#08080d]">
         <FloatingParticles count={12} className="z-0" />
         <div className="relative max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
@@ -580,7 +580,7 @@ export default function ChauffeursPage() {
         <div className="max-w-5xl mx-auto px-6 lg:px-8 pt-16 md:pt-24">
           <SectionTitle
             eyebrow="Comment ça marche"
-            title="Ajnaya qui voit"
+            title="L'IA qui voit"
             gradient="avant la demande."
             subtitle="Pas de magie. Des données en temps réel : trains, événements, météo, habitudes locales."
           />
@@ -596,7 +596,7 @@ export default function ChauffeursPage() {
           Multi-app chaos, fatigue, manque de visibilité
           Chaque micro-frustration = preuve qu'on connaît le métier
           ═══════════════════════════════════════════════════════════════ */}
-      <section data-section="features" className="relative bg-[#070A14]">
+      <section data-section="features" className="relative bg-[#08080d]">
         <HorizontalMicroDetails />
       </section>
 
@@ -716,7 +716,7 @@ export default function ChauffeursPage() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-0 bg-[#060610]"
+          className="absolute inset-0 bg-[#050508]"
         />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] md:w-[1000px] md:h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent rounded-full blur-[60px] md:blur-[120px] pointer-events-none" />
 

@@ -309,7 +309,7 @@ export default function DashboardLogin() {
   }
 
   return (
-    <main className="min-h-screen bg-[#060610] flex items-center justify-center px-4 relative overflow-hidden">
+    <main className="min-h-screen bg-[#050508] flex items-center justify-center px-4 relative overflow-hidden">
       {/* Nebula Canvas */}
       <div className="absolute inset-0">
         <NebulaCanvas phase={phase} />
@@ -319,7 +319,7 @@ export default function DashboardLogin() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at center, transparent 20%, rgba(5,5,8,0.4) 50%, #060610 80%)',
+          background: 'radial-gradient(ellipse at center, transparent 20%, rgba(5,5,8,0.4) 50%, #050508 80%)',
         }}
       />
 

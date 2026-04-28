@@ -47,7 +47,7 @@ function PartnerCategory({ icon, name, desc }: { icon: string; name: string; des
       viewport={{ once: true }}
       className="p-[1px] rounded-2xl bg-gradient-to-r from-white/[0.05] to-white/[0.05] hover:from-accent-purple/30 hover:to-accent-cyan/30 transition-all duration-500"
     >
-      <div className="p-6 md:p-8 rounded-[15px] bg-[#070A14] h-full group">
+      <div className="p-6 md:p-8 rounded-[15px] bg-[#08080d] h-full group">
         <div className="text-3xl mb-4">{icon}</div>
         <h3 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{name}</h3>
         <p className="font-body text-sm text-white/45 leading-relaxed">{desc}</p>
@@ -61,7 +61,7 @@ function ValueProp({ number, title, desc, accent = 'accent-cyan', icon: Icon }: 
   number: string; title: string; desc: string; accent?: string; icon?: React.ElementType
 }) {
   return (
-    <div className="group flex-shrink-0 w-[300px] md:w-[400px] p-5 md:p-7 rounded-2xl border border-white/[0.08] bg-[#070A14]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all snap-start">
+    <div className="group flex-shrink-0 w-[300px] md:w-[400px] p-5 md:p-7 rounded-2xl border border-white/[0.08] bg-[#0a0a12]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all snap-start">
       <div className="mb-4">
         {Icon ? (
           <div className={`w-10 h-10 rounded-full bg-${accent}/10 flex items-center justify-center`}>
@@ -110,7 +110,7 @@ function HorizontalValueProps() {
         La solution
       </span>
       <h2 className="font-title text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-5">
-        Un réseau piloté par Ajnaya
+        Un réseau intelligent
         <span className="block bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
           au service de votre marque.
         </span>
@@ -123,8 +123,8 @@ function HorizontalValueProps() {
       <ValueProp
         number="01"
         icon={Brain}
-        title="Chauffeurs repositionnés en temps réel par Ajnaya"
-        desc="Ajnaya anticipe la demande et positionne les chauffeurs AVANT que vos clients appellent. Temps d'attente moyen visé : moins de 4 minutes. Pas de promesse vide — de la data en temps réel."
+        title="Chauffeurs repositionnés en temps réel par l'IA"
+        desc="Ajnaya, notre IA, anticipe la demande et positionne les chauffeurs AVANT que vos clients appellent. Temps d'attente moyen visé : moins de 4 minutes. Pas de promesse vide — de la data en temps réel."
       />
       <ValueProp
         number="02"
@@ -203,7 +203,7 @@ export default function HomePage() {
   const mockupY = useTransform(heroScrollProgress, [0, 1], [0, 150])
 
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#050508]">
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -264,7 +264,7 @@ export default function HomePage() {
                 className="font-body text-base text-white/50 max-w-2xl mx-auto mb-10"
               >
                 FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
-                pilotés par Ajnaya — ponctualité, qualité, traçabilité. Zéro friction.
+                pilotés par l&apos;IA — ponctualité, qualité, traçabilité. Zéro friction.
               </motion.p>
 
               {/* CTAs */}
@@ -315,7 +315,7 @@ export default function HomePage() {
               >
                 <span>Paris & Île-de-France</span>
                 <span className="w-px h-3 bg-white/10" />
-                <span>Ajnaya temps réel</span>
+                <span>IA temps réel</span>
                 <span className="w-px h-3 bg-white/10" />
                 <span>Chauffeurs certifiés</span>
                 <span className="w-px h-3 bg-white/10" />
@@ -380,7 +380,7 @@ export default function HomePage() {
                   className="font-body text-lg lg:text-xl text-white/50 mb-10"
                 >
                   FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
-                  pilotés par Ajnaya — ponctualité, qualité, traçabilité. Zéro friction.
+                  pilotés par l&apos;IA — ponctualité, qualité, traçabilité. Zéro friction.
                 </motion.p>
 
                 {/* CTAs */}
@@ -417,7 +417,7 @@ export default function HomePage() {
                 >
                   <span>Paris & Île-de-France</span>
                   <span className="w-px h-3 bg-white/10" />
-                  <span>Ajnaya temps réel</span>
+                  <span>IA temps réel</span>
                   <span className="w-px h-3 bg-white/10" />
                   <span>Chauffeurs certifiés</span>
                   <span className="w-px h-3 bg-white/10" />
@@ -445,7 +445,7 @@ export default function HomePage() {
           2. PROBLÈME B2B — La douleur du partenaire
           "Vos clients méritent mieux que ce qu'ils ont aujourd'hui."
           ═══════════════════════════════════════════════════════════════ */}
-      <section data-section="problem" className="relative py-20 md:py-28 bg-[#070A14]">
+      <section data-section="problem" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -475,7 +475,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-[#070A14]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-[#0a0a12]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
             >
               <Clock className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Expérience dégradée</div>
@@ -488,7 +488,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-[#070A14]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(-0.5deg)]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-[#0a0a12]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(-0.5deg)]"
             >
               <ShieldQuestion className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Zéro contrôle</div>
@@ -501,7 +501,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-[#070A14]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-[#0a0a12]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
             >
               <TrendingDown className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Revenu manqué</div>
@@ -530,7 +530,7 @@ export default function HomePage() {
           4. QUI SONT NOS PARTENAIRES — Catégories cibles
           Hôtels, Airbnb, conciergeries, entreprises
           ═══════════════════════════════════════════════════════════════ */}
-      <section data-section="partners" className="relative py-20 md:py-28 bg-[#070A14]">
+      <section data-section="partners" className="relative py-20 md:py-28 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -554,7 +554,7 @@ export default function HomePage() {
               <PartnerCategory
                 icon="🏨"
                 name="Hôtels & Résidences"
-                desc="Du palace au boutique-hôtel. Offrez un service navette Ajnaya à vos clients : arrivée aéroport, transferts, sorties. Votre conciergerie devient digitale."
+                desc="Du palace au boutique-hôtel. Offrez un service navette IA à vos clients : arrivée aéroport, transferts, sorties. Votre conciergerie devient digitale."
               />
             </TiltCard>
             <TiltCard>
@@ -607,7 +607,7 @@ export default function HomePage() {
               </span>
             </h2>
             <p className="font-body text-base md:text-lg text-white/45 max-w-2xl mx-auto">
-              FOREAS fusionne données temps réel, analyse prédictive et pilotage Ajnaya
+              FOREAS fusionne données temps réel, analyse prédictive et optimisation IA
               pour créer le réseau de transport le plus réactif du marché.
             </p>
           </motion.div>
@@ -624,7 +624,7 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
                 </svg>
               </div>
-              <h3 className="font-title text-lg font-semibold text-white mb-2">Ajnaya prédictive</h3>
+              <h3 className="font-title text-lg font-semibold text-white mb-2">IA Prédictive</h3>
               <p className="text-sm text-white/45">Trains, vols, événements, météo — Ajnaya anticipe la demande 15 à 30 minutes avant qu&apos;elle se matérialise.</p>
             </motion.div>
 
@@ -640,7 +640,7 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                 </svg>
               </div>
-              <h3 className="font-title text-lg font-semibold text-white mb-2">Tableau de bord partenaire</h3>
+              <h3 className="font-title text-lg font-semibold text-white mb-2">Dashboard Partenaire</h3>
               <p className="text-sm text-white/45">Métriques en temps réel : courses générées, satisfaction, revenus. Vous pilotez le transport comme vous pilotez votre RevPAR.</p>
             </motion.div>
 
@@ -681,7 +681,7 @@ export default function HomePage() {
           Pas de Stripe ici. Contact / démo.
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-[#060610]" />
+        <div className="absolute inset-0 bg-[#050508]" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] md:w-[1000px] md:h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent rounded-full blur-[60px] md:blur-[120px] pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto px-6 lg:px-8">

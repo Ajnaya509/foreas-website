@@ -30,7 +30,7 @@ const stats = [
 
 export default function TechnologiePage() {
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#050508]">
       <Header />
 
       {/* Hero */}
@@ -43,7 +43,7 @@ export default function TechnologiePage() {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full mb-6 md:mb-8">
               <span className="w-1.5 h-1.5 bg-accent-cyan rounded-full animate-pulse" />
-              Propulsé par Ajnaya
+              Propulsé par l'IA
             </span>
           </motion.div>
 
@@ -54,7 +54,7 @@ export default function TechnologiePage() {
             className="font-title text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.1] tracking-tight mb-4 md:mb-6"
           >
             <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Ajnaya.</span>
-            <span className="block text-white/60">Ajnaya qui vous fait gagner.</span>
+            <span className="block text-white/60">L'IA qui vous fait gagner.</span>
           </motion.h1>
 
           <motion.p
@@ -69,7 +69,7 @@ export default function TechnologiePage() {
       </section>
 
       {/* How it works */}
-      <section className="py-16 md:py-24 bg-[#070A14]">
+      <section className="py-16 md:py-24 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -104,7 +104,7 @@ export default function TechnologiePage() {
       </section>
 
       {/* Tech Grid */}
-      <section className="py-16 md:py-24 bg-[#060610]">
+      <section className="py-16 md:py-24 bg-[#050508]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -139,7 +139,7 @@ export default function TechnologiePage() {
       </section>
 
       {/* Stats */}
-      <section className="py-16 md:py-24 bg-[#070A14]">
+      <section className="py-16 md:py-24 bg-[#08080d]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {stats.map((stat, index) => (

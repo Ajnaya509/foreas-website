@@ -43,7 +43,7 @@ export function ConsentBanner() {
           </button>
           <button
             onClick={handleAccept}
-            className="px-3 py-1.5 bg-[#00D4FF] text-[#060610] rounded-md hover:bg-cyan-400 transition text-xs font-bold"
+            className="px-3 py-1.5 bg-[#00D4FF] text-[#050508] rounded-md hover:bg-cyan-400 transition text-xs font-bold"
           >
             Accepter
           </button>

@@ -78,7 +78,7 @@ export default async function TopicLandingPage(
   if (!data) return notFound()
 
   return (
-    <Suspense fallback={<div className="bg-[#060610] min-h-screen" />}>
+    <Suspense fallback={<div className="bg-[#050508] min-h-screen" />}>
       <LandingPageTemplate content={data} />
     </Suspense>
   )

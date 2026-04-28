@@ -10,18 +10,15 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
 // Preload critical fonts for immediate rendering
-// Site2026v41 — Audit copywriting : mots bannis "IA"/"Optimisation"/"intelligente"
-// remplacés par "Ajnaya" / "Pilotage" / "qui te fait gagner" (skill §7).
-// SEO : "IA"/"VTC" gardés en keywords (recherche utilisateur), retirés du copy visible.
 export const metadata: Metadata = {
-  title: 'FOREAS | Pilote ton activité VTC avec Ajnaya',
-  description: 'Ajnaya aide les chauffeurs VTC à gagner plus sur Uber, Bolt et Heetch. +35% de revenus visés à Paris.',
-  keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'Heetch', 'revenus', 'Ajnaya', 'IA chauffeur', 'Paris'],
+  title: 'FOREAS | Optimisation intelligente pour chauffeurs VTC',
+  description: 'FOREAS aide les chauffeurs VTC à gagner plus sur les plateformes grâce à l\'IA Ajnaya. +35% de revenus observés à Paris.',
+  keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'optimisation', 'revenus', 'IA', 'Paris'],
   authors: [{ name: 'FOREAS Labs' }],
   metadataBase: new URL('https://foreas.xyz'),
   openGraph: {
     title: 'FOREAS | Même travail. Plus de revenus.',
-    description: 'Tes revenus VTC pilotés par Ajnaya. Zéro friction. +35% visés à Paris.',
+    description: 'Optimisation intelligente de vos revenus VTC, pilotée par l\'IA Ajnaya.',
     url: 'https://foreas.xyz',
     siteName: 'FOREAS',
     locale: 'fr_FR',
@@ -30,7 +27,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'FOREAS | Même travail. Plus de revenus.',
-    description: 'Tes revenus VTC pilotés par Ajnaya. Zéro friction. +35% visés à Paris.',
+    description: 'Optimisation intelligente de vos revenus VTC, pilotée par l\'IA Ajnaya.',
   },
   robots: {
     index: true,
@@ -72,7 +69,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="bg-foreas-obsidian text-text-primary antialiased">
+      <body className="bg-foreas-black text-foreas-light antialiased">
         {/* Tracking pixels — chargement conditionnel au consentement RGPD */}
         <TikTokPixel />
         <MetaPixel />

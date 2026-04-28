@@ -64,7 +64,7 @@ export default function PartnerDashboard() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-[#070A14] border border-white/[0.06] rounded-2xl p-5"
+          className="bg-[#0a0a12] border border-white/[0.06] rounded-2xl p-5"
         >
           <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">Chauffeurs actifs</p>
           <div className="flex items-baseline gap-2">
@@ -81,7 +81,7 @@ export default function PartnerDashboard() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.05 }}
-          className="bg-[#070A14] border border-white/[0.06] rounded-2xl p-5"
+          className="bg-[#0a0a12] border border-white/[0.06] rounded-2xl p-5"
         >
           <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">CA flotte (mois)</p>
           <span className="text-white text-2xl font-bold">{MOCK_FLEET.totalRevenue.toLocaleString('fr-FR')}€</span>
@@ -94,7 +94,7 @@ export default function PartnerDashboard() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-[#070A14] border border-white/[0.06] rounded-2xl p-5"
+          className="bg-[#0a0a12] border border-white/[0.06] rounded-2xl p-5"
         >
           <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">Net/h moyen</p>
           <span className="text-white text-2xl font-bold">{MOCK_FLEET.avgNetPerHour}€</span>
@@ -107,7 +107,7 @@ export default function PartnerDashboard() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="bg-[#070A14] border border-white/[0.06] rounded-2xl p-5"
+          className="bg-[#0a0a12] border border-white/[0.06] rounded-2xl p-5"
         >
           <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">Score flotte</p>
           <div className="flex items-baseline gap-2">
@@ -130,7 +130,7 @@ export default function PartnerDashboard() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-[#070A14] border border-white/[0.06] rounded-2xl overflow-hidden"
+        className="bg-[#0a0a12] border border-white/[0.06] rounded-2xl overflow-hidden"
       >
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <h2 className="text-white font-semibold">Chauffeurs</h2>
@@ -197,7 +197,7 @@ export default function PartnerDashboard() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="bg-[#070A14] border border-white/[0.06] rounded-2xl"
+        className="bg-[#0a0a12] border border-white/[0.06] rounded-2xl"
       >
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <h2 className="text-white font-semibold">Annonces récentes</h2>

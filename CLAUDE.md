@@ -57,17 +57,8 @@ Optimiser le site vitrine foreas.xyz pour maximiser la conversion visiteurs → 
 ### Conventions
 - **Deploy** : auto sur push master
 - **Commits** : Site2026vXX
-- **Thème v2** (Site2026v41 — UNIFIÉ avec l'app FOREAS Driver) :
-  - **Obsidian** : `#060610` (body) · `#070A14` (card layer 1) · `#111528` (card layer 2)
-  - **Accents** : `#00D4FF` (cyan) · `#8C52FF` (violet) · `#F5C842` (gold) — mirror app
-  - **Glass** : `rgba(17, 21, 40, 0.88)` + border `rgba(255, 255, 255, 0.08)`
-  - **Source de vérité** : `src/design/tokens.ts` — JAMAIS hardcoder de hex ailleurs
-- **Fonts** : Montserrat (body — 11 niveaux), Genos (display + h1-h3), JetBrains Mono (code)
-- **Système 4pt** : `xxs=2, xs=4, sm=8, md=12, lg=16, xl=20, xxl=24, xxxl=32, huge=48, massive=64`
-- **Radius** : `sm=8, md=12, lg=16, xl=20, xxl=24, round=9999`
-- **Motion durations** : `instant=120 fast=220 base=320 slow=480 cinematic=720` (ms)
-- **Composants v2** : `import { Button, Card, FoIcon } from '@/components/ui'`
-- **Skill source** : `~/FOREAS-Clean/.claude/skills/foreas-mobile-design.md` v1.0
+- **Thème** : "Dark Sovereign" (deepblack #050508, cyan #00D4FF, purple #8C52FF, green #10B981)
+- **Fonts** : Montserrat (body), Genos (display), JetBrains Mono (code)
 
 ---
 
@@ -304,18 +295,11 @@ Header, Footer, Hero, Features, Stats, AppDemo, DownloadSection, CTA, PhoneMocku
 
 10 portes d'entrée, pipeline unifié via `_utils_ajnaya_respond` + `_utils_ajnaya_send_cross_canal`. Le widget de ce site écrit dans `widget_conversations` Supabase et peut générer des `handoff_tokens` pour basculer une conversation vers WhatsApp sans perte de contexte.
 
-### Palette unifiée site/app/widget (Site2026v41 — 28 avril 2026)
+### Palette mobile vs palette site
 
-✅ **Palettes maintenant UNIFIÉES entre site et app** :
-- **Source de vérité** : `~/FOREAS-Clean/.claude/skills/foreas-mobile-design.md` v1.0
-- **Tokens partagés** :
-  - Obsidian : `#060610` / `#070A14` / `#111528` (3 couches)
-  - Cyan : `#00D4FF` (primary action)
-  - Violet : `#8C52FF` (brand Ajnaya)
-  - Gold : `#F5C842` (success premium — REMPLACE l'ancien green `#10B981`)
-- **Cohérence cross-canal** : site, widget Ajnaya, app mobile, dashboard partenaire utilisent les MÊMES tokens.
-- Ancienne palette "Dark Sovereign" (`#050508` / vert `#10B981`) → migrée vers nouveaux tokens v2.
-- Voir aussi : `CLAUDE.md` du repo `FOREAS-Clean` + skill mobile-design (priorité absolue).
+⚠️ **Ne pas confondre** :
+- **Ce site** (Dark Sovereign) : `#050508` / `#00D4FF` / `#8C52FF` / `#10B981` ← identité site (voir section Stack ci-dessus)
+- **App mobile & dashboard** : `#080C18` / `#00C9FF` / `#6C3CE0` / `#2ECC71` ← identité produit (différente, ne pas mélanger)
 
 ### Références complémentaires
 

@@ -6,7 +6,7 @@ import Footer from '@/components/Footer'
 
 export default function ConfidentialitePage() {
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#050508]">
       <Header />
 
       <section className="pt-28 pb-16 md:pt-36 md:pb-24 px-6 lg:px-8">

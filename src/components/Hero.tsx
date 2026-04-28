@@ -3,63 +3,49 @@
 import { motion } from 'framer-motion'
 import PhoneMockup from './PhoneMockup'
 import { useIsMobile } from '@/hooks/useDevicePerf'
-import { Button } from '@/components/ui'
 
-/**
- * Hero — Site2026v41
- *
- * Aligné design system v2 :
- * - Tokens v2 (foreas-obsidian, accent-cyan/purple/gold)
- * - Typo Genos (display) + Montserrat (body) avec niveaux canoniques
- * - Copywriting audité : zéro mot banni, scènes concrètes
- * - Boutons via composant Button (focus rings WCAG AA)
- * - Backgrounds layered avec mesh-foreas signature
- *
- * Public : multi-audience (homepage). Tagline B2C-friendly.
- */
 export default function Hero() {
   const isMobile = useIsMobile()
 
   return (
     <section className="relative min-h-[100dvh] lg:h-screen flex items-center overflow-hidden">
-      {/* Background — Cinematic dark gradient */}
+      {/* Background - Cinematic dark gradient */}
       <div
         className="absolute inset-0"
-        aria-hidden="true"
         style={{
           background: `
-            radial-gradient(ellipse 120% 60% at 50% -20%, rgba(140, 82, 255, 0.10) 0%, transparent 50%),
-            radial-gradient(ellipse 80% 50% at 80% 50%, rgba(0, 212, 255, 0.06) 0%, transparent 40%),
-            linear-gradient(180deg, #060610 0%, #070A14 50%, #060610 100%)
+            radial-gradient(ellipse 120% 60% at 50% -20%, rgba(140, 82, 255, 0.08) 0%, transparent 50%),
+            radial-gradient(ellipse 80% 50% at 80% 50%, rgba(0, 212, 255, 0.04) 0%, transparent 40%),
+            linear-gradient(180deg, #050508 0%, #08080d 50%, #050508 100%)
           `
         }}
       />
 
-      {/* Floating orbs — desktop only (GPU heavy) */}
+      {/* Floating orbs - Subtle depth (desktop only — blur-[150px] is GPU-heavy) */}
       {!isMobile && (
         <>
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-accent-purple/[0.04] rounded-full blur-[150px] pointer-events-none" aria-hidden="true" />
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent-cyan/[0.03] rounded-full blur-[120px] pointer-events-none" aria-hidden="true" />
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-accent-purple/[0.03] rounded-full blur-[150px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent-cyan/[0.02] rounded-full blur-[120px] pointer-events-none" />
         </>
       )}
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-lg lg:px-xxxl pt-massive lg:pt-xl pb-huge">
-        <div className="grid lg:grid-cols-2 gap-huge lg:gap-massive items-center">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 pt-24 lg:pt-20 pb-12">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
           {/* Left: Typography-first content */}
           <div className="text-center lg:text-left">
 
-            {/* Eyebrow — credibility signal */}
+            {/* Eyebrow - Subtle credibility signal */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.48 }}
-              className="mb-lg lg:mb-xl"
+              transition={{ duration: 0.5 }}
+              className="mb-5 lg:mb-6"
             >
-              <span className="inline-flex items-center gap-sm px-lg py-sm text-eyebrow text-accent-cyan/80 border border-accent-cyan/20 rounded-full md:backdrop-blur-glass">
-                <span className="w-1.5 h-1.5 bg-accent-gold rounded-full md:animate-pulse" aria-hidden="true" />
-                Disponible sur iOS &amp; Android
+              <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full md:backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 bg-accent-green rounded-full md:animate-pulse" />
+                Disponible sur iOS & Android
               </span>
             </motion.div>
 
@@ -68,74 +54,68 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="font-title text-display-l md:text-display-xl lg:text-display-xxl font-semibold leading-[1.05] tracking-tight mb-md lg:mb-lg"
+              className="font-title text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight mb-4 lg:mb-5"
             >
-              <span className="block text-text-primary">Tournez moins.</span>
+              <span className="block text-white">Tournez moins.</span>
               <span className="block bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Gagnez plus.</span>
             </motion.h1>
 
-            {/* Subheadline — Mot banni "IA" remplacé par Ajnaya (skill §7) */}
+            {/* Subheadline */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="font-body text-body-lg text-text-tertiary max-w-md mx-auto lg:mx-0 mb-xl lg:mb-xxl"
+              className="font-body text-base md:text-lg text-white/50 max-w-md mx-auto lg:mx-0 mb-6 lg:mb-8"
             >
-              Ajnaya voit la demande avant qu&apos;elle arrive.
+              L'IA qui voit la demande avant qu'elle arrive.
             </motion.p>
 
-            {/* Stats pill — preuve sociale chiffrée */}
+            {/* Stats pill - Preuve sociale chiffrée */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex items-center gap-lg md:gap-xxl justify-center lg:justify-start mb-xxl lg:mb-xxxl"
+              className="flex items-center gap-4 md:gap-6 justify-center lg:justify-start mb-8 lg:mb-10"
             >
-              <div className="flex items-baseline gap-xxs">
-                <span className="font-title text-h1 md:text-display-l font-bold text-text-primary">+35</span>
-                <span className="font-title text-h2 md:text-h1 font-bold text-accent-cyan">%</span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-title text-3xl md:text-4xl font-bold text-white">+35</span>
+                <span className="font-title text-xl md:text-2xl font-bold text-accent-cyan">%</span>
               </div>
-              <div className="h-8 md:h-10 w-px bg-white/8" aria-hidden="true" />
-              <p className="text-caption md:text-label text-text-secondary text-left">
+              <div className="h-8 md:h-10 w-px bg-white/10" />
+              <p className="text-xs md:text-sm text-white/60 text-left">
                 de CA visé<br />
-                <span className="text-text-tertiary">Pilotage Ajnaya</span>
+                <span className="text-white/60">IA prédictive</span>
               </p>
             </motion.div>
 
-            {/* CTA — engagement progressif */}
+            {/* CTA - Engagement progressif */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-md justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
             >
-              <Button
-                as="link"
-                href="/tarifs2"
-                variant="primary"
-                size="lg"
-                iconRight={
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                }
+              <a
+                href="#telecharger"
+                className="group relative inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-semibold text-white overflow-hidden rounded-xl md:rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
-                Essayer gratuitement
-              </Button>
+                {/* Button gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-purple/80 transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-cyan/80" />
+                <span className="relative">Essayer gratuitement</span>
+                <svg className="relative w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
 
-              <Button
-                as="link"
+              <a
                 href="#demo"
-                variant="ghost"
-                size="lg"
-                iconLeft={
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                }
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl md:rounded-2xl transition-all duration-300 md:backdrop-blur-sm"
               >
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
                 Voir la démo
-              </Button>
+              </a>
             </motion.div>
           </div>
 
@@ -144,18 +124,20 @@ export default function Hero() {
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative flex justify-center lg:justify-end mt-md lg:mt-0"
+            className="relative flex justify-center lg:justify-end mt-4 lg:mt-0"
           >
+            {/* Glow behind phone */}
             {!isMobile && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[400px] h-[400px] md:h-[500px] bg-gradient-to-b from-accent-purple/20 via-accent-cyan/10 to-transparent rounded-full blur-[80px] md:blur-[100px] pointer-events-none" aria-hidden="true" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[400px] h-[400px] md:h-[500px] bg-gradient-to-b from-accent-purple/20 via-accent-cyan/10 to-transparent rounded-full blur-[80px] md:blur-[100px] pointer-events-none" />
             )}
+
             <PhoneMockup />
           </motion.div>
         </div>
       </div>
 
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-foreas-obsidian to-transparent pointer-events-none" aria-hidden="true" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#050508] to-transparent pointer-events-none" />
     </section>
   )
 }
