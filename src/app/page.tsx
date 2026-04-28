@@ -9,6 +9,15 @@ import Footer from '@/components/Footer'
 import TiltCard from '@/components/TiltCard'
 import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 import { Clock, ShieldQuestion, TrendingDown, Brain, BarChart3, Palette, Wallet } from 'lucide-react'
+// Site2026v44 — Phase 3 : composants signature FOREAS-Grade
+import {
+  HeroNarrative,
+  EyebrowLabel,
+  InkGradientButton,
+  Button,
+  MarkerPulse,
+  GlassCard,
+} from '@/components/ui'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS HOME GÉNÉRALE — BIG DOMINO B2B / AUTORITÉ
@@ -203,7 +212,7 @@ export default function HomePage() {
   const mockupY = useTransform(heroScrollProgress, [0, 1], [0, 150])
 
   return (
-    <main className="min-h-screen bg-[#050508]">
+    <main className="min-h-screen bg-foreas-obsidian">
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -214,112 +223,87 @@ export default function HomePage() {
           ═══════════════════════════════════════════════════════════════ */}
 
       {isMobile ? (
-        /* ── MOBILE HERO: static, simple whileInView fade-in, zero useScroll ── */
-        <section data-section="hero" className="relative pt-28 pb-24 overflow-hidden">
-          {/* Background glows — static on mobile */}
-          <div className="pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-purple/6 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent-cyan/4 rounded-full blur-[80px]" />
-          </div>
+        /* ── MOBILE HERO — FOREAS-Grade v44 (HeroNarrative + InkGradientButton) ── */
+        <section data-section="hero" className="relative pt-massive pb-massive overflow-hidden bg-foreas-obsidian">
+          {/* Background mesh signature (subtil) */}
+          <div className="absolute inset-0 bg-mesh-foreas pointer-events-none" aria-hidden="true" />
 
-          <div className="relative max-w-6xl mx-auto px-6">
+          <div className="relative max-w-6xl mx-auto px-lg">
             <div className="text-center">
-              {/* Eyebrow */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="mb-6"
-              >
-                <span className="inline-flex items-center gap-3 px-5 py-2.5 text-xs font-medium tracking-wider uppercase border border-white/10 rounded-full text-white/50">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
-                  </span>
-                  Intelligence Mobilité · Paris
-                </span>
-              </motion.div>
-
-              {/* Headline */}
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="font-title text-4xl font-semibold leading-[1.05] tracking-tight mb-6"
-              >
-                <span className="text-white">Offrez à vos clients</span>
-                <br />
-                <span className="bg-gradient-to-r from-[#8C52FF] via-[#00D4FF] to-[#8C52FF] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
-                  le transport qu&apos;ils méritent.
-                </span>
-              </motion.h1>
+              {/* HeroNarrative — pattern signature 3 étages */}
+              <HeroNarrative
+                eyebrow="Ajnaya · Intelligence Mobilité"
+                eyebrowDot
+                eyebrowColor="cyan"
+                scene="Offrez à vos clients le transport qu'ils méritent."
+                sceneAccent="qu'ils méritent."
+                align="center"
+                className="mb-xxl"
+              />
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="font-body text-base text-white/50 max-w-2xl mx-auto mb-10"
+                transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="font-body text-body-lg text-text-secondary max-w-xl mx-auto mb-huge"
               >
                 FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
-                pilotés par l&apos;IA — ponctualité, qualité, traçabilité. Zéro friction.
+                pilotés par Ajnaya — ponctualité, qualité, traçabilité. Zéro friction.
               </motion.p>
 
-              {/* CTAs */}
+              {/* CTAs — InkGradientButton signature + ghost secondaire */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+                transition={{ duration: 0.6, delay: 0.45 }}
+                className="flex flex-col sm:flex-row gap-md justify-center mb-huge"
               >
-                <a
+                <InkGradientButton
+                  as="link"
                   href="/contact"
-                  className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  size="lg"
+                  iconRight={
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  }
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
-                  <span className="relative">Devenir partenaire</span>
-                  <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
-                <a
-                  href="/chauffeurs"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
-                >
+                  Devenir partenaire
+                </InkGradientButton>
+                <Button as="link" href="/chauffeurs" variant="ghost" size="lg">
                   Je suis chauffeur
-                </a>
+                </Button>
               </motion.div>
 
-              {/* DashboardMockup — mobile: below CTAs */}
+              {/* DashboardMockup */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="flex justify-center mb-10"
+                className="flex justify-center mb-xxl"
               >
                 <div className="max-w-[300px] mx-auto">
                   <DashboardMockup />
                 </div>
               </motion.div>
 
-              {/* Authority signals */}
+              {/* Authority signals — Cialdini pattern (eyebrows en chip) */}
               <motion.div
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-white/25 text-xs"
+                className="flex flex-wrap items-center justify-center gap-x-xxl gap-y-sm text-text-tertiary"
               >
-                <span>Paris & Île-de-France</span>
-                <span className="w-px h-3 bg-white/10" />
-                <span>IA temps réel</span>
-                <span className="w-px h-3 bg-white/10" />
-                <span>Chauffeurs certifiés</span>
-                <span className="w-px h-3 bg-white/10" />
-                <span>API disponible</span>
+                <EyebrowLabel color="muted" as="span">Paris &amp; Île-de-France</EyebrowLabel>
+                <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
+                <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
+                <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
+                <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
+                <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
+                <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
               </motion.div>
             </div>
           </div>
@@ -336,92 +320,75 @@ export default function HomePage() {
             <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-accent-cyan/4 rounded-full blur-[160px]" />
           </motion.div>
 
-          <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          {/* Background mesh signature (subtil) */}
+          <div className="absolute inset-0 bg-mesh-foreas pointer-events-none" aria-hidden="true" />
+
+          <div className="relative max-w-7xl mx-auto px-lg lg:px-xxl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-massive lg:gap-massive items-center">
               {/* Left col — text — parallax layer 2 */}
               <motion.div
                 style={reducedMotion ? {} : { y: titleY, willChange: 'transform' }}
                 className="text-center lg:text-left"
               >
-                {/* Eyebrow */}
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="mb-8"
-                >
-                  <span className="inline-flex items-center gap-3 px-5 py-2.5 text-xs font-medium tracking-wider uppercase border border-white/10 rounded-full text-white/50">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
-                    </span>
-                    Intelligence Mobilité · Paris
-                  </span>
-                </motion.div>
-
-                {/* Headline */}
-                <motion.h1
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                  className="font-title text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
-                >
-                  <span className="text-white">Offrez à vos clients</span>
-                  <br />
-                  <span className="bg-gradient-to-r from-[#8C52FF] via-[#00D4FF] to-[#8C52FF] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
-                    le transport qu&apos;ils méritent.
-                  </span>
-                </motion.h1>
+                {/* HeroNarrative — pattern signature 3 étages */}
+                <HeroNarrative
+                  eyebrow="Ajnaya · Intelligence Mobilité"
+                  eyebrowDot
+                  eyebrowColor="cyan"
+                  scene="Offrez à vos clients le transport qu'ils méritent."
+                  sceneAccent="qu'ils méritent."
+                  align="left"
+                  className="mb-xxl"
+                />
 
                 <motion.p
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.35 }}
-                  className="font-body text-lg lg:text-xl text-white/50 mb-10"
+                  transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  className="font-body text-body-lg text-text-secondary max-w-xl mb-huge"
                 >
                   FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
-                  pilotés par l&apos;IA — ponctualité, qualité, traçabilité. Zéro friction.
+                  pilotés par Ajnaya — ponctualité, qualité, traçabilité. Zéro friction.
                 </motion.p>
 
-                {/* CTAs */}
+                {/* CTAs — InkGradientButton signature + ghost secondaire */}
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.5 }}
-                  className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
+                  transition={{ duration: 0.6, delay: 0.45 }}
+                  className="flex flex-col sm:flex-row gap-md justify-center lg:justify-start mb-huge"
                 >
-                  <a
+                  <InkGradientButton
+                    as="link"
                     href="/contact"
-                    className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    size="lg"
+                    iconRight={
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    }
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300" />
-                    <span className="relative">Devenir partenaire</span>
-                    <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </a>
-                  <a
-                    href="/chauffeurs"
-                    className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all"
-                  >
+                    Devenir partenaire
+                  </InkGradientButton>
+                  <Button as="link" href="/chauffeurs" variant="ghost" size="lg">
                     Je suis chauffeur
-                  </a>
+                  </Button>
                 </motion.div>
 
-                {/* Authority signals */}
+                {/* Authority signals — Cialdini pattern */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                  className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-white/25 text-xs"
+                  transition={{ duration: 0.6, delay: 0.7 }}
+                  className="flex flex-wrap items-center justify-center lg:justify-start gap-x-xxl gap-y-sm"
                 >
-                  <span>Paris & Île-de-France</span>
-                  <span className="w-px h-3 bg-white/10" />
-                  <span>IA temps réel</span>
-                  <span className="w-px h-3 bg-white/10" />
-                  <span>Chauffeurs certifiés</span>
-                  <span className="w-px h-3 bg-white/10" />
-                  <span>API disponible</span>
+                  <EyebrowLabel color="muted" as="span">Paris &amp; Île-de-France</EyebrowLabel>
+                  <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
+                  <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
+                  <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
+                  <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
+                  <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
+                  <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
                 </motion.div>
               </motion.div>
 
@@ -431,8 +398,18 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="hidden lg:flex justify-center lg:justify-end"
+                className="hidden lg:flex justify-center lg:justify-end relative"
               >
+                {/* Marker pulse signature au-dessus du mockup (signal Ajnaya temps réel) */}
+                <div className="absolute -top-md -right-md z-20">
+                  <GlassCard level="high" padding="sm" radius="lg" glow="cyan" className="flex items-center gap-md">
+                    <MarkerPulse size={32} />
+                    <div className="text-left">
+                      <EyebrowLabel color="cyan">Ajnaya · Live</EyebrowLabel>
+                      <p className="text-caption text-text-secondary mt-xxs">147 actifs · Paris</p>
+                    </div>
+                  </GlassCard>
+                </div>
                 <DashboardMockup />
               </motion.div>
             </div>
