@@ -109,10 +109,15 @@ html { scroll-behavior: smooth; }
   font-display: swap;
 }
 
-/* Genos - Local fonts */
+/* Genos — Variable font UNIQUEMENT (Site2026v52) */
+/* Les versions statiques (Bold/Light/Italic/BoldItalic) ont été retirées car  */
+/* elles écrasaient le Variable Font à certains poids (font-weight: 700 prenait*/
+/* Genos-Bold.ttf au lieu du Variable). Ne garder QUE le Variable garantit le  */
+/* rendu cohérent à TOUS les poids — celui de la capture user "Le transport... */
 @font-face {
   font-family: 'Genos';
-  src: url('/fonts/Genos-VariableFont_wght.ttf') format('truetype');
+  src: url('/fonts/Genos-VariableFont_wght.ttf') format('truetype-variations'),
+       url('/fonts/Genos-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -120,40 +125,9 @@ html { scroll-behavior: smooth; }
 
 @font-face {
   font-family: 'Genos';
-  src: url('/fonts/Genos-Italic-VariableFont_wght.ttf') format('truetype');
+  src: url('/fonts/Genos-Italic-VariableFont_wght.ttf') format('truetype-variations'),
+       url('/fonts/Genos-Italic-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-Italic.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-BoldItalic.ttf') format('truetype');
-  font-weight: 700;
   font-style: italic;
   font-display: swap;
 }
