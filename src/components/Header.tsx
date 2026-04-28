@@ -5,12 +5,27 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { useThrottledScroll } from '@/hooks/useDevicePerf'
+import { InkGradientButton } from '@/components/ui'
 
+/**
+ * Header — Site2026v44 (Phase 3.3)
+ *
+ * Aligné design system v43 :
+ * - Logo "FOREAS/" avec slash en gradient signature 3-stops
+ * - Liens nav avec underline-grow signature (gauche-à-droite)
+ * - CTA "Essai gratuit" via InkGradientButton (signature drift)
+ * - Background glass-card-mid quand scrolled (blur 24px)
+ * - Touch targets 44pt iOS / 48pt Android
+ * - WCAG focus rings cyan 2px
+ */
 const navigation = [
   { name: 'Chauffeurs', href: '/chauffeurs' },
   { name: 'Partenaires', href: '/partenaires' },
   { name: 'Tarifs', href: '/tarifs2' },
 ]
+
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-obsidian rounded-md'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -25,62 +40,65 @@ export default function Header() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, delay: 2.4, ease: [0.16, 1, 0.3, 1] }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-base ease-standard ${
         mobileMenuOpen
-          ? 'bg-[#050508]'
+          ? 'bg-foreas-obsidian'
           : scrolled
-            ? 'bg-[#050508]/95 backdrop-blur-xl border-b border-white/5'
+            ? 'glass-card-mid !rounded-none border-b border-glass-border'
             : 'bg-transparent'
       }`}
     >
-      <nav className="mx-auto max-w-7xl px-6 lg:px-8" aria-label="Global">
+      <nav className="mx-auto max-w-7xl px-lg lg:px-xxl" aria-label="Navigation principale">
         <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center group">
-            <span className="font-title text-xl lg:text-2xl font-semibold tracking-wider text-white transition-all">
+          {/* Logo — slash en gradient 3-stops signature */}
+          <Link
+            href="/"
+            className={`flex items-center group ${focusRing}`}
+            aria-label="FOREAS — Retour à l'accueil"
+          >
+            <span className="font-title text-h1 font-bold tracking-wider text-text-primary">
               FOREAS
-              <span className="text-white group-hover:text-accent-purple transition-colors">/</span>
+              <span className="bg-gradient-foreas-h bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-fast">
+                /
+              </span>
             </span>
           </Link>
 
-          {/* Desktop Navigation - Center */}
-          <div className="hidden md:flex md:items-center md:gap-1">
+          {/* Desktop Navigation — underline-grow signature */}
+          <div className="hidden md:flex md:items-center md:gap-xs">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="relative px-4 py-2 text-sm font-medium text-white/50 hover:text-white transition-colors group"
+                className={`relative px-lg py-sm text-label text-text-tertiary hover:text-text-primary transition-colors duration-fast ease-standard min-h-[44px] flex items-center ${focusRing}`}
               >
-                {item.name}
-                <span className="absolute bottom-1 left-4 right-4 h-px bg-accent-purple scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                <span className="underline-grow">{item.name}</span>
               </Link>
             ))}
           </div>
 
-          {/* CTA Button - Right */}
-          <div className="hidden md:flex md:items-center md:gap-6">
+          {/* CTA Right — InkGradientButton signature */}
+          <div className="hidden md:flex md:items-center md:gap-xl">
             <Link
               href="/contact"
-              className="text-sm font-medium text-white/50 hover:text-white transition-colors"
+              className={`text-label text-text-tertiary hover:text-text-primary transition-colors duration-fast ease-standard min-h-[44px] flex items-center px-sm ${focusRing}`}
             >
-              Contact
+              <span className="underline-grow">Contact</span>
             </Link>
-            <Link
-              href="/tarifs2"
-              className="group relative inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white overflow-hidden rounded-full transition-all hover:scale-[1.02]"
-            >
-              <div className="absolute inset-0 bg-accent-purple transition-all group-hover:bg-accent-purple/90" />
-              <span className="relative">Essai gratuit</span>
-            </Link>
+            <InkGradientButton as="link" href="/tarifs2" size="sm">
+              Essai gratuit
+            </InkGradientButton>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button — touch target 48dp */}
           <button
             type="button"
-            className="md:hidden p-3 -mr-2 text-white/60 hover:text-white transition-colors"
+            className={`md:hidden p-md -mr-md text-text-tertiary hover:text-text-primary transition-colors duration-fast ease-standard min-w-[48px] min-h-[48px] flex items-center justify-center ${focusRing}`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {mobileMenuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
           </button>
         </div>
 
@@ -91,20 +109,20 @@ export default function Header() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.32, ease: [0, 0, 0.2, 1] }}
               className="md:hidden overflow-hidden"
             >
-              <div className="py-6 space-y-1 border-t border-white/5 bg-[#050508]">
+              <div className="py-xxl space-y-xs border-t border-glass-border bg-foreas-obsidian">
                 {navigation.map((item, index) => (
                   <motion.div
                     key={item.name}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.05, duration: 0.22 }}
                   >
                     <Link
                       href={item.href}
-                      className="block py-3 text-base font-medium text-white/60 hover:text-white transition-colors"
+                      className={`block py-md text-body text-text-secondary hover:text-text-primary transition-colors duration-fast min-h-[48px] flex items-center px-sm ${focusRing}`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.name}
@@ -112,18 +130,20 @@ export default function Header() {
                   </motion.div>
                 ))}
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="pt-4"
+                  transition={{ delay: 0.2, duration: 0.22 }}
+                  className="pt-lg"
                 >
-                  <Link
+                  <InkGradientButton
+                    as="link"
                     href="/tarifs2"
-                    className="block w-full text-center px-6 py-4 text-base font-semibold text-white bg-accent-purple rounded-xl"
+                    size="md"
+                    fullWidth
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Essai gratuit
-                  </Link>
+                  </InkGradientButton>
                 </motion.div>
               </div>
             </motion.div>
