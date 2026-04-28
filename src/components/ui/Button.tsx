@@ -51,14 +51,13 @@ interface ButtonAsLink extends BaseProps {
 type ButtonProps = ButtonAsButton | ButtonAsLink
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
-// Variant primary : gradient signature app cyan→violet→purple + glow violet
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-gradient-foreas text-white shadow-glow-violet hover:shadow-glow-violet-strong',
+    'bg-gradient-foreas text-white shadow-glow-cyan hover:shadow-glow-cyan-strong',
   secondary:
-    'bg-foreas-navy-card text-white border border-glass-border-soft hover:border-glass-border-hover hover:bg-foreas-navy-card/80',
+    'bg-foreas-obsidianLight text-white border border-white/8 hover:border-white/16 hover:bg-foreas-obsidianLight/80',
   ghost:
-    'bg-transparent text-white border border-glass-border-soft hover:bg-white/5 hover:border-glass-border-hover',
+    'bg-transparent text-white border border-white/12 hover:bg-white/5 hover:border-white/24',
   destructive:
     'bg-danger text-white hover:bg-danger/90',
 }
@@ -89,10 +88,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const baseClasses = [
       'inline-flex items-center justify-center',
-      'font-semibold rounded-pill',  // pill style signature app
-      'transition-all duration-fast',
+      'font-semibold rounded-md',
+      'transition-colors duration-fast',
       'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-navy',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-obsidian',
       'select-none',
       sizeStyles[size],
       variantStyles[variant],

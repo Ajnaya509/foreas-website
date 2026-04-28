@@ -159,73 +159,54 @@ html { scroll-behavior: smooth; }
 }
 
 :root {
-  /* ─── FOREAS Design System — VRAIE PALETTE APP v110 ───
-   * Source : ~/FOREAS-Clean/src/screens/HomeScreen.tsx const COLORS
-   * Site2026v42 — Refonte visuelle = même langage que l'app actuelle
+  /* ─── FOREAS Design System v2 — Aligné app/site/widget ───
+   * Source : src/design/tokens.ts + skill foreas-mobile-design.md v1.0
+   * Site2026v41 — Refonte cohérente cross-canal
    */
 
-  /* Navy — backgrounds multi-couches (mirror app HomeScreen) */
-  --foreas-navy: #080C18;          /* body — app primary */
-  --foreas-navy-deep: #060A14;     /* deeper layer (WebView fallback) */
-  --foreas-navy-card: #0D1526;     /* cards solid */
-  --foreas-navy-mid: #0B0F1A;      /* intermediate (legacy theme) */
+  /* Obsidian — backgrounds multi-couches (NON-NÉGOCIABLE) */
+  --foreas-obsidian: #060610;       /* body — profondeur max */
+  --foreas-obsidian-deep: #070A14;  /* card layer 1 */
+  --foreas-obsidian-light: #111528; /* card layer 2 */
 
-  /* Aliases compat v41 + legacy */
-  --foreas-obsidian: #080C18;       /* alias navy pour rétrocompat */
-  --foreas-obsidian-deep: #060A14;  /* alias navy-deep */
-  --foreas-obsidian-light: #0D1526; /* alias navy-card */
-  --foreas-deepblack: #080C18;
-  --foreas-black: #080C18;
-  --foreas-dark: #0D1526;
+  /* Aliases legacy (rétrocompat) — tous pointent vers obsidian */
+  --foreas-deepblack: #060610;
+  --foreas-black: #060610;
+  --foreas-dark: #070A14;
+  --foreas-navy: #070A14;
 
-  /* Accents signature — app v110 actuelle */
-  --accent-cyan: #00C9FF;           /* primary — app cyan (pas #00D4FF) */
-  --accent-violet: #6C3CE0;         /* brand violet — app (pas #8C52FF) */
-  --accent-purple: #A855F7;         /* signature purple */
-  --accent-success: #4ADE80;        /* positive feedback */
-  --accent-gold: #FFD700;           /* admin */
+  /* Accents signature */
+  --accent-cyan: #00D4FF;       /* primary action */
+  --accent-purple: #8C52FF;     /* brand Ajnaya */
+  --accent-gold: #F5C842;       /* success premium (remplace ancien green) */
 
-  /* Legacy accents (rétrocompat — ne plus utiliser) */
-  --accent-blue: #4A90E2;
-  --accent-green: #4ADE80;
+  /* Legacy accents (rétrocompat) */
+  --accent-blue: #3B82F6;
+  --accent-green: #10B981;
   --accent-magenta: #EC4899;
 
-  /* Glass — multi-couches signature app */
-  --glass-bg: rgba(11, 17, 32, 0.88);          /* heavy (HomeScreen) */
-  --glass-bg-light: rgba(12, 18, 34, 0.58);    /* medium (GlassCard) */
-  --glass-bg-ultra: rgba(255, 255, 255, 0.03); /* ultra-light overlay */
-  --glass-border: #1A2540;                      /* solid */
-  --glass-border-soft: rgba(255, 255, 255, 0.08);
+  /* Glass */
+  --glass-high: rgba(17, 21, 40, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.08);
   --glass-border-hover: rgba(255, 255, 255, 0.16);
 
-  /* Compat alias v41 */
-  --glass-high: rgba(11, 17, 32, 0.88);
-
-  /* Texte — opacités blanc (WCAG AA validé sur navy) */
+  /* Texte (opacités blanc — WCAG AA validé) */
   --text-primary: #FFFFFF;
   --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-tertiary: rgba(255, 255, 255, 0.55);
-  --text-muted: rgba(255, 255, 255, 0.35);
+  --text-tertiary: rgba(255, 255, 255, 0.45);
+  --text-muted: rgba(255, 255, 255, 0.28);
 
-  /* Motion durations — app fast 180 / normal 300 / slow 500 */
+  /* Motion durations (skill §8) */
   --duration-instant: 120ms;
-  --duration-fast: 180ms;
-  --duration-base: 300ms;
-  --duration-slow: 500ms;
+  --duration-fast: 220ms;
+  --duration-base: 320ms;
+  --duration-slow: 480ms;
   --duration-cinematic: 720ms;
 
   /* Easings */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
   --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
-  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1); /* signature ease-out app */
-
-  /* Gradient signature app — cyan → violet → purple */
-  --gradient-foreas: linear-gradient(135deg, #00C9FF 0%, #6C3CE0 50%, #A855F7 100%);
-  --gradient-foreas-h: linear-gradient(90deg, #00C9FF 0%, #6C3CE0 50%, #A855F7 100%);
-
-  /* Glow signature (HomeScreen .dd marker) */
-  --glow-marker: 0 0 12px rgba(0, 201, 255, 0.80), 0 0 24px rgba(108, 60, 224, 0.40);
 }
 
 * {
@@ -240,7 +221,7 @@ html {
 
 body {
   font-family: 'Montserrat', system-ui, sans-serif;
-  background: var(--foreas-navy);
+  background: var(--foreas-obsidian);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -318,30 +299,20 @@ h1, h2, h3, h4, h5, h6 {
   scrollbar-width: none;
 }
 
-/* Gradient text utility - FOREAS Signature (cyan → violet → purple — app v110) */
-.gradient-text,
-.gradient-text-foreas {
-  background: var(--gradient-foreas-h);
+/* Gradient text utility - FOREAS Signature */
+.gradient-text {
+  background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-cyan) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glass card — multi-couche signature app (mirror GlassCard.tsx + HomeScreen overlay) */
-.glass-card {
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border-soft);
-  backdrop-filter: blur(50px);
-  -webkit-backdrop-filter: blur(50px);
-  border-radius: 24px;
-}
-
-.glass-card-heavy {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border-soft);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-radius: 24px;
+/* Gradient text variation - Violet to Cyan */
+.gradient-text-foreas {
+  background: linear-gradient(90deg, #8C52FF 0%, #00D4FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Gradient border utility */
@@ -353,8 +324,8 @@ h1, h2, h3, h4, h5, h6 {
   content: '';
   position: absolute;
   inset: 0;
-  padding: 1px;
-  background: var(--gradient-foreas);
+  padding: 2px;
+  background: linear-gradient(90deg, #8C52FF 0%, #00D4FF 100%);
   border-radius: inherit;
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -366,53 +337,10 @@ h1, h2, h3, h4, h5, h6 {
   mask-composite: exclude;
 }
 
-/* iPhone mockup glow — cyan + violet (app live) */
+/* iPhone mockup glow effect */
 .phone-glow {
-  filter: drop-shadow(0 0 60px rgba(108, 60, 224, 0.35))
-          drop-shadow(0 0 100px rgba(0, 201, 255, 0.20));
-}
-
-/* Marker pulse rings (HomeScreen mapbox dot animation) */
-.marker-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  animation: markerPulse 2.5s ease-out infinite;
-}
-.marker-ring-1 {
-  width: 60px;
-  height: 60px;
-  background: radial-gradient(circle, rgba(0, 201, 255, 0.40) 0%, rgba(108, 60, 224, 0.15) 50%, transparent 70%);
-}
-.marker-ring-2 {
-  width: 45px;
-  height: 45px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, transparent 70%);
-  animation-delay: 0.6s;
-}
-.marker-ring-3 {
-  width: 70px;
-  height: 70px;
-  background: radial-gradient(circle, rgba(0, 201, 255, 0.12) 0%, transparent 70%);
-  animation-delay: 1.2s;
-}
-.marker-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 18px;
-  height: 18px;
-  background: var(--gradient-foreas);
-  border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.95);
-  box-shadow: var(--glow-marker);
-  z-index: 10;
-}
-@keyframes markerPulse {
-  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+  filter: drop-shadow(0 0 60px rgba(140, 82, 255, 0.3))
+          drop-shadow(0 0 100px rgba(0, 212, 255, 0.2));
 }
 
 /* Subtle particle background animation */

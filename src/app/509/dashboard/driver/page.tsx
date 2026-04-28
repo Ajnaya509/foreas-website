@@ -38,7 +38,7 @@ function KPICard({ label, value, unit, trend, trendColor, delay }: {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: delay || 0 }}
-      className="bg-[#0D1526] border border-white/[0.06] rounded-2xl p-5 hover:border-white/[0.1] transition-colors"
+      className="bg-[#070A14] border border-white/[0.06] rounded-2xl p-5 hover:border-white/[0.1] transition-colors"
     >
       <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">{label}</p>
       <div className="flex items-baseline gap-1.5">
@@ -135,7 +135,7 @@ export default function DriverDashboard() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="lg:col-span-3 bg-[#0D1526] border border-white/[0.06] rounded-2xl p-6"
+          className="lg:col-span-3 bg-[#070A14] border border-white/[0.06] rounded-2xl p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-white font-semibold">Revenus cette semaine</h2>
@@ -152,7 +152,7 @@ export default function DriverDashboard() {
           className="lg:col-span-2 space-y-4"
         >
           {/* Score Ajnaya */}
-          <div className="bg-[#0D1526] border border-white/[0.06] rounded-2xl p-6">
+          <div className="bg-[#070A14] border border-white/[0.06] rounded-2xl p-6">
             <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-4">Score Ajnaya</p>
             <div className="flex items-center gap-4">
               <div className="relative w-20 h-20">
@@ -218,7 +218,7 @@ export default function DriverDashboard() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="bg-[#0D1526] border border-white/[0.06] rounded-2xl p-6"
+        className="bg-[#070A14] border border-white/[0.06] rounded-2xl p-6"
       >
         <h2 className="text-white font-semibold mb-5">Répartition du temps</h2>
         <div className="flex gap-2 h-6 rounded-full overflow-hidden mb-4">

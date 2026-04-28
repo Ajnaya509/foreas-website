@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default function GoDesktopPage() {
   return (
-    <div className="min-h-screen bg-[#080C18] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#060610] flex items-center justify-center px-4">
       <div className="text-center max-w-sm w-full">
         {/* Logo text */}
         <div className="mb-6">
@@ -28,7 +28,7 @@ export default function GoDesktopPage() {
             size={180}
             level="H"
             includeMargin={false}
-            fgColor="#080C18"
+            fgColor="#060610"
             bgColor="#ffffff"
           />
         </div>
@@ -38,7 +38,7 @@ export default function GoDesktopPage() {
         <div className="flex flex-col gap-3 max-w-xs mx-auto">
           <Link
             href="https://apps.apple.com/app/foreas-driver/id[APP_ID]"
-            className="block w-full py-3 bg-[#00D4FF] text-[#080C18] font-bold rounded-xl hover:bg-cyan-300 transition text-sm"
+            className="block w-full py-3 bg-[#00D4FF] text-[#060610] font-bold rounded-xl hover:bg-cyan-300 transition text-sm"
           >
             App Store (iOS)
           </Link>

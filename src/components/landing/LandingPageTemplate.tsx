@@ -130,7 +130,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
   const ctaHref = `/go/${topic_slug}`
 
   return (
-    <div className="bg-[#080C18] text-white min-h-screen overflow-x-hidden">
+    <div className="bg-[#060610] text-white min-h-screen overflow-x-hidden">
 
       {/* ── SECTION 1 — PATTERN INTERRUPT ─────────────────────────────────── */}
       <section className="min-h-screen flex flex-col items-center justify-center px-4 py-20 text-center relative">
@@ -154,7 +154,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           <Link
             href={ctaHref}
             onClick={trackCTAClick}
-            className="inline-block px-8 py-4 bg-[#00D4FF] text-[#080C18] font-black text-base rounded-2xl hover:bg-cyan-300 transition-all shadow-[0_0_30px_rgba(0,212,255,0.3)]"
+            className="inline-block px-8 py-4 bg-[#00D4FF] text-[#060610] font-black text-base rounded-2xl hover:bg-cyan-300 transition-all shadow-[0_0_30px_rgba(0,212,255,0.3)]"
           >
             Essayer gratuitement →
           </Link>
@@ -292,7 +292,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           <Link
             href={ctaHref}
             onClick={trackCTAClick}
-            className="inline-block px-10 py-5 bg-[#00D4FF] text-[#080C18] font-black text-lg rounded-2xl hover:bg-cyan-300 transition-all shadow-[0_0_50px_rgba(0,212,255,0.4)] mb-4"
+            className="inline-block px-10 py-5 bg-[#00D4FF] text-[#060610] font-black text-lg rounded-2xl hover:bg-cyan-300 transition-all shadow-[0_0_50px_rgba(0,212,255,0.4)] mb-4"
           >
             Commencer l&apos;essai gratuit →
           </Link>
@@ -305,11 +305,11 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
 
       {/* ── STICKY CTA MOBILE ─────────────────────────────────────────────── */}
       {showStickyCtA && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden px-4 pb-4 pt-2 bg-gradient-to-t from-[#080C18] to-transparent">
+        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden px-4 pb-4 pt-2 bg-gradient-to-t from-[#060610] to-transparent">
           <Link
             href={ctaHref}
             onClick={trackCTAClick}
-            className="block w-full py-4 bg-[#00D4FF] text-[#080C18] font-black text-center rounded-2xl shadow-[0_0_30px_rgba(0,212,255,0.4)]"
+            className="block w-full py-4 bg-[#00D4FF] text-[#060610] font-black text-center rounded-2xl shadow-[0_0_30px_rgba(0,212,255,0.4)]"
           >
             Essayer gratuitement →
           </Link>

@@ -30,7 +30,7 @@ const stats = [
 
 export default function TechnologiePage() {
   return (
-    <main className="min-h-screen bg-[#080C18]">
+    <main className="min-h-screen bg-[#060610]">
       <Header />
 
       {/* Hero */}
@@ -69,7 +69,7 @@ export default function TechnologiePage() {
       </section>
 
       {/* How it works */}
-      <section className="py-16 md:py-24 bg-[#0D1526]">
+      <section className="py-16 md:py-24 bg-[#070A14]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -104,7 +104,7 @@ export default function TechnologiePage() {
       </section>
 
       {/* Tech Grid */}
-      <section className="py-16 md:py-24 bg-[#080C18]">
+      <section className="py-16 md:py-24 bg-[#060610]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -139,7 +139,7 @@ export default function TechnologiePage() {
       </section>
 
       {/* Stats */}
-      <section className="py-16 md:py-24 bg-[#0D1526]">
+      <section className="py-16 md:py-24 bg-[#070A14]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {stats.map((stat, index) => (

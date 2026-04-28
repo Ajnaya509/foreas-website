@@ -12,7 +12,7 @@ const values = [
 
 export default function AProposPage() {
   return (
-    <main className="min-h-screen bg-[#080C18]">
+    <main className="min-h-screen bg-[#060610]">
       <Header />
 
       {/* Hero */}
@@ -39,7 +39,7 @@ export default function AProposPage() {
       </section>
 
       {/* Content */}
-      <section className="py-16 md:py-24 bg-[#0D1526]">
+      <section className="py-16 md:py-24 bg-[#070A14]">
         <div className="max-w-3xl mx-auto px-6 lg:px-8 space-y-6 md:space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -85,7 +85,7 @@ export default function AProposPage() {
       </section>
 
       {/* Values */}
-      <section className="py-16 md:py-24 bg-[#080C18]">
+      <section className="py-16 md:py-24 bg-[#060610]">
         <div className="max-w-3xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-3 gap-4 md:gap-8">
             {values.map((value, index) => (

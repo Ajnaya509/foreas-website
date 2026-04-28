@@ -25,7 +25,7 @@ export default function Preloader() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#080C18] overflow-hidden"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#060610] overflow-hidden"
         >
           {/* Subtle ambient glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent-purple/[0.06] rounded-full blur-[120px] pointer-events-none" />

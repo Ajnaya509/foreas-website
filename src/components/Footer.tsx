@@ -6,7 +6,7 @@ import Link from 'next/link'
  * Footer — Site2026v41
  *
  * Aligné design system v2 :
- * - Tokens v2 (foreas-navy, accent-cyan, accent-purple)
+ * - Tokens v2 (foreas-obsidian, accent-cyan, accent-purple)
  * - Touch targets ≥ 44pt sur tous les liens
  * - Focus rings cyan 2px (WCAG AA)
  * - Mentions légales complètes (skill : conformité)
@@ -26,11 +26,11 @@ const legal = [
 ]
 
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-navy rounded-md'
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-obsidian rounded-md'
 
 export default function Footer() {
   return (
-    <footer className="relative bg-foreas-navy border-t border-glass-border-soft" role="contentinfo">
+    <footer className="relative bg-foreas-obsidian border-t border-white/8" role="contentinfo">
       <div className="max-w-7xl mx-auto px-lg lg:px-xxxl">
         {/* Main */}
         <div className="py-huge md:py-massive">
@@ -38,9 +38,9 @@ export default function Footer() {
             {/* Brand */}
             <div className="flex-shrink-0 flex flex-col items-center text-center">
               <Link href="/" className={`inline-block group min-h-[44px] px-sm ${focusRing}`} aria-label="FOREAS — Accueil">
-                <span className="font-title text-h2 md:text-h1 font-bold tracking-wider text-text-primary">
+                <span className="font-title text-h2 md:text-h1 font-semibold tracking-wider text-text-primary">
                   FOREAS
-                  <span className="bg-gradient-foreas-h bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-fast">/</span>
+                  <span className="text-text-primary group-hover:text-accent-purple transition-colors duration-fast">/</span>
                 </span>
               </Link>
               <p className="tagline text-body text-text-tertiary mt-sm">
@@ -75,7 +75,7 @@ export default function Footer() {
                 href="https://twitter.com/foreas_app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-11 h-11 rounded-full bg-foreas-navy-card border border-white/8 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-white/16 hover:bg-foreas-navy-card/80 transition-all duration-fast ${focusRing}`}
+                className={`w-11 h-11 rounded-full bg-foreas-obsidianLight border border-white/8 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-white/16 hover:bg-foreas-obsidianLight/80 transition-all duration-fast ${focusRing}`}
                 aria-label="Suivre FOREAS sur X (Twitter)"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -86,7 +86,7 @@ export default function Footer() {
                 href="https://www.linkedin.com/company/foreas"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-11 h-11 rounded-full bg-foreas-navy-card border border-white/8 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-white/16 hover:bg-foreas-navy-card/80 transition-all duration-fast ${focusRing}`}
+                className={`w-11 h-11 rounded-full bg-foreas-obsidianLight border border-white/8 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-white/16 hover:bg-foreas-obsidianLight/80 transition-all duration-fast ${focusRing}`}
                 aria-label="Suivre FOREAS sur LinkedIn"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">

@@ -58,7 +58,7 @@ export default function Features() {
   return (
     <section className="relative py-32 lg:py-40 overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-[#080C18]" />
+      <div className="absolute inset-0 bg-[#060610]" />
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

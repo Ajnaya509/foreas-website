@@ -72,7 +72,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="bg-foreas-navy text-text-primary antialiased">
+      <body className="bg-foreas-obsidian text-text-primary antialiased">
         {/* Tracking pixels — chargement conditionnel au consentement RGPD */}
         <TikTokPixel />
         <MetaPixel />

@@ -47,7 +47,7 @@ function PartnerCategory({ icon, name, desc }: { icon: string; name: string; des
       viewport={{ once: true }}
       className="p-[1px] rounded-2xl bg-gradient-to-r from-white/[0.05] to-white/[0.05] hover:from-accent-purple/30 hover:to-accent-cyan/30 transition-all duration-500"
     >
-      <div className="p-6 md:p-8 rounded-[15px] bg-[#0D1526] h-full group">
+      <div className="p-6 md:p-8 rounded-[15px] bg-[#070A14] h-full group">
         <div className="text-3xl mb-4">{icon}</div>
         <h3 className="font-title text-lg md:text-xl font-semibold text-white mb-2">{name}</h3>
         <p className="font-body text-sm text-white/45 leading-relaxed">{desc}</p>
@@ -61,7 +61,7 @@ function ValueProp({ number, title, desc, accent = 'accent-cyan', icon: Icon }: 
   number: string; title: string; desc: string; accent?: string; icon?: React.ElementType
 }) {
   return (
-    <div className="group flex-shrink-0 w-[300px] md:w-[400px] p-5 md:p-7 rounded-2xl border border-white/[0.08] bg-[#0D1526]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all snap-start">
+    <div className="group flex-shrink-0 w-[300px] md:w-[400px] p-5 md:p-7 rounded-2xl border border-white/[0.08] bg-[#070A14]/95 md:bg-white/[0.03] md:backdrop-blur-sm hover:border-accent-cyan/20 transition-all snap-start">
       <div className="mb-4">
         {Icon ? (
           <div className={`w-10 h-10 rounded-full bg-${accent}/10 flex items-center justify-center`}>
@@ -203,7 +203,7 @@ export default function HomePage() {
   const mockupY = useTransform(heroScrollProgress, [0, 1], [0, 150])
 
   return (
-    <main className="min-h-screen bg-[#080C18]">
+    <main className="min-h-screen bg-[#060610]">
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -445,7 +445,7 @@ export default function HomePage() {
           2. PROBLÈME B2B — La douleur du partenaire
           "Vos clients méritent mieux que ce qu'ils ont aujourd'hui."
           ═══════════════════════════════════════════════════════════════ */}
-      <section data-section="problem" className="relative py-20 md:py-28 bg-[#0D1526]">
+      <section data-section="problem" className="relative py-20 md:py-28 bg-[#070A14]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -475,7 +475,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-[#0D1526]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-[#070A14]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
             >
               <Clock className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Expérience dégradée</div>
@@ -488,7 +488,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-[#0D1526]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(-0.5deg)]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-[#070A14]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(-0.5deg)]"
             >
               <ShieldQuestion className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Zéro contrôle</div>
@@ -501,7 +501,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="p-6 rounded-2xl border border-red-500/10 bg-[#0D1526]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
+              className="p-6 rounded-2xl border border-red-500/10 bg-[#070A14]/95 md:bg-transparent md:backdrop-blur-sm bg-red-500/[0.03] animate-red-pulse-border transition-transform duration-150 hover:[transform:rotate(0.5deg)]"
             >
               <TrendingDown className="w-8 h-8 text-red-400/40 mb-3" />
               <div className="text-red-400/60 text-xs font-mono uppercase tracking-widest mb-3">Revenu manqué</div>
@@ -530,7 +530,7 @@ export default function HomePage() {
           4. QUI SONT NOS PARTENAIRES — Catégories cibles
           Hôtels, Airbnb, conciergeries, entreprises
           ═══════════════════════════════════════════════════════════════ */}
-      <section data-section="partners" className="relative py-20 md:py-28 bg-[#0D1526]">
+      <section data-section="partners" className="relative py-20 md:py-28 bg-[#070A14]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -681,7 +681,7 @@ export default function HomePage() {
           Pas de Stripe ici. Contact / démo.
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-[#080C18]" />
+        <div className="absolute inset-0 bg-[#060610]" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] md:w-[1000px] md:h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent rounded-full blur-[60px] md:blur-[120px] pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto px-6 lg:px-8">
