@@ -27,3 +27,9 @@ export { Button, type ButtonVariant, type ButtonSize } from './Button'
 // Animations
 export { AnimatedCounter, type AnimatedCounterProps } from './AnimatedCounter'
 export { MarkerPulse, type MarkerPulseProps } from './MarkerPulse'
+
+// ─── v51 Apple-grade depth system ────────────────────────────────────────────
+export { DepthBackground, type DepthVariant } from './DepthBackground'
+export { GlassPanel, type GlassLevel as GlassPanelLevel, type GlassGlow as GlassPanelGlow } from './GlassPanel'
+export { AppleCTA, type AppleCTAVariant, type AppleCTASize } from './AppleCTA'
+export { SpotlightCard, type SpotlightColor } from './SpotlightCard'

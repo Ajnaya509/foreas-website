@@ -351,10 +351,33 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  /* ── Site2026v50 — Inter + OpenType features ── */
+  /* ── Site2026v51 — Stripe-grade Inter fine-tuning ── */
   font-optical-sizing: auto;
-  font-feature-settings: 'liga' 1, 'kern' 1, 'calt' 1, 'ss01' 1, 'ss03' 1;
+  font-feature-settings: 'liga' 1, 'kern' 1, 'calt' 1, 'ss01' 1, 'ss03' 1, 'cv11' 1;
   text-rendering: optimizeLegibility;
+  /* Inter optimal LS body (valeur exacte Stripe.com) */
+  letter-spacing: -0.011em;
+  /* Line-height confortable mais dense (Linear standard) */
+  line-height: 1.55;
+}
+
+/* ── Display titles fine-tuning Linear/Stripe ── */
+.text-display-tight {
+  letter-spacing: -0.04em;          /* Stripe big titles signature */
+  line-height: 0.95;                /* Linear hero leading */
+}
+
+.text-display-mid {
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+}
+
+/* ── Numbers tabular partout (Tufte) ── */
+.tabular,
+.tabular-nums,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'liga' 1, 'kern' 1;
 }
 
 /* ── Hyphens automatiques (paragraphes français — Lupton p.122) ── */

@@ -9,14 +9,14 @@ import Footer from '@/components/Footer'
 import TiltCard from '@/components/TiltCard'
 import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 import { Clock, ShieldQuestion, TrendingDown, Brain, BarChart3, Palette, Wallet } from 'lucide-react'
-// Site2026v44 — Phase 3 : composants signature FOREAS-Grade
+// Site2026v51 — Apple-grade depth system
 import {
   HeroNarrative,
   EyebrowLabel,
-  InkGradientButton,
-  Button,
+  AppleCTA,
   MarkerPulse,
-  GlassCard,
+  GlassPanel,
+  DepthBackground,
 } from '@/components/ui'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -222,216 +222,134 @@ export default function HomePage() {
           en expérience premium."
           ═══════════════════════════════════════════════════════════════ */}
 
-      {isMobile ? (
-        /* ── MOBILE HERO — FOREAS-Grade v46 (overlay + animated gradient + glass live card) ── */
-        <section data-section="hero" className="relative pt-massive pb-massive overflow-hidden bg-foreas-obsidian">
-          {/* Background : mesh signature radial */}
-          <div className="absolute inset-0 bg-mesh-foreas pointer-events-none" aria-hidden="true" />
-          {/* Overlay diagonal cyan→violet (signature page einvoice) */}
-          <div className="absolute inset-0 bg-hero-overlay pointer-events-none" aria-hidden="true" />
+      {/* ── HERO Apple-grade v51 (DepthBackground + GlassPanel + AppleCTA) ─────
+          Mobile et Desktop unifiés (responsive single section)
+          Layers Z-stack :
+            0. bg solid #050508 (body)
+            1. DepthBackground variant="hero" (mesh + grain + 5 orbes parallax + vignette)
+            2. Content (text + CTAs + DashboardMockup)
+            3. GlassPanel "Ajnaya · Live" floating au-dessus du mockup
+          ───────────────────────────────────────────────────────────────────── */}
+      <section
+        ref={heroRef}
+        data-section="hero"
+        className="relative overflow-hidden pt-32 pb-24 md:pt-40 md:pb-32"
+      >
+        {/* Layer 1 — Background depth system (5 orbes parallax + mesh + grain + vignette) */}
+        <DepthBackground variant="hero" parallax={!isMobile} />
 
-          <div className="relative max-w-6xl mx-auto px-lg sm:px-xxl">
-            <div className="text-center">
-              {/* HeroNarrative — pattern signature 3 étages + sceneAccent animated par défaut */}
+        {/* Layer 2 — Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Text column */}
+            <motion.div
+              style={reducedMotion || isMobile ? {} : { y: titleY, willChange: 'transform' }}
+              className="text-center lg:text-left"
+            >
               <HeroNarrative
                 eyebrow="Ajnaya · Intelligence Mobilité"
                 eyebrowDot
                 eyebrowColor="cyan"
                 scene="Offrez à vos clients le transport qu'ils méritent."
                 sceneAccent="qu'ils méritent."
-                align="center"
-                className="mb-xxl"
+                align={isMobile ? 'center' : 'left'}
+                className="mb-8 [&_h1]:text-display-tight"
               />
 
               <motion.p
                 initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="font-body text-body-lg text-text-secondary max-w-prose mx-auto mb-huge"
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                className="font-body text-[17px] leading-[1.6] tracking-[-0.011em] text-text-secondary max-w-prose mx-auto lg:mx-0 mb-10"
               >
                 FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
                 pilotés par Ajnaya — ponctualité, qualité, traçabilité. Zéro friction.
               </motion.p>
 
-              {/* CTAs — InkGradientButton signature + ghost secondaire */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.45 }}
-                className="flex flex-col sm:flex-row gap-md justify-center mb-huge"
+                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-12"
               >
-                <InkGradientButton
+                <AppleCTA
                   as="link"
                   href="/contact"
+                  variant="primary"
                   size="lg"
                   iconRight={
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   }
                 >
                   Devenir partenaire
-                </InkGradientButton>
-                <Button as="link" href="/chauffeurs" variant="ghost" size="lg">
+                </AppleCTA>
+                <AppleCTA as="link" href="/chauffeurs" variant="ghost" size="lg">
                   Je suis chauffeur
-                </Button>
+                </AppleCTA>
               </motion.div>
 
-              {/* DashboardMockup + glass live card mobile (signature pulse cyan/violet) */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="relative flex justify-center mb-xxl"
-              >
-                <div className="max-w-[300px] mx-auto relative">
-                  <DashboardMockup />
-                  {/* Live card mobile — placée au-dessus du mockup */}
-                  <GlassCard
-                    level="high"
-                    padding="sm"
-                    radius="lg"
-                    glow="cyan"
-                    className="absolute -top-md -right-sm flex items-center gap-sm z-20"
-                  >
-                    <MarkerPulse size={28} />
-                    <div className="text-left">
-                      <EyebrowLabel color="cyan">Ajnaya · Live</EyebrowLabel>
-                      <p className="text-caption text-text-secondary mt-xxs">147 actifs</p>
-                    </div>
-                  </GlassCard>
-                </div>
-              </motion.div>
-
-              {/* Authority signals — grid 2x2 sur mobile (Krug : pas de wrap pataud) */}
+              {/* Authority signals — divider · pattern Stripe */}
               <motion.div
                 initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="grid grid-cols-2 gap-md sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-xxl sm:gap-y-sm"
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="hidden sm:flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2"
               >
-                <EyebrowLabel color="muted" as="span">Paris &amp; Île-de-France</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">Paris &amp; IDF</EyebrowLabel>
+                <span className="w-px h-3 bg-white/10" aria-hidden="true" />
+                <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
+                <span className="w-px h-3 bg-white/10" aria-hidden="true" />
+                <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
+                <span className="w-px h-3 bg-white/10" aria-hidden="true" />
+                <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
+              </motion.div>
+
+              {/* Mobile authority — grid 2x2 */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="sm:hidden grid grid-cols-2 gap-3"
+              >
+                <EyebrowLabel color="muted" as="span">Paris &amp; IDF</EyebrowLabel>
                 <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
                 <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
                 <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
               </motion.div>
-            </div>
-          </div>
-        </section>
-      ) : (
-        /* ── DESKTOP HERO: parallax with useScroll + useTransform + will-change ── */
-        <section ref={heroRef} data-section="hero" className="relative pt-40 pb-32 overflow-hidden bg-foreas-obsidian">
-          {/* Background glows — parallax layer 1 */}
-          <motion.div
-            style={reducedMotion ? {} : { y: glowY, willChange: 'transform' }}
-            className="pointer-events-none"
-          >
-            <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-accent-purple/[0.06] rounded-full blur-[200px]" />
-            <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-accent-cyan/[0.05] rounded-full blur-[160px]" />
-            <div className="absolute top-1/3 right-1/3 w-[500px] h-[500px] bg-[#A855F7]/[0.04] rounded-full blur-[140px]" />
-          </motion.div>
+            </motion.div>
 
-          {/* Background : mesh signature radial */}
-          <div className="absolute inset-0 bg-mesh-foreas pointer-events-none" aria-hidden="true" />
-          {/* Overlay diagonal cyan→violet (signature page einvoice) */}
-          <div className="absolute inset-0 bg-hero-overlay pointer-events-none" aria-hidden="true" />
-
-          <div className="relative max-w-7xl mx-auto px-lg lg:px-xxl">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-massive lg:gap-massive items-center">
-              {/* Left col — text — parallax layer 2 */}
-              <motion.div
-                style={reducedMotion ? {} : { y: titleY, willChange: 'transform' }}
-                className="text-center lg:text-left"
-              >
-                {/* HeroNarrative — pattern signature 3 étages */}
-                <HeroNarrative
-                  eyebrow="Ajnaya · Intelligence Mobilité"
-                  eyebrowDot
-                  eyebrowColor="cyan"
-                  scene="Offrez à vos clients le transport qu'ils méritent."
-                  sceneAccent="qu'ils méritent."
-                  align="left"
-                  className="mb-xxl"
-                />
-
-                <motion.p
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                  className="font-body text-body-lg text-text-secondary max-w-prose mb-huge"
-                >
-                  FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
-                  pilotés par Ajnaya — ponctualité, qualité, traçabilité. Zéro friction.
-                </motion.p>
-
-                {/* CTAs — InkGradientButton signature + ghost secondaire */}
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.45 }}
-                  className="flex flex-col sm:flex-row gap-md justify-center lg:justify-start mb-huge"
-                >
-                  <InkGradientButton
-                    as="link"
-                    href="/contact"
-                    size="lg"
-                    iconRight={
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    }
-                  >
-                    Devenir partenaire
-                  </InkGradientButton>
-                  <Button as="link" href="/chauffeurs" variant="ghost" size="lg">
-                    Je suis chauffeur
-                  </Button>
-                </motion.div>
-
-                {/* Authority signals — Cialdini pattern */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 0.7 }}
-                  className="flex flex-wrap items-center justify-center lg:justify-start gap-x-xxl gap-y-sm"
-                >
-                  <EyebrowLabel color="muted" as="span">Paris &amp; Île-de-France</EyebrowLabel>
-                  <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
-                  <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
-                  <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
-                  <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
-                  <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
-                  <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
-                </motion.div>
-              </motion.div>
-
-              {/* Right col — DashboardMockup — parallax layer 3 (desktop only) */}
-              <motion.div
-                style={reducedMotion ? {} : { y: mockupY, willChange: 'transform' }}
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="hidden lg:flex justify-center lg:justify-end relative"
-              >
-                {/* Marker pulse signature au-dessus du mockup (signal Ajnaya temps réel) */}
-                <div className="absolute -top-md -right-md z-20">
-                  <GlassCard level="high" padding="sm" radius="lg" glow="cyan" className="flex items-center gap-md">
-                    <MarkerPulse size={32} />
-                    <div className="text-left">
-                      <EyebrowLabel color="cyan">Ajnaya · Live</EyebrowLabel>
-                      <p className="text-caption text-text-secondary mt-xxs">147 actifs · Paris</p>
-                    </div>
-                  </GlassCard>
-                </div>
+            {/* DashboardMockup column */}
+            <motion.div
+              style={reducedMotion || isMobile ? {} : { y: mockupY, willChange: 'transform' }}
+              initial={{ opacity: 0, x: isMobile ? 0 : 40, y: isMobile ? 40 : 0 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex justify-center lg:justify-end"
+            >
+              <div className="relative max-w-[300px] lg:max-w-[400px]">
                 <DashboardMockup />
-              </motion.div>
-            </div>
+
+                {/* Glass live card floating — signature signal Ajnaya temps réel */}
+                <GlassPanel
+                  level="floating"
+                  glow="cyan"
+                  radius="lg"
+                  padding="sm"
+                  className="absolute -top-3 -right-3 lg:-top-4 lg:-right-4 flex items-center gap-3 z-20"
+                >
+                  <MarkerPulse size={28} />
+                  <div className="text-left pr-1">
+                    <EyebrowLabel color="cyan">Ajnaya · Live</EyebrowLabel>
+                    <p className="text-[12px] text-text-secondary mt-0.5 tabular-nums">147 actifs · Paris</p>
+                  </div>
+                </GlassPanel>
+              </div>
+            </motion.div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
 
       {/* ═══════════════════════════════════════════════════════════════
