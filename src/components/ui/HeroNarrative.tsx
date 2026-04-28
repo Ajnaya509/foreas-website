@@ -103,7 +103,7 @@ export function HeroNarrative({
         initial={reducedMotion ? false : { opacity: 0, y: 16 }}
         animate={reducedMotion ? false : { opacity: 1, y: 0 }}
         transition={{ ...transition, delay: delay + 0.16 }}
-        className="font-sans font-black text-display-l md:text-display-xl lg:text-display-xxl text-text-hero leading-[1.02] tracking-tight"
+        className="font-display-genos font-black text-display-l md:text-display-xl lg:text-display-xxl text-text-hero leading-[1.02] tracking-tight"
       >
         {sceneContent}
       </motion.h1>
