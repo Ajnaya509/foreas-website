@@ -37,7 +37,7 @@ export default function Stats() {
   return (
     <section ref={ref} className="relative py-24 lg:py-32 overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-[#08080d]" />
+      <div className="absolute inset-0 bg-[#070A14]" />
 
       {/* Gradient line top */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />

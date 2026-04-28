@@ -13,7 +13,7 @@ const contacts = [
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-[#050508]">
+    <main className="min-h-screen bg-[#060610]">
       <Header />
 
       {/* Hero */}

@@ -159,15 +159,54 @@ html { scroll-behavior: smooth; }
 }
 
 :root {
-  /* FOREAS App-style Dark Blue Palette - Subtle gradients */
-  --foreas-deepblack: #050508;   /* Noir profond */
-  --foreas-black: #08080d;       /* Noir avec touche bleu */
-  --foreas-dark: #0a0a12;        /* Bleu nuit très foncé */
-  --foreas-navy: #0c0c16;        /* Bleu nuit subtil */
-  --accent-cyan: #00D4FF;
+  /* ─── FOREAS Design System v2 — Aligné app/site/widget ───
+   * Source : src/design/tokens.ts + skill foreas-mobile-design.md v1.0
+   * Site2026v41 — Refonte cohérente cross-canal
+   */
+
+  /* Obsidian — backgrounds multi-couches (NON-NÉGOCIABLE) */
+  --foreas-obsidian: #060610;       /* body — profondeur max */
+  --foreas-obsidian-deep: #070A14;  /* card layer 1 */
+  --foreas-obsidian-light: #111528; /* card layer 2 */
+
+  /* Aliases legacy (rétrocompat) — tous pointent vers obsidian */
+  --foreas-deepblack: #060610;
+  --foreas-black: #060610;
+  --foreas-dark: #070A14;
+  --foreas-navy: #070A14;
+
+  /* Accents signature */
+  --accent-cyan: #00D4FF;       /* primary action */
+  --accent-purple: #8C52FF;     /* brand Ajnaya */
+  --accent-gold: #F5C842;       /* success premium (remplace ancien green) */
+
+  /* Legacy accents (rétrocompat) */
   --accent-blue: #3B82F6;
+  --accent-green: #10B981;
   --accent-magenta: #EC4899;
-  --accent-purple: #8C52FF;
+
+  /* Glass */
+  --glass-high: rgba(17, 21, 40, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.16);
+
+  /* Texte (opacités blanc — WCAG AA validé) */
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.72);
+  --text-tertiary: rgba(255, 255, 255, 0.45);
+  --text-muted: rgba(255, 255, 255, 0.28);
+
+  /* Motion durations (skill §8) */
+  --duration-instant: 120ms;
+  --duration-fast: 220ms;
+  --duration-base: 320ms;
+  --duration-slow: 480ms;
+  --duration-cinematic: 720ms;
+
+  /* Easings */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
 }
 
 * {
@@ -182,11 +221,30 @@ html {
 
 body {
   font-family: 'Montserrat', system-ui, sans-serif;
-  background: var(--foreas-black);
-  color: #F9FAFB;
+  background: var(--foreas-obsidian);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+}
+
+/* ── Focus rings WCAG AA — cyan 2px partout (skill §6) ── */
+*:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Reduce motion — skill §6 + §8 ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Typography Classes */

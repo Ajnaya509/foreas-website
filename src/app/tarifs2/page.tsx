@@ -175,7 +175,7 @@ const PLANS: Plan[] = [
       { text: 'Suivi revenus multi-plateformes', ok: true },
       { text: 'Communauté chauffeurs', ok: true },
       { text: 'Abonnement VTC inclus', ok: true },
-      { text: 'Ajnaya IA conduite + voix', ok: false },
+      { text: 'Ajnaya conduite + voix', ok: false },
       { text: 'Site driver perso + QR code', ok: false },
       { text: 'Parrainage 10€/filleul (à vie)', ok: false },
       { text: 'Compta IA', ok: false },
@@ -187,7 +187,7 @@ const PLANS: Plan[] = [
     weeklyPrice: 12.97, annualWeeklyPrice: 10.37, popular: true,
     features: [
       { text: 'Tout Essentiel inclus', ok: true, star: true },
-      { text: 'Ajnaya IA conduite + voix', ok: true, star: true },
+      { text: 'Ajnaya conduite + voix', ok: true, star: true },
       { text: 'Site driver perso + QR code', ok: true, star: true },
       { text: 'Parrainage 10€/filleul (à vie)', ok: true },
       { text: 'Données temps réel Sonar + Bolt', ok: true },
@@ -206,7 +206,7 @@ const PLANS: Plan[] = [
       { text: 'Support prioritaire 24/7', ok: true, star: true },
       { text: 'Badge VIP communauté', ok: true },
       { text: 'Accès beta nouvelles fonctions', ok: true },
-      { text: 'Coaching IA personnalisé', ok: true },
+      { text: 'Coaching Ajnaya personnalisé', ok: true },
       { text: 'Parrainage 3 niveaux complet', ok: true },
       { text: 'Analytics prédictives avancées', ok: true },
     ],
@@ -231,7 +231,7 @@ function TarifsContent() {
     { q: "Pourquoi la carte est demandée si c'est gratuit ?", a: "Stripe prépare l'abonnement après l'essai. Aucun montant débité avant le premier lundi 18h. Annulez avant = 0€." },
     { q: "Le parrainage, c'est vraiment à vie ?", a: "Oui. Tant que ton filleul reste abonné et que toi aussi. 10€/filleul direct (N1), 4€ au N2, 2€ au N3. Versement après 4 semaines complètes." },
     { q: 'Puis-je changer de plan ?', a: "Oui, upgrade ou downgrade à tout moment. Prorata automatique." },
-    { q: "C'est quoi Ajnaya ?", a: "Ton copilote IA conduite. Analyse zones, trafic, événements en temps réel. Utilisable en vocal. Disponible à partir du plan Pro." },
+    { q: "C'est quoi Ajnaya ?", a: "Ton copilote Ajnaya. Analyse zones, trafic, événements en temps réel. Utilisable en vocal. Disponible à partir du plan Pro." },
     { q: 'Puis-je annuler à tout moment ?', a: "Sans engagement. Annulation 1 clic depuis l'app." },
   ]
 

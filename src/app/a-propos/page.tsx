@@ -7,12 +7,12 @@ import Footer from '@/components/Footer'
 const values = [
   { title: 'Précision', desc: 'Données réelles.' },
   { title: 'Confiance', desc: 'Transparence totale.' },
-  { title: 'Innovation', desc: 'Toujours en avance.' },
+  { title: 'Avance', desc: 'Toujours en avance.' },
 ]
 
 export default function AProposPage() {
   return (
-    <main className="min-h-screen bg-[#050508]">
+    <main className="min-h-screen bg-[#060610]">
       <Header />
 
       {/* Hero */}
@@ -33,13 +33,13 @@ export default function AProposPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-body text-base md:text-lg text-white/50 max-w-lg mx-auto"
           >
-            Donner aux chauffeurs le pouvoir de l'IA.
+            Donner aux chauffeurs le pouvoir d&apos;Ajnaya.
           </motion.p>
         </div>
       </section>
 
       {/* Content */}
-      <section className="py-16 md:py-24 bg-[#08080d]">
+      <section className="py-16 md:py-24 bg-[#070A14]">
         <div className="max-w-3xl mx-auto px-6 lg:px-8 space-y-6 md:space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -50,7 +50,7 @@ export default function AProposPage() {
             <h2 className="font-title text-xl md:text-2xl font-semibold text-white mb-3 md:mb-4">Pourquoi</h2>
             <p className="text-sm md:text-base text-white/50 leading-relaxed">
               Les chauffeurs perdent des heures chaque jour. Attentes, zones mal choisies, courses à vide.
-              L'IA peut changer ça.
+              Ajnaya peut changer ça.
             </p>
           </motion.div>
 
@@ -85,7 +85,7 @@ export default function AProposPage() {
       </section>
 
       {/* Values */}
-      <section className="py-16 md:py-24 bg-[#050508]">
+      <section className="py-16 md:py-24 bg-[#060610]">
         <div className="max-w-3xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-3 gap-4 md:gap-8">
             {values.map((value, index) => (

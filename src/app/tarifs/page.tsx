@@ -241,7 +241,7 @@ function TarifsContent() {
   const current = pricing[billingCycle]
 
   const features = [
-    { icon: '🧠', title: 'Ajnaya IA Prédictive', desc: 'Anticipe les zones les plus rentables avant que la concurrence y arrive.', badge: '+35% CA' },
+    { icon: '🧠', title: 'Ajnaya Ajnaya prédictive', desc: 'Anticipe les zones les plus rentables avant que la concurrence y arrive.', badge: '+35% CA' },
     { icon: '🗺️', title: 'Cartographie temps réel', desc: 'Snapshots géographiques Mapbox — événements, météo, affluence.', badge: 'Exclusif' },
     { icon: '⚡', title: 'Multi-plateformes', desc: 'Vue unifiée Uber, Bolt, Heetch — une seule app, zéro jonglage.', badge: '-23% temps mort' },
     { icon: '🔔', title: 'Alertes intelligentes', desc: 'Notifications contextuelles : "Aéroport dans 12 min — 5 chauffeurs seulement."', badge: 'Temps réel' },
@@ -258,7 +258,7 @@ function TarifsContent() {
   const faqs = [
     { q: "Pourquoi vous demandez ma carte si c'est gratuit ?", a: "C'est la bonne question — on la comprend. Stripe (notre système de paiement) demande votre carte pour préparer l'abonnement APRÈS l'essai. Mais aucun montant n'est prélevé avant le premier lundi 18h suivant votre inscription. Si vous annulez avant cette date, vous ne payez absolument rien. C'est garanti et vérifiable sur votre relevé." },
     { q: "Combien de jours d'essai gratuit ?", a: "Entre 1 et 7 jours selon le jour de votre inscription. L'essai se termine toujours le lundi à 18h Paris — la date exacte vous est affichée avant de saisir votre carte." },
-    { q: "L'IA fait des promesses réalistes ?", a: "Oui. FOREAS distingue données confirmées, estimations et simulations. Les +35% viennent des données réelles de nos 147 chauffeurs actifs." },
+    { q: "Ajnaya fait des promesses réalistes ?", a: "Oui. FOREAS distingue données confirmées, estimations et simulations. Les +35% viennent des données réelles de nos 147 chauffeurs actifs." },
     { q: 'Puis-je annuler à tout moment ?', a: "Absolument. Pas de préavis, pas de frais. Depuis l'app ou par email en moins de 2 minutes." },
     { q: 'FOREAS remplace-t-il mes apps VTC ?', a: "Non — il les amplifie. Vous continuez à recevoir vos courses via Uber, Bolt ou Heetch. FOREAS se superpose pour vous aider entre les courses." },
     { q: 'Disponible sur iOS et Android ?', a: "Oui, les deux. Interface minimaliste et vocale, optimisée pour la conduite." },
@@ -299,7 +299,7 @@ function TarifsContent() {
               <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">35% de plus.</span>
             </h1>
             <p className="text-white/60 text-lg sm:text-xl mb-2 max-w-2xl mx-auto leading-relaxed">
-              Parce qu'ils ont FOREAS. L'IA qui prédit les zones, élimine le temps mort, et transforme chaque heure en chiffre d'affaires.
+              Parce qu'ils ont FOREAS. Ajnaya qui prédit les zones, élimine le temps mort, et transforme chaque heure en chiffre d'affaires.
             </p>
             <p className="text-white/60 text-sm mb-10">147 chauffeurs · 3 villes · +38% CA moyen documenté</p>
 
@@ -367,7 +367,7 @@ function TarifsContent() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold mb-3">Tout ce qu'Ajnaya fait pour vous</h2>
-            <p className="text-white/50">Pendant que vous conduisez, l'IA travaille.</p>
+            <p className="text-white/50">Pendant que vous conduisez, Ajnaya travaille.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((f, i) => (
@@ -425,7 +425,7 @@ function TarifsContent() {
                 </div>
               </div>
               <div className="space-y-3 mb-8">
-                {['Ajnaya IA prédictive (temps réel)', 'Cartographie Mapbox HD', 'Multi-plateformes (Uber, Bolt, Heetch…)', 'Alertes intelligentes contextuelles', 'Analytics & historique complet', 'Mode nuit & événements locaux', 'Support prioritaire < 2h', 'Mises à jour IA continues'].map((item, i) => (
+                {['Ajnaya Ajnaya prédictive (temps réel)', 'Cartographie Mapbox HD', 'Multi-plateformes (Uber, Bolt, Heetch…)', 'Alertes intelligentes contextuelles', 'Analytics & historique complet', 'Mode nuit & événements locaux', 'Support prioritaire < 2h', 'Mises à jour Ajnaya continues'].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
