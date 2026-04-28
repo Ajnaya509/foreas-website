@@ -717,13 +717,13 @@ export default function AjnayaWidget() {
               left-3 right-3 bottom-3 max-h-[75vh]
               md:left-auto md:right-6 md:bottom-[100px] md:w-[400px] md:h-[560px] md:max-h-none"
             style={{
-              background: '#070A14',
+              background: '#0D1526',
               border: '1px solid rgba(255,255,255,0.06)',
               boxShadow: '0 30px 60px rgba(0,0,0,0.6), 0 0 40px rgba(140,82,255,0.08)',
             }}
           >
             {/* ─── Header ─── */}
-            <div className="flex items-center justify-between px-4 h-14 flex-shrink-0" style={{ background: 'linear-gradient(180deg, #0c0c14 0%, #070A14 100%)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="flex items-center justify-between px-4 h-14 flex-shrink-0" style={{ background: 'linear-gradient(180deg, #0c0c14 0%, #0D1526 100%)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
               <div className="flex items-center gap-2.5">
                 <MiniHologram />
                 <span className="font-title text-base font-semibold text-white ml-0.5">Ajnaya</span>

@@ -9,7 +9,7 @@ export default function AjnayaNotification({ text = '3 Intercités arrivent Gare
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: '-30px' }}
       transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-      className="max-w-[320px] mx-auto p-3.5 rounded-2xl bg-[#070A14] border border-accent-cyan/15 shadow-lg shadow-black/40"
+      className="max-w-[320px] mx-auto p-3.5 rounded-2xl bg-[#0D1526] border border-accent-cyan/15 shadow-lg shadow-black/40"
     >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center">

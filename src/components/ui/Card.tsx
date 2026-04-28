@@ -31,13 +31,14 @@ export interface CardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   as?: 'div' | 'article' | 'section'
 }
 
+// Variants alignés app v110 (mirror GlassCard.tsx + HomeScreen overlay)
 const variantStyles: Record<CardVariant, string> = {
   glass:
-    'bg-[rgba(17,21,40,0.88)] backdrop-blur-glass border border-white/8',
+    'bg-glass-light backdrop-blur-glass-heavy border border-glass-border-soft',
   solid:
-    'bg-foreas-obsidianDeep border border-white/8',
+    'bg-foreas-navy-card border border-glass-border-soft',
   elevated:
-    'bg-foreas-obsidianLight border border-white/8 shadow-card-md',
+    'bg-foreas-navy-card border border-glass-border-soft shadow-card-md',
 }
 
 const glowStyles: Record<NonNullable<CardGlow>, string> = {
@@ -46,11 +47,12 @@ const glowStyles: Record<NonNullable<CardGlow>, string> = {
   gold: 'shadow-glow-gold',
 }
 
+// Radius app : sm=8, md=16, lg=24, xl=28
 const radiusStyles: Record<CardRadius, string> = {
   sm: 'rounded-sm',
   md: 'rounded-md',
-  lg: 'rounded-lg',
-  xl: 'rounded-xl',
+  lg: 'rounded-lg',     // 24px (app default)
+  xl: 'rounded-xl',     // 28px
   xxl: 'rounded-xxl',
 }
 
@@ -86,7 +88,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       radiusStyles[radius],
       paddingStyles[padding],
       hoverable
-        ? 'transition-all duration-base hover:border-white/16 hover:shadow-card-lg cursor-pointer'
+        ? 'transition-all duration-base hover:border-glass-border-hover hover:shadow-card-lg cursor-pointer'
         : '',
       className,
     ]

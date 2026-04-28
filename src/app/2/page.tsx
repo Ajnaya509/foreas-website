@@ -164,7 +164,7 @@ export default function HomepageV2() {
           CTA → /tarifs2 → Stripe Checkout.
           ═══════════════════════════════════════════════════════════ */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-[#060610]" />
+        <div className="absolute inset-0 bg-[#080C18]" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] md:w-[1000px] md:h-[600px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent rounded-full blur-[60px] md:blur-[120px] pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto px-6 lg:px-8">

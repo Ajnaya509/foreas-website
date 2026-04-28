@@ -33,7 +33,7 @@ export default function InteractivePhoneMockup() {
           <div className="absolute inset-0 rounded-[3rem] border border-white/10" />
 
           {/* Screen area */}
-          <div className="relative w-full h-full bg-[#060610] rounded-[2.8rem] overflow-hidden">
+          <div className="relative w-full h-full bg-[#080C18] rounded-[2.8rem] overflow-hidden">
             {/* Dynamic Island */}
             <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[100px] h-[32px] bg-black rounded-full z-20" />
 
@@ -119,8 +119,8 @@ function AccueilScreen() {
       className="h-full pb-20"
     >
       {/* Map preview */}
-      <div className="h-[45%] bg-[#070A14] relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#070A14]/50" />
+      <div className="h-[45%] bg-[#0D1526] relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0D1526]/50" />
         <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur rounded-lg">
           <span className="text-white text-xs">Paris 11e</span>
         </div>

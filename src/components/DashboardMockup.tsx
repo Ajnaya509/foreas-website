@@ -28,7 +28,7 @@ export default function DashboardMockup() {
         <div className="relative w-[300px] sm:w-[340px] lg:w-[380px] bg-gradient-to-b from-[#1a1a1f] to-[#0d0d12] rounded-2xl p-[2px] shadow-2xl shadow-black/50">
           <div className="absolute inset-0 rounded-2xl border border-white/10" />
 
-          <div className="relative bg-[#060610] rounded-[14px] overflow-hidden p-4 space-y-4">
+          <div className="relative bg-[#080C18] rounded-[14px] overflow-hidden p-4 space-y-4">
             {/* Top bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

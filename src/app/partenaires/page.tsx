@@ -286,7 +286,7 @@ export default function PartenairesPage() {
   const mockupY = useTransform(heroProgress, [0, 1], [0, 150 * parallaxMult])
 
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#080C18]">
       {iconKeyframeStyle}
       <Header />
 
@@ -497,7 +497,7 @@ export default function PartenairesPage() {
       {/* ═══════════════════════════════════════════════════════════════
           2. DOULEUR PRIMAIRE — La réalité fleet
           ═══════════════════════════════════════════════════════════════ */}
-      <section id="douleurs" data-section="duality" className="relative py-20 md:py-28 bg-[#070A14]">
+      <section id="douleurs" data-section="duality" className="relative py-20 md:py-28 bg-[#0D1526]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="Ce que vous vivez au quotidien"
@@ -635,7 +635,7 @@ export default function PartenairesPage() {
           4. LA SOLUTION FOREAS FLEET — Ce qui change
           Icon micro-animations: CSS-based (no permanent RAF loops)
           ═══════════════════════════════════════════════════════════════ */}
-      <section data-section="solution" className="relative py-20 md:py-28 bg-[#070A14]">
+      <section data-section="solution" className="relative py-20 md:py-28 bg-[#0D1526]">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SectionTitle
             eyebrow="FOREAS Fleet"
@@ -800,7 +800,7 @@ export default function PartenairesPage() {
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
         {/* Opaque bg on mobile instead of backdrop-blur */}
-        <div className={`absolute inset-0 ${isMobile ? 'bg-[#060610]' : 'bg-[#060610]'}`} />
+        <div className={`absolute inset-0 ${isMobile ? 'bg-[#080C18]' : 'bg-[#080C18]'}`} />
         <div className={`absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none rounded-full ${
           isMobile
             ? 'w-[400px] h-[300px] bg-gradient-to-b from-accent-purple/10 via-accent-cyan/5 to-transparent blur-[60px]'

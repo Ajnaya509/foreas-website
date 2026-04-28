@@ -81,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const roleDot = isAdmin ? 'bg-red-400' : isPartner ? 'bg-accent-purple' : 'bg-accent-cyan'
 
   return (
-    <div className="min-h-screen bg-[#060610] flex">
+    <div className="min-h-screen bg-[#080C18] flex">
       {/* ═══ Ambient Background ═══ */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-[40%] -left-[20%] w-[60%] h-[60%] bg-accent-purple/[0.03] rounded-full blur-[150px]" />
@@ -173,7 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ═══ MAIN CONTENT ═══ */}
       <div className="flex-1 flex flex-col min-h-screen relative z-10">
         {/* Mobile header */}
-        <header className="lg:hidden sticky top-0 z-30 bg-[#060610]/80 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 z-30 bg-[#080C18]/80 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-lg hover:bg-white/[0.05] transition-colors"

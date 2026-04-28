@@ -86,7 +86,7 @@ function SuccessContent() {
   const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#080C18]">
       <Header />
 
       <section className="relative pt-32 pb-20 md:pt-40 md:pb-28">
@@ -256,7 +256,7 @@ function SuccessContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-[#060610] flex items-center justify-center">
+      <main className="min-h-screen bg-[#080C18] flex items-center justify-center">
         <div className="w-12 h-12 rounded-full border-2 border-accent-cyan/30 border-t-accent-cyan animate-spin" />
       </main>
     }>

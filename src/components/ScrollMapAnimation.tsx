@@ -88,7 +88,7 @@ export default function ScrollMapAnimation() {
   const card3Y = useTransform(scrollYProgress, [0.59, 0.64, 0.80], isMobile ? [30, 0, 0] : [0, 0, 0])
 
   return (
-    <section ref={containerRef} className={`relative bg-[#060610] ${isMobile ? 'h-[280vh]' : 'h-[350vh]'}`}>
+    <section ref={containerRef} className={`relative bg-[#080C18] ${isMobile ? 'h-[280vh]' : 'h-[350vh]'}`}>
       <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
 
         {/* ─── FULLSCREEN MAP ─── */}
@@ -106,7 +106,7 @@ export default function ScrollMapAnimation() {
               viewBox="0 0 1000 500"
               preserveAspectRatio="xMidYMid meet"
             >
-              <rect width="1000" height="500" fill="#060610" />
+              <rect width="1000" height="500" fill="#080C18" />
 
               <defs>
                 <linearGradient id="immRouteGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -250,10 +250,10 @@ export default function ScrollMapAnimation() {
 
           {/* ─── Vignette edges ─── */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#060610] to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#060610] to-transparent" />
-            <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-[#060610] to-transparent" />
-            <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-[#060610] to-transparent" />
+            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#080C18] to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#080C18] to-transparent" />
+            <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-[#080C18] to-transparent" />
+            <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-[#080C18] to-transparent" />
           </div>
         </motion.div>
 

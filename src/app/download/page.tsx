@@ -26,7 +26,7 @@ export default function DownloadPage() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-[#060610]">
+    <main className="min-h-screen bg-[#080C18]">
       <Header />
 
       <section className="relative pt-32 pb-20 md:pt-40 md:pb-28">

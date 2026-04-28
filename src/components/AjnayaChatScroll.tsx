@@ -86,8 +86,8 @@ function MapSnapshotBlock({ block }: { block: Extract<VisualBlock, { type: 'mapS
           <circle cx="195" cy="24" r="1.5" fill="#fff" />
         </svg>
         <div className="absolute bottom-1.5 left-2 right-2 flex justify-between">
-          <span className="text-[7px] text-accent-cyan font-semibold bg-[#060610]/90 px-1.5 py-0.5 rounded-sm">{block.from}</span>
-          <span className="text-[7px] text-accent-purple font-semibold bg-[#060610]/90 px-1.5 py-0.5 rounded-sm">{block.to}</span>
+          <span className="text-[7px] text-accent-cyan font-semibold bg-[#080C18]/90 px-1.5 py-0.5 rounded-sm">{block.from}</span>
+          <span className="text-[7px] text-accent-purple font-semibold bg-[#080C18]/90 px-1.5 py-0.5 rounded-sm">{block.to}</span>
         </div>
         <div className="absolute top-1.5 right-2">
           <span className="text-[6px] text-green-400/50 font-mono tracking-widest">SAFE</span>
@@ -304,7 +304,7 @@ export default function AjnayaChatScroll() {
             <motion.div className="relative flex-shrink-0" style={{ opacity: phoneOpacity, scale: phoneScale }}>
               <div className="relative w-[220px] h-[400px] bg-gradient-to-b from-[#1a1a1f] to-[#0d0d12] rounded-[2.4rem] p-[2px] shadow-2xl shadow-black/50">
                 <div className="absolute inset-0 rounded-[2.4rem] border border-white/[0.08]" />
-                <div className="relative w-full h-full bg-[#060610] rounded-[2.2rem]" style={{ overflow: 'hidden', isolation: 'isolate' }}>
+                <div className="relative w-full h-full bg-[#080C18] rounded-[2.2rem]" style={{ overflow: 'hidden', isolation: 'isolate' }}>
                   {/* Dynamic Island */}
                   <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-[75px] h-[24px] bg-black rounded-full z-30" />
                   {/* Status bar */}
@@ -316,7 +316,7 @@ export default function AjnayaChatScroll() {
                     </div>
                   </div>
                   {/* Chat header */}
-                  <div className="absolute top-10 left-0 right-0 z-20 px-3 pb-2 bg-[#060610] border-b border-white/[0.04]">
+                  <div className="absolute top-10 left-0 right-0 z-20 px-3 pb-2 bg-[#080C18] border-b border-white/[0.04]">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center">
                         <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -366,7 +366,7 @@ export default function AjnayaChatScroll() {
                   {/* Input bar */}
                   <div className="absolute bottom-4 left-2.5 right-2.5 z-20">
                     <div className="flex items-center gap-1.5">
-                      <div className="flex-1 flex items-center bg-[#060610] border border-white/[0.06] rounded-full px-3 py-2">
+                      <div className="flex-1 flex items-center bg-[#080C18] border border-white/[0.06] rounded-full px-3 py-2">
                         <span className="text-white/20 text-[9px]">Parlez ou écrivez...</span>
                       </div>
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center">
@@ -444,7 +444,7 @@ export default function AjnayaChatScroll() {
 
               <div className="relative w-[290px] h-[560px] bg-gradient-to-b from-[#1a1a1f] to-[#0d0d12] rounded-[2.8rem] p-[3px] shadow-2xl shadow-black/50">
                 <div className="absolute inset-0 rounded-[2.8rem] border border-white/[0.08]" />
-                <div className="relative w-full h-full bg-[#060610] rounded-[2.6rem]" style={{ overflow: 'hidden', isolation: 'isolate' }}>
+                <div className="relative w-full h-full bg-[#080C18] rounded-[2.6rem]" style={{ overflow: 'hidden', isolation: 'isolate' }}>
                   <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90px] h-[28px] bg-black rounded-full z-30" />
                   <div className="absolute top-3 left-6 right-6 flex justify-between items-center text-white text-[10px] font-medium z-20">
                     <span>20:03</span>
@@ -453,7 +453,7 @@ export default function AjnayaChatScroll() {
                       <svg className="w-5 h-3" viewBox="0 0 28 14"><rect x="0" y="0" width="24" height="14" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5"/><rect x="2" y="2" width="17" height="10" rx="1.5" fill="currentColor"/></svg>
                     </div>
                   </div>
-                  <div className="absolute top-12 left-0 right-0 z-20 px-4 pb-2.5 bg-[#060610] border-b border-white/[0.04]">
+                  <div className="absolute top-12 left-0 right-0 z-20 px-4 pb-2.5 bg-[#080C18] border-b border-white/[0.04]">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center shadow-lg shadow-accent-purple/20">
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -505,7 +505,7 @@ export default function AjnayaChatScroll() {
                   </div>
                   <div className="absolute bottom-5 left-3 right-3 z-20">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 flex items-center bg-[#060610]/95 backdrop-blur-md border border-white/[0.06] rounded-full px-3.5 py-2.5">
+                      <div className="flex-1 flex items-center bg-[#080C18]/95 backdrop-blur-md border border-white/[0.06] rounded-full px-3.5 py-2.5">
                         <span className="text-white/20 text-[10px]">Parlez ou écrivez...</span>
                       </div>
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center shadow-lg shadow-accent-purple/25">

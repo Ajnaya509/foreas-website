@@ -26,7 +26,7 @@ export default function PhoneMockup() {
           <div className="absolute inset-0 rounded-[2rem] sm:rounded-[2.5rem] md:rounded-[3rem] border border-white/10" />
 
           {/* Screen area */}
-          <div className="relative w-full h-full bg-[#060610] rounded-[1.8rem] sm:rounded-[2.3rem] md:rounded-[2.8rem] overflow-hidden">
+          <div className="relative w-full h-full bg-[#080C18] rounded-[1.8rem] sm:rounded-[2.3rem] md:rounded-[2.8rem] overflow-hidden">
             {/* Dynamic Island */}
             <div className="absolute top-2 sm:top-3 left-1/2 -translate-x-1/2 w-[70px] sm:w-[85px] md:w-[100px] h-[22px] sm:h-[26px] md:h-[32px] bg-black rounded-full z-20 flex items-center justify-center gap-1.5 md:gap-2">
               <div className="w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-[#1a1a1a]" />
@@ -51,7 +51,7 @@ export default function PhoneMockup() {
             {/* App Content */}
             <div className="absolute inset-0 pt-10 sm:pt-14">
               {/* Map Area - Paris Style */}
-              <div className="h-[48%] sm:h-[42%] relative bg-[#070A14] overflow-hidden">
+              <div className="h-[48%] sm:h-[42%] relative bg-[#0D1526] overflow-hidden">
                 {/* Paris-style map background */}
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 220" preserveAspectRatio="xMidYMid slice">
                   <defs>

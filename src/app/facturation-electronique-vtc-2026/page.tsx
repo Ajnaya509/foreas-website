@@ -4,7 +4,7 @@
  * Target query primaire : "facturation électronique VTC 2026"
  * Intent : informationnel → transactionnel (CTA → /tarifs2)
  *
- * Palette : Dark Sovereign site (#060610 / #00D4FF / #8C52FF / #10B981)
+ * Palette : Dark Sovereign site (#080C18 / #00D4FF / #8C52FF / #10B981)
  * Guardrail légal : FOREAS = copilote compta IA, PAS expert-comptable.
  */
 
@@ -102,7 +102,7 @@ export default function FacturationElectroniqueVTC2026() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <main className="min-h-screen bg-[#060610] text-white">
+      <main className="min-h-screen bg-[#080C18] text-white">
         {/* ── HERO ─────────────────────────────────────── */}
         <section className="relative overflow-hidden px-6 py-16 md:py-24">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-[#8C52FF]/5 to-transparent pointer-events-none" />
@@ -127,7 +127,7 @@ export default function FacturationElectroniqueVTC2026() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href="/tarifs2?utm_source=seo&utm_campaign=einvoice2026"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00D4FF] hover:bg-cyan-300 transition px-6 py-4 text-base font-bold text-[#060610] shadow-[0_0_30px_rgba(0,212,255,0.3)]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00D4FF] hover:bg-cyan-300 transition px-6 py-4 text-base font-bold text-[#080C18] shadow-[0_0_30px_rgba(0,212,255,0.3)]"
               >
                 Je prépare ma conformité avec FOREAS →
               </Link>
@@ -335,7 +335,7 @@ export default function FacturationElectroniqueVTC2026() {
             </p>
             <Link
               href="/tarifs2?utm_source=seo&utm_campaign=einvoice2026&utm_content=cta_final"
-              className="inline-flex items-center gap-3 rounded-2xl bg-[#00D4FF] hover:bg-cyan-300 transition px-8 py-5 text-lg font-bold text-[#060610] shadow-[0_0_50px_rgba(0,212,255,0.4)]"
+              className="inline-flex items-center gap-3 rounded-2xl bg-[#00D4FF] hover:bg-cyan-300 transition px-8 py-5 text-lg font-bold text-[#080C18] shadow-[0_0_50px_rgba(0,212,255,0.4)]"
             >
               Je prépare ma conformité →
             </Link>
