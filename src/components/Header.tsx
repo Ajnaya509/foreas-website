@@ -1,23 +1,27 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValueEvent, useScroll } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
-import { useThrottledScroll } from '@/hooks/useDevicePerf'
 import { InkGradientButton } from '@/components/ui'
 
 /**
- * Header — Site2026v44 (Phase 3.3)
+ * Header — Site2026v54
  *
- * Aligné design system v43 :
- * - Logo "FOREAS/" avec slash en gradient signature 3-stops
- * - Liens nav avec underline-grow signature (gauche-à-droite)
- * - CTA "Essai gratuit" via InkGradientButton (signature drift)
- * - Background glass-card-mid quand scrolled (blur 24px)
- * - Touch targets 44pt iOS / 48pt Android
- * - WCAG focus rings cyan 2px
+ * Smart hide-on-scroll-down (pattern Linear / Notion / Stripe.com 2024) :
+ *  - Au scroll DOWN > 100px : header se masque (translateY -100%)
+ *  - Au scroll UP : header réapparaît immédiatement
+ *  - Au top de page (< 50px) : toujours visible
+ *  - Mobile menu open : forcé visible
+ *  - Reduce-motion : header reste fixe (pas d'animation)
+ *
+ * Cohérent avec :
+ *  - WCAG 2.1 (le user peut toujours accéder au menu en scrollant up)
+ *  - Norman §feedback (la nav réapparaît dès qu'on remonte = signal "elle est là")
+ *  - Krug §convention (top-bar conventionnelle préservée)
  */
+
 const navigation = [
   { name: 'Chauffeurs', href: '/chauffeurs' },
   { name: 'Partenaires', href: '/partenaires' },
@@ -29,34 +33,66 @@ const focusRing =
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [hidden, setHidden] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const { scrollY } = useScroll()
 
-  useThrottledScroll(useCallback((scrollY: number) => {
-    setScrolled(scrollY > 20)
-  }, []))
+  // Track scroll direction (smart hide pattern)
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    const previous = scrollY.getPrevious() ?? 0
+
+    // Toujours visible en haut de page
+    if (latest < 50) {
+      setHidden(false)
+      setScrolled(false)
+      return
+    }
+
+    // Background glass apparaît dès 50px
+    setScrolled(true)
+
+    // Si mobile menu ouvert : ne jamais masquer
+    if (mobileMenuOpen) {
+      setHidden(false)
+      return
+    }
+
+    // Hide on scroll down (>100px et direction descendante)
+    if (latest > previous && latest > 100) {
+      setHidden(true)
+    } else if (latest < previous) {
+      // Show on scroll up (immédiat)
+      setHidden(false)
+    }
+  })
+
+  // Force visible quand mobile menu s'ouvre
+  useEffect(() => {
+    if (mobileMenuOpen) setHidden(false)
+  }, [mobileMenuOpen])
 
   return (
     <motion.header
       initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, delay: 2.4, ease: [0.16, 1, 0.3, 1] }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-base ease-standard ${
+      animate={{ y: hidden ? -100 : 0, opacity: 1 }}
+      transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-[background,backdrop-filter,border-color] duration-300 ease-out ${
         mobileMenuOpen
           ? 'bg-foreas-obsidian'
           : scrolled
-            ? 'glass-card-mid !rounded-none border-b border-glass-border'
-            : 'bg-transparent'
+            ? 'bg-foreas-obsidian/80 backdrop-blur-[24px] border-b border-white/[0.06]'
+            : 'bg-transparent border-b border-transparent'
       }`}
     >
-      <nav className="mx-auto max-w-7xl px-lg lg:px-xxl" aria-label="Navigation principale">
+      <nav className="mx-auto max-w-7xl px-6 lg:px-8" aria-label="Navigation principale">
         <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo — Genos (signature brand) via font-title + slash en gradient 3-stops */}
+          {/* Logo — Genos signature */}
           <Link
             href="/"
             className={`flex items-center group ${focusRing}`}
             aria-label="FOREAS — Retour à l'accueil"
           >
-            <span className="font-title text-h1 font-bold tracking-wider text-text-primary">
+            <span className="font-title text-2xl lg:text-[28px] font-semibold tracking-wider text-text-primary">
               FOREAS
               <span className="bg-gradient-foreas-h bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-fast">
                 /
@@ -64,24 +100,24 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* Desktop Navigation — underline-grow signature */}
-          <div className="hidden md:flex md:items-center md:gap-xs">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex md:items-center md:gap-1">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`relative px-lg py-sm text-label text-text-tertiary hover:text-text-primary transition-colors duration-fast ease-standard min-h-[44px] flex items-center ${focusRing}`}
+                className={`relative px-4 py-2 text-[13px] font-medium text-text-tertiary hover:text-text-primary transition-colors duration-200 min-h-[44px] flex items-center ${focusRing}`}
               >
                 <span className="underline-grow">{item.name}</span>
               </Link>
             ))}
           </div>
 
-          {/* CTA Right — InkGradientButton signature */}
-          <div className="hidden md:flex md:items-center md:gap-xl">
+          {/* CTA Right */}
+          <div className="hidden md:flex md:items-center md:gap-5">
             <Link
               href="/contact"
-              className={`text-label text-text-tertiary hover:text-text-primary transition-colors duration-fast ease-standard min-h-[44px] flex items-center px-sm ${focusRing}`}
+              className={`text-[13px] font-medium text-text-tertiary hover:text-text-primary transition-colors duration-200 min-h-[44px] flex items-center px-2 ${focusRing}`}
             >
               <span className="underline-grow">Contact</span>
             </Link>
@@ -90,10 +126,10 @@ export default function Header() {
             </InkGradientButton>
           </div>
 
-          {/* Mobile menu button — touch target 48dp */}
+          {/* Mobile menu button */}
           <button
             type="button"
-            className={`md:hidden p-md -mr-md text-text-tertiary hover:text-text-primary transition-colors duration-fast ease-standard min-w-[48px] min-h-[48px] flex items-center justify-center ${focusRing}`}
+            className={`md:hidden p-3 -mr-3 text-text-tertiary hover:text-text-primary transition-colors duration-200 min-w-[48px] min-h-[48px] flex items-center justify-center ${focusRing}`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={mobileMenuOpen}
@@ -112,7 +148,7 @@ export default function Header() {
               transition={{ duration: 0.32, ease: [0, 0, 0.2, 1] }}
               className="md:hidden overflow-hidden"
             >
-              <div className="py-xxl space-y-xs border-t border-glass-border bg-foreas-obsidian">
+              <div className="py-6 space-y-1 border-t border-white/[0.06] bg-foreas-obsidian">
                 {navigation.map((item, index) => (
                   <motion.div
                     key={item.name}
@@ -122,7 +158,7 @@ export default function Header() {
                   >
                     <Link
                       href={item.href}
-                      className={`block py-md text-body text-text-secondary hover:text-text-primary transition-colors duration-fast min-h-[48px] flex items-center px-sm ${focusRing}`}
+                      className={`block py-3 text-base font-medium text-text-secondary hover:text-text-primary transition-colors duration-200 min-h-[48px] flex items-center px-2 ${focusRing}`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.name}
@@ -133,7 +169,7 @@ export default function Header() {
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.22 }}
-                  className="pt-lg"
+                  className="pt-4"
                 >
                   <InkGradientButton
                     as="link"

@@ -365,6 +365,19 @@ p, .prose, .text-prose {
   hyphenate-limit-last: always;
 }
 
+/* ── Measure constraint Bringhurst (45-75 char/ligne, 66 = idéal Lupton) ── */
+/* Utility .measure : à ajouter sur les paragraphes principaux pour borner   */
+/* la largeur de lecture (équivalent Tailwind max-w-prose mais plus strict). */
+.measure {
+  max-width: 65ch;            /* Bringhurst 45-75ch, optimum 66 */
+}
+.measure-narrow {
+  max-width: 50ch;            /* sub-titres, lead paragraph */
+}
+.measure-wide {
+  max-width: 75ch;            /* paragraphes denses techniques */
+}
+
 /* ── Tabular nums utility (chiffres alignés — Tufte) ── */
 .tabular,
 .tabular-nums {

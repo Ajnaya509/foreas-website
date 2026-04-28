@@ -84,30 +84,34 @@ const config: Config = {
         display: ['Genos', 'var(--font-inter)', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
-      // ─── Échelle modulaire Apple HIG (ratio 1.250 — Major Third Bringhurst) ─
-      // Toutes les line-heights = multiples de 4 (baseline grid strict)
-      // Letter-spacings : negative display (-2.5% à -2%), neutral body, eyebrow 12%
+      // ═══ Échelle modulaire — ratio ~1.25 strict (Bringhurst §3.1.1) ═══════
+      // Site2026v54 — Refonte Bringhurst-strict
+      // - Ratio 1.25 (Major Third) sur les headings → gamme musicale cohérente
+      // - Ratio 1.30-1.40 sur display (autorité progressive)
+      // - Toutes line-heights = multiples de 4 (baseline grid Hochuli)
+      // - Pas de fontWeight ni letterSpacing imposés ici (laisse .font-title
+      //   Genos 600 LS +0.02em s'appliquer + permet font-weight CSS libre)
       fontSize: {
-        // Display — Inter Display optical sizing (axis 24-72)
-        'display-xxl': ['72px', { lineHeight: '76px', letterSpacing: '-2.0px', fontWeight: '900' }],
-        'display-xl':  ['56px', { lineHeight: '60px', letterSpacing: '-1.5px', fontWeight: '900' }],
-        'display-l':   ['40px', { lineHeight: '48px', letterSpacing: '-1.0px', fontWeight: '800' }],
-        // Headings — ratio 1.25 strict
-        'h1': ['34px', { lineHeight: '40px', letterSpacing: '-0.8px', fontWeight: '800' }],
-        'h2': ['28px', { lineHeight: '36px', letterSpacing: '-0.6px', fontWeight: '700' }],
-        'h3': ['20px', { lineHeight: '28px', letterSpacing: '-0.4px', fontWeight: '700' }],
-        // Body — Inter Text optical sizing (axis 12-22), lineHeight 1.5+ Bringhurst
-        'body-lg':   ['17px', { lineHeight: '28px', letterSpacing: '-0.2px', fontWeight: '500' }],
-        'body':      ['15px', { lineHeight: '24px', letterSpacing: '-0.1px', fontWeight: '400' }],
-        'body-bold': ['15px', { lineHeight: '24px', letterSpacing: '-0.1px', fontWeight: '700' }],
-        // Labels — captions/micro
-        'label':   ['13px', { lineHeight: '18px', letterSpacing: '0.1px', fontWeight: '600' }],
-        'caption': ['13px', { lineHeight: '18px', letterSpacing: '0.2px', fontWeight: '500' }],
-        'micro':   ['11px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
-        // Eyebrow — UPPERCASE, LS 12% (Lupton 5-12% canonical)
-        'eyebrow': ['11px', { lineHeight: '16px', letterSpacing: '1.3px', fontWeight: '800' }],
-        // Fluid display (Bringhurst clamp signature) — display-fluid scale automatically
-        'display-fluid': ['clamp(2rem, 4vw + 1rem, 4.5rem)', { lineHeight: '1.05', letterSpacing: '-0.025em', fontWeight: '900' }],
+        // Display — ratio progressif 1.30-1.40 (autorité)
+        'display-xxl': ['80px', { lineHeight: '88px' }],   // ratio 1.33
+        'display-xl':  ['60px', { lineHeight: '64px' }],   // ratio 1.36
+        'display-l':   ['44px', { lineHeight: '52px' }],   // ratio 1.375
+        // Headings — ratio 1.25 strict (Major Third Bringhurst)
+        'h1': ['32px', { lineHeight: '40px' }],   // 16 × 1.25⁵ ≈ 32
+        'h2': ['24px', { lineHeight: '32px' }],   // 16 × 1.25³ ≈ 24
+        'h3': ['20px', { lineHeight: '28px' }],   // 16 × 1.25² ≈ 20
+        // Body — base 16 (universel) + ratio 1.125 sur lg
+        'body-lg':   ['18px', { lineHeight: '28px' }],
+        'body':      ['16px', { lineHeight: '24px' }],
+        'body-bold': ['16px', { lineHeight: '24px' }],
+        // Labels — multiples de 4 propres
+        'label':   ['14px', { lineHeight: '20px' }],
+        'caption': ['14px', { lineHeight: '20px' }],
+        'micro':   ['12px', { lineHeight: '16px' }],
+        // Eyebrow — UPPERCASE LS 12% (Lupton 5-12% canonical)
+        'eyebrow': ['11px', { lineHeight: '16px', letterSpacing: '1.3px', fontWeight: '700' }],
+        // Fluid display (Bringhurst clamp) — scaling fluide entre tailles d'écran
+        'display-fluid': ['clamp(2.25rem, 4vw + 1rem, 5rem)', { lineHeight: '1.05' }],
       },
 
       // ─── Spacing 4pt system ────────────────────────────────────────────────
