@@ -82,7 +82,7 @@ export function SectionHeader({
         whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-50px' }}
         transition={{ ...transition, delay: 0.08 }}
-        className="font-display-genos font-black text-display-l md:text-display-xl text-text-hero leading-[1.02] tracking-tight"
+        className="font-title font-black text-display-l md:text-display-xl text-text-hero leading-[1.02]"
       >
         {titleContent}
       </motion.h2>

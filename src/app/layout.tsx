@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 import Preloader from '@/components/Preloader'
 import GrainOverlay from '@/components/GrainOverlay'
@@ -10,16 +11,11 @@ import { MetaPixel } from '@/components/MetaPixel'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
-// Site2026v47 — Refonte typo Bringhurst-strict (note 64 → 100)
-// Inter Variable = standard SaaS premium 2026 (Vercel, Linear, Stripe, Notion)
-// Optical sizing axis activé via font-optical-sizing: auto dans globals.css
-const inter = Inter({
-  subsets: ['latin', 'latin-ext'],
-  display: 'swap',
-  variable: '--font-inter',
-  weight: ['400', '500', '600', '700', '800', '900'],
-  preload: true,
-})
+// Site2026v49 — Geist Sans (Vercel premium font 2026)
+// Geist = supérieure à Inter base : x-height optimisée, formes plus chaudes,
+// optical sizing variable axis natif, conçue pour interfaces tech modernes.
+// Utilisée par : Vercel, Next.js, v0.dev, Sandpack, Geist UI.
+// CSS var auto : --font-geist-sans / --font-geist-mono
 
 export const metadata: Metadata = {
   title: 'FOREAS | Pilote ton activité VTC avec Ajnaya',
@@ -52,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr" className={inter.variable}>
+    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
         {/* Favicon */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

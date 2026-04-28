@@ -71,15 +71,18 @@ const config: Config = {
         },
       },
 
-      // ─── Typography — Bringhurst-strict (Site2026v47) ──────────────────────
-      // Inter Variable = standard SaaS 2026 (body + display)
-      // Genos = logo + grands titres déco uniquement (rare, distinctif)
+      // ─── Typography — Site2026v49 (Geist + Genos préservé) ─────────────────
+      // Geist Sans = standard SaaS premium Vercel 2026 (body + h1-h6 + UI)
+      // Genos = font-title et font-display (préserve choix créatif historique)
+      // Letter-spacing Genos restauré +0.02em positif (aération condensé natif)
       fontFamily: {
-        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
-        body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
-        title: ['Genos', 'var(--font-inter)', 'system-ui', 'sans-serif'],
-        display: ['Genos', 'var(--font-inter)', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        // font-title et font-display = Genos (137 usages historiques préservés)
+        title: ['Genos', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        display: ['Genos', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        // Mono = Geist Mono (cohérent avec Geist Sans)
+        mono: ['var(--font-geist-mono)', 'JetBrains Mono', 'monospace'],
       },
       // ─── Échelle modulaire Apple HIG (ratio 1.250 — Major Third Bringhurst) ─
       // Toutes les line-heights = multiples de 4 (baseline grid strict)

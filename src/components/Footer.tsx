@@ -45,7 +45,7 @@ export default function Footer() {
                 className={`inline-block group min-h-[44px] px-sm py-xs ${focusRing}`}
                 aria-label="FOREAS — Accueil"
               >
-                <span className="font-display-genos text-h1 font-bold tracking-wider text-text-primary">
+                <span className="font-title text-h1 font-bold tracking-wider text-text-primary">
                   FOREAS
                   <span className="bg-gradient-foreas-h bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-fast">
                     /
