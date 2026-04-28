@@ -33,3 +33,6 @@ export { DepthBackground, type DepthVariant } from './DepthBackground'
 export { GlassPanel, type GlassLevel as GlassPanelLevel, type GlassGlow as GlassPanelGlow } from './GlassPanel'
 export { AppleCTA, type AppleCTAVariant, type AppleCTASize } from './AppleCTA'
 export { SpotlightCard, type SpotlightColor } from './SpotlightCard'
+
+// ─── v55 Müller-Brockmann grid system ────────────────────────────────────────
+export { Container, Grid, Section, type ContainerVariant, type ContainerProps, type GridProps, type SectionProps } from './Container'

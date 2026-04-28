@@ -10,6 +10,7 @@ import TiltCard from '@/components/TiltCard'
 import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 import { Clock, ShieldQuestion, TrendingDown, Brain, BarChart3, Palette, Wallet } from 'lucide-react'
 // Site2026v51 — Apple-grade depth system
+// Site2026v55 — Müller-Brockmann grid system (Container, Grid 12-col)
 import {
   HeroNarrative,
   EyebrowLabel,
@@ -17,6 +18,8 @@ import {
   MarkerPulse,
   GlassPanel,
   DepthBackground,
+  Container,
+  Grid,
 } from '@/components/ui'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -235,16 +238,16 @@ export default function HomePage() {
         data-section="hero"
         className="relative overflow-hidden pt-32 pb-24 md:pt-40 md:pb-32"
       >
-        {/* Layer 1 — Background depth system (5 orbes parallax + mesh + grain + vignette) */}
+        {/* Layer 1 — Background depth system */}
         <DepthBackground variant="hero" parallax={!isMobile} />
 
-        {/* Layer 2 — Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Text column */}
+        {/* Layer 2 — Content via Müller-Brockmann grid 12-col */}
+        <Container className="relative z-10">
+          <Grid gap="xl" className="items-center">
+            {/* Text column — 12 cols mobile / 7 cols desktop */}
             <motion.div
               style={reducedMotion || isMobile ? {} : { y: titleY, willChange: 'transform' }}
-              className="text-center lg:text-left"
+              className="col-span-12 lg:col-span-7 text-center lg:text-left"
             >
               <HeroNarrative
                 eyebrow="Ajnaya · Intelligence Mobilité"
@@ -253,14 +256,14 @@ export default function HomePage() {
                 scene="Offrez à vos clients le transport qu'ils méritent."
                 sceneAccent="qu'ils méritent."
                 align={isMobile ? 'center' : 'left'}
-                className="mb-8 [&_h1]:text-display-tight"
+                className="mb-8"
               />
 
               <motion.p
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                className="font-body text-[17px] leading-[1.6] tracking-[-0.011em] text-text-secondary max-w-prose mx-auto lg:mx-0 mb-10"
+                className="font-body text-body-lg text-text-secondary measure mx-auto lg:mx-0 mb-10"
               >
                 FOREAS connecte hôtels, conciergeries et entreprises à un réseau de chauffeurs VTC
                 pilotés par Ajnaya — ponctualité, qualité, traçabilité. Zéro friction.
@@ -320,13 +323,13 @@ export default function HomePage() {
               </motion.div>
             </motion.div>
 
-            {/* DashboardMockup column */}
+            {/* DashboardMockup column — 12 cols mobile / 5 cols desktop (Grid Müller-Brockmann) */}
             <motion.div
               style={reducedMotion || isMobile ? {} : { y: mockupY, willChange: 'transform' }}
               initial={{ opacity: 0, x: isMobile ? 0 : 40, y: isMobile ? 40 : 0 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
               transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="relative flex justify-center lg:justify-end"
+              className="col-span-12 lg:col-span-5 relative flex justify-center lg:justify-end"
             >
               <div className="relative max-w-[300px] lg:max-w-[400px]">
                 <DashboardMockup />
@@ -347,8 +350,8 @@ export default function HomePage() {
                 </GlassPanel>
               </div>
             </motion.div>
-          </div>
-        </div>
+          </Grid>
+        </Container>
       </section>
 
 
