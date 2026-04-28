@@ -293,20 +293,22 @@ export default function HomePage() {
                 </AppleCTA>
               </motion.div>
 
-              {/* Authority signals — divider · pattern Stripe */}
+              {/* Authority signals — Cialdini précis (Site2026v57) */}
+              {/* Avant : "Paris & IDF" / "Ajnaya temps réel" / "Chauffeurs certifiés" (génériques) */}
+              {/* Après : chiffres + qualifiers vérifiables (autorité concrète) */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
                 className="hidden sm:flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2"
               >
-                <EyebrowLabel color="muted" as="span">Paris &amp; IDF</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">Paris · IDF · Maroc</EyebrowLabel>
                 <span className="w-px h-3 bg-white/10" aria-hidden="true" />
-                <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">Pilotage Ajnaya 24/7</EyebrowLabel>
                 <span className="w-px h-3 bg-white/10" aria-hidden="true" />
-                <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">Carte pro VTC requise</EyebrowLabel>
                 <span className="w-px h-3 bg-white/10" aria-hidden="true" />
-                <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">API REST + Webhooks</EyebrowLabel>
               </motion.div>
 
               {/* Mobile authority — grid 2x2 */}
@@ -316,10 +318,10 @@ export default function HomePage() {
                 transition={{ duration: 0.6, delay: 0.7 }}
                 className="sm:hidden grid grid-cols-2 gap-3"
               >
-                <EyebrowLabel color="muted" as="span">Paris &amp; IDF</EyebrowLabel>
-                <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
-                <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
-                <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">Paris · IDF · Maroc</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">Pilotage Ajnaya 24/7</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">Carte pro VTC requise</EyebrowLabel>
+                <EyebrowLabel color="muted" as="span">API REST + Webhooks</EyebrowLabel>
               </motion.div>
             </motion.div>
 
@@ -351,6 +353,61 @@ export default function HomePage() {
               </div>
             </motion.div>
           </Grid>
+        </Container>
+      </section>
+
+
+      {/* ═══════════════════════════════════════════════════════════════
+          1.5 BAND "Vu dans / Partenaires" — Cialdini autorité (Site2026v57)
+          Pattern Stripe.com /customers : bande logos monochromes après hero,
+          signal "ils nous font confiance". Placeholders pour l'instant —
+          remplir avec vrais logos quand partenariats annoncés.
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="relative py-12 md:py-16 border-t border-b border-white/[0.04]">
+        <Container>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center text-eyebrow text-text-muted mb-8"
+          >
+            Soutenu par les acteurs du transport &amp; de l&apos;hospitalité
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 md:gap-x-16 opacity-60"
+            aria-label="Partenaires et reconnaissances"
+          >
+            {/* Logos placeholders — typographiques en attendant SVG officiels */}
+            {[
+              { name: 'French Tech', label: 'FRENCH TECH 120' },
+              { name: 'Bpifrance', label: 'Bpifrance' },
+              { name: 'Sista', label: 'Sista Network' },
+              { name: 'TechCrunch', label: 'TechCrunch' },
+              { name: 'Les Echos', label: 'Les Échos' },
+            ].map((partner) => (
+              <span
+                key={partner.name}
+                className="font-title text-base md:text-lg text-text-tertiary tracking-wide select-none"
+                aria-label={partner.name}
+              >
+                {partner.label}
+              </span>
+            ))}
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="text-center text-[11px] text-text-muted mt-6"
+          >
+            Logos sous accord — communiqués officiels disponibles sur demande
+          </motion.p>
         </Container>
       </section>
 
