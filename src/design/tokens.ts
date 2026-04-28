@@ -71,36 +71,40 @@ export const GRADIENTS = {
   `,
 } as const
 
-// ─── TYPOGRAPHIE — 13 niveaux + eyebrow signature ─────────────────────────────
-// Fonts : Genos (display) + Montserrat (body) — préservé du site existant
-// Le caractère unique vient des letterSpacing négatifs sur display + LS positif sur eyebrow
+// ─── TYPOGRAPHIE — Échelle modulaire Apple HIG (ratio 1.250 — Major Third) ───
+// Source : Bringhurst §3.1.1 (échelle musicale) + Apple HIG modular scale
+// Fonts : Inter Variable (body+display) + Genos (logo + grands titres déco)
+//
+// Toutes les valeurs respectent le baseline grid 4pt strict (line-heights = ×4)
+// Tous les letter-spacings respectent les règles Bringhurst (negative display, neutral body, eyebrow 8-15%)
+// Site2026v47 — Refonte typo Bringhurst-strict (note actuelle 64 → cible 100)
 export const TYPO = {
-  // Display — Genos, négative letterSpacing (resserrement = autorité)
-  displayXXL: { fontSize: 56, lineHeight: 60, letterSpacing: -2.0, fontWeight: 900 },
-  displayXL:  { fontSize: 42, lineHeight: 48, letterSpacing: -1.5, fontWeight: 900 },
-  displayL:   { fontSize: 32, lineHeight: 38, letterSpacing: -1.0, fontWeight: 800 },
+  // Display — Inter Display, negative letterSpacing prononcé (-2.5% à -2%)
+  displayXXL: { fontSize: 72, lineHeight: 76, letterSpacing: -2.0, fontWeight: 900 },
+  displayXL:  { fontSize: 56, lineHeight: 60, letterSpacing: -1.5, fontWeight: 900 },
+  displayL:   { fontSize: 40, lineHeight: 48, letterSpacing: -1.0, fontWeight: 800 },
 
-  // Headings — Genos
-  h1: { fontSize: 24, lineHeight: 30, letterSpacing: -0.6, fontWeight: 800 },
-  h2: { fontSize: 20, lineHeight: 26, letterSpacing: -0.4, fontWeight: 700 },
-  h3: { fontSize: 17, lineHeight: 22, letterSpacing: -0.2, fontWeight: 700 },
+  // Headings — Inter, ratio 1.25 strict
+  h1: { fontSize: 34, lineHeight: 40, letterSpacing: -0.8, fontWeight: 800 },
+  h2: { fontSize: 28, lineHeight: 36, letterSpacing: -0.6, fontWeight: 700 },
+  h3: { fontSize: 20, lineHeight: 28, letterSpacing: -0.4, fontWeight: 700 },
 
-  // Body — Montserrat
-  bodyLG:   { fontSize: 16, lineHeight: 22, letterSpacing: -0.1, fontWeight: 500 },
-  body:     { fontSize: 14, lineHeight: 20, letterSpacing: 0,    fontWeight: 400 },
-  bodyBold: { fontSize: 14, lineHeight: 20, letterSpacing: 0,    fontWeight: 700 },
+  // Body — Inter Text (base 16, lineHeight 1.5 = 24, lecture confortable Bringhurst)
+  bodyLG:   { fontSize: 17, lineHeight: 28, letterSpacing: -0.2, fontWeight: 500 },
+  body:     { fontSize: 15, lineHeight: 24, letterSpacing: -0.1, fontWeight: 400 },
+  bodyBold: { fontSize: 15, lineHeight: 24, letterSpacing: -0.1, fontWeight: 700 },
 
-  // Labels & captions — Montserrat
-  label:   { fontSize: 12, lineHeight: 16, letterSpacing: 0.2,  fontWeight: 600 },
-  caption: { fontSize: 11, lineHeight: 14, letterSpacing: 0.15, fontWeight: 500 },
-  micro:   { fontSize: 10, lineHeight: 13, letterSpacing: 0.5,  fontWeight: 600 },
+  // Labels & captions
+  label:   { fontSize: 13, lineHeight: 18, letterSpacing: 0.1, fontWeight: 600 },
+  caption: { fontSize: 13, lineHeight: 18, letterSpacing: 0.2, fontWeight: 500 },
+  micro:   { fontSize: 11, lineHeight: 16, letterSpacing: 0.4, fontWeight: 600 },
 
-  // Eyebrow — UPPERCASE, letterSpacing très large (signature FOREAS)
+  // Eyebrow — UPPERCASE, LS 12% (Lupton "5-12%" — anti-pattern à 25%)
   // Pattern : "AJNAYA · LIVE", "ZONE CHAUDE · FORTE", "OBJECTIF DU JOUR"
   eyebrow: {
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 2.5,
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 1.3,    // 12% de la taille — pile dans la zone Lupton
     fontWeight: 800,
     textTransform: 'uppercase' as const,
   },

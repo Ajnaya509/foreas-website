@@ -50,13 +50,13 @@ export default function Header() {
     >
       <nav className="mx-auto max-w-7xl px-lg lg:px-xxl" aria-label="Navigation principale">
         <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo — slash en gradient 3-stops signature */}
+          {/* Logo — Genos (signature brand) + slash en gradient 3-stops */}
           <Link
             href="/"
             className={`flex items-center group ${focusRing}`}
             aria-label="FOREAS — Retour à l'accueil"
           >
-            <span className="font-title text-h1 font-bold tracking-wider text-text-primary">
+            <span className="font-display-genos text-h1 font-bold tracking-wider text-text-primary">
               FOREAS
               <span className="bg-gradient-foreas-h bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-fast">
                 /

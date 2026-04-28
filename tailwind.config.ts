@@ -71,34 +71,40 @@ const config: Config = {
         },
       },
 
-      // ─── Typography ────────────────────────────────────────────────────────
+      // ─── Typography — Bringhurst-strict (Site2026v47) ──────────────────────
+      // Inter Variable = standard SaaS 2026 (body + display)
+      // Genos = logo + grands titres déco uniquement (rare, distinctif)
       fontFamily: {
-        sans: ['Montserrat', 'system-ui', 'sans-serif'],
-        title: ['Genos', 'system-ui', 'sans-serif'],
-        display: ['Genos', 'system-ui', 'sans-serif'],
-        body: ['Montserrat', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        title: ['Genos', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['Genos', 'var(--font-inter)', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
-      // 13 niveaux + eyebrow — mirror app TYPO_V2
+      // ─── Échelle modulaire Apple HIG (ratio 1.250 — Major Third Bringhurst) ─
+      // Toutes les line-heights = multiples de 4 (baseline grid strict)
+      // Letter-spacings : negative display (-2.5% à -2%), neutral body, eyebrow 12%
       fontSize: {
-        // Display — letterSpacing négatif (resserrement = autorité)
-        'display-xxl': ['56px', { lineHeight: '60px', letterSpacing: '-2.0px', fontWeight: '900' }],
-        'display-xl':  ['42px', { lineHeight: '48px', letterSpacing: '-1.5px', fontWeight: '900' }],
-        'display-l':   ['32px', { lineHeight: '38px', letterSpacing: '-1.0px', fontWeight: '800' }],
-        // Headings
-        'h1': ['24px', { lineHeight: '30px', letterSpacing: '-0.6px', fontWeight: '800' }],
-        'h2': ['20px', { lineHeight: '26px', letterSpacing: '-0.4px', fontWeight: '700' }],
-        'h3': ['17px', { lineHeight: '22px', letterSpacing: '-0.2px', fontWeight: '700' }],
-        // Body
-        'body-lg':   ['16px', { lineHeight: '22px', letterSpacing: '-0.1px', fontWeight: '500' }],
-        'body':      ['14px', { lineHeight: '20px', fontWeight: '400' }],
-        'body-bold': ['14px', { lineHeight: '20px', fontWeight: '700' }],
-        // Labels
-        'label':   ['12px', { lineHeight: '16px', letterSpacing: '0.2px',  fontWeight: '600' }],
-        'caption': ['11px', { lineHeight: '14px', letterSpacing: '0.15px', fontWeight: '500' }],
-        'micro':   ['10px', { lineHeight: '13px', letterSpacing: '0.5px',  fontWeight: '600' }],
-        // Eyebrow — UPPERCASE LS 2.5 (signature)
-        'eyebrow': ['10px', { lineHeight: '14px', letterSpacing: '2.5px', fontWeight: '800' }],
+        // Display — Inter Display optical sizing (axis 24-72)
+        'display-xxl': ['72px', { lineHeight: '76px', letterSpacing: '-2.0px', fontWeight: '900' }],
+        'display-xl':  ['56px', { lineHeight: '60px', letterSpacing: '-1.5px', fontWeight: '900' }],
+        'display-l':   ['40px', { lineHeight: '48px', letterSpacing: '-1.0px', fontWeight: '800' }],
+        // Headings — ratio 1.25 strict
+        'h1': ['34px', { lineHeight: '40px', letterSpacing: '-0.8px', fontWeight: '800' }],
+        'h2': ['28px', { lineHeight: '36px', letterSpacing: '-0.6px', fontWeight: '700' }],
+        'h3': ['20px', { lineHeight: '28px', letterSpacing: '-0.4px', fontWeight: '700' }],
+        // Body — Inter Text optical sizing (axis 12-22), lineHeight 1.5+ Bringhurst
+        'body-lg':   ['17px', { lineHeight: '28px', letterSpacing: '-0.2px', fontWeight: '500' }],
+        'body':      ['15px', { lineHeight: '24px', letterSpacing: '-0.1px', fontWeight: '400' }],
+        'body-bold': ['15px', { lineHeight: '24px', letterSpacing: '-0.1px', fontWeight: '700' }],
+        // Labels — captions/micro
+        'label':   ['13px', { lineHeight: '18px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'caption': ['13px', { lineHeight: '18px', letterSpacing: '0.2px', fontWeight: '500' }],
+        'micro':   ['11px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        // Eyebrow — UPPERCASE, LS 12% (Lupton 5-12% canonical)
+        'eyebrow': ['11px', { lineHeight: '16px', letterSpacing: '1.3px', fontWeight: '800' }],
+        // Fluid display (Bringhurst clamp signature) — display-fluid scale automatically
+        'display-fluid': ['clamp(2rem, 4vw + 1rem, 4.5rem)', { lineHeight: '1.05', letterSpacing: '-0.025em', fontWeight: '900' }],
       },
 
       // ─── Spacing 4pt system ────────────────────────────────────────────────

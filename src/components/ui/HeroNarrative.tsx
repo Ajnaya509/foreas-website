@@ -93,7 +93,7 @@ export function HeroNarrative({
           initial={reducedMotion ? false : { opacity: 0, y: 12 }}
           animate={reducedMotion ? false : { opacity: 1, y: 0 }}
           transition={{ ...transition, delay: delay + 0.08 }}
-          className="font-title text-h2 text-text-secondary"
+          className="font-sans text-h2 text-text-secondary"
         >
           {greeting}
         </motion.h2>
@@ -103,7 +103,7 @@ export function HeroNarrative({
         initial={reducedMotion ? false : { opacity: 0, y: 16 }}
         animate={reducedMotion ? false : { opacity: 1, y: 0 }}
         transition={{ ...transition, delay: delay + 0.16 }}
-        className="font-title font-black text-display-l md:text-display-xl lg:text-display-xxl text-text-hero leading-[1.02] tracking-tight"
+        className="font-sans font-black text-display-l md:text-display-xl lg:text-display-xxl text-text-hero leading-[1.02] tracking-tight"
       >
         {sceneContent}
       </motion.h1>

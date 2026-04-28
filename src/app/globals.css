@@ -345,37 +345,77 @@ html {
 }
 
 body {
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
   background: var(--foreas-obsidian);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  /* ── Site2026v47 — Typo Bringhurst-strict ── */
+  font-optical-sizing: auto;                                /* Inter Display/Text axis auto */
+  font-feature-settings: 'liga' 1, 'kern' 1, 'calt' 1;     /* ligatures + kerning + contextual alts */
+  text-rendering: optimizeLegibility;
 }
 
-/* Typography Classes */
-.font-title {
-  font-family: 'Genos', system-ui, sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+/* ── Hyphens automatiques (paragraphes français — Lupton p.122) ── */
+p, .prose, .text-prose {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphenate-limit-chars: 6 3 3;     /* min 6 char total, 3 avant césure, 3 après */
+  hyphenate-limit-lines: 2;          /* max 2 lignes consécutives avec césure */
+  hyphenate-limit-last: always;
+}
+
+/* ── Tabular nums utility (chiffres alignés — Tufte) ── */
+.tabular,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'liga' 1, 'kern' 1;
+}
+
+/* ── Italic emphasis (Bringhurst : "italics for emphasis is the elegant choice") ── */
+.em-italic,
+.text-prose em {
+  font-style: italic;
+  font-weight: inherit;     /* italic seul, pas bold + italic */
+  color: var(--text-primary); /* italic = couleur primaire (visibilité) */
+}
+
+/* ── Headings — Inter (Genos réservé logo + display-decorative uniquement) ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+  font-optical-sizing: auto;
+  font-feature-settings: 'ss01' 1, 'cv11' 1;  /* stylistic set 1 (alt 'a'), curved variant */
+}
+
+/* ── Genos uniquement sur classes décoratives explicites (logo + display déco) ── */
+.font-display-genos,
+.font-title-genos {
+  font-family: 'Genos', var(--font-inter), system-ui, sans-serif;
+  font-optical-sizing: auto;
+}
+
+/* ─── Typography Classes — v47 ─── */
+/* font-title et font-display = Genos (réservé logo + grands titres déco) */
+.font-title,
+.font-display {
+  font-family: 'Genos', var(--font-inter), system-ui, sans-serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;     /* Bringhurst : negative LS sur display */
 }
 
 .font-subtitle {
-  font-family: 'Genos', system-ui, sans-serif;
+  font-family: 'Genos', var(--font-inter), system-ui, sans-serif;
   font-style: italic;
   font-weight: 400;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
 }
 
-.font-body {
-  font-family: 'Montserrat', system-ui, sans-serif;
-}
-
-/* Headings default to Genos */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Genos', system-ui, sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+/* font-body et font-sans = Inter (standard SaaS premium 2026) */
+.font-body,
+.font-sans {
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+  font-optical-sizing: auto;
 }
 
 /* Custom scrollbar - Subtle dark theme */
