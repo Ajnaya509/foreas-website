@@ -159,15 +159,179 @@ html { scroll-behavior: smooth; }
 }
 
 :root {
-  /* FOREAS App-style Dark Blue Palette - Subtle gradients */
-  --foreas-deepblack: #050508;   /* Noir profond */
-  --foreas-black: #08080d;       /* Noir avec touche bleu */
-  --foreas-dark: #0a0a12;        /* Bleu nuit très foncé */
-  --foreas-navy: #0c0c16;        /* Bleu nuit subtil */
+  /* ─── FOREAS Design System v2 — Tokens canoniques ───
+   * Source : src/design/tokens.ts (single source of truth)
+   * Mirror app : ~/FOREAS-Clean/src/design/tokens.v2.ts
+   * Site2026v43 — Refonte FOREAS-Grade
+   */
+
+  /* Obsidian — backgrounds 3 couches (signature) */
+  --foreas-obsidian: #060610;        /* body */
+  --foreas-obsidian-deep: #070A14;   /* card layer 1 */
+  --foreas-obsidian-light: #111528;  /* card layer 2 */
+
+  /* Aliases legacy (rétrocompat code existant) */
+  --foreas-deepblack: #060610;
+  --foreas-black: #060610;
+  --foreas-dark: #070A14;
+  --foreas-navy: #070A14;
+
+  /* Accents signature */
   --accent-cyan: #00D4FF;
-  --accent-blue: #3B82F6;
-  --accent-magenta: #EC4899;
+  --accent-cyan-ice: #6DEAFF;
+  --accent-cyan-deep: #00A3CC;
   --accent-purple: #8C52FF;
+  --accent-purple-deep: #6C3CE0;
+  --accent-purple-mist: #B494FF;
+  --accent-violet: #8C52FF;
+  --accent-gold: #F5C842;
+  --accent-gold-radiant: #FFD659;
+
+  /* Legacy accents (rétrocompat) */
+  --accent-blue: #3B82F6;
+  --accent-green: #10B981;
+  --accent-magenta: #EC4899;
+
+  /* Glass — 3 niveaux empilables */
+  --glass-high: rgba(17, 21, 40, 0.88);
+  --glass-mid: rgba(17, 21, 40, 0.72);
+  --glass-low: rgba(17, 21, 40, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-high: rgba(255, 255, 255, 0.18);
+
+  /* Texte — opacités calibrées WCAG AA */
+  --text-hero: #F8FAFC;
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.72);
+  --text-tertiary: rgba(255, 255, 255, 0.45);
+  --text-muted: rgba(255, 255, 255, 0.28);
+
+  /* Motion durations canoniques */
+  --duration-instant: 120ms;
+  --duration-fast: 220ms;
+  --duration-base: 320ms;
+  --duration-slow: 480ms;
+  --duration-cinematic: 720ms;
+
+  /* Easings — Bezier précis (banni `ease` générique) */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1); /* signature entrée hero */
+  --ease-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Gradient signature 3-stops */
+  --gradient-foreas: linear-gradient(135deg, #00D4FF 0%, #8C52FF 50%, #B494FF 100%);
+  --gradient-foreas-h: linear-gradient(90deg, #00D4FF 0%, #8C52FF 50%, #B494FF 100%);
+  --gradient-royal: linear-gradient(135deg, #8C52FF 0%, #6C3CE0 100%);
+  --gradient-ice: linear-gradient(135deg, #00D4FF 0%, #6DEAFF 100%);
+  --gradient-gold: linear-gradient(135deg, #F5C842 0%, #FFD659 100%);
+
+  /* Glow signature */
+  --glow-marker: 0 0 12px rgba(0, 212, 255, 0.80), 0 0 24px rgba(140, 82, 255, 0.40);
+}
+
+/* ── WCAG AA — Focus rings cyan 2px (skill §6) ── */
+*:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── prefers-reduced-motion (skill §6 + §8) ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Glass card — 3 niveaux signature (skill GlassCard.tsx mirror) ── */
+.glass-card-high {
+  background: var(--glass-high);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  border-radius: 16px;
+}
+.glass-card-mid {
+  background: var(--glass-mid);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 16px;
+}
+.glass-card-low {
+  background: var(--glass-low);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+}
+
+/* ── Marker pulse signature (HomeScreen .pr ring expansion) ── */
+.marker-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  animation: markerPulse 2.5s ease-out infinite;
+}
+.marker-ring-1 {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.40) 0%, rgba(140, 82, 255, 0.15) 50%, transparent 70%);
+}
+.marker-ring-2 {
+  width: 45px;
+  height: 45px;
+  background: radial-gradient(circle, rgba(180, 148, 255, 0.35) 0%, transparent 70%);
+  animation-delay: 0.6s;
+}
+.marker-ring-3 {
+  width: 70px;
+  height: 70px;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.12) 0%, transparent 70%);
+  animation-delay: 1.2s;
+}
+.marker-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  background: var(--gradient-foreas);
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  box-shadow: var(--glow-marker);
+  z-index: 10;
+}
+@keyframes markerPulse {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+}
+
+/* ── Underline animée gauche-à-droite (links text — Norman §) ── */
+.underline-grow {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition: background-size 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.underline-grow:hover {
+  background-size: 100% 1px;
+}
+
+/* ── Tabular nums (chiffres alignés pricing/stats) ── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 * {
@@ -182,8 +346,8 @@ html {
 
 body {
   font-family: 'Montserrat', system-ui, sans-serif;
-  background: var(--foreas-black);
-  color: #F9FAFB;
+  background: var(--foreas-obsidian);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
