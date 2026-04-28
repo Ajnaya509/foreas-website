@@ -160,6 +160,17 @@ const config: Config = {
         'gradient-gold': 'linear-gradient(135deg, #F5C842 0%, #FFD659 100%)',
         // Mesh radial signature (background hero subtil)
         'mesh-foreas': 'radial-gradient(ellipse 120% 60% at 50% -10%, rgba(0, 212, 255, 0.12) 0%, transparent 50%), radial-gradient(ellipse 100% 70% at 80% 50%, rgba(140, 82, 255, 0.10) 0%, transparent 45%), radial-gradient(ellipse 80% 50% at 30% 100%, rgba(180, 148, 255, 0.08) 0%, transparent 50%)',
+        // Hero overlay diagonal (signature page einvoice — couches additionnelles)
+        'hero-overlay': 'linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(140, 82, 255, 0.08) 50%, transparent 100%)',
+        // ─── Section backgrounds — teintes sémantiques (storytelling visuel) ───
+        // Pattern app /facturation-electronique-vtc-2026 : chaque section a sa teinte
+        'section-cyan': 'linear-gradient(180deg, transparent 0%, rgba(0, 212, 255, 0.04) 50%, transparent 100%)',
+        'section-violet': 'linear-gradient(180deg, transparent 0%, rgba(140, 82, 255, 0.05) 50%, transparent 100%)',
+        'section-orange': 'linear-gradient(180deg, transparent 0%, rgba(251, 146, 60, 0.04) 50%, transparent 100%)',
+        'section-gold': 'linear-gradient(180deg, transparent 0%, rgba(245, 200, 66, 0.04) 50%, transparent 100%)',
+        'section-success': 'linear-gradient(180deg, transparent 0%, rgba(16, 185, 129, 0.04) 50%, transparent 100%)',
+        // Section CTA finale (gradient diagonal montant — signature einvoice)
+        'section-cta': 'linear-gradient(135deg, rgba(0, 212, 255, 0.06) 0%, rgba(140, 82, 255, 0.10) 100%)',
         // Legacy alias (rétrocompat code existant)
         'gradient-accent': 'linear-gradient(90deg, #8C52FF 0%, #00D4FF 100%)',
       },

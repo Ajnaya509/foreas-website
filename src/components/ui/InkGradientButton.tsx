@@ -67,10 +67,11 @@ const sizeStyles: Record<InkSize, string> = {
 // Variant 1 — primary : cyan base + nuage violet (signature unique)
 // Variant 2 — violet : violet pure + cyan light overlay
 // Variant 3 — gold : gold premium
+// v46 : shadow glow puissant par défaut (pattern page einvoice : 0_0_30px repos, 0_0_50px hover)
 const baseStyles: Record<InkVariant, string> = {
-  primary: 'bg-gradient-to-br from-[#00D4FF] via-[#00BCE5] to-[#0096B8] text-white shadow-glow-cyan',
-  violet: 'bg-gradient-to-br from-[#8C52FF] via-[#7440DC] to-[#5C2FB8] text-white shadow-glow-violet',
-  gold: 'bg-gradient-to-br from-[#FFD659] via-[#F5C842] to-[#D4A82E] text-foreas-obsidian shadow-glow-gold',
+  primary: 'bg-gradient-to-br from-[#00D4FF] via-[#00BCE5] to-[#0096B8] text-foreas-obsidian shadow-[0_0_30px_rgba(0,212,255,0.30)] hover:shadow-[0_0_50px_rgba(0,212,255,0.50)]',
+  violet: 'bg-gradient-to-br from-[#8C52FF] via-[#7440DC] to-[#5C2FB8] text-white shadow-[0_0_30px_rgba(140,82,255,0.35)] hover:shadow-[0_0_50px_rgba(140,82,255,0.55)]',
+  gold: 'bg-gradient-to-br from-[#FFD659] via-[#F5C842] to-[#D4A82E] text-foreas-obsidian shadow-[0_0_30px_rgba(245,200,66,0.30)] hover:shadow-[0_0_50px_rgba(245,200,66,0.50)]',
 }
 
 // Couches d'encre (3 nuages violet drift) — uniquement variant primary
@@ -134,13 +135,13 @@ export const InkGradientButton = React.forwardRef<HTMLButtonElement, InkProps>(
     const baseClasses = [
       'relative inline-flex items-center justify-center',
       'rounded-xl',                        // pill-ish radius (24px)
-      'font-bold tracking-tight',
+      'font-black tracking-tight',         // v46 : font-black (900) au lieu de bold
       'overflow-hidden',                   // contient les nuages drift
-      'transition-shadow duration-fast ease-standard',
+      'transition-all duration-base ease-standard',  // v46 : transition-all pour shadow + transform
       'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-obsidian',
       'select-none',
-      'hover:shadow-glow-cyan-strong',
+      'hover:-translate-y-0.5',            // v46 : élévation hover signature (Norman feedback)
       sizeStyles[size],
       baseStyles[variant],
       fullWidth ? 'w-full' : '',

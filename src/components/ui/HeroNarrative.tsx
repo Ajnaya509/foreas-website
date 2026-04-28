@@ -32,6 +32,7 @@ export interface HeroNarrativeProps {
   greeting?: string
   scene: string
   sceneAccent?: string                      // Portion du scene à afficher en gradient
+  sceneAnimated?: boolean                   // v46 : sceneAccent glisse 6s (default true)
   eyebrowColor?: 'cyan' | 'violet' | 'gold'
   eyebrowDot?: boolean
   align?: 'left' | 'center'
@@ -44,6 +45,7 @@ export function HeroNarrative({
   greeting,
   scene,
   sceneAccent,
+  sceneAnimated = true,    // v46 : par défaut le scene accent glisse (signature app)
   eyebrowColor = 'cyan',
   eyebrowDot = false,
   align = 'left',
@@ -53,12 +55,16 @@ export function HeroNarrative({
   const reducedMotion = useReducedMotion()
   const alignClass = align === 'center' ? 'text-center items-center' : 'text-left items-start'
 
-  // Split scene si sceneAccent fourni — wrap accent en GradientText
+  // Split scene si sceneAccent fourni — wrap accent en GradientText animated par défaut
   const sceneContent = sceneAccent && scene.includes(sceneAccent)
     ? scene.split(sceneAccent).reduce<React.ReactNode[]>((acc, part, i, arr) => {
         acc.push(<React.Fragment key={`p-${i}`}>{part}</React.Fragment>)
         if (i < arr.length - 1) {
-          acc.push(<GradientText key={`a-${i}`} variant="foreas">{sceneAccent}</GradientText>)
+          acc.push(
+            <GradientText key={`a-${i}`} variant="foreas" animated={sceneAnimated && !reducedMotion}>
+              {sceneAccent}
+            </GradientText>
+          )
         }
         return acc
       }, [])
@@ -97,7 +103,7 @@ export function HeroNarrative({
         initial={reducedMotion ? false : { opacity: 0, y: 16 }}
         animate={reducedMotion ? false : { opacity: 1, y: 0 }}
         transition={{ ...transition, delay: delay + 0.16 }}
-        className="font-title text-display-l md:text-display-xl lg:text-display-xxl text-text-hero leading-[1.05]"
+        className="font-title font-black text-display-l md:text-display-xl lg:text-display-xxl text-text-hero leading-[1.02] tracking-tight"
       >
         {sceneContent}
       </motion.h1>

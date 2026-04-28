@@ -223,14 +223,16 @@ export default function HomePage() {
           ═══════════════════════════════════════════════════════════════ */}
 
       {isMobile ? (
-        /* ── MOBILE HERO — FOREAS-Grade v44 (HeroNarrative + InkGradientButton) ── */
+        /* ── MOBILE HERO — FOREAS-Grade v46 (overlay + animated gradient + glass live card) ── */
         <section data-section="hero" className="relative pt-massive pb-massive overflow-hidden bg-foreas-obsidian">
-          {/* Background mesh signature (subtil) */}
+          {/* Background : mesh signature radial */}
           <div className="absolute inset-0 bg-mesh-foreas pointer-events-none" aria-hidden="true" />
+          {/* Overlay diagonal cyan→violet (signature page einvoice) */}
+          <div className="absolute inset-0 bg-hero-overlay pointer-events-none" aria-hidden="true" />
 
-          <div className="relative max-w-6xl mx-auto px-lg">
+          <div className="relative max-w-6xl mx-auto px-lg sm:px-xxl">
             <div className="text-center">
-              {/* HeroNarrative — pattern signature 3 étages */}
+              {/* HeroNarrative — pattern signature 3 étages + sceneAccent animated par défaut */}
               <HeroNarrative
                 eyebrow="Ajnaya · Intelligence Mobilité"
                 eyebrowDot
@@ -277,32 +279,43 @@ export default function HomePage() {
                 </Button>
               </motion.div>
 
-              {/* DashboardMockup */}
+              {/* DashboardMockup + glass live card mobile (signature pulse cyan/violet) */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="flex justify-center mb-xxl"
+                className="relative flex justify-center mb-xxl"
               >
-                <div className="max-w-[300px] mx-auto">
+                <div className="max-w-[300px] mx-auto relative">
                   <DashboardMockup />
+                  {/* Live card mobile — placée au-dessus du mockup */}
+                  <GlassCard
+                    level="high"
+                    padding="sm"
+                    radius="lg"
+                    glow="cyan"
+                    className="absolute -top-md -right-sm flex items-center gap-sm z-20"
+                  >
+                    <MarkerPulse size={28} />
+                    <div className="text-left">
+                      <EyebrowLabel color="cyan">Ajnaya · Live</EyebrowLabel>
+                      <p className="text-caption text-text-secondary mt-xxs">147 actifs</p>
+                    </div>
+                  </GlassCard>
                 </div>
               </motion.div>
 
-              {/* Authority signals — Cialdini pattern (eyebrows en chip) */}
+              {/* Authority signals — grid 2x2 sur mobile (Krug : pas de wrap pataud) */}
               <motion.div
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                className="flex flex-wrap items-center justify-center gap-x-xxl gap-y-sm text-text-tertiary"
+                className="grid grid-cols-2 gap-md sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-xxl sm:gap-y-sm"
               >
                 <EyebrowLabel color="muted" as="span">Paris &amp; Île-de-France</EyebrowLabel>
-                <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
                 <EyebrowLabel color="muted" as="span">Ajnaya temps réel</EyebrowLabel>
-                <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
                 <EyebrowLabel color="muted" as="span">Chauffeurs certifiés</EyebrowLabel>
-                <span className="w-px h-3 bg-glass-border" aria-hidden="true" />
                 <EyebrowLabel color="muted" as="span">API disponible</EyebrowLabel>
               </motion.div>
             </div>
@@ -310,18 +323,21 @@ export default function HomePage() {
         </section>
       ) : (
         /* ── DESKTOP HERO: parallax with useScroll + useTransform + will-change ── */
-        <section ref={heroRef} data-section="hero" className="relative pt-40 pb-32 overflow-hidden">
+        <section ref={heroRef} data-section="hero" className="relative pt-40 pb-32 overflow-hidden bg-foreas-obsidian">
           {/* Background glows — parallax layer 1 */}
           <motion.div
             style={reducedMotion ? {} : { y: glowY, willChange: 'transform' }}
             className="pointer-events-none"
           >
-            <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-accent-purple/6 rounded-full blur-[200px]" />
-            <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-accent-cyan/4 rounded-full blur-[160px]" />
+            <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-accent-purple/[0.06] rounded-full blur-[200px]" />
+            <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-accent-cyan/[0.05] rounded-full blur-[160px]" />
+            <div className="absolute top-1/3 right-1/3 w-[500px] h-[500px] bg-[#A855F7]/[0.04] rounded-full blur-[140px]" />
           </motion.div>
 
-          {/* Background mesh signature (subtil) */}
+          {/* Background : mesh signature radial */}
           <div className="absolute inset-0 bg-mesh-foreas pointer-events-none" aria-hidden="true" />
+          {/* Overlay diagonal cyan→violet (signature page einvoice) */}
+          <div className="absolute inset-0 bg-hero-overlay pointer-events-none" aria-hidden="true" />
 
           <div className="relative max-w-7xl mx-auto px-lg lg:px-xxl">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-massive lg:gap-massive items-center">
