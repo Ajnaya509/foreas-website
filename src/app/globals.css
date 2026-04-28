@@ -342,6 +342,30 @@ html { scroll-behavior: smooth; }
 
 html {
   scroll-behavior: smooth;
+  /* ── Site2026v56 — Mobile-first improvements ── */
+  /* Empêche zoom auto iOS sur input < 16px (Wroblewski §4) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Évite le rebound iOS sur scroll horizontal accidentel */
+  overflow-x: hidden;
+  /* iOS safe area inset (notch / home indicator) */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Autorise zoom utilisateur (accessibility WCAG 2.1.4.4) sans bloquer le pinch */
+@viewport {
+  width: device-width;
+  zoom: 1.0;
+}
+
+/* Touch action : auto sur scrollables, manipulation sur tap zones */
+button, [role="button"], a, input, select, textarea {
+  touch-action: manipulation;   /* élimine le 300ms tap delay iOS Safari */
+}
+
+/* Inputs ≥ 16px = pas de zoom auto iOS (Wroblewski + Apple HIG) */
+input, select, textarea {
+  font-size: 16px;
 }
 
 body {

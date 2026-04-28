@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Preloader from '@/components/Preloader'
@@ -21,6 +21,18 @@ const inter = Inter({
   weight: ['400', '500', '600', '700', '800', '900'],
   preload: true,
 })
+
+// ═══ Viewport Mobile-first (Wroblewski + Apple Web App spec) ═══════════════
+// Required for proper mobile rendering — sans cela les mobiles zoom/dézoom
+// de manière imprévisible. En Next.js 15+, séparé de metadata.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,           // accessibility : permet zoom jusqu'à 500%
+  userScalable: true,         // WCAG 2.1.4.4 conformité
+  themeColor: '#060610',      // status bar color iOS/Android (= obsidian body)
+  colorScheme: 'dark',
+}
 
 export const metadata: Metadata = {
   title: 'FOREAS | Pilote ton activité VTC avec Ajnaya',
