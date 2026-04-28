@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import Preloader from '@/components/Preloader'
 import GrainOverlay from '@/components/GrainOverlay'
@@ -11,11 +10,17 @@ import { MetaPixel } from '@/components/MetaPixel'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
-// Site2026v49 — Geist Sans (Vercel premium font 2026)
-// Geist = supérieure à Inter base : x-height optimisée, formes plus chaudes,
-// optical sizing variable axis natif, conçue pour interfaces tech modernes.
-// Utilisée par : Vercel, Next.js, v0.dev, Sandpack, Geist UI.
-// CSS var auto : --font-geist-sans / --font-geist-mono
+// Site2026v50 — Configuration finale typographique :
+// • Inter (next/font/google) : remplace Montserrat sur body + UI + h1-h6 réguliers
+// • Genos (local TTF Variable + Italic) : logo + font-title stratégique
+// → Pattern identique à l'app FOREAS Driver
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-inter',
+  weight: ['400', '500', '600', '700', '800', '900'],
+  preload: true,
+})
 
 export const metadata: Metadata = {
   title: 'FOREAS | Pilote ton activité VTC avec Ajnaya',
@@ -48,22 +53,29 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="fr" className={inter.variable}>
       <head>
         {/* Favicon */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
 
-        {/* Preconnect to critical third-party CDNs for faster resource loading */}
+        {/* Preconnect critical CDNs */}
         <link rel="preconnect" href="https://image.mux.com" />
         <link rel="dns-prefetch" href="https://image.mux.com" />
         <link rel="preconnect" href="https://stream.mux.com" />
         <link rel="dns-prefetch" href="https://stream.mux.com" />
 
-        {/* Genos = logo + grands titres déco uniquement (Inter prend le relais sur le reste) */}
+        {/* Preload Genos Variable + Italic (logo + tagline + display moments) */}
         <link
           rel="preload"
           href="/fonts/Genos-VariableFont_wght.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/Genos-Italic-VariableFont_wght.ttf"
           as="font"
           type="font/ttf"
           crossOrigin="anonymous"

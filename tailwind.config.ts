@@ -71,18 +71,18 @@ const config: Config = {
         },
       },
 
-      // ─── Typography — Site2026v49 (Geist + Genos préservé) ─────────────────
-      // Geist Sans = standard SaaS premium Vercel 2026 (body + h1-h6 + UI)
+      // ─── Typography — Site2026v50 (Inter + Genos préservé) ─────────────────
+      // Inter (next/font/google) = remplace Montserrat sur body + h1-h6 + UI
       // Genos = font-title et font-display (préserve choix créatif historique)
-      // Letter-spacing Genos restauré +0.02em positif (aération condensé natif)
+      //   + Genos Italic via .font-subtitle / .tagline pour subtitles
+      // Letter-spacing Genos +0.02em positif (Genos est CONDENSÉE par nature)
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
-        body: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
         // font-title et font-display = Genos (137 usages historiques préservés)
-        title: ['Genos', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
-        display: ['Genos', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
-        // Mono = Geist Mono (cohérent avec Geist Sans)
-        mono: ['var(--font-geist-mono)', 'JetBrains Mono', 'monospace'],
+        title: ['Genos', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['Genos', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       // ─── Échelle modulaire Apple HIG (ratio 1.250 — Major Third Bringhurst) ─
       // Toutes les line-heights = multiples de 4 (baseline grid strict)

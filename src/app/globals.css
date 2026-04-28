@@ -345,13 +345,13 @@ html {
 }
 
 body {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
   background: var(--foreas-obsidian);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  /* ── Site2026v49 — Geist Sans premium + OpenType features ── */
+  /* ── Site2026v50 — Inter + OpenType features ── */
   font-optical-sizing: auto;
   font-feature-settings: 'liga' 1, 'kern' 1, 'calt' 1, 'ss01' 1, 'ss03' 1;
   text-rendering: optimizeLegibility;
@@ -381,9 +381,9 @@ p, .prose, .text-prose {
   color: var(--text-primary); /* italic = couleur primaire (visibilité) */
 }
 
-/* ── Headings — Geist Sans default (sauf override .font-title qui = Genos) ── */
+/* ── Headings — Inter default (sauf override .font-title qui = Genos) ── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
   font-optical-sizing: auto;
   font-feature-settings: 'liga' 1, 'kern' 1, 'ss01' 1;
 }
@@ -391,34 +391,35 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Genos via classes explicites .font-display-genos / .font-title-genos ── */
 .font-display-genos,
 .font-title-genos {
-  font-family: 'Genos', var(--font-geist-sans), system-ui, sans-serif;
+  font-family: 'Genos', var(--font-inter), system-ui, sans-serif;
   font-optical-sizing: auto;
   letter-spacing: 0.02em;     /* +0.02em positif = Genos aérée (condensé natif) */
 }
 
-/* ─── Typography Classes — v49 ─── */
+/* ─── Typography Classes — v50 ─── */
 /* font-title et font-display = Genos (préservation 137 usages historiques) */
 /* IMPORTANT : letter-spacing POSITIF +0.02em — Genos est CONDENSÉE par nature */
 /* (negative LS la rendrait illisible). Bringhurst : negative LS pour display */
 /* WIDE/normal, positive ou neutre pour display CONDENSED comme Genos. */
 .font-title,
 .font-display {
-  font-family: 'Genos', var(--font-geist-sans), system-ui, sans-serif;
+  font-family: 'Genos', var(--font-inter), system-ui, sans-serif;
   font-optical-sizing: auto;
   letter-spacing: 0.02em;        /* +0.02em positif = aération nécessaire */
 }
 
+/* Genos Italic — taglines, sous-titres signature */
 .font-subtitle {
-  font-family: 'Genos', var(--font-geist-sans), system-ui, sans-serif;
+  font-family: 'Genos', var(--font-inter), system-ui, sans-serif;
   font-style: italic;
   font-weight: 400;
   letter-spacing: 0.01em;
 }
 
-/* font-body et font-sans = Geist Sans (premium Vercel 2026) */
+/* font-body et font-sans = Inter (remplace Montserrat) */
 .font-body,
 .font-sans {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
   font-optical-sizing: auto;
 }
 
