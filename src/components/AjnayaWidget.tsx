@@ -501,6 +501,7 @@ export default function AjnayaWidget() {
           message: text,
           sessionId,
           prospectId,
+          identityId,             // v58 — propagé au chat route pour canal_memory writes
           pageSource: pathname,
           scrollSection,
           heatScore,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { sendCAPIEvent } from '@/lib/meta-capi'
 
 export const runtime = 'nodejs'
 
@@ -190,6 +191,67 @@ export async function POST(request: NextRequest) {
         user_type,
       },
       ts: Date.now(),
+    })
+
+    // 5. Fire-and-forget Pieuvre webhook /webhook/phone-captured (v58 — fil pieuvre P0)
+    //    Trigger Variable Reward workflow wF5dzYGUReKt3TGB côté N8N.
+    //    On NE bloque PAS la réponse au widget — fail silently.
+    const pieuvreBaseUrl = process.env.PIEUVRE_RESPOND_URL || ''
+    const pieuvreSecret = process.env.PIEUVRE_RESPOND_SECRET || ''
+    if (pieuvreBaseUrl && pieuvreSecret) {
+      // Extract origin from PIEUVRE_RESPOND_URL (which contains /webhook/ajnaya-respond)
+      const origin = pieuvreBaseUrl.replace(/\/webhook\/.*$/, '')
+      const phoneCapturedUrl = `${origin}/webhook/phone-captured`
+      // Fire-and-forget — don't await
+      fetch(phoneCapturedUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Foreas-Shared-Secret': pieuvreSecret,
+        },
+        body: JSON.stringify({
+          identity_id,
+          canal,
+          page_source: page_source || null,
+          merged,
+          user_type,
+          ts: Date.now(),
+        }),
+      }).catch((err) => {
+        console.warn('[identity/capture] phone-captured webhook fail:', (err as Error).message)
+      })
+    }
+
+    // 6. Meta CAPI server-side — event Lead (v58 — fil pieuvre P0 #7)
+    //    Critique pour attribution CTWA / Advantage+ Meta. Fire-and-forget.
+    //    Le pixel client envoie aussi Lead avec eventID partagé via tracking.ts ;
+    //    Meta déduplique via event_id. Ici on émet en plus côté server-side parce
+    //    que la capture phone est l'événement de conversion principale.
+    const forwardedFor = request.headers.get('x-forwarded-for') || ''
+    const clientIp = forwardedFor.split(',')[0]?.trim() || request.headers.get('x-real-ip') || undefined
+    const clientUa = request.headers.get('user-agent') || undefined
+    const cookieHeader = request.headers.get('cookie') || ''
+    const fbcMatch = cookieHeader.match(/_fbc=([^;]+)/)
+    const fbpMatch = cookieHeader.match(/_fbp=([^;]+)/)
+    sendCAPIEvent({
+      eventName: 'Lead',
+      // eventId omis = nouveau Lead unique (pas de dedup avec un pixel client à
+      // ce moment précis car la capture s'est faite via l'API, pas via fbq client)
+      eventSourceUrl: page_source ? `https://foreas.xyz${page_source}` : 'https://foreas.xyz',
+      userData: {
+        phone: phone_e164,                    // sera normalisé + sha256 par buildUserData
+        externalId: identity_id,              // identity_bridge.id pour matching
+        clientIpAddress: clientIp,
+        clientUserAgent: clientUa,
+        fbc: fbcMatch?.[1] || null,
+        fbp: fbpMatch?.[1] || null,
+      },
+      customData: {
+        contentName: 'phone_captured_widget',
+      },
+      actionSource: 'website',
+    }).catch((err) => {
+      console.warn('[identity/capture] Meta CAPI Lead fail:', (err as Error).message)
     })
 
     return NextResponse.json({

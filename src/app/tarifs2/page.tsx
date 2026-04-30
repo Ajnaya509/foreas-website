@@ -7,6 +7,7 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { trackInitiateCheckout } from '@/lib/tracking'   // v58 — Meta CAPI server+client
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -222,7 +223,14 @@ function TarifsContent() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [flowState, setFlowState] = useState<'idle' | 'bridge' | 'checkout'>('idle')
 
-  const openFlow = (plan: Plan) => { setSelectedPlan(plan); setFlowState('bridge') }
+  const openFlow = (plan: Plan) => {
+    setSelectedPlan(plan)
+    setFlowState('bridge')
+    // v58 — Meta CAPI InitiateCheckout (Lead + InitiateCheckout = backbone attribution CTWA)
+    // tracking.ts envoie en parallèle pixel client (fbq) + CAPI server-side avec eventID dedup
+    const price = billing === 'weekly' ? plan.weeklyPrice : plan.annualWeeklyPrice
+    trackInitiateCheckout(plan.name, price)
+  }
   const closeAll = () => { setFlowState('idle'); setSelectedPlan(null) }
   const confirmCheckout = () => setFlowState('checkout')
 

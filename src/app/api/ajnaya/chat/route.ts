@@ -55,6 +55,34 @@ async function saveMessage(msg: Record<string, unknown>) {
   } catch { /* silent */ }
 }
 
+// ─── Write canal_memory fragments (v58 — fil pieuvre P0 #5) ──────────────────
+// Quand le path Haiku fallback est utilisé (Pieuvre down), le site doit
+// alimenter canal_memory directement. Pieuvre le fait normalement côté N8N
+// quand il répond, mais ici on bypass — donc on doit l'écrire nous-mêmes.
+async function writeCanalMemory(
+  identity_id: string,
+  canal: 'web' | 'voice_agent',
+  fragments: Record<string, unknown>
+) {
+  try {
+    const sb = await getSupabase()
+    if (!sb) return
+    // Une row par (identity_id, canal, context_key) — upsert pour update si existe
+    const upserts = Object.entries(fragments).map(([context_key, context_value]) => ({
+      identity_id,
+      canal,
+      context_key,
+      context_value,
+      updated_at: new Date().toISOString(),
+    }))
+    if (upserts.length === 0) return
+    await sb.from('canal_memory').upsert(upserts, {
+      onConflict: 'identity_id,canal,context_key',
+      ignoreDuplicates: false,
+    })
+  } catch { /* silent — never block response */ }
+}
+
 // ─── Update prospect ─────────────────────────────────────────────────────────
 async function updateProspect(prospectId: string, updates: Record<string, unknown>) {
   try {
@@ -312,6 +340,7 @@ export async function POST(request: NextRequest) {
     let conversationHistory: Array<{ role: string; text: string }>
     let sessionId: string | null
     let prospectId: string | null
+    let identityId: string | null = null   // v58 — propagation pour canal_memory
     let device: string
 
     if (openaiMode) {
@@ -338,6 +367,7 @@ export async function POST(request: NextRequest) {
       conversationHistory = body.conversationHistory || []
       sessionId = body.sessionId || null
       prospectId = body.prospectId || null
+      identityId = body.identityId || null  // v58 — propagation Pieuvre canal_memory
       device = body.device || 'mobile'
     }
 
@@ -480,6 +510,20 @@ export async function POST(request: NextRequest) {
       conversion_event: conversionEvent,
       metadata: { sessionId },
     })
+
+    // 6b. canal_memory writes (v58 — fil pieuvre P0 #5) — Haiku fallback bypass Pieuvre
+    //     Pieuvre alimente canal_memory côté N8N quand il répond. Quand on tombe ici
+    //     (Pieuvre disabled OU Pieuvre returned null), il faut alimenter nous-mêmes
+    //     pour que la mémoire cross-canal reste vivante.
+    if (identityId) {
+      const nowISO = new Date().toISOString()
+      writeCanalMemory(identityId, openaiMode ? 'voice_agent' : 'web', {
+        last_user_msg: { text: userMessage, at: nowISO, page_source: pageSource },
+        last_user_intent: { sentiment, objection_detected: objection, has_conversion_link: hasConversionLink, at: nowISO },
+        last_ajnaya_msg: { text: reply, llm_model: llmModel, at: nowISO },
+        hot_score_peak: { value: heatScore, at: nowISO, scroll_section: scrollSection },
+      })
+    }
 
     // 7. Update prospect if exists
     if (currentProspectId) {
