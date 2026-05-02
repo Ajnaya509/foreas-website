@@ -257,14 +257,14 @@ export default function PartnerSignupForm() {
       <Header />
 
       <div className="relative pt-28 pb-20 md:pt-36 md:pb-24 px-6 lg:px-8 overflow-hidden">
-        {/* Warm halos */}
+        {/* Warm halos — variant warm spec: violet 0.22 + rose 0.14 */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none animate-halo-pulse"
           aria-hidden
           style={{
             background:
-              'radial-gradient(ellipse 60% 50% at 20% 30%, rgba(140,82,255,0.10) 0%, transparent 70%),' +
-              'radial-gradient(ellipse 50% 40% at 85% 70%, rgba(255,102,153,0.07) 0%, transparent 70%)',
+              'radial-gradient(ellipse 60% 50% at 20% 30%, rgba(140,82,255,0.22) 0%, transparent 70%),' +
+              'radial-gradient(ellipse 50% 40% at 85% 70%, rgba(255,102,153,0.14) 0%, transparent 70%)',
           }}
         />
 
@@ -455,7 +455,7 @@ export default function PartnerSignupForm() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -4 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute top-full left-0 right-0 mt-1.5 z-20 rounded-xl border border-white/[0.08] bg-[#0a0a0f] overflow-hidden"
+                            className="absolute top-full left-0 right-0 mt-1.5 z-20 rounded-xl border border-white/[0.08] bg-black overflow-hidden"
                             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
                           >
                             {COMPANY_TYPES.map((t) => (

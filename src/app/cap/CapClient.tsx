@@ -183,14 +183,14 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
 
       {/* ── Hero ──────────────────────────────────────────────────────────────── */}
       <section className="relative pt-28 pb-16 md:pt-36 md:pb-20 px-6 lg:px-8 overflow-hidden">
-        {/* Warm background halos */}
+        {/* Warm background halos — variant warm spec: violet 0.22 + rose 0.14 */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none animate-halo-pulse"
           aria-hidden
           style={{
             background:
-              'radial-gradient(ellipse 70% 60% at 30% 20%, rgba(140,82,255,0.12) 0%, transparent 70%),' +
-              'radial-gradient(ellipse 50% 50% at 80% 80%, rgba(255,102,153,0.08) 0%, transparent 70%)',
+              'radial-gradient(ellipse 70% 60% at 30% 20%, rgba(140,82,255,0.22) 0%, transparent 70%),' +
+              'radial-gradient(ellipse 50% 50% at 80% 80%, rgba(255,102,153,0.14) 0%, transparent 70%)',
           }}
         />
 
@@ -341,11 +341,11 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
       {/* ── Pricing ───────────────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 px-6 lg:px-8 relative">
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none animate-halo-pulse"
           aria-hidden
           style={{
             background:
-              'radial-gradient(ellipse 60% 50% at 70% 50%, rgba(255,102,153,0.07) 0%, transparent 70%)',
+              'radial-gradient(ellipse 60% 50% at 70% 50%, rgba(255,102,153,0.14) 0%, transparent 70%)',
           }}
         />
         <div className="max-w-5xl mx-auto relative">
