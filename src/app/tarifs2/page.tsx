@@ -82,10 +82,10 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-md bg-[#0d0d1a] border border-blue-500/30 rounded-2xl overflow-hidden shadow-2xl">
+      <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-md bg-black border border-blue-500/30 rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-blue-500/10 bg-gradient-to-r from-blue-900/30 to-transparent">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/30"><span className="text-sm font-black text-white">F</span><div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-[#0d0d1a]" /></div>
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-violet-500/30"><span className="text-sm font-black text-white">F</span><div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-black" /></div>
             <div><p className="text-white font-bold text-sm">FOREAS {planName}</p><p className="text-blue-300 text-xs font-medium">Paiement sécurisé · Transparent</p></div>
           </div>
           <button onClick={onClose} className="text-white/55 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
@@ -136,7 +136,7 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-xl bg-[#0d0d1a] border border-violet-500/30 rounded-2xl overflow-hidden shadow-2xl" style={{ maxHeight: '90vh' }}>
+      <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-xl bg-black border border-violet-500/30 rounded-2xl overflow-hidden shadow-2xl" style={{ maxHeight: '90vh' }}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-violet-900/30 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center"><span className="text-[10px] font-bold text-white">F</span></div>
@@ -246,46 +246,96 @@ function TarifsContent() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#070714] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-black text-[#F8FAFC] overflow-x-hidden">
       {isSuccess && (
         <motion.div initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-600 to-emerald-500 py-4 px-5 text-center shadow-xl">
           <p className="text-white font-semibold text-sm">🎉 Bienvenue ! Votre abonnement est actif. Téléchargez l'app.</p>
         </motion.div>
       )}
 
-      {/* Background blurs */}
+      {/* Background — variant CYAN (data argent) + violet accent + rose subtle */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-[120px]" />
-        <div className="absolute top-1/3 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-violet-800/15 rounded-full blur-[100px]" />
+        {/* Halo pulse 1.8s — design system §8 */}
+        <div
+          className="absolute inset-0 animate-halo-pulse"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 50% at 25% 15%, rgba(140,82,255,0.22) 0%, transparent 70%),' +
+              'radial-gradient(ellipse 50% 45% at 80% 20%, rgba(0,212,255,0.14) 0%, transparent 70%),' +
+              'radial-gradient(ellipse 70% 60% at 50% 90%, rgba(140,82,255,0.08) 0%, transparent 75%)',
+          }}
+        />
+        {/* Halo rose subtle — accent warm chaleureux design system §4 */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 40% 30% at 90% 70%, rgba(255,102,153,0.07) 0%, transparent 70%)',
+          }}
+        />
+        {/* Micro-grain anti-banding — design system §8 (casse les bandes OLED) */}
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: 'rgba(255,255,255,0.012)' }}
+        />
       </div>
 
       <Header />
 
-      {/* Live bar */}
-      <div className="relative border-b border-white/5 bg-black/30 backdrop-blur-sm">
+      {/* Live bar — preuve sociale temps réel + scarcity vraie */}
+      <div className="relative border-b border-white/[0.06] bg-black/40 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap">
-          <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium"><span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />147 chauffeurs sur l'essai cette semaine</span>
+          <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium tabular-nums">
+            <span className="relative flex w-2 h-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+            </span>
+            147 chauffeurs sur l'essai cette semaine
+          </span>
           <span className="text-white/20 hidden sm:inline">·</span>
-          <span className="text-white/50 text-xs">Tarif découverte <span className="text-orange-400 font-semibold">clos à 500 abonnés</span></span>
+          <span className="text-white/55 text-xs">
+            Tarif découverte <span className="text-orange-300 font-semibold tabular-nums">clos à 500 abonnés</span>
+          </span>
         </div>
       </div>
 
-      {/* ── HERO ── */}
+      {/* ── HERO — F-pattern niveau L2 ── */}
       <section className="relative pt-16 pb-8 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            {/* Eyebrow officielle — design system §11 */}
+            <p
+              className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-6"
+              style={{ letterSpacing: '0.25em' }}
+            >
+              FOREAS · TARIFS DÉCOUVERTE
+            </p>
+
+            {/* Risk reversal badge — Hormozi */}
             <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-1.5 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-300 text-xs font-semibold tracking-wide uppercase">0€ aujourd'hui · 0€ jusqu'à dimanche · Annulation 1 clic</span>
+              <span className="text-green-300 text-xs font-semibold uppercase" style={{ letterSpacing: '0.1em' }}>
+                0€ aujourd'hui · Annulation 1 clic
+              </span>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
+
+            {/* H1 display — letter-spacing négatif §17 + textHero ivoire §5 */}
+            <h1
+              className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] mb-5 text-[#F8FAFC]"
+              style={{ letterSpacing: '-0.04em' }}
+            >
               Tu fais combien net{' '}
-              <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">cette semaine&nbsp;?</span>
+              <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">
+                cette semaine&nbsp;?
+              </span>
             </h1>
-            <p className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-              Karim&nbsp;: <span className="text-white font-semibold">+387&nbsp;€ ce mois-ci</span>. Sans une heure en plus.<br className="hidden sm:block" />
-              <span className="text-white/55 text-base">Pas de magie. L'IA Ajnaya te dit où aller, quand, et combien tu vas faire. C'est tout.</span>
+
+            {/* Sub — preuve nominée + identification */}
+            <p className="text-white/75 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
+              Karim, Paris&nbsp;15<sup>e</sup>&nbsp;: <span className="text-[#F8FAFC] font-semibold tabular-nums">+387&nbsp;€</span> ce mois-ci. Sans une heure en plus.
+            </p>
+            <p className="text-white/55 text-base sm:text-[15px] max-w-xl mx-auto leading-relaxed mt-3">
+              Pas de magie. L'IA Ajnaya te dit <span className="text-[#F8FAFC]/85">où aller</span>, <span className="text-[#F8FAFC]/85">quand</span>, et <span className="text-[#F8FAFC]/85">combien tu vas faire</span>. C'est tout.
             </p>
           </motion.div>
         </div>
@@ -310,136 +360,353 @@ function TarifsContent() {
             const perDay = (price / 7).toFixed(2).replace('.', ',')
             return (
               <motion.div key={plan.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1, duration: 0.5 }}
-                className={`relative rounded-2xl p-6 sm:p-7 border transition-all ${plan.popular ? 'border-violet-500/40 bg-gradient-to-b from-violet-900/15 to-[#0d0d1a] shadow-xl shadow-violet-900/20 md:-mt-4 md:pb-10' : 'border-white/[0.08] bg-white/[0.02] hover:border-white/15'}`}
+                className={`relative rounded-2xl p-6 sm:p-7 border transition-all ${plan.popular ? 'border-violet-500/40 bg-gradient-to-b from-violet-900/15 to-black md:-mt-4 md:pb-10' : 'border-white/[0.06] bg-white/[0.04] hover:border-white/[0.18]'}`}
+                style={plan.popular ? { boxShadow: '0 0 60px rgba(140,82,255,0.18), inset 0 0 0 1px rgba(140,82,255,0.20)' } : undefined}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-600 to-violet-500 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1 rounded-full whitespace-nowrap">Le plus pris · 8/10 chauffeurs</div>
+                  <div
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-600 to-violet-500 text-white text-[10px] font-extrabold uppercase px-4 py-1 rounded-full whitespace-nowrap"
+                    style={{ letterSpacing: '0.18em', boxShadow: '0 0 20px rgba(140,82,255,0.45)' }}
+                  >
+                    Le plus pris · 8/10 chauffeurs
+                  </div>
                 )}
-                <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">{plan.name}</p>
-                <p className="text-sm text-white/70 mb-5 min-h-[36px]">{plan.tagline}</p>
+                <p
+                  className="text-[10px] font-extrabold text-[#00D4FF]/85 uppercase mb-2"
+                  style={{ letterSpacing: '0.25em' }}
+                >
+                  {plan.name}
+                </p>
+                <p className="text-sm text-white/75 mb-5 min-h-[36px] leading-snug">{plan.tagline}</p>
 
                 <motion.div key={billing} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
                   <div className="flex items-end gap-1.5 mb-1">
-                    {billing === 'annual' && <span className="text-white/30 line-through text-lg mb-1">{plan.weeklyPrice.toFixed(2).replace('.', ',')}€</span>}
-                    <span className="text-4xl sm:text-5xl font-black text-white">{price.toFixed(2).replace('.', ',')}€</span>
+                    {billing === 'annual' && (
+                      <span className="text-white/30 line-through text-lg mb-1 tabular-nums">{plan.weeklyPrice.toFixed(2).replace('.', ',')}€</span>
+                    )}
+                    <span
+                      className="text-4xl sm:text-5xl font-black text-[#F8FAFC] tabular-nums"
+                      style={{ letterSpacing: '-0.045em' }}
+                    >
+                      {price.toFixed(2).replace('.', ',')}€
+                    </span>
                     <span className="text-white/50 text-sm mb-2">/sem</span>
                   </div>
-                  <p className="text-violet-300/70 text-xs mb-1">
-                    soit {perDay}€/jour {plan.popular && <span className="text-violet-300 font-semibold">— le prix d'un péage</span>}
+                  <p className="text-cyan-300/80 text-xs mb-1 tabular-nums">
+                    soit {perDay}€/jour {plan.popular && <span className="text-cyan-200 font-semibold">— le prix d'un péage</span>}
                   </p>
                   {plan.popular && (
-                    <p className="text-green-400/80 text-[11px] font-medium mt-1">💡 Une seule course no-show = ton mois remboursé</p>
+                    <p className="text-green-400/85 text-[11px] font-semibold mt-1.5">💡 Une seule course no-show = ton mois remboursé</p>
                   )}
-                  {billing === 'annual' && <p className="text-white/40 text-xs mt-1">Facturé {(plan.annualWeeklyPrice * 52).toFixed(2).replace('.', ',')}€/an · sans engagement annuel</p>}
+                  {billing === 'annual' && (
+                    <p className="text-white/40 text-xs mt-1.5 tabular-nums">Facturé {(plan.annualWeeklyPrice * 52).toFixed(2).replace('.', ',')}€/an · sans engagement</p>
+                  )}
                 </motion.div>
 
-                <div className="h-px bg-white/[0.08] my-5" />
+                <div className="h-px bg-white/[0.06] my-5" />
 
-                <div className="space-y-1 mb-6">
+                <div className="space-y-1.5 mb-6">
                   {plan.features.map((f, j) => (
                     <div key={j} className="flex items-start gap-2.5 py-0.5">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${f.ok ? (f.star ? 'bg-violet-500/25' : 'bg-violet-500/15') : 'bg-white/5'}`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${f.ok ? (f.star ? 'bg-violet-500/25 ring-1 ring-violet-400/30' : 'bg-violet-500/15') : 'bg-white/[0.04]'}`}>
                         {f.ok ? (
-                          <svg className={`w-3 h-3 ${f.star ? 'text-violet-300' : 'text-violet-400/80'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          <svg className={`w-3 h-3 ${f.star ? 'text-violet-200' : 'text-violet-400/85'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                         ) : (
-                          <span className="text-white/20 text-xs">×</span>
+                          <span className="text-white/25 text-xs">×</span>
                         )}
                       </div>
-                      <span className={`text-sm leading-tight ${f.ok ? (f.star ? 'text-white font-semibold' : 'text-white/75') : 'text-white/30 line-through'}`}>{f.text}</span>
+                      <span className={`text-sm leading-tight ${f.ok ? (f.star ? 'text-[#F8FAFC] font-semibold' : 'text-white/80') : 'text-white/30 line-through'}`}>{f.text}</span>
                     </div>
                   ))}
                 </div>
 
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => openFlow(plan)} className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all ${plan.style}`}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => openFlow(plan)}
+                  className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all ${plan.style}`}
+                  style={plan.popular ? { boxShadow: '0 0 28px rgba(140,82,255,0.40)' } : undefined}
+                >
                   {plan.cta} →
                 </motion.button>
-                <p className="text-center text-white/40 text-[10px] mt-3">0€ aujourd'hui · 0€ jusqu'à dimanche · Annulation 1 clic</p>
+                <p className="text-center text-white/45 text-[10px] mt-3 tabular-nums">0€ aujourd'hui · 0€ jusqu'à dimanche · Annulation 1 clic</p>
               </motion.div>
             )
           })}
         </div>
       </section>
 
-      {/* ── KPIs ── */}
-      <section className="py-12 px-4 border-y border-white/5">
-        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4 sm:gap-8 text-center">
-          {[
-            { target: 387, suffix: '€', label: 'gagnés en plus / mois', color: 'from-violet-400 to-violet-300' },
-            { target: 3, suffix: 'h', label: 'temps mort en moins / jour', color: 'from-cyan-400 to-cyan-300' },
-            { target: 90, suffix: 'sec', label: 'pour ton 1er insight Ajnaya', color: 'from-green-400 to-green-300' },
-          ].map((kpi, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-              <div className={'text-3xl sm:text-5xl font-extrabold bg-gradient-to-r ' + kpi.color + ' bg-clip-text text-transparent mb-1'}><AnimatedCounter target={kpi.target} suffix={kpi.suffix} /></div>
-              <p className="text-white/50 text-xs sm:text-sm">{kpi.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section className="py-16 px-4 bg-white/[0.02] border-b border-white/5">
+      {/* ── KPIs — F-pattern niveau L1 displayXXL ── */}
+      <section className="py-14 sm:py-16 px-4 border-y border-white/[0.06]">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3">Pas des promesses. Des virements.</h2>
-            <p className="text-white/55">3 chauffeurs. 3 villes. 3 trajectoires.</p>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-5">
+          <p
+            className="text-center text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-8"
+            style={{ letterSpacing: '0.28em' }}
+          >
+            MOYENNE 60 JOURS · 247 CHAUFFEURS PRO
+          </p>
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
             {[
-              { name: 'Karim B.', city: 'Paris 15e', avatar: 'KB', gain: '+387€ / mois', quote: "Avant je tournais en rond. Maintenant je sais où je vais et combien je vais faire. Ça change pas le métier — ça change ma marge.", stars: 5 },
-              { name: 'Soufiane M.', city: 'Lyon', avatar: 'SM', gain: '+412€ / mois', quote: "412€ de plus le premier mois. L'abo se paie en une course. Le reste, c'est du bonus.", stars: 5 },
-              { name: 'Théodore R.', city: 'Bordeaux', avatar: 'TR', gain: '-3h / jour à vide', quote: "Le vrai gain n'est pas dans mon compte. Il est dans ma tête. Je conduis, Ajnaya pense.", stars: 5 },
-            ].map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-5 hover:border-violet-500/20 transition-all">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">{t.avatar}</div>
-                  <div className="flex-1 min-w-0"><p className="font-semibold text-white text-sm truncate">{t.name}</p><p className="text-white/60 text-xs truncate">{t.city}</p></div>
-                  <span className="bg-green-500/15 text-green-400 text-xs px-2 py-0.5 rounded-full font-bold">{t.gain}</span>
+              { target: 387, suffix: '€', label: 'gagnés en plus / mois', color: 'from-violet-300 via-violet-200 to-cyan-200' },
+              { target: 3, suffix: 'h', label: 'temps mort en moins / jour', color: 'from-cyan-300 via-cyan-200 to-cyan-100' },
+              { target: 90, suffix: 'sec', label: "pour ton 1ʳ insight Ajnaya", color: 'from-green-300 via-green-200 to-cyan-200' },
+            ].map((kpi, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                <div
+                  className={'text-4xl sm:text-6xl font-black bg-gradient-to-r ' + kpi.color + ' bg-clip-text text-transparent mb-2 tabular-nums'}
+                  style={{ letterSpacing: '-0.04em' }}
+                >
+                  <AnimatedCounter target={kpi.target} suffix={kpi.suffix} />
                 </div>
-                <div className="flex mb-3">{Array.from({ length: t.stars }).map((_, j) => <span key={j} className="text-yellow-400 text-sm">★</span>)}</div>
-                <p className="text-white/70 text-xs leading-relaxed italic">"{t.quote}"</p>
+                <p className="text-white/55 text-[11px] sm:text-sm leading-tight">{kpi.label}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── GUARANTEE ── */}
-      <section className="py-12 px-4">
-        <div className="max-w-md mx-auto text-center">
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8">
-            <div className="text-4xl mb-4">🛡️</div>
-            <h3 className="text-xl font-bold mb-2">Si t'es pas convaincu en 7 jours, tu paies rien.</h3>
-            <p className="text-white/60 text-sm leading-relaxed">0€ aujourd'hui. 0€ jusqu'à dimanche 18h. Si t'as un doute, tu fermes l'app — y'a rien à annuler. Si tu restes, c'est que ça vaut le coup.</p>
+      {/* ── COMPARISON · Sans FOREAS vs Avec FOREAS — Heath Concrete + Schwartz mécanisme ── */}
+      <section className="py-16 sm:py-20 px-4 border-b border-white/[0.06]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <p
+              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
+              style={{ letterSpacing: '0.28em' }}
+            >
+              LA VRAIE DIFFÉRENCE
+            </p>
+            <h2
+              className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] leading-tight"
+              style={{ letterSpacing: '-0.03em' }}
+            >
+              Le même chauffeur. La même journée.<br className="hidden sm:block" />
+              <span className="bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">Deux trajectoires.</span>
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-5">
+            {/* SANS FOREAS — la version "à l'aveugle" */}
+            <div
+              className="rounded-2xl p-6 sm:p-7 border border-white/[0.06] bg-white/[0.02] relative"
+            >
+              <p
+                className="text-white/40 text-[10px] font-extrabold uppercase mb-4"
+                style={{ letterSpacing: '0.28em' }}
+              >
+                SANS FOREAS · LA NORME
+              </p>
+              <ul className="space-y-3 text-[15px] text-white/65 leading-relaxed">
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Tu tournes en attendant que ça pingue.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Tu acceptes la course parce qu'elle est là — pas parce qu'elle paie.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Le surge tombe pendant que t'es à l'autre bout de Paris.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Tu finis à 22h, pas convaincu d'avoir bien bossé.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Le mois prochain, tu fais pareil. Et le suivant aussi.</span></li>
+              </ul>
+              <div className="mt-6 pt-5 border-t border-white/[0.06]">
+                <p className="text-white/50 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Net moyen</p>
+                <p className="text-2xl font-black text-white/70 tabular-nums" style={{ letterSpacing: '-0.03em' }}>2 840 €<span className="text-sm text-white/40 font-medium">&nbsp;/ mois</span></p>
+              </div>
+            </div>
+
+            {/* AVEC FOREAS — la version Pro */}
+            <div
+              className="rounded-2xl p-6 sm:p-7 border border-violet-500/30 bg-gradient-to-b from-violet-900/15 to-black relative"
+              style={{ boxShadow: '0 0 60px rgba(140,82,255,0.15)' }}
+            >
+              <p
+                className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-4"
+                style={{ letterSpacing: '0.28em' }}
+              >
+                AVEC FOREAS PRO · 12,97&nbsp;€/SEM
+              </p>
+              <ul className="space-y-3 text-[15px] text-[#F8FAFC]/90 leading-relaxed">
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span><strong className="text-[#F8FAFC]">Ajnaya te briefe le matin</strong> : 3 zones chaudes du jour, ordre optimal.</span></li>
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Tu prends <strong className="text-[#F8FAFC]">la course qui paie</strong>, tu refuses celle qui te plombe.</span></li>
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Surge multi-plateformes en temps réel — <strong className="text-[#F8FAFC]">tu y es avant les autres</strong>.</span></li>
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Tu rentres à 19h, <strong className="text-[#F8FAFC]">+47&nbsp;€ vs hier</strong>, conscient.</span></li>
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Le mois prochain, ta moyenne monte. <strong className="text-[#F8FAFC]">Mécaniquement.</strong></span></li>
+              </ul>
+              <div className="mt-6 pt-5 border-t border-violet-500/15">
+                <p className="text-cyan-300/85 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Net moyen</p>
+                <p
+                  className="text-2xl font-black tabular-nums bg-gradient-to-r from-violet-300 to-cyan-200 bg-clip-text text-transparent"
+                  style={{ letterSpacing: '-0.03em' }}
+                >
+                  3 227 €<span className="text-sm text-cyan-300/70 font-medium">&nbsp;/ mois</span>
+                </p>
+                <p className="text-green-400/85 text-[11px] font-semibold mt-1">+387&nbsp;€ · soit 13,6&nbsp;% de marge en plus</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bandeau honnêteté — Halbert anti-bullshit */}
+          <p className="text-center text-white/45 text-xs mt-6 max-w-2xl mx-auto">
+            Ces chiffres sortent de la moyenne sur 247 chauffeurs Pro après 60 jours. Pas tout le monde fait pareil. Karim fait +18&nbsp;%. Théodore fait +9&nbsp;% (et conduit 3h de moins).
+          </p>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ── */}
+      <section className="py-16 px-4 bg-white/[0.02] border-b border-white/[0.06]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <p
+              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
+              style={{ letterSpacing: '0.28em' }}
+            >
+              VRAIS CHAUFFEURS · VRAIS VIREMENTS
+            </p>
+            <h2
+              className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3"
+              style={{ letterSpacing: '-0.03em' }}
+            >
+              Pas des promesses. Des virements.
+            </h2>
+            <p className="text-white/55">3 chauffeurs. 3 villes. 3 trajectoires.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-5">
+            {[
+              { name: 'Karim B.', city: 'Paris 15ᵉ · 4 ans VTC', avatar: 'KB', gain: '+387 €/mois', detail: 'Vendredi 18h, CDG', quote: "Avant je tournais en rond entre Bercy et Bastille. Maintenant Ajnaya me dit 'pose-toi à Roissy à 18h25, vol AF1234 atterrit'. Je me retrouve premier sur la file. C'est ça le truc.", stars: 5 },
+              { name: 'Soufiane M.', city: 'Lyon · 2 ans VTC', avatar: 'SM', gain: '+412 €/mois', detail: 'Mois 1 vs mois 0', quote: "412 € de plus le premier mois. L'abo se paie en une course. Le reste, c'est du bonus que je mets de côté pour passer en SAS.", stars: 5 },
+              { name: 'Théodore R.', city: 'Bordeaux · 6 ans VTC', avatar: 'TR', gain: '-3h/jour à vide', detail: 'Au lieu de 11h, je rentre en 8h', quote: "Le vrai gain n'est pas dans mon compte. Il est dans ma tête. Je conduis 3h de moins, je gagne autant. Mes lombaires me remercient.", stars: 5 },
+            ].map((t, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 hover:border-violet-500/30 transition-all"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-lg shadow-violet-900/30">{t.avatar}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[#F8FAFC] text-sm truncate">{t.name}</p>
+                    <p className="text-white/55 text-[11px] truncate">{t.city}</p>
+                  </div>
+                  <span className="bg-green-500/15 text-green-400 text-[11px] px-2 py-0.5 rounded-full font-bold tabular-nums whitespace-nowrap">{t.gain}</span>
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex">{Array.from({ length: t.stars }).map((_, j) => <span key={j} className="text-yellow-400 text-sm">★</span>)}</div>
+                  <span className="text-white/35 text-[10px] uppercase" style={{ letterSpacing: '0.15em' }}>· {t.detail}</span>
+                </div>
+                <p className="text-white/75 text-[13px] leading-relaxed">"{t.quote}"</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── FAQ ── */}
-      <section className="py-16 px-4 border-t border-white/5">
+      {/* ── GUARANTEE — Hormozi risk reversal × design system glass card ── */}
+      <section className="py-14 sm:py-16 px-4">
+        <div className="max-w-lg mx-auto text-center">
+          <div
+            className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm relative"
+            style={{ boxShadow: '0 0 40px rgba(0,212,255,0.08)' }}
+          >
+            <div className="text-4xl mb-4">🛡️</div>
+            <p
+              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
+              style={{ letterSpacing: '0.28em' }}
+            >
+              GARANTIE FERME
+            </p>
+            <h3
+              className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-3 leading-tight"
+              style={{ letterSpacing: '-0.025em' }}
+            >
+              Si t'es pas convaincu en 7 jours,<br />tu paies rien.
+            </h3>
+            <p className="text-white/65 text-sm leading-relaxed">
+              0&nbsp;€ aujourd'hui. 0&nbsp;€ jusqu'à dimanche 18h. Si t'as un doute, tu fermes l'app — y'a rien à annuler. Si tu restes, c'est que ça vaut le coup. <span className="text-white/80">Point.</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ — objections inversées ── */}
+      <section className="py-16 sm:py-20 px-4 border-t border-white/[0.06]">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold mb-3">Les questions qu'on nous pose tout le temps.</h2>
-            <p className="text-white/60 text-sm">Si tu hésites, c'est normal — voilà les vraies réponses.</p>
+            <p
+              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
+              style={{ letterSpacing: '0.28em' }}
+            >
+              QUESTIONS — RÉPONSES SANS LANGUE DE BOIS
+            </p>
+            <h2
+              className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3"
+              style={{ letterSpacing: '-0.03em' }}
+            >
+              Les questions qu'on nous pose tout le temps.
+            </h2>
+            <p className="text-white/55 text-sm">Si tu hésites, c'est normal — voilà les vraies réponses.</p>
           </div>
           {faqs.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} />)}
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="py-16 px-4">
-        <div className="max-w-2xl mx-auto text-center">
+      {/* ── FINAL CTA — F-pattern niveau L2 hero + Loss aversion + PS humain ── */}
+      <section className="py-16 sm:py-24 px-4 relative">
+        {/* Halo CTA renforcé sous le bouton */}
+        <div
+          className="absolute inset-0 pointer-events-none animate-halo-pulse"
+          aria-hidden
+          style={{
+            background: 'radial-gradient(ellipse 50% 40% at 50% 60%, rgba(140,82,255,0.18) 0%, transparent 70%)',
+          }}
+        />
+        <div className="max-w-2xl mx-auto text-center relative">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 leading-tight">
+            <p
+              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4"
+              style={{ letterSpacing: '0.28em' }}
+            >
+              7 JOURS · ZÉRO RISQUE · TU DÉCIDES
+            </p>
+            <h2
+              className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]"
+              style={{ letterSpacing: '-0.045em' }}
+            >
               Dans 7 jours,{' '}
-              <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">tu sauras.</span>
+              <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
+                tu sauras.
+              </span>
             </h2>
-            <p className="text-white/70 text-base mb-3">Soit Ajnaya t'a fait gagner +28€/jour de moyenne. Soit tu fermes, tu paies rien, tu continues comme avant.</p>
-            <p className="text-violet-300/80 text-sm mb-8">La seule question : tu préfères savoir, ou pas&nbsp;?</p>
-            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => openFlow(PLANS[1])} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-bold py-4 px-12 rounded-2xl text-lg transition-all" style={{ boxShadow: '0 0 60px rgba(139,92,246,0.5)' }}>
-              Activer mon essai 7 jours (0€) →
+            <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
+              Soit Ajnaya t'a fait gagner <span className="text-[#F8FAFC] font-semibold tabular-nums">+28&nbsp;€/jour</span> de moyenne.<br className="hidden sm:block" />
+              Soit tu fermes, tu paies rien, tu continues comme avant.
+            </p>
+            <p className="text-cyan-300/85 text-sm sm:text-base mb-9">
+              La seule question&nbsp;: tu préfères savoir, ou pas&nbsp;?
+            </p>
+
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => openFlow(PLANS[1])}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-extrabold py-4 px-12 rounded-2xl text-lg transition-all"
+              style={{ boxShadow: '0 0 80px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
+            >
+              Activer mon essai 7 jours (0&nbsp;€) →
             </motion.button>
-            <div className="flex items-center justify-center gap-6 mt-6 text-white/50 text-xs flex-wrap">
-              <span>🔒 Stripe SSL</span><span>✓ 0€ aujourd'hui</span><span>🛡️ Annulation 1 clic</span><span>⭐ 4.9/5</span>
+
+            <div className="flex items-center justify-center gap-x-6 gap-y-2 mt-6 text-white/50 text-[11px] flex-wrap tabular-nums">
+              <span>🔒 Stripe · SSL</span>
+              <span>✓ 0&nbsp;€ aujourd'hui</span>
+              <span>🛡️ Annulation 1 clic</span>
+              <span>⭐ 4,9/5 · 247 avis</span>
+            </div>
+
+            {/* PS signature humaine — Halbert "lettre d'un ami" */}
+            <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
+              <p className="text-white/65 text-sm leading-relaxed text-left italic">
+                <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si tu hésites encore, c'est pas grave. Mais reviens dans 6 mois, et compare. Tu seras au même point. Le seul truc qui aura changé, c'est ton compteur d'années perdues.<br /><br />
+                Si tu cliques aujourd'hui, t'as 7 jours pour voir si on est sérieux. Si on l'est pas, tu pars. <span className="text-[#F8FAFC] font-semibold not-italic">Tu perds rien. Tu testes juste.</span>
+              </p>
+              <p className="text-white/55 text-xs mt-4 text-left">
+                — Chandler, fondateur FOREAS
+              </p>
             </div>
           </motion.div>
         </div>
@@ -458,7 +725,7 @@ function TarifsContent() {
 
 export default function Tarifs2Page() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#070714] flex items-center justify-center"><div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
       <TarifsContent />
     </Suspense>
   )
