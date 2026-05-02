@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
+// ─── Price IDs — source de vérité : FOREAS-SHARED/STRIPE_MLM_CROSSFIL_MASTER.md §1
+// TEST IDs (6 = 3 tiers × 2 périodes). À remplacer par LIVE IDs via env vars sur Vercel.
+// Format clé : {tier}_{period}  — tier: essentiel|pro|elite  · period: weekly|annual
 const PRICE_IDS: Record<string, string> = {
-  weekly: process.env.STRIPE_PRICE_WEEKLY || 'price_1RvOx5K89oTss0SbHKIgcUoO',
-  annual: process.env.STRIPE_PRICE_ANNUAL || 'price_1Szy2YK89oTss0Sb9pQyBWXt',
+  // ── Essentiel — 12,97 €/sem · 539,55 €/an (−20%)
+  essentiel_weekly: process.env.STRIPE_PRICE_ESSENTIEL_WEEKLY || 'price_1TSf65K89oTss0SbYYW3wJvM',
+  essentiel_annual: process.env.STRIPE_PRICE_ESSENTIEL_ANNUAL || 'price_1TSf65K89oTss0SbIptbv1tS',
+  // ── Pro — 14,97 €/sem · 622,75 €/an (−20%)
+  pro_weekly:       process.env.STRIPE_PRICE_PRO_WEEKLY       || 'price_1TSf66K89oTss0SbrgIWSg7V',
+  pro_annual:       process.env.STRIPE_PRICE_PRO_ANNUAL       || 'price_1TSf66K89oTss0SbhFbsSUPV',
+  // ── Elite — 34,97 €/sem · 1 454,75 €/an (−20%)
+  elite_weekly:     process.env.STRIPE_PRICE_ELITE_WEEKLY     || 'price_1TSf66K89oTss0SbSx44SXda',
+  elite_annual:     process.env.STRIPE_PRICE_ELITE_ANNUAL     || 'price_1TSf67K89oTss0SbcjzKb9Q6',
+  // ── Aliases compat page /tarifs2 (VIP → Elite) + legacy weekly/annual (→ Pro)
+  vip_weekly:       process.env.STRIPE_PRICE_ELITE_WEEKLY     || 'price_1TSf66K89oTss0SbSx44SXda',
+  vip_annual:       process.env.STRIPE_PRICE_ELITE_ANNUAL     || 'price_1TSf67K89oTss0SbcjzKb9Q6',
+  weekly:           process.env.STRIPE_PRICE_PRO_WEEKLY       || 'price_1TSf66K89oTss0SbrgIWSg7V',
+  annual:           process.env.STRIPE_PRICE_PRO_ANNUAL       || 'price_1TSf66K89oTss0SbhFbsSUPV',
 }
 
 // Lazy init to avoid build-time error when STRIPE_SECRET_KEY is not set
