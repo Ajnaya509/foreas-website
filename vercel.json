@@ -1,5 +1,11 @@
 {
   "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/c/:slug",
+      "destination": "https://foreas-stripe-backend-production.up.railway.app/c/:slug"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

@@ -42,7 +42,13 @@ export async function POST(request: NextRequest) {
     }
     const stripe = getStripe()
     const body = await request.json()
-    const { plan, mode } = body
+    const { plan, mode, referral_code } = body
+
+    // Referral code: from body OR from cookie foreas_partner_ref
+    const cookieHeader = request.headers.get('cookie') || ''
+    const cookieRefMatch = cookieHeader.match(/foreas_partner_ref=([^;]+)/)
+    const effectiveReferralCode = (referral_code || cookieRefMatch?.[1] || '').trim().toUpperCase() || null
+
     if (!plan || !PRICE_IDS[plan]) {
       return NextResponse.json({ error: 'Plan invalide' }, { status: 400 })
     }
@@ -55,7 +61,16 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       locale: 'fr',
-      subscription_data: { trial_end: trialEnd, metadata: { plan } },
+      // client_reference_id carries the referral code for MLM attribution
+      // Railway webhook reads this to create partner_referrals row
+      ...(effectiveReferralCode ? { client_reference_id: effectiveReferralCode } : {}),
+      subscription_data: {
+        trial_end: trialEnd,
+        metadata: {
+          plan,
+          ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
+        },
+      },
       payment_method_collection: 'always',
       custom_fields: [
         {
