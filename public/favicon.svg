@@ -1,5 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#050508"/>
-  <text x="4" y="24" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff">F</text>
-  <text x="16" y="24" font-family="Arial, sans-serif" font-size="22" font-weight="normal" fill="#ffffff">/</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 375">
+  <rect width="375" height="375" rx="80" fill="#000000"/>
+  <g fill="#ffffff" fill-opacity="1">
+    <g transform="translate(43.453127, 279.970708)">
+      <path d="M 25.953125 0 L 25.953125 -132.9375 C 25.953125 -135.644531 26.054688 -137.726562 26.265625 -139.1875 C 26.484375 -140.644531 27.21875 -141.789062 28.46875 -142.625 C 29.71875 -143.457031 31.695312 -143.875 34.40625 -143.875 L 158.578125 -143.875 L 158.578125 -130.109375 L 50.046875 -130.109375 L 50.046875 -82.265625 L 149.515625 -82.265625 L 149.515625 -68.5 L 50.046875 -68.5 L 50.046875 0 Z"/>
+    </g>
+    <g transform="translate(212.045293, 279.970708)">
+      <path d="M 13.765625 11.890625 L 89.140625 -179.84375 L 105.71875 -179.84375 L 30.34375 11.890625 Z"/>
+    </g>
+  </g>
 </svg>
