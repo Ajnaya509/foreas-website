@@ -113,21 +113,25 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     keyEmotion: 'Sécurité — paiement garanti chaque semaine',
   },
 
-  // ─── 5. HADIETOU — angle ponctualité / support ──────────────────────
+  // ─── 5. HADIETOU — angle support humain / accompagnement ────────────
+  // ⚠️ NOTE PRODUIT : la phrase "virements tous les mercredis" fait référence
+  // au rattachement (ancien modèle). FOREAS chauffeur indépendant = abonnement
+  // à l'IA Ajnaya, pas reversement. Quote courte refondue pour pointer
+  // l'accompagnement humain + recommandation aux proches (preuve sociale forte).
   {
     order: 5,
     playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
     assetId: 'YYMmJsmfWYqhSB2wylK7Tr3IDOrEqMhXE015O02uCttgA',
     name: 'Hadietou',
     context: 'Banlieue parisienne · 9 ans VTC',
-    profile: 'Banlieue parisienne · 35 ans · indépendant · option salariat',
+    profile: 'Banlieue parisienne · 35 ans · indépendant',
     quoteShort:
-      "« Foreas, c'est un confort et un futur. Virements ponctuels tous les mercredis. Réponse en moins de 24 heures. »",
-    gainBadge: 'Mercredi · viré',
+      "« FOREAS représente un confort et un futur. Quand j'envoie un mail, on me répond dans les 24 heures. Je le recommanderais à mes amis proches. »",
+    gainBadge: 'Support · 24h',
     detail: 'Indépendant · 9 ans VTC',
     posterTimeSec: 3,
-    moodTags: ['réassurance', 'ponctualité', 'ouverture'],
-    keyEmotion: 'Tranquillité — il sait à quoi s\'attendre',
+    moodTags: ['réassurance', 'accompagnement', 'recommandation'],
+    keyEmotion: 'Tranquillité — il sait qu\'il peut compter sur l\'équipe',
   },
 
   // ─── 6. NIKOLIC NEBOJSA — angle longévité / écoute ──────────────────

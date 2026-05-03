@@ -3,8 +3,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
-import { TESTIMONIALS } from './testimonials.data'
-import TestimonialVideoCard from './TestimonialVideoCard'
+import TestimonialCarousel from './TestimonialCarousel'
 
 /**
  * ZoneSocialProof — Section 4 témoignages chauffeurs (vidéos Mux LIVE)
@@ -60,11 +59,9 @@ export default function ZoneSocialProof() {
           </p>
         </motion.div>
 
-        {/* Grid 3 cols desktop · 2 cols tablet · 1 col mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-8">
-          {TESTIMONIALS.map((t, i) => (
-            <TestimonialVideoCard key={t.playbackId} testimonial={t} index={i} />
-          ))}
+        {/* Carrousel défilement infini auto-play 5s — embla */}
+        <div className="mb-10">
+          <TestimonialCarousel />
         </div>
 
         {/* Caption autorité humaine */}

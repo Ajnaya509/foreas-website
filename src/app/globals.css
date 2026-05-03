@@ -45,6 +45,66 @@ html { scroll-behavior: smooth; }
   animation: halo-pulse-fast 0.9s ease-in-out infinite alternate;
 }
 
+/* ─── FOREAS Home Crème (Site2026v68 home chauffeur) ────────────────────
+   Variant unique réservé à la home `/` : rupture délibérée signalant
+   "FOREAS chaleur humaine" sur l'acquisition, transition cinématique
+   vers le noir Apple absolu au scroll.
+   Switchable A/B : crème chaud (papier japonais hôtel) vs frais (Apple).
+   ──────────────────────────────────────────────────────────────────── */
+:root {
+  /* Crème chaud (default) — hôtel boutique, papier japonais, lettre manuscrite */
+  --bg-cream-warm: #f8f4ed;
+  --bg-cream-warm-soft: #f4efe3;
+  --bg-cream-warm-edge: #eae4d5;
+  --text-cream-fg: #2a2520;          /* ivoire foncé, contraste retina-friendly */
+  --text-cream-fg-soft: rgba(42, 37, 32, 0.65);
+  --text-cream-fg-muted: rgba(42, 37, 32, 0.42);
+  --border-cream: rgba(42, 37, 32, 0.08);
+  --border-cream-strong: rgba(42, 37, 32, 0.16);
+
+  /* Crème frais (alternative A/B) — Apple Pages, Notion, presque blanc */
+  --bg-cream-fresh: #fafaf7;
+  --bg-cream-fresh-soft: #f5f5f0;
+  --bg-cream-fresh-edge: #ebebe5;
+}
+
+.bg-cream-warm  { background-color: var(--bg-cream-warm); }
+.bg-cream-fresh { background-color: var(--bg-cream-fresh); }
+.text-cream-fg  { color: var(--text-cream-fg); }
+.text-cream-fg-soft  { color: var(--text-cream-fg-soft); }
+.text-cream-fg-muted { color: var(--text-cream-fg-muted); }
+.border-cream  { border-color: var(--border-cream); }
+
+/* Dégradé cinématique crème → noir absolu (zone de transition Big Domino) */
+.bg-cream-to-black {
+  background:
+    linear-gradient(
+      180deg,
+      var(--bg-cream-warm) 0%,
+      var(--bg-cream-warm-edge) 30%,
+      #1a1410 65%,
+      #000000 100%
+    );
+}
+
+/* Texture papier japonais subtile — pour donner du grain sur fond crème */
+.bg-cream-warm-textured {
+  background-color: var(--bg-cream-warm);
+  background-image:
+    radial-gradient(rgba(42, 37, 32, 0.018) 1px, transparent 1px),
+    radial-gradient(rgba(42, 37, 32, 0.012) 1px, transparent 1px);
+  background-size: 22px 22px, 13px 13px;
+  background-position: 0 0, 11px 11px;
+}
+
+/* Halos crème ultra-doux (pour ne pas casser l'épure smooth) */
+.cream-halo-warm {
+  background:
+    radial-gradient(ellipse 60% 50% at 25% 18%, rgba(255, 191, 122, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 80% 25%, rgba(186, 153, 240, 0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 55% at 50% 92%, rgba(255, 191, 122, 0.10) 0%, transparent 75%);
+}
+
 /* ── Red pulse border for problem cards ── */
 @keyframes red-pulse-border {
   0%, 100% { border-color: rgba(239, 68, 68, 0.1); }
