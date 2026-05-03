@@ -47,7 +47,7 @@ export default function ZoneFinalCTAWithPS() {
             className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4"
             style={{ letterSpacing: '0.28em' }}
           >
-            7 JOURS · ZÉRO RISQUE · TU DÉCIDES
+            7 JOURS · ZÉRO RISQUE · VOUS DÉCIDEZ
           </p>
           <h2
             className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]"
@@ -55,16 +55,16 @@ export default function ZoneFinalCTAWithPS() {
           >
             Dans 7 jours,{' '}
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-              tu sauras.
+              vous saurez.
             </span>
           </h2>
           <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
-            Soit Ajnaya t&apos;a fait gagner{' '}
+            Soit Ajnaya vous a fait gagner{' '}
             <span className="text-[#F8FAFC] font-semibold tabular-nums">+28&nbsp;€/jour</span> de moyenne.<br className="hidden sm:block" />
-            Soit tu fermes WhatsApp. Et basta.
+            Soit vous fermez WhatsApp. Et basta.
           </p>
           <p className="text-cyan-300/85 text-sm sm:text-base mb-10">
-            La seule question&nbsp;: tu préfères savoir, ou pas&nbsp;?
+            La seule question&nbsp;: préférez-vous savoir, ou pas&nbsp;?
           </p>
 
           <a
@@ -90,11 +90,11 @@ export default function ZoneFinalCTAWithPS() {
           {/* PS signature humaine — Halbert "lettre d'un ami" */}
           <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
             <p className="text-white/65 text-sm leading-relaxed text-left italic">
-              <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si t&apos;es arrivé jusqu&apos;ici et que tu cliques pas, c&apos;est ok. Mais reviens dans 6 mois, et compare. Tu seras au même point. Le seul truc qui aura changé, c&apos;est ton compteur d&apos;années perdues.
+              <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si vous êtes arrivé jusqu&apos;ici et que vous ne cliquez pas, c&apos;est ok. Mais revenez dans 6 mois, et comparez. Vous serez au même point. Le seul truc qui aura changé, c&apos;est votre compteur d&apos;années perdues.
               <br />
               <br />
-              Si tu cliques aujourd&apos;hui, t&apos;as 7 jours pour voir si on est sérieux. Si on l&apos;est pas, tu pars.{' '}
-              <span className="text-[#F8FAFC] font-semibold not-italic">Tu perds rien. Tu testes juste.</span>
+              Si vous cliquez aujourd&apos;hui, vous avez 7 jours pour voir si on est sérieux. Si on ne l&apos;est pas, vous partez.{' '}
+              <span className="text-[#F8FAFC] font-semibold not-italic">Vous ne perdez rien. Vous testez juste.</span>
             </p>
             <p className="text-white/55 text-xs mt-4 text-left">
               — Chandler, fondateur FOREAS

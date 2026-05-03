@@ -50,9 +50,9 @@ export default function ZonePlanTimeline() {
             className="text-3xl sm:text-4xl font-black text-[#F8FAFC] leading-tight"
             style={{ letterSpacing: '-0.035em' }}
           >
-            Tu cliques. Ajnaya te briefe.<br />
+            Vous cliquez. Ajnaya vous briefe.<br />
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-              Vendredi t&apos;as ta réponse.
+              Vendredi vous avez votre réponse.
             </span>
           </h2>
         </motion.div>
@@ -62,22 +62,22 @@ export default function ZonePlanTimeline() {
           <PlanStep
             n={1}
             timestamp="AUJOURD'HUI · 90 SEC"
-            title="Tu rejoins via WhatsApp"
-            desc="Pas de carte. Pas de formulaire. Tu envoies « go » — c'est tout."
+            title="Vous rejoignez via WhatsApp"
+            desc="Pas de carte. Pas de formulaire. Vous envoyez « go » — c'est tout."
             delay={0}
           />
           <PlanStep
             n={2}
             timestamp="DEMAIN · 1 MESSAGE"
-            title="Ajnaya t'envoie tes 3 zones"
-            desc="Au réveil. Avec l'ordre optimal pour ta journée."
+            title="Ajnaya vous envoie vos 3 zones"
+            desc="Au réveil. Avec l'ordre optimal pour votre journée."
             delay={0.1}
           />
           <PlanStep
             n={3}
             timestamp="VENDREDI · 1 CHIFFRE"
-            title="Tu compares ton net"
-            desc="Si c'est mieux, tu restes. Si c'est pareil, tu pars sans rien payer."
+            title="Vous comparez votre net"
+            desc="Si c'est mieux, vous restez. Si c'est pareil, vous partez sans rien payer."
             delay={0.2}
             highlight
           />

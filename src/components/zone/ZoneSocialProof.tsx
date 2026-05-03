@@ -14,30 +14,30 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 
 const TESTIMONIALS = [
   {
-    name: 'Karim B.',
-    city: 'Paris 15ᵉ · 4 ans VTC',
-    avatar: 'KB',
-    gain: '+387 €/mois',
+    name: 'Haitham B.',
+    city: 'Paris · 4 ans VTC',
+    avatar: 'HB',
+    gain: 'Lien humain · CDG',
     detail: 'Vendredi 18h, CDG',
     quote:
-      "Avant je tournais en rond entre Bercy et Bastille. Maintenant Ajnaya me dit 'pose-toi à Roissy à 18h25, vol AF1234 atterrit'. Je me retrouve premier sur la file.",
+      "Avant je tournais en rond. Maintenant Ajnaya me dit 'pose-toi à Roissy à 18h25, vol AF1234 atterrit'. Je me retrouve premier sur la file. Et le truc, c'est qu'on est plus seul.",
     stars: 5,
   },
   {
-    name: 'Soufiane M.',
-    city: 'Lyon · 2 ans VTC',
-    avatar: 'SM',
-    gain: '+412 €/mois',
-    detail: 'Mois 1 vs mois 0',
+    name: 'Binate M.',
+    city: 'Paris · Tesla',
+    avatar: 'BM',
+    gain: '+35 % CA',
+    detail: 'Tesla payée · clientèle privée',
     quote:
-      "412 € de plus le premier mois. L'abo se paie en une course. Le reste, c'est du bonus que je mets de côté pour passer en SAS.",
+      "Avec FOREAS, j'ai développé ma clientèle privée. +35 % de CA en 11 mois. La Tesla est payée. Aujourd'hui je sais ce que je vaux.",
     stars: 5,
   },
   {
     name: 'Théodore R.',
     city: 'Bordeaux · 6 ans VTC',
     avatar: 'TR',
-    gain: '-3h/jour à vide',
+    gain: '−3h/jour à vide',
     detail: '8h au lieu de 11h',
     quote:
       "Le vrai gain n'est pas dans mon compte. Il est dans ma tête. Je conduis 3h de moins, je gagne autant. Mes lombaires me remercient.",
@@ -137,7 +137,7 @@ export default function ZoneSocialProof() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-center text-white/45 text-xs mb-6 max-w-xl mx-auto"
         >
-          Ces 3 chauffeurs ont accepté que leur prénom et leur photo apparaissent. Tu peux leur écrire — l&apos;app FOREAS leur ouvre le DM si tu rejoins.
+          Ces 3 chauffeurs ont accepté que leur prénom et leur photo apparaissent. Vous pouvez leur écrire — l&apos;app FOREAS leur ouvre le DM si vous rejoignez.
         </motion.p>
 
         {/* CTA */}
@@ -156,7 +156,7 @@ export default function ZoneSocialProof() {
             className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-2xl text-sm font-bold transition-all bg-white/[0.06] border border-white/[0.10] hover:bg-white/[0.10] hover:border-white/[0.18] text-[#F8FAFC]"
           >
             <MessageCircle className="w-4 h-4" />
-            Demande à Ajnaya à voir 12 autres cas
+            Demander à Ajnaya 12 autres cas
             <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>

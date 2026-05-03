@@ -57,12 +57,12 @@ export default function ZoneSearchResultCard({
           </p>
         </div>
         <p className="text-[#F8FAFC] text-base sm:text-lg leading-relaxed mb-4">
-          On n&apos;a pas encore assez de données fiables sur{' '}
+          Nous n&apos;avons pas encore assez de données fiables sur{' '}
           <span className="font-semibold">{stats.zone_match}</span>. Ajnaya y travaille (la flotte grandit chaque jour).
         </p>
         {fallback && (
           <p className="text-white/65 text-sm leading-relaxed mb-5">
-            En attendant, regarde{' '}
+            En attendant, regardez{' '}
             <span className="text-[#F8FAFC] font-semibold">{fallback.name}</span> :{' '}
             <span className="tabular-nums text-cyan-300 font-semibold">
               {fallback.avg_hourly.toFixed(2).replace('.', ',')} €/h
@@ -79,7 +79,7 @@ export default function ZoneSearchResultCard({
           style={{ boxShadow: '0 0 28px rgba(16,185,129,0.40)' }}
         >
           <MessageCircle className="w-4 h-4" />
-          Demande à Ajnaya pour ta zone précise
+          Demander à Ajnaya pour votre zone précise
           <ArrowRight className="w-4 h-4" />
         </a>
       </motion.div>
@@ -169,7 +169,7 @@ export default function ZoneSearchResultCard({
       >
         <MessageCircle className="w-4 h-4" />
         {sarcasmLevel === 1
-          ? 'Pour le tarif EXACT à ton créneau → Ajnaya WhatsApp'
+          ? 'Pour le tarif EXACT à votre créneau → Ajnaya WhatsApp'
           : sarcasmLevel === 2
           ? "Aller à Ajnaya — c'est gratuit"
           : 'Demander à Ajnaya (1 message, 0 inscription)'}
@@ -193,8 +193,8 @@ function SarcasticBlock({ level, zoneName }: { level: SarcasmLevel; zoneName: st
       >
         <p className="text-[#F8FAFC]/90 text-sm leading-relaxed">
           <span className="text-base mr-1">👀</span>
-          <span className="font-semibold">Encore toi sur {zoneName} ?</span>{' '}
-          Tu sens bien que t&apos;as besoin du tarif exact. Ajnaya t&apos;attend.
+          <span className="font-semibold">Encore vous sur {zoneName} ?</span>{' '}
+          Vous sentez bien que vous avez besoin du tarif exact. Ajnaya vous attend.
         </p>
       </motion.div>
     )
@@ -214,7 +214,7 @@ function SarcasticBlock({ level, zoneName }: { level: SarcasmLevel; zoneName: st
         <span className="font-semibold">Bon. Maintenant on rigole moins.</span>
       </p>
       <p className="text-white/70 text-sm leading-relaxed">
-        Tu testes la techno depuis quelques jours. Si tu veux le vrai chiffre — sur ta zone, ton créneau, ton statut — viens sur WhatsApp. C&apos;est là que la conversation commence.
+        Vous testez la techno depuis quelques jours. Si vous voulez le vrai chiffre — sur votre zone, votre créneau, votre statut — venez sur WhatsApp. C&apos;est là que la conversation commence.
       </p>
     </motion.div>
   )

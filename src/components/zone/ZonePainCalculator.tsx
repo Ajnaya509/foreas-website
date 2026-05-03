@@ -76,7 +76,7 @@ export default function ZonePainCalculator() {
             className="text-3xl sm:text-4xl font-black text-[#F8FAFC] leading-tight"
             style={{ letterSpacing: '-0.035em' }}
           >
-            Tu donnes combien à Uber sur une course de{' '}
+            Combien donnez-vous à Uber sur une course de{' '}
             <span className="bg-gradient-to-r from-rose-300 to-rose-400 bg-clip-text text-transparent">
               {grossFare}&nbsp;€
             </span>
@@ -158,11 +158,11 @@ export default function ZonePainCalculator() {
           style={{ boxShadow: '0 0 40px rgba(140,82,255,0.15)' }}
         >
           <p className="text-[#F8FAFC] text-base sm:text-lg leading-relaxed mb-5">
-            À <span className="text-rose-300 font-semibold tabular-nums">{breakdown.net.toFixed(2).replace('.', ',')}&nbsp;€</span>, tu bosses pour{' '}
+            À <span className="text-rose-300 font-semibold tabular-nums">{breakdown.net.toFixed(2).replace('.', ',')}&nbsp;€</span>, vous travaillez pour{' '}
             <span className="text-rose-300 font-semibold tabular-nums">{((breakdown.net / 0.5) || 0).toFixed(2).replace('.', ',')} €/h</span> environ.<br />
             Ajnaya identifie les courses où ce ratio passe à{' '}
-            <span className="text-cyan-300 font-bold tabular-nums">22 €/h+</span>. Tu fais le même nombre de runs.{' '}
-            <span className="text-[#F8FAFC] font-semibold">Tu gagnes 3× plus.</span>
+            <span className="text-cyan-300 font-bold tabular-nums">22 €/h+</span>. Vous faites le même nombre de runs.{' '}
+            <span className="text-[#F8FAFC] font-semibold">Vous gagnez 3× plus.</span>
           </p>
 
           <a
@@ -174,7 +174,7 @@ export default function ZonePainCalculator() {
             style={{ boxShadow: '0 0 28px rgba(16,185,129,0.40)' }}
           >
             <MessageCircle className="w-4 h-4" />
-            Demande à Ajnaya combien tu pourrais gagner
+            Demander à Ajnaya combien vous pourriez gagner
             <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>

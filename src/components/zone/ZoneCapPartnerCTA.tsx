@@ -44,7 +44,7 @@ export default function ZoneCapPartnerCTA() {
                 className="text-rose-300/85 text-[10px] font-extrabold uppercase mb-2"
                 style={{ letterSpacing: '0.28em' }}
               >
-                TU PILOTES UNE FLOTTE / UN GROUPE&nbsp;?
+                VOUS PILOTEZ UNE FLOTTE / UN GROUPE&nbsp;?
               </p>
               <h2
                 className="text-xl sm:text-2xl font-black text-[#F8FAFC] mb-2 leading-tight"
@@ -56,7 +56,7 @@ export default function ZoneCapPartnerCTA() {
                 </span>
               </h2>
               <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-5">
-                Toi en haut, tes recrues en dessous. Cascade <span className="font-semibold tabular-nums text-[#F8FAFC]">10&nbsp;€ / 4&nbsp;€ / 2&nbsp;€</span>{' '}
+                Vous en haut, vos recrues en dessous. Cascade <span className="font-semibold tabular-nums text-[#F8FAFC]">10&nbsp;€ / 4&nbsp;€ / 2&nbsp;€</span>{' '}
                 à vie sur 3 niveaux.
               </p>
               <Link

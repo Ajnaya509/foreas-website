@@ -55,7 +55,7 @@ export default function ZoneMechanismVisual() {
           >
             Pas un dashboard de plus.<br />
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-              L&apos;IA qui te dit où aller — avant que tu y penses.
+              L&apos;IA qui vous dit où aller — avant que vous y pensiez.
             </span>
           </h2>
         </motion.div>
@@ -92,14 +92,14 @@ export default function ZoneMechanismVisual() {
             icon={Brain}
             label="ANALYSE"
             title="Surge, flux, anticipation"
-            desc="Le surge tombe à 800 m de toi ? Ajnaya le sait avant que ton app de plateforme te le dise."
+            desc="Le surge tombe à 800 m de vous ? Ajnaya le sait avant que votre app de plateforme vous le dise."
             delay={0.1}
           />
           <MechanismCard
             icon={MessageSquare}
             label="PARLE"
             title="Vocal, texte, WhatsApp"
-            desc="Tu lui parles ou tu lis. À ton choix. Pendant que tu conduis, elle bosse pour toi."
+            desc="Vous lui parlez ou vous lisez. À votre choix. Pendant que vous conduisez, elle travaille pour vous."
             delay={0.2}
           />
         </div>
@@ -112,7 +112,7 @@ export default function ZoneMechanismVisual() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-[#F8FAFC]/80 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto mb-8"
         >
-          Pendant que tu conduis, Ajnaya regarde 7 apps en parallèle. Quand un surge tombe à 800 m de toi, elle te le dit avant les autres.{' '}
+          Pendant que vous conduisez, Ajnaya regarde 7 apps en parallèle. Quand un surge tombe à 800 m de vous, elle vous le dit avant les autres.{' '}
           <span className="text-[#F8FAFC] font-semibold">C&apos;est tout. C&apos;est ça qui change tout.</span>
         </motion.p>
 
@@ -133,7 +133,7 @@ export default function ZoneMechanismVisual() {
             style={{ boxShadow: '0 0 32px rgba(16,185,129,0.40)' }}
           >
             <MessageCircle className="w-4 h-4" />
-            Demande à Ajnaya une démo en 90 sec
+            Demander à Ajnaya une démo en 90 sec
             <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>

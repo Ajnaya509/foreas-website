@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -6,16 +7,17 @@ export const dynamic = 'force-dynamic'
 /**
  * GET /api/home/zone-stats?zone=...
  *
- * Renvoie les stats de zone pour la search bar de /ou-ca-paie.
+ * Renvoie les stats de zone pour la search bar de la home.
  *
- * PHASE 1 (actuel) : 6 zones mockées hardcodées + fuzzy matching basique.
- *                    Données HONNÊTES marquées comme estimations approximatives
- *                    (transparence Halbert : "47 courses · S18").
+ * PHASE 2 (live, depuis 03/05/2026) : appelle la RPC Supabase
+ * `public.get_zone_stats(zone_input text)` livrée par le fil Pieuvre.
+ * 51 zones canoniques disponibles (Paris 24, Lyon 6, Marseille 5 + autres).
  *
- * PHASE 2 (à venir) : remplace par RPC Supabase get_zone_stats() côté Pieuvre
- *                     (voir FOREAS-SHARED/HOME_HERO_SEARCH_v1_SPEC.md §3).
+ * FALLBACK : si la RPC échoue (Supabase down, env manquante…), on retombe
+ * sur 6 zones mockées MVP — la page reste fonctionnelle, jamais d'erreur 500.
  *
- * Signature de retour cohérente Phase 1 ↔ Phase 2 — frontend agnostique.
+ * Voir : FOREAS-SHARED/HOME_HERO_SEARCH_v1_SPEC.md §3
+ *      : FOREAS-SHARED/AJNAYA_CONTRACTS.md §11
  */
 
 interface ZoneStats {
@@ -27,11 +29,11 @@ interface ZoneStats {
   week_iso: string
   last_updated: string
   has_data: boolean
-  fallback_zone?: { name: string; avg_hourly: number }
+  fallback_zone?: { name: string; avg_hourly: number } | null
 }
 
-// ─── Seed Phase 1 — 6 zones priorité 1 ──────────────────────────────────────
-const ZONES_MOCK: Record<string, ZoneStats> = {
+// ─── Mocks fallback (sécurité au cas où la RPC est indisponible) ────────────
+const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
   cdg: {
     zone_match: 'Aéroport CDG',
     avg_hourly: 41.8,
@@ -94,29 +96,21 @@ const ZONES_MOCK: Record<string, ZoneStats> = {
   },
 }
 
-// Fallback élégant (zone inconnue) → suggère la plus proche dans la même région
-const FALLBACK_DEFAULT: NonNullable<ZoneStats['fallback_zone']> = {
-  name: 'Aéroport CDG',
-  avg_hourly: 41.8,
-}
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
+const FALLBACK_DEFAULT = { name: 'Aéroport CDG', avg_hourly: 41.8 }
 
 function normalize(input: string): string {
   return input
     .toLowerCase()
     .trim()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // retirer accents
+    .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]/g, '')
 }
 
-function fuzzyMatch(input: string): keyof typeof ZONES_MOCK | null {
+function fuzzyMatchMock(input: string): keyof typeof ZONES_MOCK_FALLBACK | null {
   const n = normalize(input)
   if (!n) return null
-
-  // Match keywords pour chaque zone
-  const matchers: Record<keyof typeof ZONES_MOCK, string[]> = {
+  const matchers: Record<keyof typeof ZONES_MOCK_FALLBACK, string[]> = {
     cdg: ['cdg', 'roissy', 'aeroportcdg', 'charlesdegaulle', 'paris2'],
     orly: ['orly', 'aeroportorly', 'paris7'],
     defense: ['defense', 'ladefense', 'puteaux', 'courbevoie'],
@@ -124,11 +118,8 @@ function fuzzyMatch(input: string): keyof typeof ZONES_MOCK | null {
     partdieu: ['partdieu', 'lyon', 'lyonpartdieu'],
     bordeauxgare: ['bordeaux', 'saintjean', 'bordeauxsaintjean'],
   }
-
-  for (const [key, keywords] of Object.entries(matchers) as [keyof typeof ZONES_MOCK, string[]][]) {
-    if (keywords.some(kw => n.includes(kw) || kw.includes(n))) {
-      return key
-    }
+  for (const [key, keywords] of Object.entries(matchers) as [keyof typeof ZONES_MOCK_FALLBACK, string[]][]) {
+    if (keywords.some(kw => n.includes(kw) || kw.includes(n))) return key
   }
   return null
 }
@@ -143,36 +134,65 @@ function getCurrentWeekISO(): string {
 }
 
 // ─── Handler ────────────────────────────────────────────────────────────────
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const zoneInput = searchParams.get('zone')?.trim() ?? ''
 
   if (!zoneInput) {
-    return NextResponse.json(
-      { error: 'missing_zone' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'missing_zone' }, { status: 400 })
   }
 
-  const matchKey = fuzzyMatch(zoneInput)
+  // ─── Tentative RPC Supabase (Phase 2) ─────────────────────────────────────
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!matchKey) {
-    // Fallback élégant : pas de data sur la zone tapée → suggère CDG
-    const fallback: ZoneStats = {
-      zone_match: zoneInput, // on garde le texte tapé
-      avg_hourly: 0,
-      demand_delta_pct: 0,
-      top_pool: '',
-      courses_count: 0,
-      week_iso: getCurrentWeekISO(),
-      last_updated: new Date().toISOString(),
-      has_data: false,
-      fallback_zone: FALLBACK_DEFAULT,
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+      })
+
+      const { data, error } = await supabase.rpc('get_zone_stats', {
+        zone_input: zoneInput,
+      })
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const row = data[0]
+        const stats: ZoneStats = {
+          zone_match: row.zone_match ?? zoneInput,
+          avg_hourly: Number(row.avg_hourly ?? 0),
+          demand_delta_pct: Number(row.demand_delta_pct ?? 0),
+          top_pool: row.top_pool ?? '',
+          courses_count: Number(row.courses_count ?? 0),
+          week_iso: row.week_iso ?? getCurrentWeekISO(),
+          last_updated: row.last_updated ?? new Date().toISOString(),
+          has_data: Boolean(row.has_data),
+          fallback_zone: row.fallback_zone ?? null,
+        }
+        return NextResponse.json(stats)
+      }
+      // Si erreur RPC ou data vide → fallback mocks ci-dessous (resilience)
+    } catch {
+      // Exception réseau / config → fallback mocks
     }
-    return NextResponse.json(fallback)
   }
 
-  const stats = ZONES_MOCK[matchKey]
-  return NextResponse.json(stats)
+  // ─── Fallback mocks (sécurité) ────────────────────────────────────────────
+  const matchKey = fuzzyMatchMock(zoneInput)
+  if (matchKey) {
+    return NextResponse.json(ZONES_MOCK_FALLBACK[matchKey])
+  }
+
+  const fallback: ZoneStats = {
+    zone_match: zoneInput,
+    avg_hourly: 0,
+    demand_delta_pct: 0,
+    top_pool: '',
+    courses_count: 0,
+    week_iso: getCurrentWeekISO(),
+    last_updated: new Date().toISOString(),
+    has_data: false,
+    fallback_zone: FALLBACK_DEFAULT,
+  }
+  return NextResponse.json(fallback)
 }

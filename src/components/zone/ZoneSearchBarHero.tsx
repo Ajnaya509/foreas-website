@@ -187,9 +187,9 @@ export default function ZoneSearchBarHero() {
           className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] mb-3 text-[#F8FAFC]"
           style={{ letterSpacing: '-0.045em' }}
         >
-          Gagne plus.{' '}
+          Gagnez plus.{' '}
           <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-            Roule moins.
+            Roulez moins.
           </span>
         </motion.h1>
 
@@ -200,7 +200,7 @@ export default function ZoneSearchBarHero() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-white/70 text-base sm:text-lg mb-10 leading-relaxed max-w-xl mx-auto"
         >
-          Tape ta zone. Ajnaya te dit où ça paie ce soir.
+          Tapez votre zone. Ajnaya vous dit où ça paie ce soir.
         </motion.p>
 
         {/* Search bar — glass card focus cyan glow */}
@@ -221,7 +221,7 @@ export default function ZoneSearchBarHero() {
               type="text"
               value={zoneInput}
               onChange={(e) => setZoneInput(e.target.value)}
-              placeholder={hasInteracted ? 'Tape ta zone…' : animatedPlaceholder}
+              placeholder={hasInteracted ? 'Tapez votre zone…' : animatedPlaceholder}
               autoComplete="off"
               spellCheck={false}
               className="flex-1 bg-transparent border-none outline-none text-[#F8FAFC] placeholder-white/30 text-base sm:text-lg font-medium"

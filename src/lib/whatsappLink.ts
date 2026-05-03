@@ -50,28 +50,28 @@ export function buildWAMessage(opts: BuildWAOptions): string {
   switch (section) {
     case 'hero_zone':
       return zone
-        ? `Salut Ajnaya, je suis sur la zone ${zone}. Tu peux me donner le tarif horaire exact ${slot ?? 'pour ce soir'} ?`
-        : `Salut Ajnaya, je veux le tarif horaire exact sur ma zone.`
+        ? `Bonjour Ajnaya, je suis sur la zone ${zone}. Pouvez-vous me donner le tarif horaire exact ${slot ?? 'pour ce soir'} ?`
+        : `Bonjour Ajnaya, je souhaite le tarif horaire exact sur ma zone.`
 
     case 'pain':
-      return `Salut Ajnaya. Sur une course de ${amount ?? 25}€, je touche environ ${Math.round((amount ?? 25) * 0.56)}€ net. Combien je pourrais gagner avec FOREAS sur les mêmes courses ?`
+      return `Bonjour Ajnaya. Sur une course de ${amount ?? 25}€, je touche environ ${Math.round((amount ?? 25) * 0.56)}€ net. Combien pourrais-je gagner avec FOREAS sur les mêmes courses ?`
 
     case 'mechanism':
-      return `Salut Ajnaya, je veux la démo de 90 secondes.`
+      return `Bonjour Ajnaya, je souhaite la démo de 90 secondes.`
 
     case 'social_proof':
-      return `Salut Ajnaya, je veux voir 12 autres cas de chauffeurs comme Karim.`
+      return `Bonjour Ajnaya, je souhaite voir d'autres cas de chauffeurs comme Haitham.`
 
     case 'plan':
-      return `Go. Je veux le brief de demain matin.`
+      return `Bonjour Ajnaya. Je veux le brief de demain matin.`
 
     case 'cap':
-      return `Salut Ajnaya, je pilote une flotte / un groupe. Je veux comprendre le programme CAP.`
+      return `Bonjour Ajnaya, je pilote une flotte / un groupe. Je souhaite comprendre le programme CAP.`
 
     case 'final':
-      return `Démarrer avec Ajnaya. 0€. Je teste.`
+      return `Bonjour Ajnaya. Démarrer avec FOREAS. 0€. Je teste.`
 
     default:
-      return `Salut Ajnaya.`
+      return `Bonjour Ajnaya.`
   }
 }

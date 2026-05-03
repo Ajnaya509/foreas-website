@@ -76,8 +76,8 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
   const steps = [
     { icon: '🎁', label: "Aujourd'hui", sub: `Accès complet FOREAS ${planName}`, hl: '0€ débité', hlC: 'text-green-400 bg-green-500/10', active: true },
     { icon: '📱', label: `${trialDays} jour${trialDays > 1 ? 's' : ''} pour tester`, sub: 'Tu testes Ajnaya sur tes vraies courses', hl: null, hlC: '', active: false },
-    { icon: '📅', label: `${formatDateFR(nextMonday)} à 18h`, sub: "Fin de l'essai — tu décides", hl: 'Annule avant → 0€', hlC: 'text-blue-300 bg-blue-500/10', active: false },
-    { icon: '💳', label: 'Premier débit (si tu restes)', sub: 'Annulable en 1 clic, à n\'importe quel moment', hl: null, hlC: '', active: false },
+    { icon: '📅', label: `${formatDateFR(nextMonday)} à 18h`, sub: "Fin de l'essai — vous décidez", hl: 'Annulez avant → 0€', hlC: 'text-blue-300 bg-blue-500/10', active: false },
+    { icon: '💳', label: 'Premier débit (si vous restez)', sub: 'Annulable en 1 clic, à n\'importe quel moment', hl: null, hlC: '', active: false },
   ]
 
   return (
@@ -110,13 +110,13 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
             <div className="flex items-start gap-2.5">
               <span className="text-base mt-0.5">🔒</span>
               <div>
-                <p className="text-white/90 text-sm font-semibold mb-1">Pourquoi tu me demandes une carte ?</p>
-                <p className="text-white/60 text-xs leading-relaxed">Stripe la garde de côté pour activer ton abo <strong className="text-white/85">après</strong> l'essai — pas avant. <strong className="text-white/85">0€ aujourd'hui, 0€ jusqu'au {formatDateFR(nextMonday)} 18h.</strong> Si t'annules avant, il n'y a rien à payer. C'est tout.</p>
+                <p className="text-white/90 text-sm font-semibold mb-1">Pourquoi une carte est demandée ?</p>
+                <p className="text-white/60 text-xs leading-relaxed">Stripe la garde de côté pour activer votre abonnement <strong className="text-white/85">après</strong> l'essai — pas avant. <strong className="text-white/85">0€ aujourd'hui, 0€ jusqu'au {formatDateFR(nextMonday)} 18h.</strong> Si vous annulez avant, il n'y a rien à payer. C'est tout.</p>
               </div>
             </div>
           </div>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onConfirm} className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-900/40 mb-3">
-            Démarrer {trialDays} jour{trialDays > 1 ? 's' : ''} (0€ aujourd'hui) →
+            Démarrer mes {trialDays} jour{trialDays > 1 ? 's' : ''} (0€ aujourd&apos;hui) →
           </motion.button>
           <p className="text-center text-white/50 text-xs">0€ aujourd'hui · Annulation 1 clic · Stripe sécurisé</p>
         </div>
@@ -169,15 +169,15 @@ interface Plan {
 
 const PLANS: Plan[] = [
   {
-    id: 'essentiel', name: 'Essentiel', tagline: 'Le minimum pour pas conduire à l\'aveugle.',
+    id: 'essentiel', name: 'Essentiel', tagline: 'Le minimum pour ne pas conduire à l\'aveugle.',
     weeklyPrice: 9.97, annualWeeklyPrice: 7.97,
     features: [
       { text: 'Tableau de bord toutes plateformes (Uber, Bolt, Heetch)', ok: true },
       { text: 'Tes vrais chiffres (€/h, €/km, marge nette)', ok: true },
       { text: 'Communauté FOREAS (1 200+ chauffeurs)', ok: true },
       { text: 'Abonnement plateforme VTC inclus', ok: true },
-      { text: 'Ajnaya IA — celle qui te dit où aller', ok: false },
-      { text: 'Ton site driver perso (foreas.xyz/ton-prénom)', ok: false },
+      { text: 'Ajnaya IA — celle qui vous dit où aller', ok: false },
+      { text: 'Votre site driver perso (foreas.xyz/votre-prénom)', ok: false },
       { text: 'Parrainage 10€/filleul à vie', ok: false },
       { text: 'Compta IA (livre recettes auto)', ok: false },
     ],
@@ -188,8 +188,8 @@ const PLANS: Plan[] = [
     weeklyPrice: 12.97, annualWeeklyPrice: 10.37, popular: true,
     features: [
       { text: 'Tout Essentiel inclus', ok: true, star: true },
-      { text: 'Ajnaya IA — vocal + texte, te dit où aller', ok: true, star: true },
-      { text: 'Ton site driver perso (foreas.xyz/ton-prénom)', ok: true, star: true },
+      { text: 'Ajnaya IA — vocal + texte, vous dit où aller', ok: true, star: true },
+      { text: 'Votre site driver perso (foreas.xyz/votre-prénom)', ok: true, star: true },
       { text: 'Parrainage 10€/filleul à vie (4€ N2 · 2€ N3)', ok: true },
       { text: 'Surge temps réel Uber + Bolt + Heetch', ok: true },
       { text: 'Alertes zones chaudes (push + vocal)', ok: true },
@@ -199,7 +199,7 @@ const PLANS: Plan[] = [
     cta: 'Activer Ajnaya — 7 jours gratuit', style: 'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white shadow-lg shadow-violet-900/40',
   },
   {
-    id: 'vip', name: 'VIP', tagline: 'Tout Pro + ta compta tourne toute seule.',
+    id: 'vip', name: 'VIP', tagline: 'Tout Pro + votre compta tourne toute seule.',
     weeklyPrice: 24.97, annualWeeklyPrice: 19.97,
     features: [
       { text: 'Tout Pro inclus', ok: true, star: true },
@@ -235,14 +235,14 @@ function TarifsContent() {
   const confirmCheckout = () => setFlowState('checkout')
 
   const faqs = [
-    { q: "C'est quoi la vraie différence entre les 3 plans ?", a: "Essentiel = tu as les chiffres, tu décides seul. Pro = Ajnaya décide AVEC toi (le plan choisi par 8/10 chauffeurs). VIP = en plus, ta compta tourne toute seule (livre recettes auto, export URSSAF, fini le comptable à 90€/h)." },
-    { q: "Pourquoi tu me demandes une carte si c'est gratuit ?", a: "Stripe la garde de côté pour activer ton abo APRÈS l'essai — pas avant. 0€ jusqu'à dimanche 18h. Tu annules en 1 clic depuis l'app, où que tu sois. Si t'annules avant dimanche, il n'y a rien à payer. Point." },
-    { q: "10€/filleul à vie, c'est un piège quelque part ?", a: "Non. Tant que ton filleul reste abonné ET que toi aussi, tu touches 10€/mois sur lui (N1). Plus 4€ s'il parraine quelqu'un (N2). Plus 2€ s'il parraine encore (N3). Versé après 4 semaines complètes, virement automatique. Pas de plafond, pas d'expiration." },
-    { q: "J'ai déjà essayé d'autres outils. Pourquoi celui-là ?", a: "Parce que les autres te donnent des données — toi tu dois faire le tri. Ajnaya te dit où aller MAINTENANT, à la prochaine course. C'est pas un dashboard de plus. C'est le seul qui prend la décision avec toi en temps réel." },
-    { q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme te coupe, tu redistribues ton temps sur les autres en 1 minute. La communauté FOREAS te briefe aussi sur les bons réflexes pour récupérer ton compte." },
-    { q: "Ajnaya, c'est une IA qui parle ou un truc qui m'observe ?", a: "Les deux, à ton choix. Tu lui parles (vocal naturel) ou tu lis. Elle voit en temps réel les zones, le trafic, les événements, le surge multi-plateformes. Elle te dit où aller — et où NE PAS aller. Disponible à partir du plan Pro." },
-    { q: "Je peux changer de plan en cours ?", a: "Oui, à tout moment. Up ou down. Prorata calculé automatiquement. Pas de pénalité, pas d'appel à un commercial à 19h le vendredi." },
-    { q: "Et si je veux arrêter dans 3 mois ?", a: "Tu cliques 'Annuler', tu confirmes, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement." },
+    { q: "Quelle est la vraie différence entre les 3 plans ?", a: "Essentiel = vous avez les chiffres, vous décidez seul. Pro = Ajnaya décide AVEC vous (le plan choisi par 8 chauffeurs sur 10). VIP = en plus, votre compta tourne toute seule (livre recettes auto, export URSSAF, fini le comptable à 90€/h)." },
+    { q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Stripe la garde de côté pour activer votre abonnement APRÈS l'essai — pas avant. 0€ jusqu'à dimanche 18h. Vous annulez en 1 clic depuis l'app, où que vous soyez. Si vous annulez avant dimanche, il n'y a rien à payer. Point." },
+    { q: "10€/filleul à vie, est-ce un piège ?", a: "Non. Tant que votre filleul reste abonné ET que vous aussi, vous touchez 10€/mois sur lui (N1). Plus 4€ s'il parraine quelqu'un (N2). Plus 2€ s'il parraine encore (N3). Versé après 4 semaines complètes, virement automatique. Pas de plafond, pas d'expiration." },
+    { q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres vous donnent des données — vous devez faire le tri. Ajnaya vous dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec vous en temps réel." },
+    { q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme vous coupe, vous redistribuez votre temps sur les autres en 1 minute. La communauté FOREAS vous briefe aussi sur les bons réflexes pour récupérer votre compte." },
+    { q: "Ajnaya, est-ce une IA qui parle ou un outil qui m'observe ?", a: "Les deux, à votre choix. Vous lui parlez (vocal naturel) ou vous lisez. Elle voit en temps réel les zones, le trafic, les événements, le surge multi-plateformes. Elle vous dit où aller — et où NE PAS aller. Disponible à partir du plan Pro." },
+    { q: "Puis-je changer de plan en cours ?", a: "Oui, à tout moment. Up ou down. Prorata calculé automatiquement. Pas de pénalité, pas d'appel à un commercial à 19h le vendredi." },
+    { q: "Et si je veux arrêter dans 3 mois ?", a: "Vous cliquez 'Annuler', vous confirmez, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement." },
   ]
 
   return (
@@ -290,7 +290,7 @@ function TarifsContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
             </span>
-            147 chauffeurs sur l'essai cette semaine
+            147 chauffeurs en essai cette semaine
           </span>
           <span className="text-white/20 hidden sm:inline">·</span>
           <span className="text-white/55 text-xs">
@@ -324,7 +324,7 @@ function TarifsContent() {
               className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] mb-5 text-[#F8FAFC]"
               style={{ letterSpacing: '-0.04em' }}
             >
-              Tu fais combien net{' '}
+              Combien faites-vous net{' '}
               <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">
                 cette semaine&nbsp;?
               </span>
@@ -332,10 +332,10 @@ function TarifsContent() {
 
             {/* Sub — preuve nominée + identification */}
             <p className="text-white/75 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-              Karim, Paris&nbsp;15<sup>e</sup>&nbsp;: <span className="text-[#F8FAFC] font-semibold tabular-nums">+387&nbsp;€</span> ce mois-ci. Sans une heure en plus.
+              Haitham, Paris&nbsp;: <span className="text-[#F8FAFC] font-semibold tabular-nums">+387&nbsp;€</span> ce mois-ci. Sans une heure en plus.
             </p>
             <p className="text-white/55 text-base sm:text-[15px] max-w-xl mx-auto leading-relaxed mt-3">
-              Pas de magie. L'IA Ajnaya te dit <span className="text-[#F8FAFC]/85">où aller</span>, <span className="text-[#F8FAFC]/85">quand</span>, et <span className="text-[#F8FAFC]/85">combien tu vas faire</span>. C'est tout.
+              Pas de magie. L'IA Ajnaya vous dit <span className="text-[#F8FAFC]/85">où aller</span>, <span className="text-[#F8FAFC]/85">quand</span>, et <span className="text-[#F8FAFC]/85">combien vous allez faire</span>. C'est tout.
             </p>
           </motion.div>
         </div>
@@ -396,7 +396,7 @@ function TarifsContent() {
                     soit {perDay}€/jour {plan.popular && <span className="text-cyan-200 font-semibold">— le prix d'un péage</span>}
                   </p>
                   {plan.popular && (
-                    <p className="text-green-400/85 text-[11px] font-semibold mt-1.5">💡 Une seule course no-show = ton mois remboursé</p>
+                    <p className="text-green-400/85 text-[11px] font-semibold mt-1.5">💡 Une seule course no-show = votre mois remboursé</p>
                   )}
                   {billing === 'annual' && (
                     <p className="text-white/40 text-xs mt-1.5 tabular-nums">Facturé {(plan.annualWeeklyPrice * 52).toFixed(2).replace('.', ',')}€/an · sans engagement</p>
@@ -449,7 +449,7 @@ function TarifsContent() {
             {[
               { target: 387, suffix: '€', label: 'gagnés en plus / mois', color: 'from-violet-300 via-violet-200 to-cyan-200' },
               { target: 3, suffix: 'h', label: 'temps mort en moins / jour', color: 'from-cyan-300 via-cyan-200 to-cyan-100' },
-              { target: 90, suffix: 'sec', label: "pour ton 1ʳ insight Ajnaya", color: 'from-green-300 via-green-200 to-cyan-200' },
+              { target: 90, suffix: 'sec', label: "pour votre 1ᵉʳ insight Ajnaya", color: 'from-green-300 via-green-200 to-cyan-200' },
             ].map((kpi, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
                 <div
@@ -496,11 +496,11 @@ function TarifsContent() {
                 SANS FOREAS · LA NORME
               </p>
               <ul className="space-y-3 text-[15px] text-white/65 leading-relaxed">
-                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Tu tournes en attendant que ça pingue.</span></li>
-                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Tu acceptes la course parce qu'elle est là — pas parce qu'elle paie.</span></li>
-                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Le surge tombe pendant que t'es à l'autre bout de Paris.</span></li>
-                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Tu finis à 22h, pas convaincu d'avoir bien bossé.</span></li>
-                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Le mois prochain, tu fais pareil. Et le suivant aussi.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Vous tournez en attendant que ça pingue.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Vous acceptez la course parce qu'elle est là — pas parce qu'elle paie.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Le surge tombe pendant que vous êtes à l'autre bout de Paris.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Vous finissez à 22h, pas convaincu d'avoir bien bossé.</span></li>
+                <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Le mois prochain, vous faites pareil. Et le suivant aussi.</span></li>
               </ul>
               <div className="mt-6 pt-5 border-t border-white/[0.06]">
                 <p className="text-white/50 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Net moyen</p>
@@ -566,7 +566,7 @@ function TarifsContent() {
           </div>
           <div className="grid sm:grid-cols-3 gap-5">
             {[
-              { name: 'Karim B.', city: 'Paris 15ᵉ · 4 ans VTC', avatar: 'KB', gain: '+387 €/mois', detail: 'Vendredi 18h, CDG', quote: "Avant je tournais en rond entre Bercy et Bastille. Maintenant Ajnaya me dit 'pose-toi à Roissy à 18h25, vol AF1234 atterrit'. Je me retrouve premier sur la file. C'est ça le truc.", stars: 5 },
+              { name: 'Haitham B.', city: 'Paris · 4 ans VTC', avatar: 'HB', gain: '+387 €/mois', detail: 'Vendredi 18h, CDG', quote: "Avant je tournais en rond entre Bercy et Bastille. Maintenant Ajnaya me dit 'pose-toi à Roissy à 18h25, vol AF1234 atterrit'. Je me retrouve premier sur la file. C'est ça le truc.", stars: 5 },
               { name: 'Soufiane M.', city: 'Lyon · 2 ans VTC', avatar: 'SM', gain: '+412 €/mois', detail: 'Mois 1 vs mois 0', quote: "412 € de plus le premier mois. L'abo se paie en une course. Le reste, c'est du bonus que je mets de côté pour passer en SAS.", stars: 5 },
               { name: 'Théodore R.', city: 'Bordeaux · 6 ans VTC', avatar: 'TR', gain: '-3h/jour à vide', detail: 'Au lieu de 11h, je rentre en 8h', quote: "Le vrai gain n'est pas dans mon compte. Il est dans ma tête. Je conduis 3h de moins, je gagne autant. Mes lombaires me remercient.", stars: 5 },
             ].map((t, i) => (
@@ -615,10 +615,10 @@ function TarifsContent() {
               className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-3 leading-tight"
               style={{ letterSpacing: '-0.025em' }}
             >
-              Si t'es pas convaincu en 7 jours,<br />tu paies rien.
+              Si vous n&apos;êtes pas convaincu en 7 jours,<br />vous ne payez rien.
             </h3>
             <p className="text-white/65 text-sm leading-relaxed">
-              0&nbsp;€ aujourd'hui. 0&nbsp;€ jusqu'à dimanche 18h. Si t'as un doute, tu fermes l'app — y'a rien à annuler. Si tu restes, c'est que ça vaut le coup. <span className="text-white/80">Point.</span>
+              0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ jusqu&apos;à dimanche 18h. Si vous avez un doute, vous fermez l&apos;app — il n&apos;y a rien à annuler. Si vous restez, c&apos;est que ça vaut le coup. <span className="text-white/80">Point.</span>
             </p>
           </div>
         </div>
@@ -640,7 +640,7 @@ function TarifsContent() {
             >
               Les questions qu'on nous pose tout le temps.
             </h2>
-            <p className="text-white/55 text-sm">Si tu hésites, c'est normal — voilà les vraies réponses.</p>
+            <p className="text-white/55 text-sm">Si vous hésitez, c&apos;est normal — voilà les vraies réponses.</p>
           </div>
           {faqs.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} />)}
         </div>
@@ -662,7 +662,7 @@ function TarifsContent() {
               className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4"
               style={{ letterSpacing: '0.28em' }}
             >
-              7 JOURS · ZÉRO RISQUE · TU DÉCIDES
+              7 JOURS · ZÉRO RISQUE · VOUS DÉCIDEZ
             </p>
             <h2
               className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]"
@@ -670,15 +670,15 @@ function TarifsContent() {
             >
               Dans 7 jours,{' '}
               <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-                tu sauras.
+                vous saurez.
               </span>
             </h2>
             <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
-              Soit Ajnaya t'a fait gagner <span className="text-[#F8FAFC] font-semibold tabular-nums">+28&nbsp;€/jour</span> de moyenne.<br className="hidden sm:block" />
-              Soit tu fermes, tu paies rien, tu continues comme avant.
+              Soit Ajnaya vous a fait gagner <span className="text-[#F8FAFC] font-semibold tabular-nums">+28&nbsp;€/jour</span> de moyenne.<br className="hidden sm:block" />
+              Soit vous fermez, vous ne payez rien, vous continuez comme avant.
             </p>
             <p className="text-cyan-300/85 text-sm sm:text-base mb-9">
-              La seule question&nbsp;: tu préfères savoir, ou pas&nbsp;?
+              La seule question&nbsp;: préférez-vous savoir, ou pas&nbsp;?
             </p>
 
             <motion.button
@@ -688,7 +688,7 @@ function TarifsContent() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-extrabold py-4 px-12 rounded-2xl text-lg transition-all"
               style={{ boxShadow: '0 0 80px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
             >
-              Activer mon essai 7 jours (0&nbsp;€) →
+              Activer votre essai 7 jours (0&nbsp;€) →
             </motion.button>
 
             <div className="flex items-center justify-center gap-x-6 gap-y-2 mt-6 text-white/50 text-[11px] flex-wrap tabular-nums">
@@ -701,8 +701,8 @@ function TarifsContent() {
             {/* PS signature humaine — Halbert "lettre d'un ami" */}
             <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
               <p className="text-white/65 text-sm leading-relaxed text-left italic">
-                <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si tu hésites encore, c'est pas grave. Mais reviens dans 6 mois, et compare. Tu seras au même point. Le seul truc qui aura changé, c'est ton compteur d'années perdues.<br /><br />
-                Si tu cliques aujourd'hui, t'as 7 jours pour voir si on est sérieux. Si on l'est pas, tu pars. <span className="text-[#F8FAFC] font-semibold not-italic">Tu perds rien. Tu testes juste.</span>
+                <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si vous hésitez encore, ce n&apos;est pas grave. Mais revenez dans 6 mois, et comparez. Vous serez au même point. Le seul truc qui aura changé, c&apos;est votre compteur d&apos;années perdues.<br /><br />
+                Si vous cliquez aujourd&apos;hui, vous avez 7 jours pour voir si on est sérieux. Si on ne l&apos;est pas, vous partez. <span className="text-[#F8FAFC] font-semibold not-italic">Vous ne perdez rien. Vous testez juste.</span>
               </p>
               <p className="text-white/55 text-xs mt-4 text-left">
                 — Chandler, fondateur FOREAS
