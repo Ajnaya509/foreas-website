@@ -129,22 +129,54 @@ export default function HomeHeroCream() {
         className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-cream-warm-textured"
         aria-label="Tarif horaire VTC en direct"
       >
-        {/* Halos très subtils (Apple ne crie jamais) */}
+        {/* ─── Apple Vision Pro spatial halos ───────────────────────────────
+           4 blobs colorés diffus qui drift lentement en background.
+           Effet Aurora/Nebula spatial. Sur fond blanc Apple, ça donne la
+           profondeur Vision Pro sans casser l'épure.                          */}
         <div
-          className="absolute inset-0 pointer-events-none cream-halo-warm animate-halo-pulse"
-          aria-hidden="true"
-        />
-
-        {/* Composant graphique gradient — opacity réduite Apple-style */}
-        <div
-          className="absolute top-1/2 left-0 right-0 -translate-y-28 sm:-translate-y-40 pointer-events-none opacity-25"
+          className="absolute inset-0 pointer-events-none overflow-hidden"
           aria-hidden="true"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/gradient-line.svg"
-            alt=""
-            className="w-full h-auto"
+          {/* Blob 1 — Violet brand top-left (le + visible) */}
+          <div
+            className="absolute -top-[15%] -left-[10%] w-[55%] h-[55%] rounded-full animate-vision-a"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 50%, rgba(140, 82, 255, 0.28) 0%, rgba(140, 82, 255, 0.06) 50%, transparent 80%)',
+              filter: 'blur(40px)',
+              willChange: 'transform',
+            }}
+          />
+          {/* Blob 2 — Cyan brand top-right (Ajnaya signature) */}
+          <div
+            className="absolute -top-[5%] -right-[12%] w-[48%] h-[48%] rounded-full animate-vision-b"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.22) 0%, rgba(0, 212, 255, 0.05) 55%, transparent 80%)',
+              filter: 'blur(48px)',
+              willChange: 'transform',
+            }}
+          />
+          {/* Blob 3 — Rose warm bottom-center (humain) */}
+          <div
+            className="absolute -bottom-[20%] left-[25%] w-[60%] h-[55%] rounded-full animate-vision-c"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 50%, rgba(255, 102, 153, 0.15) 0%, rgba(255, 102, 153, 0.04) 55%, transparent 80%)',
+              filter: 'blur(56px)',
+              willChange: 'transform',
+            }}
+          />
+          {/* Blob 4 — Or précieux mid-left (subtil award) */}
+          <div
+            className="absolute top-[40%] -left-[15%] w-[35%] h-[35%] rounded-full animate-vision-a"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 50%, rgba(245, 200, 66, 0.12) 0%, rgba(245, 200, 66, 0.03) 55%, transparent 80%)',
+              filter: 'blur(50px)',
+              animationDelay: '4s',
+              willChange: 'transform',
+            }}
           />
         </div>
 
@@ -172,7 +204,7 @@ export default function HomeHeroCream() {
             </span>
           </motion.div>
 
-          {/* H1 — slogan en NOIR APPLE pur (italique fait l'effet, pas le gradient) */}
+          {/* H1 — slogan : "Gagnez plus" noir Apple + "roulez moins." gradient brand sobre */}
           <motion.h1
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -187,20 +219,34 @@ export default function HomeHeroCream() {
           >
             Gagnez plus,
             <br />
-            <span style={{ fontStyle: 'italic', color: '#1d1d1f' }}>
+            <span
+              style={{
+                fontStyle: 'italic',
+                backgroundImage:
+                  'linear-gradient(135deg, #6C3CE0 0%, #8C52FF 35%, #00D4FF 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                color: 'transparent',
+              }}
+            >
               roulez moins.
             </span>
           </motion.h1>
 
-          {/* Sub-line vouvoyée Apple gray */}
+          {/* Sub-line excitante — mention Uber/Bolt/Heetch + scan multi-plateformes */}
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="text-base sm:text-lg leading-relaxed mb-10 sm:mb-12 max-w-xl mx-auto"
+            className="text-base sm:text-lg leading-relaxed mb-10 sm:mb-12 max-w-2xl mx-auto"
             style={{ color: '#6e6e73' }}
           >
-            Tapez votre zone. Ajnaya vous dit où ça paie ce soir.
+            Tapez votre zone. Ajnaya scanne{' '}
+            <strong style={{ color: '#1d1d1f', fontWeight: 700 }}>
+              Uber, Bolt, Heetch
+            </strong>{' '}
+            + 4 autres plateformes — vous dit où foncer ce soir.
           </motion.p>
 
           {/* Search bar — blanc pur Apple avec ombre précise */}

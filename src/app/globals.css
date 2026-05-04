@@ -45,6 +45,26 @@ html { scroll-behavior: smooth; }
   animation: halo-pulse-fast 0.9s ease-in-out infinite alternate;
 }
 
+/* ── Apple Vision Pro spatial drift (blobs background) ─────────────── */
+@keyframes vision-drift-a {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(40px, 30px, 0) scale(1.06); }
+  100% { transform: translate3d(-30px, 50px, 0) scale(0.95); }
+}
+@keyframes vision-drift-b {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(-50px, 40px, 0) scale(1.08); }
+  100% { transform: translate3d(30px, -30px, 0) scale(0.96); }
+}
+@keyframes vision-drift-c {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(60px, -40px, 0) scale(0.94); }
+  100% { transform: translate3d(-40px, 20px, 0) scale(1.05); }
+}
+.animate-vision-a { animation: vision-drift-a 22s ease-in-out infinite alternate; }
+.animate-vision-b { animation: vision-drift-b 28s ease-in-out infinite alternate; }
+.animate-vision-c { animation: vision-drift-c 34s ease-in-out infinite alternate; }
+
 /* ─── FOREAS Home Crème (Site2026v68 home chauffeur) ────────────────────
    Variant unique réservé à la home `/` : rupture délibérée signalant
    "FOREAS chaleur humaine" sur l'acquisition, transition cinématique
