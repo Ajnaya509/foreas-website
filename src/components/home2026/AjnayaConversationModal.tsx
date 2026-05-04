@@ -2,28 +2,27 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, MessageCircle, Loader2, MapPin, TrendingUp, Clock } from 'lucide-react'
+import { X, Send, MapPin, TrendingUp, TrendingDown, Volume2, MessageCircle, VolumeX } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
 import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 
-interface AjnayaConversationModalProps {
-  isOpen: boolean
-  onClose: () => void
-  initialZone?: string
-}
+/**
+ * AjnayaConversationModal — Pieuvre Brain + ElevenLabs v3 (Site2026v73)
+ *
+ * Refonte totale conversion :
+ * - Connecté à /api/ajnaya/home-modal → Pieuvre Brain (tentacle widget_site, metadata_source=home_modal_v1)
+ * - TTS auto-play après chaque réponse Ajnaya via /api/tts (eleven_v3 Koraly)
+ * - Waveform animé Framer Motion pendant lecture audio
+ * - Social proof cards avec vrais témoignages (Binate Mux thumbnail + Dragan)
+ * - Zone card données réelles get_zone_intelligence v3
+ * - Intro directe sans "je suis une IA"
+ * - WhatsApp CTA green dès turn 2
+ */
 
-interface ChatMessage {
-  id: string
-  role: 'user' | 'ajnaya'
-  type?: 'text' | 'zone-card'
-  text?: string
-  zoneStats?: ZoneStats
-  timestamp: number
-  isTyping?: boolean
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ZoneStats {
+interface ZoneData {
   zone_match: string
   avg_hourly: number
   demand_delta_pct: number
@@ -31,29 +30,315 @@ interface ZoneStats {
   courses_count: number
   week_iso: string
   has_data: boolean
-  last_updated?: string
   fallback_zone?: { name: string; avg_hourly: number; note?: string } | null
 }
 
-const QUICK_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu']
+interface Testimonial {
+  name: string
+  zone: string
+  quote: string
+  kpi?: string
+  vehicle?: string
+  mux_id?: string
+}
 
-/**
- * AjnayaConversationModal — Apple-grade absolu (Site2026v72)
- *
- * Refonte +100/100 :
- * - Backdrop noir Apple #000 / 0.42 (au lieu de brown cream)
- * - Modal blanc pur #fff avec border 1px rgba(0,0,0,0.08)
- * - Bulles user noir Apple, bulles Ajnaya gris Apple #f5f5f7 (iMessage-like)
- * - Zone card : grand chiffre €/h en noir absolu — l'italique fait le travail
- * - Quick zones chips neutres #f5f5f7 — plus de teinte violette criarde
- * - Send button noir Apple solide
- * - Avatar Ajnaya : keep gradient violet→cyan (signature brand) — UN SEUL endroit où le gradient subsiste
- * - Push WhatsApp final : keep green (couleur signature WhatsApp)
- *
- * Skills :
- * - foreas-design-system : variant blanc Apple, bulles iMessage-grade
- * - foreas-copy-atomic : Pre-Suasion, Cialdini réciprocité, Hormozi value stack
- */
+type MsgType = 'text' | 'zone-card' | 'social-proof'
+
+interface ChatMessage {
+  id: string
+  role: 'user' | 'ajnaya'
+  type: MsgType
+  text?: string
+  zoneData?: ZoneData
+  testimonials?: Testimonial[]
+  tts_text?: string
+  timestamp: number
+  isTyping?: boolean
+}
+
+interface AjnayaConversationModalProps {
+  isOpen: boolean
+  onClose: () => void
+  initialZone?: string
+}
+
+const QUICK_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Disneyland']
+
+// ─── Waveform animé ───────────────────────────────────────────────────────────
+function AudioWaveform({ active }: { active: boolean }) {
+  const heights = [8, 14, 10, 16, 8]
+  return (
+    <div className="flex items-center gap-[3px]" style={{ height: 20 }}>
+      {heights.map((h, i) => (
+        <motion.div
+          key={i}
+          className="rounded-full"
+          style={{ width: 3, backgroundColor: active ? '#6C3CE0' : '#d1d1d6' }}
+          animate={active ? { height: [h, h * 1.9, h * 0.5, h * 1.6, h] } : { height: 3 }}
+          transition={active ? {
+            duration: 0.55,
+            delay: i * 0.09,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          } : { duration: 0.25 }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ─── Typing dots ──────────────────────────────────────────────────────────────
+function ThinkingDots() {
+  return (
+    <div className="flex items-center gap-1 px-1 py-0.5">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="rounded-full"
+          style={{ width: 7, height: 7, backgroundColor: '#a1a1aa' }}
+          animate={{ scale: [1, 1.45, 1], opacity: [0.45, 1, 0.45] }}
+          transition={{ duration: 1.1, delay: i * 0.22, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ─── Zone card ────────────────────────────────────────────────────────────────
+function ZoneCard({ data }: { data: ZoneData }) {
+  const trend = data.demand_delta_pct
+  const isUp = trend >= 0
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.93, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+      className="rounded-2xl overflow-hidden border w-full"
+      style={{ borderColor: 'rgba(0,0,0,0.08)', backgroundColor: '#f5f5f7' }}
+    >
+      <div className="px-4 pt-3.5 pb-3">
+        {/* Zone label */}
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <MapPin className="w-3 h-3 flex-shrink-0" style={{ color: '#6C3CE0' }} />
+          <span
+            className="text-[10px] font-bold uppercase tracking-widest truncate"
+            style={{ color: '#6e6e73', letterSpacing: '0.16em' }}
+          >
+            {data.zone_match}
+          </span>
+        </div>
+
+        {/* Big number */}
+        <div className="flex items-end gap-2 mb-2.5">
+          <span
+            className="font-black tabular-nums"
+            style={{ fontSize: 38, color: '#1d1d1f', letterSpacing: '-0.04em', lineHeight: 1 }}
+          >
+            {data.avg_hourly.toFixed(0)}
+          </span>
+          <span className="text-sm font-semibold mb-1" style={{ color: '#6e6e73' }}>€/h</span>
+          <div
+            className={`ml-auto flex items-center gap-0.5 text-xs font-bold ${isUp ? 'text-emerald-600' : 'text-rose-500'}`}
+          >
+            {isUp
+              ? <TrendingUp className="w-3.5 h-3.5" />
+              : <TrendingDown className="w-3.5 h-3.5" />}
+            {isUp ? '+' : ''}{trend}%
+          </div>
+        </div>
+
+        {/* Meta row */}
+        <div
+          className="flex items-center justify-between pt-2.5 border-t"
+          style={{ borderColor: 'rgba(0,0,0,0.06)' }}
+        >
+          <span className="text-[10px] font-medium" style={{ color: '#86868b' }}>
+            {data.courses_count} courses · {data.top_pool}
+          </span>
+          <span
+            className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full"
+            style={{
+              backgroundColor: '#1d1d1f',
+              color: '#fff',
+              letterSpacing: '0.12em',
+            }}
+          >
+            RÉEL
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Social proof card ────────────────────────────────────────────────────────
+function SocialProofCard({ testimonials }: { testimonials: Testimonial[] }) {
+  const primary = testimonials[0]
+  const secondary = testimonials[1]
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', damping: 22, stiffness: 240, delay: 0.05 }}
+      className="rounded-2xl border w-full overflow-hidden"
+      style={{
+        borderColor: 'rgba(108,60,224,0.14)',
+        backgroundColor: 'rgba(108,60,224,0.04)',
+      }}
+    >
+      <div className="p-3.5">
+        {/* Primary testimonial (Binate) */}
+        <div className="flex items-start gap-3">
+          {primary.mux_id && (
+            <div className="relative flex-shrink-0 w-11 h-11 rounded-xl overflow-hidden">
+              <img
+                src={`https://image.mux.com/${primary.mux_id}/thumbnail.jpg?width=88&height=88&fit_mode=smartcrop`}
+                alt={primary.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+              {/* Play overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                <div className="w-4 h-4 rounded-full bg-white/92 flex items-center justify-center">
+                  <div
+                    className="ml-px"
+                    style={{
+                      width: 0,
+                      height: 0,
+                      borderTop: '4px solid transparent',
+                      borderBottom: '4px solid transparent',
+                      borderLeft: '6px solid #1d1d1f',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium leading-snug" style={{ color: '#1d1d1f' }}>
+              "{primary.quote}"
+            </p>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              <span className="text-[11px]" style={{ color: '#6e6e73' }}>
+                {primary.name} · {primary.zone}
+                {primary.vehicle && ` · ${primary.vehicle}`}
+              </span>
+              {primary.kpi && (
+                <span
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: '#059669' }}
+                >
+                  {primary.kpi}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Secondary testimonial */}
+        {secondary && (
+          <div
+            className="mt-2.5 pt-2 text-[11px]"
+            style={{
+              borderTop: '1px solid rgba(0,0,0,0.06)',
+              color: '#86868b',
+            }}
+          >
+            <span className="font-medium" style={{ color: '#6e6e73' }}>{secondary.name}</span>
+            {' '}· "{secondary.quote}"
+          </div>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Message bubble ───────────────────────────────────────────────────────────
+function MessageBubble({
+  msg,
+  isActiveAudio,
+  onToggleAudio,
+}: {
+  msg: ChatMessage
+  isActiveAudio: boolean
+  onToggleAudio: () => void
+}) {
+  // Typing indicator
+  if (msg.isTyping) {
+    return (
+      <div className="flex justify-start">
+        <div className="px-3 py-2.5 rounded-2xl rounded-bl-sm" style={{ backgroundColor: '#f5f5f7' }}>
+          <ThinkingDots />
+        </div>
+      </div>
+    )
+  }
+
+  // Zone card
+  if (msg.type === 'zone-card' && msg.zoneData) {
+    return (
+      <div className="flex justify-start w-full max-w-[296px]">
+        <ZoneCard data={msg.zoneData} />
+      </div>
+    )
+  }
+
+  // Social proof
+  if (msg.type === 'social-proof' && msg.testimonials) {
+    return (
+      <div className="flex justify-start w-full max-w-[296px]">
+        <SocialProofCard testimonials={msg.testimonials} />
+      </div>
+    )
+  }
+
+  // Regular text bubble
+  const isAjnaya = msg.role === 'ajnaya'
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+      className={`flex ${isAjnaya ? 'justify-start' : 'justify-end'}`}
+    >
+      <div
+        className={`max-w-[84%] px-3.5 py-2.5 text-sm leading-relaxed ${
+          isAjnaya ? 'rounded-2xl rounded-bl-sm' : 'rounded-2xl rounded-br-sm'
+        }`}
+        style={
+          isAjnaya
+            ? { backgroundColor: '#f5f5f7', color: '#1d1d1f' }
+            : { backgroundColor: '#1d1d1f', color: '#fff' }
+        }
+      >
+        <span className="whitespace-pre-wrap">{msg.text}</span>
+
+        {/* Audio toggle — Ajnaya messages seulement */}
+        {isAjnaya && (msg.tts_text || msg.text) && (
+          <button
+            onClick={onToggleAudio}
+            className="flex items-center gap-1.5 mt-2 opacity-50 hover:opacity-90 transition-opacity focus:outline-none"
+            aria-label={isActiveAudio ? 'Arrêter la lecture' : 'Écouter Ajnaya'}
+          >
+            {isActiveAudio ? (
+              <>
+                <AudioWaveform active />
+                <VolumeX className="w-3 h-3" style={{ color: '#6C3CE0' }} />
+              </>
+            ) : (
+              <Volume2 className="w-3 h-3" style={{ color: '#6e6e73' }} />
+            )}
+          </button>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MODAL PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function AjnayaConversationModal({
   isOpen,
   onClose,
@@ -61,696 +346,525 @@ export default function AjnayaConversationModal({
 }: AjnayaConversationModalProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState(initialZone)
-  const [isTurn, setIsTurn] = useState<1 | 2 | 3 | 'closed'>(1)
-  const [zoneStats, setZoneStats] = useState<ZoneStats | null>(null)
+  const [turn, setTurn] = useState<1 | 2 | 3>(1)
+  const [zoneData, setZoneData] = useState<ZoneData | null>(null)
+  const [identityId, setIdentityId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [playingMsgId, setPlayingMsgId] = useState<string | null>(null)
+  const [sessionId] = useState(
+    () => `hm-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  )
+
   const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const initialZoneSentRef = useRef(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const initialSentRef = useRef(false)
 
-  // Init au premier mount : message d'accroche Ajnaya
-  useEffect(() => {
-    if (!isOpen || messages.length > 0) return
-    const intro: ChatMessage = {
-      id: 'm-intro',
-      role: 'ajnaya',
-      type: 'text',
-      text:
-        "Bonjour 👋 Je suis Ajnaya, l'IA FOREAS.\n\nDites-moi votre zone — je vous donne le tarif horaire moyen ce soir, en temps réel.",
-      timestamp: Date.now(),
-    }
-    setMessages([intro])
-
-    getVisitorId().catch(() => { /* silencieux */ })
-
-    if (initialZone && !initialZoneSentRef.current) {
-      initialZoneSentRef.current = true
-      setTimeout(() => {
-        handleZoneSubmit(initialZone)
-      }, 600)
-    }
-  }, [isOpen, initialZone, messages.length])
-
-  // Auto-scroll en bas à chaque nouveau message
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages])
 
-  // Focus input à l'ouverture (desktop seulement, sinon le clavier mobile pop direct)
+  // Focus input desktop
   useEffect(() => {
-    if (!isOpen || isTurn === 'closed') return
-    if (typeof window === 'undefined') return
-    const isDesktop = window.matchMedia('(min-width: 640px)').matches
-    if (isDesktop) {
-      setTimeout(() => inputRef.current?.focus(), 200)
-    }
-  }, [isOpen, isTurn])
+    if (!isOpen) return
+    const isDesktop =
+      typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches
+    if (isDesktop) setTimeout(() => inputRef.current?.focus(), 320)
+  }, [isOpen])
 
-  // Reset état à la fermeture
+  // Init intro message
+  useEffect(() => {
+    if (!isOpen || messages.length > 0) return
+
+    setMessages([{
+      id: 'm-intro',
+      role: 'ajnaya',
+      type: 'text',
+      text: 'CDG, La Défense, Bercy... dites-moi votre zone — je vous dis combien ça paie ce soir.',
+      timestamp: Date.now(),
+    }])
+
+    getVisitorId().catch(() => {})
+
+    // Si zone pré-remplie (depuis la search bar hero)
+    if (initialZone && !initialSentRef.current) {
+      initialSentRef.current = true
+      setTimeout(() => callModal(initialZone, 1), 700)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialZone])
+
+  // Reset state on close
   useEffect(() => {
     if (!isOpen) {
-      const timer = setTimeout(() => {
+      const t = setTimeout(() => {
         setMessages([])
         setInputValue('')
-        setIsTurn(1)
-        setZoneStats(null)
-        initialZoneSentRef.current = false
+        setTurn(1)
+        setZoneData(null)
+        setIdentityId(null)
+        setIsPlaying(false)
+        setPlayingMsgId(null)
+        initialSentRef.current = false
+        if (audioRef.current) {
+          audioRef.current.pause()
+          audioRef.current = null
+        }
       }, 400)
-      return () => clearTimeout(timer)
+      return () => clearTimeout(t)
     }
   }, [isOpen])
 
-  const handleZoneSubmit = useCallback(async (zone: string) => {
-    if (!zone.trim()) return
-    setIsLoading(true)
-
-    // Haptic feedback (iOS / Android)
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate?.(8) } catch { /* silencieux */ }
-    }
-
-    const userMsg: ChatMessage = {
-      id: `m-user-${Date.now()}`,
-      role: 'user',
-      type: 'text',
-      text: zone,
-      timestamp: Date.now(),
-    }
-
-    const typingMsg: ChatMessage = {
-      id: `m-typing-${Date.now()}`,
-      role: 'ajnaya',
-      type: 'text',
-      text: '...',
-      timestamp: Date.now(),
-      isTyping: true,
-    }
-
-    setMessages((prev) => [...prev, userMsg, typingMsg])
-    recordSearch(zone)
-
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('trackCustom', 'AjnayaModalZoneSubmitted', { zone })
-    }
-
+  // ─── TTS ──────────────────────────────────────────────────────────────────
+  const playTTS = useCallback(async (text: string, msgId: string) => {
+    if (!text?.trim()) return
     try {
-      const res = await fetch(
-        `/api/home/zone-stats?zone=${encodeURIComponent(zone)}`,
-      )
-      const data = (await res.json()) as ZoneStats
-      setZoneStats(data)
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+      setIsPlaying(true)
+      setPlayingMsgId(msgId)
 
-      if (data.has_data) {
-        const cardMsg: ChatMessage = {
-          id: `m-card-${Date.now()}`,
-          role: 'ajnaya',
-          type: 'zone-card',
-          zoneStats: data,
-          timestamp: Date.now(),
-        }
-        const followUpMsg: ChatMessage = {
-          id: `m-followup-${Date.now() + 1}`,
-          role: 'ajnaya',
-          type: 'text',
-          text:
-            'Pour le tarif EXACT à votre créneau (et savoir où aller en priorité), quel créneau visez-vous ce soir ?',
-          timestamp: Date.now() + 1,
-        }
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      if (!res.ok) throw new Error('TTS error')
 
-        setMessages((prev) => {
-          const filtered = prev.filter((m) => !m.isTyping)
-          return [...filtered, cardMsg, followUpMsg]
-        })
-      } else {
-        const fb = data.fallback_zone
-        const fallbackText =
-          `Hmm, je n'ai pas encore assez de données fiables sur **${data.zone_match}**.\n\n` +
-          (fb
-            ? `En attendant, regardez **${fb.name}** : ${fb.avg_hourly
-                .toFixed(2)
-                .replace('.', ',')} €/h en moyenne cette semaine.\n\n`
-            : '') +
-          `Pour le tarif EXACT sur votre zone, à votre créneau, on continue sur WhatsApp. Quel créneau visez-vous ce soir ?`
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
 
-        setMessages((prev) => {
-          const filtered = prev.filter((m) => !m.isTyping)
-          return [
-            ...filtered,
-            {
-              id: `m-fb-${Date.now()}`,
-              role: 'ajnaya',
-              type: 'text',
-              text: fallbackText,
-              timestamp: Date.now(),
-            },
-          ]
-        })
+      audio.onended = () => {
+        setIsPlaying(false)
+        setPlayingMsgId(null)
+        URL.revokeObjectURL(url)
+      }
+      audio.onerror = () => {
+        setIsPlaying(false)
+        setPlayingMsgId(null)
       }
 
-      setIsTurn(2)
+      await audio.play()
     } catch {
-      setMessages((prev) => {
-        const filtered = prev.filter((m) => !m.isTyping)
-        return [
-          ...filtered,
-          {
-            id: `m-err-${Date.now()}`,
-            role: 'ajnaya',
-            type: 'text',
-            text: "Hmm, ma connexion vacille un instant. Tentez à nouveau ou cliquez **Continuer sur WhatsApp** — je reprends la conversation là-bas.",
-            timestamp: Date.now(),
-          },
-        ]
-      })
-    } finally {
-      setIsLoading(false)
+      setIsPlaying(false)
+      setPlayingMsgId(null)
     }
   }, [])
 
-  const handleTurn2Submit = useCallback(
-    (message: string) => {
-      if (!message.trim()) return
+  const toggleAudio = useCallback(
+    (text: string, msgId: string) => {
+      if (isPlaying && playingMsgId === msgId) {
+        audioRef.current?.pause()
+        setIsPlaying(false)
+        setPlayingMsgId(null)
+      } else {
+        playTTS(text, msgId)
+      }
+    },
+    [isPlaying, playingMsgId, playTTS]
+  )
 
-      // Haptic
+  // ─── Main API call ─────────────────────────────────────────────────────────
+  const callModal = useCallback(
+    async (message: string, currentTurn: 1 | 2 | 3) => {
+      if (!message.trim() || isLoading) return
+      setIsLoading(true)
+
+      // Vibration haptic
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try { navigator.vibrate?.(8) } catch { /* silencieux */ }
       }
 
       const userMsg: ChatMessage = {
-        id: `m-user-${Date.now()}`,
+        id: `u-${Date.now()}`,
         role: 'user',
         type: 'text',
         text: message,
         timestamp: Date.now(),
       }
-
-      const pushReply: ChatMessage = {
-        id: `m-push-${Date.now()}`,
+      const typingMsg: ChatMessage = {
+        id: `typing-${Date.now()}`,
         role: 'ajnaya',
         type: 'text',
-        text:
-          "Parfait. Pour vous donner le tarif EXACT à votre créneau — et aller plus loin — passons sur WhatsApp.\n\nDans 2 minutes, je vous envoie :\n\n📍 **Vos 3 zones rentables pour demain matin** (perso, sur votre zone)\n🎬 **La vidéo intégrale de Binate** — il raconte +30 % de revenus en Tesla\n👥 **L'accès au groupe communautaire des 247 chauffeurs FOREAS**\n\nAucune inscription. Aucune carte. Vous testez, vous décidez.",
+        text: '',
         timestamp: Date.now(),
+        isTyping: true,
       }
 
-      setMessages((prev) => [...prev, userMsg, pushReply])
-      setIsTurn(3)
+      setMessages((prev) => [...prev, userMsg, typingMsg])
+      recordSearch(message)
 
-      if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('trackCustom', 'AjnayaModalTurn2Completed', {
-          zone: zoneStats?.zone_match,
+      try {
+        window.fbq?.('trackCustom', 'AjnayaModalTurn', {
+          turn: currentTurn,
+          zone: message,
         })
+      } catch { /* silencieux */ }
+
+      try {
+        const res = await fetch('/api/ajnaya/home-modal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            session_id: sessionId,
+            turn: currentTurn,
+            zone_data: zoneData,
+            identity_id: identityId,
+          }),
+        })
+
+        if (!res.ok) throw new Error('API error')
+        const data = await res.json() as {
+          text: string
+          tts_text: string
+          zone_data: ZoneData | null
+          show_wa_cta: boolean
+          turn_next: 1 | 2 | 3
+          testimonials: Testimonial[] | null
+          identity_id: string | null
+        }
+
+        // Persist identity_id pour tracking cross-turn
+        if (data.identity_id) setIdentityId(data.identity_id)
+
+        // Zone data
+        if (data.zone_data) setZoneData(data.zone_data)
+
+        // Build new messages
+        const newMsgs: ChatMessage[] = []
+
+        // Zone card (turn 1 seulement, si has_data)
+        if (currentTurn === 1 && data.zone_data?.has_data) {
+          newMsgs.push({
+            id: `zone-${Date.now()}`,
+            role: 'ajnaya',
+            type: 'zone-card',
+            zoneData: data.zone_data,
+            timestamp: Date.now(),
+          })
+        }
+
+        // Ajnaya text bubble
+        const ajnayaMsg: ChatMessage = {
+          id: `a-${Date.now()}`,
+          role: 'ajnaya',
+          type: 'text',
+          text: data.text,
+          tts_text: data.tts_text,
+          timestamp: Date.now() + 1,
+        }
+        newMsgs.push(ajnayaMsg)
+
+        // Replace typing indicator
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => !m.isTyping)
+          return [...filtered, ...newMsgs]
+        })
+
+        // Social proof card — injectée avec délai pour effet séquentiel
+        const proofTestimonials = data.testimonials
+        if (currentTurn >= 2 && proofTestimonials?.length) {
+          setTimeout(() => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `proof-${Date.now()}`,
+                role: 'ajnaya' as const,
+                type: 'social-proof' as const,
+                testimonials: proofTestimonials,
+                timestamp: Date.now(),
+              },
+            ])
+          }, 850)
+        }
+
+        // Advance turn
+        setTurn(data.turn_next)
+
+        // Auto-play TTS avec délai court (laisse le temps au DOM de renderer)
+        if (data.tts_text) {
+          setTimeout(() => playTTS(data.tts_text, ajnayaMsg.id), 250)
+        }
+      } catch {
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => !m.isTyping)
+          return [
+            ...filtered,
+            {
+              id: `err-${Date.now()}`,
+              role: 'ajnaya',
+              type: 'text',
+              text: 'Connexion vacillante — passons sur WhatsApp, je vous réponds en 2 minutes.',
+              timestamp: Date.now(),
+            },
+          ]
+        })
+      } finally {
+        setIsLoading(false)
       }
     },
-    [zoneStats],
+    [isLoading, sessionId, zoneData, identityId, playTTS]
   )
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
       const value = inputValue.trim()
-      if (!value || isLoading) return
-
-      if (isTurn === 1) {
-        handleZoneSubmit(value)
-      } else if (isTurn === 2) {
-        handleTurn2Submit(value)
-      }
+      if (!value) return
+      callModal(value, turn)
       setInputValue('')
     },
-    [inputValue, isTurn, isLoading, handleZoneSubmit, handleTurn2Submit],
+    [inputValue, turn, callModal]
   )
 
-  const handleQuickZone = (zone: string) => {
-    setInputValue(zone)
-    handleZoneSubmit(zone)
-  }
-
-  const handleWAClick = () => {
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('trackCustom', 'WhatsAppLinkClicked', {
-        section: 'modal_ajnaya',
-        zone: zoneStats?.zone_match,
-        turn: isTurn,
-      })
-    }
-  }
+  const handleQuickZone = useCallback(
+    (zone: string) => {
+      callModal(zone, 1)
+    },
+    [callModal]
+  )
 
   const waUrl = buildWAUrl({
     section: 'hero_zone',
-    zone: zoneStats?.zone_match ?? inputValue,
+    zone: zoneData?.zone_match ?? inputValue,
   })
+
+  const showWACTA = turn >= 2 && !isLoading
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop noir Apple */}
+          {/* ── Backdrop ── */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.22 }}
             className="fixed inset-0 z-50 backdrop-blur-md"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.42)' }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.44)' }}
             onClick={onClose}
             aria-hidden="true"
           />
 
-          {/* Wrapper centrage flex */}
+          {/* ── Modal container ── */}
           <div
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none"
             role="presentation"
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 24 }}
+              initial={{ opacity: 0, scale: 0.95, y: 24 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 24 }}
+              exit={{ opacity: 0, scale: 0.95, y: 24 }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="pointer-events-auto w-full sm:w-auto sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[80vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden"
+              className="pointer-events-auto w-full sm:w-auto sm:max-w-lg sm:mx-4 max-h-[92vh] sm:max-h-[82vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden"
               style={{
                 backgroundColor: '#ffffff',
                 boxShadow:
-                  '0 30px 80px -20px rgba(0,0,0,0.30), 0 0 0 1px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.85)',
+                  '0 32px 80px -16px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
               }}
               role="dialog"
               aria-modal="true"
               aria-label="Conversation avec Ajnaya"
             >
-              {/* Header modal */}
+
+              {/* ── Header ── */}
               <div
-                className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0"
-                style={{ borderColor: 'rgba(0, 0, 0, 0.08)' }}
+                className="flex items-center justify-between px-5 py-4 flex-shrink-0 border-b"
+                style={{ borderColor: 'rgba(0,0,0,0.08)' }}
               >
                 <div className="flex items-center gap-3">
+                  {/* Avatar */}
                   <div className="relative">
                     <div
                       className="relative w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center"
-                      style={{
-                        boxShadow: '0 4px 12px -2px rgba(140,82,255,0.32)',
-                      }}
+                      style={{ boxShadow: '0 4px 12px -2px rgba(140,82,255,0.35)' }}
                     >
                       <span className="text-sm font-bold text-white">A</span>
-                      <div
-                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
-                        style={{
-                          backgroundColor: '#34C759',
-                          border: '2px solid #ffffff',
-                        }}
+                      {/* Online dot */}
+                      <span
+                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
+                        style={{ backgroundColor: '#34C759' }}
                       />
                     </div>
+                    {/* Halo pulse */}
                     <span
-                      className="absolute inset-0 rounded-full bg-violet-500/20 animate-ping"
-                      style={{ animationDuration: '2.4s' }}
+                      className="absolute inset-0 rounded-full bg-violet-400/20 animate-ping"
+                      style={{ animationDuration: '2.6s' }}
                       aria-hidden="true"
                     />
                   </div>
+
+                  {/* Name + status */}
                   <div>
-                    <p
-                      className="font-semibold text-sm"
-                      style={{ color: '#1d1d1f' }}
-                    >
-                      Ajnaya
-                    </p>
-                    <p
-                      className="text-[11px] font-medium tabular-nums"
-                      style={{ color: '#34C759' }}
-                    >
-                      En ligne · répond instantanément
-                    </p>
+                    <p className="text-sm font-semibold" style={{ color: '#1d1d1f' }}>Ajnaya</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                      {isPlaying ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px]" style={{ color: '#6C3CE0' }}>Parle...</span>
+                          <AudioWaveform active />
+                        </div>
+                      ) : (
+                        <p className="text-[11px]" style={{ color: '#86868b' }}>
+                          Active · 247 chauffeurs
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {/* Close */}
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Fermer la conversation"
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-black/[0.06] active:scale-95"
-                  style={{ color: '#86868b' }}
+                  className="p-2 rounded-full transition-colors hover:bg-black/[0.06] active:scale-95"
+                  aria-label="Fermer"
+                  style={{ color: '#6e6e73' }}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Messages */}
-              <div
-                className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-3"
-                style={{ scrollbarWidth: 'thin' }}
-              >
-                {messages.map((m) => (
-                  <ChatBubble key={m.id} message={m} />
+              {/* ── Messages ── */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 min-h-0">
+                {messages.map((msg) => (
+                  <MessageBubble
+                    key={msg.id}
+                    msg={msg}
+                    isActiveAudio={isPlaying && playingMsgId === msg.id}
+                    onToggleAudio={() =>
+                      toggleAudio(msg.tts_text ?? msg.text ?? '', msg.id)
+                    }
+                  />
                 ))}
 
-                {/* Quick zones chips au tour 1 — neutres Apple */}
-                {isTurn === 1 && messages.length === 1 && !isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.3 }}
-                    className="flex flex-wrap gap-1.5 pt-2"
-                  >
-                    {QUICK_ZONES.map((z) => (
-                      <button
-                        key={z}
-                        type="button"
-                        onClick={() => handleQuickZone(z)}
-                        className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-[#ebebed] active:scale-95"
+                {/* ── WhatsApp CTA — visible dès turn 2 ── */}
+                <AnimatePresence>
+                  {showWACTA && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ type: 'spring', damping: 22, stiffness: 260, delay: 0.15 }}
+                      className="pt-1"
+                    >
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() =>
+                          window.fbq?.('trackCustom', 'WhatsAppLinkClicked', {
+                            section: 'modal_ajnaya',
+                            turn,
+                            zone: zoneData?.zone_match,
+                          })
+                        }
+                        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-white font-semibold text-[14px] transition-all hover:opacity-92 active:scale-[0.98]"
                         style={{
-                          backgroundColor: '#f5f5f7',
-                          color: '#1d1d1f',
+                          backgroundColor: '#25D366',
+                          boxShadow: '0 6px 22px -6px rgba(37,211,102,0.42)',
                         }}
                       >
-                        {z}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
+                        <MessageCircle className="w-4 h-4" />
+                        Continuer sur WhatsApp
+                      </a>
+                      <p
+                        className="text-center text-[10px] font-medium mt-1.5"
+                        style={{ color: '#86868b' }}
+                      >
+                        Plan personnalisé · 2 min · Aucune inscription
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Composer ou push WhatsApp final */}
-              <div
-                className="px-4 sm:px-5 py-4 border-t flex-shrink-0"
-                style={{
-                  borderColor: 'rgba(0, 0, 0, 0.08)',
-                  backgroundColor: '#fafafa',
-                }}
-              >
-                {isTurn === 3 ? (
-                  <div className="flex flex-col gap-2">
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={handleWAClick}
-                      className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-white font-bold text-sm transition-all active:scale-[0.98]"
-                      style={{
-                        backgroundColor: '#16a34a',
-                        boxShadow: '0 6px 20px -4px rgba(22,163,74,0.45)',
-                      }}
+              {/* ── Quick zones (turn 1 only, avant premier message user) ── */}
+              {turn === 1 && messages.length <= 2 && !isLoading && (
+                <div
+                  className="px-4 pb-2.5 flex gap-2 overflow-x-auto flex-shrink-0"
+                  style={{ scrollbarWidth: 'none' }}
+                >
+                  {QUICK_ZONES.map((zone) => (
+                    <motion.button
+                      key={zone}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleQuickZone(zone)}
+                      className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors hover:bg-black/10"
+                      style={{ backgroundColor: '#f5f5f7', color: '#1d1d1f' }}
                     >
-                      <MessageCircle className="w-4 h-4" />
-                      Continuer sur WhatsApp — recevoir les 3 bonus
-                    </a>
-                    <p
-                      className="text-center text-[11px] mt-1"
-                      style={{ color: '#86868b' }}
-                    >
-                      Vous gardez la main : aucune inscription, aucune carte.
-                    </p>
-                  </div>
-                ) : (
-                  <form
-                    onSubmit={handleSubmit}
-                    className="flex items-center gap-2"
-                  >
-                    {isTurn === 1 && (
-                      <MapPin
-                        className="w-4 h-4 flex-shrink-0"
-                        style={{ color: '#86868b' }}
-                      />
-                    )}
+                      {zone}
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Input ── */}
+              {turn <= 2 && (
+                <div
+                  className="px-4 pb-4 pt-2.5 flex-shrink-0 border-t"
+                  style={{ borderColor: 'rgba(0,0,0,0.06)' }}
+                >
+                  <form onSubmit={handleSubmit} className="flex gap-2 items-center">
                     <input
                       ref={inputRef}
                       type="text"
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder={
-                        isTurn === 1
-                          ? 'Tapez votre zone (CDG, La Défense...)'
-                          : 'Quel créneau visez-vous ce soir ?'
+                        turn === 1
+                          ? 'Votre zone... (ex: Bercy, CDG, Lyon)'
+                          : 'Votre créneau... (ex: ce soir 19h)'
                       }
+                      className="flex-1 text-[14px] px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                      style={{
+                        backgroundColor: '#f5f5f7',
+                        border: '1.5px solid transparent',
+                        color: '#1d1d1f',
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = 'rgba(108,60,224,0.35)'
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'transparent'
+                      }}
                       disabled={isLoading}
                       autoComplete="off"
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder-[#86868b] disabled:opacity-50 min-w-0 py-1"
-                      style={{ color: '#1d1d1f' }}
                     />
-                    <button
+                    <motion.button
                       type="submit"
-                      disabled={!inputValue.trim() || isLoading}
-                      aria-label="Envoyer"
-                      className="flex-shrink-0 w-9 h-9 rounded-full text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-black active:scale-95"
-                      style={{ backgroundColor: '#1d1d1f' }}
+                      disabled={isLoading || !inputValue.trim()}
+                      whileTap={{ scale: 0.93 }}
+                      className="p-2.5 rounded-xl transition-all disabled:opacity-35"
+                      style={{ backgroundColor: '#1d1d1f', color: '#fff' }}
                     >
                       {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <motion.div
+                          className="w-4 h-4 rounded-full border-2 border-white/25 border-t-white"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.75, repeat: Infinity, ease: 'linear' }}
+                        />
                       ) : (
-                        <Send className="w-3.5 h-3.5" />
+                        <Send className="w-4 h-4" />
                       )}
-                    </button>
+                    </motion.button>
                   </form>
-                )}
-              </div>
+                </div>
+              )}
             </motion.div>
           </div>
         </>
       )}
     </AnimatePresence>
   )
-}
-
-// ─── Sub-component : bulle de chat iMessage-grade ───────────────────
-function ChatBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === 'user'
-
-  // Typing dots Apple-grade
-  if (message.isTyping) {
-    return (
-      <div className="flex justify-start">
-        <div
-          className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5"
-          style={{ backgroundColor: '#f5f5f7' }}
-        >
-          {[0, 1, 2].map((i) => (
-            <motion.span
-              key={i}
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: '#86868b' }}
-              animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
-              transition={{
-                duration: 0.9,
-                repeat: Infinity,
-                delay: i * 0.14,
-                ease: 'easeInOut',
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // Carte structurée zone
-  if (message.type === 'zone-card' && message.zoneStats) {
-    return <ZoneCardBubble stats={message.zoneStats} />
-  }
-
-  // Texte iMessage-grade — user noir, Ajnaya gris Apple
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-    >
-      <div
-        className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-line ${
-          isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'
-        }`}
-        style={
-          isUser
-            ? {
-                backgroundColor: '#1d1d1f',
-                color: '#ffffff',
-              }
-            : {
-                backgroundColor: '#f5f5f7',
-                color: '#1d1d1f',
-              }
-        }
-      >
-        {renderMarkdownBold(message.text ?? '')}
-      </div>
-    </motion.div>
-  )
-}
-
-/**
- * Carte zone — détails Pieuvre Apple-grade
- * Le grand chiffre €/h reste en NOIR APPLE pur (pas de gradient candy)
- * L'accent violet est limité au pin et au badge "DONNÉES RÉELLES"
- */
-function ZoneCardBubble({ stats }: { stats: ZoneStats }) {
-  // "il y a X min" pour la fraîcheur de la donnée
-  const minutesAgo = stats.last_updated
-    ? Math.max(0, Math.floor((Date.now() - new Date(stats.last_updated).getTime()) / 60000))
-    : null
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="flex justify-start"
-    >
-      <div
-        className="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-tl-sm overflow-hidden"
-        style={{
-          backgroundColor: '#fafafa',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
-        }}
-      >
-        {/* Header carte — pin + zone match + badge "DONNÉES RÉELLES" */}
-        <div
-          className="px-4 py-3 flex items-center justify-between gap-2 border-b"
-          style={{ borderColor: 'rgba(0, 0, 0, 0.06)' }}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <MapPin
-              className="w-3.5 h-3.5 flex-shrink-0"
-              style={{ color: '#6C3CE0' }}
-            />
-            <p
-              className="text-[11px] font-bold truncate"
-              style={{ color: '#1d1d1f' }}
-            >
-              {stats.zone_match}
-            </p>
-          </div>
-          <span
-            className="text-[9px] font-bold uppercase tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
-            style={{
-              letterSpacing: '0.18em',
-              color: '#6C3CE0',
-              backgroundColor: 'rgba(108, 60, 224, 0.08)',
-            }}
-          >
-            Données réelles
-          </span>
-        </div>
-
-        {/* Grand chiffre — NOIR APPLE pur */}
-        <div className="px-4 py-4">
-          <p
-            className="text-[10px] font-semibold uppercase mb-1.5"
-            style={{
-              letterSpacing: '0.20em',
-              color: '#86868b',
-            }}
-          >
-            Tarif horaire moyen ce soir
-          </p>
-          <div className="flex items-baseline gap-2 mb-4">
-            <span
-              className="text-4xl sm:text-5xl font-black tabular-nums"
-              style={{
-                letterSpacing: '-0.04em',
-                color: '#1d1d1f',
-              }}
-            >
-              {stats.avg_hourly.toFixed(2).replace('.', ',')}
-            </span>
-            <span
-              className="text-base font-semibold tabular-nums"
-              style={{ color: '#86868b' }}
-            >
-              €/h
-            </span>
-          </div>
-
-          {/* Sub-stats : demande + pool */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <p
-                className="text-[10px] uppercase font-semibold mb-0.5"
-                style={{
-                  letterSpacing: '0.18em',
-                  color: '#86868b',
-                }}
-              >
-                Demande
-              </p>
-              <p
-                className="text-sm font-bold tabular-nums flex items-center gap-1"
-                style={{ color: '#34C759' }}
-              >
-                <TrendingUp className="w-3.5 h-3.5" />
-                ▲ {stats.demand_delta_pct}%
-                <span
-                  className="text-[10px] font-medium"
-                  style={{ color: '#86868b' }}
-                >
-                  vs lundi
-                </span>
-              </p>
-            </div>
-            {stats.top_pool && (
-              <div>
-                <p
-                  className="text-[10px] uppercase font-semibold mb-0.5"
-                  style={{
-                    letterSpacing: '0.18em',
-                    color: '#86868b',
-                  }}
-                >
-                  Pool optimal
-                </p>
-                <p
-                  className="text-sm font-semibold leading-tight"
-                  style={{ color: '#1d1d1f' }}
-                >
-                  {stats.top_pool}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Footer — source + fraîcheur */}
-          <div
-            className="flex items-center justify-between gap-2 pt-2 border-t"
-            style={{ borderColor: 'rgba(0, 0, 0, 0.06)' }}
-          >
-            <p
-              className="text-[10px] tabular-nums"
-              style={{ color: '#86868b' }}
-            >
-              {stats.courses_count} courses · sem. {stats.week_iso}
-            </p>
-            {minutesAgo !== null && (
-              <p
-                className="text-[10px] tabular-nums flex items-center gap-1"
-                style={{ color: '#86868b' }}
-              >
-                <Clock className="w-2.5 h-2.5" />
-                {minutesAgo === 0 ? 'à l’instant' : `il y a ${minutesAgo} min`}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-/**
- * Mini-renderer markdown bold : convertit `**texte**` en <strong>.
- */
-function renderMarkdownBold(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g)
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <strong key={i} style={{ fontWeight: 700 }}>
-          {part.slice(2, -2)}
-        </strong>
-      )
-    }
-    return <span key={i}>{part}</span>
-  })
-}
-
-declare global {
-  interface Window {
-    fbq?: (...args: unknown[]) => void
-  }
 }

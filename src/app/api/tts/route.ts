@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
       .replace(/\bnb\b/gi, 'nombre')
 
     const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=3&output_format=mp3_22050_32`,
+      // eleven_v3 — upgrade Site2026v73 (sync avec backend Railway commit 07f660d)
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=3&output_format=mp3_44100_64`,
       {
         method: 'POST',
         headers: {
@@ -58,12 +59,11 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           text: spokenText,
-          model_id: 'eleven_multilingual_v2',
+          model_id: 'eleven_v3',
           voice_settings: {
-            stability: 0.35,
-            similarity_boost: 0.8,
-            style: 0.55,
-            speed: 1.15,
+            stability: 0.50,
+            similarity_boost: 0.75,
+            style: 0.0,
             use_speaker_boost: true,
           },
         }),
