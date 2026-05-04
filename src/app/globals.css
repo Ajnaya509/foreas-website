@@ -52,20 +52,20 @@ html { scroll-behavior: smooth; }
    Switchable A/B : crème chaud (papier japonais hôtel) vs frais (Apple).
    ──────────────────────────────────────────────────────────────────── */
 :root {
-  /* Crème chaud (default) — hôtel boutique, papier japonais, lettre manuscrite */
-  --bg-cream-warm: #f8f4ed;
-  --bg-cream-warm-soft: #f4efe3;
-  --bg-cream-warm-edge: #eae4d5;
-  --text-cream-fg: #2a2520;          /* ivoire foncé, contraste retina-friendly */
-  --text-cream-fg-soft: rgba(42, 37, 32, 0.65);
-  --text-cream-fg-muted: rgba(42, 37, 32, 0.42);
-  --border-cream: rgba(42, 37, 32, 0.08);
-  --border-cream-strong: rgba(42, 37, 32, 0.16);
+  /* Blanc Apple (Site2026v70) — Apple.com / Pages / Keynote blanc immaculé */
+  --bg-cream-warm: #ffffff;
+  --bg-cream-warm-soft: #f8f8fa;
+  --bg-cream-warm-edge: #f5f5f7;    /* Apple gray-100 standard section separator */
+  --text-cream-fg: #1d1d1f;          /* Apple near-black — identique à apple.com */
+  --text-cream-fg-soft: rgba(29, 29, 31, 0.68);
+  --text-cream-fg-muted: rgba(29, 29, 31, 0.44);
+  --border-cream: rgba(0, 0, 0, 0.08);
+  --border-cream-strong: rgba(0, 0, 0, 0.16);
 
-  /* Crème frais (alternative A/B) — Apple Pages, Notion, presque blanc */
-  --bg-cream-fresh: #fafaf7;
-  --bg-cream-fresh-soft: #f5f5f0;
-  --bg-cream-fresh-edge: #ebebe5;
+  /* Alias fresh = même valeurs (compatibilité backward) */
+  --bg-cream-fresh: #f5f5f7;
+  --bg-cream-fresh-soft: #f0f0f2;
+  --bg-cream-fresh-edge: #e8e8ed;
 }
 
 .bg-cream-warm  { background-color: var(--bg-cream-warm); }
@@ -81,28 +81,23 @@ html { scroll-behavior: smooth; }
     linear-gradient(
       180deg,
       var(--bg-cream-warm) 0%,
-      var(--bg-cream-warm-edge) 30%,
-      #1a1410 65%,
+      var(--bg-cream-warm-edge) 25%,
+      #111114 62%,
       #000000 100%
     );
 }
 
-/* Texture papier japonais subtile — pour donner du grain sur fond crème */
+/* Blanc Apple — clean, sans grain (Apple ne texture pas) */
 .bg-cream-warm-textured {
   background-color: var(--bg-cream-warm);
-  background-image:
-    radial-gradient(rgba(42, 37, 32, 0.018) 1px, transparent 1px),
-    radial-gradient(rgba(42, 37, 32, 0.012) 1px, transparent 1px);
-  background-size: 22px 22px, 13px 13px;
-  background-position: 0 0, 11px 11px;
 }
 
-/* Halos crème ultra-doux (pour ne pas casser l'épure smooth) */
+/* Halos Apple blanc — violet/cyan très subtils, sans warm orange */
 .cream-halo-warm {
   background:
-    radial-gradient(ellipse 60% 50% at 25% 18%, rgba(255, 191, 122, 0.22) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 80% 25%, rgba(186, 153, 240, 0.16) 0%, transparent 70%),
-    radial-gradient(ellipse 70% 55% at 50% 92%, rgba(255, 191, 122, 0.10) 0%, transparent 75%);
+    radial-gradient(ellipse 60% 50% at 20% 15%, rgba(186, 153, 240, 0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 82% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 55% at 50% 95%, rgba(140, 82, 255, 0.06) 0%, transparent 75%);
 }
 
 /* ── Red pulse border for problem cards ── */

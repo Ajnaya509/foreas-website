@@ -91,9 +91,9 @@ export default function HomeHeroCream() {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-7 sm:mb-8"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.55)',
-              border: '1px solid rgba(42, 37, 32, 0.10)',
-              boxShadow: '0 2px 8px -2px rgba(42, 37, 32, 0.08)',
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              border: '1px solid rgba(0, 0, 0, 0.08)',
+              boxShadow: '0 1px 4px -1px rgba(0, 0, 0, 0.06)',
             }}
           >
             <span className="relative flex w-2 h-2" aria-hidden="true">
@@ -153,10 +153,10 @@ export default function HomeHeroCream() {
             <div
               className="group relative flex items-center gap-3 rounded-full transition-all px-5 sm:px-6 py-3.5 sm:py-4 cursor-text"
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.70)',
+                backgroundColor: '#ffffff',
                 boxShadow:
-                  '0 1px 0 0 rgba(255,255,255,0.85) inset, 0 1px 3px rgba(42,37,32,0.06), 0 30px 60px -25px rgba(140,82,255,0.18)',
-                border: '1px solid rgba(42, 37, 32, 0.10)',
+                  '0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06), 0 30px 60px -25px rgba(140,82,255,0.16)',
+                border: 'none',
               }}
               onClick={() => inputRef.current?.focus()}
             >
@@ -175,7 +175,7 @@ export default function HomeHeroCream() {
                 }
                 autoComplete="off"
                 spellCheck={false}
-                className="flex-1 bg-transparent border-none outline-none text-base sm:text-lg font-medium placeholder-[rgba(42,37,32,0.42)] tabular-nums min-w-0"
+                className="flex-1 bg-transparent border-none outline-none text-base sm:text-lg font-medium placeholder-[rgba(29,29,31,0.38)] tabular-nums min-w-0"
                 style={{ color: 'var(--text-cream-fg)' }}
                 aria-label="Votre zone d'opération"
               />
@@ -243,27 +243,27 @@ export default function HomeHeroCream() {
               transition={{ duration: 0.5, delay: 0.55 }}
               className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mt-5 px-3 py-1.5 rounded-full"
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.50)',
-                border: '1px solid rgba(42, 37, 32, 0.08)',
+                backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                border: '1px solid rgba(0, 0, 0, 0.07)',
               }}
             >
               <span
                 className="text-[11px] font-semibold tabular-nums"
-                style={{ color: 'rgba(42, 37, 32, 0.72)' }}
+                style={{ color: 'rgba(29, 29, 31, 0.72)' }}
               >
                 51 zones
               </span>
-              <span style={{ color: 'rgba(42, 37, 32, 0.30)' }}>·</span>
+              <span style={{ color: 'rgba(0, 0, 0, 0.18)' }}>·</span>
               <span
                 className="text-[11px] font-semibold"
-                style={{ color: 'rgba(42, 37, 32, 0.72)' }}
+                style={{ color: 'rgba(29, 29, 31, 0.72)' }}
               >
                 données réelles
               </span>
-              <span style={{ color: 'rgba(42, 37, 32, 0.30)' }}>·</span>
+              <span style={{ color: 'rgba(0, 0, 0, 0.18)' }}>·</span>
               <span
                 className="text-[11px] font-semibold"
-                style={{ color: 'rgba(42, 37, 32, 0.72)' }}
+                style={{ color: 'rgba(29, 29, 31, 0.72)' }}
               >
                 sans inscription
               </span>
@@ -288,7 +288,7 @@ export default function HomeHeroCream() {
           >
             Scroll
           </div>
-          <div className="w-px h-7 bg-gradient-to-b from-transparent via-[rgba(42,37,32,0.30)] to-transparent" />
+          <div className="w-px h-7 bg-gradient-to-b from-transparent via-[rgba(0,0,0,0.16)] to-transparent" />
         </motion.div>
       </section>
 

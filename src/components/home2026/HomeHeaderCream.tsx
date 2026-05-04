@@ -47,8 +47,8 @@ export default function HomeHeaderCream() {
       }`}
       style={{
         backgroundColor:
-          scrolled || mobileOpen ? 'rgba(248, 244, 237, 0.92)' : 'transparent',
-        borderColor: scrolled ? 'rgba(42, 37, 32, 0.08)' : 'transparent',
+          scrolled || mobileOpen ? 'rgba(255, 255, 255, 0.92)' : 'transparent',
+        borderColor: scrolled ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
       }}
     >
       <nav
@@ -148,7 +148,7 @@ export default function HomeHeaderCream() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25 }}
               className="md:hidden overflow-hidden border-t"
-              style={{ borderColor: 'var(--border-cream)' }}
+              style={{ borderColor: 'rgba(0, 0, 0, 0.08)' }}
             >
               <div className="py-5 flex flex-col gap-2">
                 <Link

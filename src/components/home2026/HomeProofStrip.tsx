@@ -55,7 +55,7 @@ export default function HomeProofStrip() {
       className="relative py-8 sm:py-10 px-5 border-y"
       style={{
         backgroundColor: 'var(--bg-cream-warm-edge)',
-        borderColor: 'rgba(42, 37, 32, 0.10)',
+        borderColor: 'rgba(0, 0, 0, 0.08)',
       }}
       aria-label="Preuves de crédibilité FOREAS"
     >
