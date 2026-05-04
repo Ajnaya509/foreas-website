@@ -7,23 +7,14 @@ import { Menu, X, MessageCircle } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
 
 /**
- * HomeHeaderCream — header de la nouvelle home `/` chauffeur
+ * HomeHeaderCream — header blanc Apple absolu (Site2026v72)
  *
- * Spec :
- * - Background : transparent au top, glass crème quand on scroll (>50px)
- * - Logo "FOREAS/" gradient signature 3-stops (cohérence brand)
- * - Lien `Pro` discret → /professionnels (B2B audience)
- * - Bouton "Connexion" → /dashboard/driver (chauffeurs déjà inscrits)
- * - Bouton "Souscrire" → wa.me Ajnaya direct (le clic ouvre WhatsApp,
- *   pas une page tarifs — Ajnaya guide vers paiement dans la conv)
- *
- * Responsive : burger mobile, layout horizontal desktop ≥768px
- *
- * Skill foreas-design-system :
- * - Variant CRÈME (rupture délibérée)
- * - text-cream-fg ivoire foncé
- * - Glass scroll : backdrop-blur + bg-cream-warm/85
- * - Bouton Souscrire = green-600 (couleur WhatsApp signature)
+ * Refonte +100/100 :
+ * - Logo "/" en violet pur #6C3CE0 (un seul ton — plus de gradient candy)
+ * - Liens Pro / Connexion en noir Apple #1d1d1f
+ * - Souscrire = noir Apple solide #1d1d1f (cohérence Apple, signal premium)
+ *   sub-line "Sans CB · 7 j offerts" parfaitement alignée
+ * - Au scroll : background blanc Apple `rgba(255,255,255,0.92)` + blur
  */
 export default function HomeHeaderCream() {
   const [scrolled, setScrolled] = useState(false)
@@ -56,7 +47,7 @@ export default function HomeHeaderCream() {
         aria-label="Navigation principale"
       >
         <div className="flex items-center justify-between h-16 lg:h-18">
-          {/* ── Logo ───────────────────────────────────────────────────── */}
+          {/* ── Logo — violet pur, plus de gradient candy ─────────────────── */}
           <Link
             href="/"
             className="flex items-center group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-md"
@@ -66,12 +57,13 @@ export default function HomeHeaderCream() {
               className="text-2xl lg:text-[26px] font-semibold tracking-wider"
               style={{
                 fontFamily: 'var(--font-genos, "Genos"), system-ui, sans-serif',
-                color: 'var(--text-cream-fg)',
+                color: '#1d1d1f',
               }}
             >
               FOREAS
               <span
-                className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-200"
+                className="transition-opacity duration-200 group-hover:opacity-70"
+                style={{ color: '#6C3CE0' }}
               >
                 /
               </span>
@@ -79,42 +71,41 @@ export default function HomeHeaderCream() {
           </Link>
 
           {/* ── Desktop nav ────────────────────────────────────────────── */}
-          <div className="hidden md:flex md:items-center md:gap-2">
+          <div className="hidden md:flex md:items-center md:gap-1">
             <Link
               href="/professionnels"
               className="px-3 py-2 text-[13px] font-medium transition-colors hover:underline underline-offset-4"
-              style={{ color: 'var(--text-cream-fg-soft)' }}
+              style={{ color: '#1d1d1f' }}
             >
               Pro
             </Link>
             <Link
               href="/dashboard/driver"
               className="px-3 py-2 text-[13px] font-medium transition-colors hover:underline underline-offset-4"
-              style={{ color: 'var(--text-cream-fg-soft)' }}
+              style={{ color: '#1d1d1f' }}
             >
               Connexion
             </Link>
-            {/* Souscrire — outlined vert (moins agressif sur le crème) + sub "Sans CB" */}
-            <div className="ml-2 flex flex-col items-end">
+            {/* Souscrire — noir Apple solide */}
+            <div className="ml-3 flex flex-col items-end">
               <a
                 href={subscribeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:bg-green-600 hover:text-white hover:border-green-600"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:bg-black active:scale-95"
                 style={{
-                  color: '#16a34a',
-                  border: '1.5px solid #16a34a',
-                  backgroundColor: 'rgba(22, 163, 74, 0.04)',
+                  backgroundColor: '#1d1d1f',
+                  color: '#ffffff',
                 }}
               >
                 <MessageCircle className="w-3.5 h-3.5" />
                 Souscrire
               </a>
               <span
-                className="text-[9px] font-semibold uppercase mt-0.5 tabular-nums"
+                className="text-[9px] font-semibold uppercase mt-1 tabular-nums"
                 style={{
                   letterSpacing: '0.18em',
-                  color: 'var(--text-cream-fg-muted)',
+                  color: '#86868b',
                 }}
               >
                 Sans CB · 7 j offerts
@@ -126,10 +117,10 @@ export default function HomeHeaderCream() {
           <button
             type="button"
             onClick={() => setMobileOpen((o) => !o)}
-            className="md:hidden p-2 rounded-full transition-colors hover:bg-black/[0.05]"
+            className="md:hidden p-2 rounded-full transition-colors hover:bg-black/[0.05] active:scale-95"
             aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={mobileOpen}
-            style={{ color: 'var(--text-cream-fg)' }}
+            style={{ color: '#1d1d1f' }}
           >
             {mobileOpen ? (
               <X className="h-5 w-5" />
@@ -150,12 +141,12 @@ export default function HomeHeaderCream() {
               className="md:hidden overflow-hidden border-t"
               style={{ borderColor: 'rgba(0, 0, 0, 0.08)' }}
             >
-              <div className="py-5 flex flex-col gap-2">
+              <div className="py-5 flex flex-col gap-1">
                 <Link
                   href="/professionnels"
                   onClick={() => setMobileOpen(false)}
                   className="px-2 py-3 text-base font-medium hover:underline underline-offset-4"
-                  style={{ color: 'var(--text-cream-fg-soft)' }}
+                  style={{ color: '#1d1d1f' }}
                 >
                   Pro
                 </Link>
@@ -163,7 +154,7 @@ export default function HomeHeaderCream() {
                   href="/dashboard/driver"
                   onClick={() => setMobileOpen(false)}
                   className="px-2 py-3 text-base font-medium hover:underline underline-offset-4"
-                  style={{ color: 'var(--text-cream-fg-soft)' }}
+                  style={{ color: '#1d1d1f' }}
                 >
                   Connexion
                 </Link>
@@ -172,12 +163,21 @@ export default function HomeHeaderCream() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileOpen(false)}
-                  className="mt-2 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-full bg-green-600 text-white text-sm font-semibold"
-                  style={{ boxShadow: '0 6px 18px -4px rgba(16,185,129,0.45)' }}
+                  className="mt-3 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-full text-white text-sm font-semibold active:scale-95"
+                  style={{ backgroundColor: '#1d1d1f' }}
                 >
                   <MessageCircle className="w-4 h-4" />
                   Souscrire — discuter avec Ajnaya
                 </a>
+                <span
+                  className="text-[10px] font-semibold uppercase mt-2 tabular-nums text-center"
+                  style={{
+                    letterSpacing: '0.18em',
+                    color: '#86868b',
+                  }}
+                >
+                  Sans CB · 7 jours offerts
+                </span>
               </div>
             </motion.div>
           )}

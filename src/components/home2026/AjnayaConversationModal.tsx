@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, MessageCircle, Loader2, MapPin, TrendingUp } from 'lucide-react'
+import { X, Send, MessageCircle, Loader2, MapPin, TrendingUp, Clock } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
 import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
@@ -16,7 +16,6 @@ interface AjnayaConversationModalProps {
 interface ChatMessage {
   id: string
   role: 'user' | 'ajnaya'
-  /** Texte simple OU clé spéciale 'zone-card' pour rendu carte structurée */
   type?: 'text' | 'zone-card'
   text?: string
   zoneStats?: ZoneStats
@@ -32,26 +31,28 @@ interface ZoneStats {
   courses_count: number
   week_iso: string
   has_data: boolean
-  fallback_zone?: { name: string; avg_hourly: number } | null
+  last_updated?: string
+  fallback_zone?: { name: string; avg_hourly: number; note?: string } | null
 }
 
 const QUICK_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu']
 
 /**
- * AjnayaConversationModal — refonte +100/100 mobile-first
+ * AjnayaConversationModal — Apple-grade absolu (Site2026v72)
  *
- * Spec :
- * - Centrage CORRECT desktop · bottom-sheet mobile (fix bug v68)
- * - Markdown bold rendered dans bulles (regex simple `**texte**` → <strong>)
- * - Tour 1 : Ajnaya répond en CARTE STRUCTURÉE (chiffre €/h grand) — pas en texte long
- * - Chips suggestions zones tap-to-fill au tour 1 (CDG · La Défense · Bercy · Lyon)
- * - Avatar gradient violet→cyan avec halo pulse animé
- * - Typing dots avec spring fluide
- * - 3 tours max → push WhatsApp avec value stack Hormozi
+ * Refonte +100/100 :
+ * - Backdrop noir Apple #000 / 0.42 (au lieu de brown cream)
+ * - Modal blanc pur #fff avec border 1px rgba(0,0,0,0.08)
+ * - Bulles user noir Apple, bulles Ajnaya gris Apple #f5f5f7 (iMessage-like)
+ * - Zone card : grand chiffre €/h en noir absolu — l'italique fait le travail
+ * - Quick zones chips neutres #f5f5f7 — plus de teinte violette criarde
+ * - Send button noir Apple solide
+ * - Avatar Ajnaya : keep gradient violet→cyan (signature brand) — UN SEUL endroit où le gradient subsiste
+ * - Push WhatsApp final : keep green (couleur signature WhatsApp)
  *
  * Skills :
- * - foreas-design-system : variant CRÈME modal · glass crème nacré
- * - foreas-copy-atomic : Pre-Suasion · Cialdini réciprocité · Hormozi value stack
+ * - foreas-design-system : variant blanc Apple, bulles iMessage-grade
+ * - foreas-copy-atomic : Pre-Suasion, Cialdini réciprocité, Hormozi value stack
  */
 export default function AjnayaConversationModal({
   isOpen,
@@ -80,9 +81,7 @@ export default function AjnayaConversationModal({
     }
     setMessages([intro])
 
-    getVisitorId().catch(() => {
-      /* silencieux */
-    })
+    getVisitorId().catch(() => { /* silencieux */ })
 
     if (initialZone && !initialZoneSentRef.current) {
       initialZoneSentRef.current = true
@@ -125,6 +124,11 @@ export default function AjnayaConversationModal({
     if (!zone.trim()) return
     setIsLoading(true)
 
+    // Haptic feedback (iOS / Android)
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate?.(8) } catch { /* silencieux */ }
+    }
+
     const userMsg: ChatMessage = {
       id: `m-user-${Date.now()}`,
       role: 'user',
@@ -151,12 +155,11 @@ export default function AjnayaConversationModal({
 
     try {
       const res = await fetch(
-        `/api/home/zone-stats?zone=${encodeURIComponent(zone)}`
+        `/api/home/zone-stats?zone=${encodeURIComponent(zone)}`,
       )
       const data = (await res.json()) as ZoneStats
       setZoneStats(data)
 
-      // Carte structurée si data, sinon texte fallback
       if (data.has_data) {
         const cardMsg: ChatMessage = {
           id: `m-card-${Date.now()}`,
@@ -179,17 +182,13 @@ export default function AjnayaConversationModal({
           return [...filtered, cardMsg, followUpMsg]
         })
       } else {
-        // Pas de data → fallback élégant + question
         const fb = data.fallback_zone
         const fallbackText =
           `Hmm, je n'ai pas encore assez de données fiables sur **${data.zone_match}**.\n\n` +
           (fb
             ? `En attendant, regardez **${fb.name}** : ${fb.avg_hourly
                 .toFixed(2)
-                .replace(
-                  '.',
-                  ','
-                )} €/h en moyenne cette semaine.\n\n`
+                .replace('.', ',')} €/h en moyenne cette semaine.\n\n`
             : '') +
           `Pour le tarif EXACT sur votre zone, à votre créneau, on continue sur WhatsApp. Quel créneau visez-vous ce soir ?`
 
@@ -232,6 +231,11 @@ export default function AjnayaConversationModal({
     (message: string) => {
       if (!message.trim()) return
 
+      // Haptic
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate?.(8) } catch { /* silencieux */ }
+      }
+
       const userMsg: ChatMessage = {
         id: `m-user-${Date.now()}`,
         role: 'user',
@@ -258,7 +262,7 @@ export default function AjnayaConversationModal({
         })
       }
     },
-    [zoneStats]
+    [zoneStats],
   )
 
   const handleSubmit = useCallback(
@@ -274,7 +278,7 @@ export default function AjnayaConversationModal({
       }
       setInputValue('')
     },
-    [inputValue, isTurn, isLoading, handleZoneSubmit, handleTurn2Submit]
+    [inputValue, isTurn, isLoading, handleZoneSubmit, handleTurn2Submit],
   )
 
   const handleQuickZone = (zone: string) => {
@@ -301,19 +305,19 @@ export default function AjnayaConversationModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop noir Apple */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="fixed inset-0 z-50 backdrop-blur-md"
-            style={{ backgroundColor: 'rgba(42, 37, 32, 0.55)' }}
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.42)' }}
             onClick={onClose}
             aria-hidden="true"
           />
 
-          {/* Wrapper centrage flex — bottom-sheet mobile · centered desktop */}
+          {/* Wrapper centrage flex */}
           <div
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none"
             role="presentation"
@@ -323,11 +327,11 @@ export default function AjnayaConversationModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 24 }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="pointer-events-auto w-full sm:w-auto sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[80vh] flex flex-col rounded-t-3xl sm:rounded-2xl overflow-hidden"
+              className="pointer-events-auto w-full sm:w-auto sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[80vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden"
               style={{
-                backgroundColor: 'rgba(248, 244, 237, 0.97)',
+                backgroundColor: '#ffffff',
                 boxShadow:
-                  '0 30px 80px -20px rgba(42,37,32,0.30), 0 0 0 1px rgba(42,37,32,0.08), inset 0 0 0 1px rgba(255,255,255,0.65)',
+                  '0 30px 80px -20px rgba(0,0,0,0.30), 0 0 0 1px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.85)',
               }}
               role="dialog"
               aria-modal="true"
@@ -336,22 +340,27 @@ export default function AjnayaConversationModal({
               {/* Header modal */}
               <div
                 className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0"
-                style={{ borderColor: 'var(--border-cream)' }}
+                style={{ borderColor: 'rgba(0, 0, 0, 0.08)' }}
               >
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div
-                      className="relative w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center"
+                      className="relative w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center"
                       style={{
-                        boxShadow: '0 6px 16px -4px rgba(140,82,255,0.45)',
+                        boxShadow: '0 4px 12px -2px rgba(140,82,255,0.32)',
                       }}
                     >
                       <span className="text-sm font-bold text-white">A</span>
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-[#f8f4ed]" />
+                      <div
+                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: '#34C759',
+                          border: '2px solid #ffffff',
+                        }}
+                      />
                     </div>
-                    {/* Halo pulse animé autour de l'avatar */}
                     <span
-                      className="absolute inset-0 rounded-full bg-violet-500/30 animate-ping"
+                      className="absolute inset-0 rounded-full bg-violet-500/20 animate-ping"
                       style={{ animationDuration: '2.4s' }}
                       aria-hidden="true"
                     />
@@ -359,11 +368,14 @@ export default function AjnayaConversationModal({
                   <div>
                     <p
                       className="font-semibold text-sm"
-                      style={{ color: 'var(--text-cream-fg)' }}
+                      style={{ color: '#1d1d1f' }}
                     >
                       Ajnaya
                     </p>
-                    <p className="text-[11px] text-green-700 font-medium">
+                    <p
+                      className="text-[11px] font-medium tabular-nums"
+                      style={{ color: '#34C759' }}
+                    >
                       En ligne · répond instantanément
                     </p>
                   </div>
@@ -372,8 +384,8 @@ export default function AjnayaConversationModal({
                   type="button"
                   onClick={onClose}
                   aria-label="Fermer la conversation"
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-black/[0.05]"
-                  style={{ color: 'var(--text-cream-fg-soft)' }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-black/[0.06] active:scale-95"
+                  style={{ color: '#86868b' }}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -388,7 +400,7 @@ export default function AjnayaConversationModal({
                   <ChatBubble key={m.id} message={m} />
                 ))}
 
-                {/* Quick zones chips au tour 1 (avant 1ʳᵉ submit) */}
+                {/* Quick zones chips au tour 1 — neutres Apple */}
                 {isTurn === 1 && messages.length === 1 && !isLoading && (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
@@ -401,11 +413,10 @@ export default function AjnayaConversationModal({
                         key={z}
                         type="button"
                         onClick={() => handleQuickZone(z)}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-[1.03]"
+                        className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-[#ebebed] active:scale-95"
                         style={{
-                          backgroundColor: 'rgba(140, 82, 255, 0.10)',
-                          color: 'var(--text-cream-fg)',
-                          border: '1px solid rgba(140, 82, 255, 0.20)',
+                          backgroundColor: '#f5f5f7',
+                          color: '#1d1d1f',
                         }}
                       >
                         {z}
@@ -421,8 +432,8 @@ export default function AjnayaConversationModal({
               <div
                 className="px-4 sm:px-5 py-4 border-t flex-shrink-0"
                 style={{
-                  borderColor: 'var(--border-cream)',
-                  backgroundColor: 'rgba(244, 239, 227, 0.5)',
+                  borderColor: 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: '#fafafa',
                 }}
               >
                 {isTurn === 3 ? (
@@ -432,9 +443,10 @@ export default function AjnayaConversationModal({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={handleWAClick}
-                      className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-all"
+                      className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-white font-bold text-sm transition-all active:scale-[0.98]"
                       style={{
-                        boxShadow: '0 8px 24px -4px rgba(16,185,129,0.55)',
+                        backgroundColor: '#16a34a',
+                        boxShadow: '0 6px 20px -4px rgba(22,163,74,0.45)',
                       }}
                     >
                       <MessageCircle className="w-4 h-4" />
@@ -442,7 +454,7 @@ export default function AjnayaConversationModal({
                     </a>
                     <p
                       className="text-center text-[11px] mt-1"
-                      style={{ color: 'var(--text-cream-fg-muted)' }}
+                      style={{ color: '#86868b' }}
                     >
                       Vous gardez la main : aucune inscription, aucune carte.
                     </p>
@@ -455,7 +467,7 @@ export default function AjnayaConversationModal({
                     {isTurn === 1 && (
                       <MapPin
                         className="w-4 h-4 flex-shrink-0"
-                        style={{ color: 'var(--text-cream-fg-muted)' }}
+                        style={{ color: '#86868b' }}
                       />
                     )}
                     <input
@@ -470,17 +482,15 @@ export default function AjnayaConversationModal({
                       }
                       disabled={isLoading}
                       autoComplete="off"
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder-[rgba(42,37,32,0.40)] disabled:opacity-50 min-w-0"
-                      style={{ color: 'var(--text-cream-fg)' }}
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder-[#86868b] disabled:opacity-50 min-w-0 py-1"
+                      style={{ color: '#1d1d1f' }}
                     />
                     <button
                       type="submit"
                       disabled={!inputValue.trim() || isLoading}
                       aria-label="Envoyer"
-                      className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-violet-500 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                      style={{
-                        boxShadow: '0 6px 16px -4px rgba(140,82,255,0.45)',
-                      }}
+                      className="flex-shrink-0 w-9 h-9 rounded-full text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-black active:scale-95"
+                      style={{ backgroundColor: '#1d1d1f' }}
                     >
                       {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -499,27 +509,28 @@ export default function AjnayaConversationModal({
   )
 }
 
-// ─── Sub-component : bulle de chat avec markdown bold ────────────────
+// ─── Sub-component : bulle de chat iMessage-grade ───────────────────
 function ChatBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
 
-  // Typing dots animé
+  // Typing dots Apple-grade
   if (message.isTyping) {
     return (
       <div className="flex justify-start">
         <div
           className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5"
-          style={{ backgroundColor: 'rgba(140, 82, 255, 0.08)' }}
+          style={{ backgroundColor: '#f5f5f7' }}
         >
           {[0, 1, 2].map((i) => (
             <motion.span
               key={i}
-              className="w-1.5 h-1.5 rounded-full bg-violet-500/70"
-              animate={{ y: [0, -3, 0] }}
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: '#86868b' }}
+              animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
               transition={{
-                duration: 0.8,
+                duration: 0.9,
                 repeat: Infinity,
-                delay: i * 0.12,
+                delay: i * 0.14,
                 ease: 'easeInOut',
               }}
             />
@@ -534,27 +545,27 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     return <ZoneCardBubble stats={message.zoneStats} />
   }
 
-  // Texte avec markdown bold rendered
+  // Texte iMessage-grade — user noir, Ajnaya gris Apple
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+      initial={{ opacity: 0, y: 6, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed whitespace-pre-line ${
+        className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-line ${
           isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'
         }`}
         style={
           isUser
             ? {
-                backgroundColor: 'var(--text-cream-fg)',
-                color: '#f8f4ed',
+                backgroundColor: '#1d1d1f',
+                color: '#ffffff',
               }
             : {
-                backgroundColor: 'rgba(140, 82, 255, 0.08)',
-                color: 'var(--text-cream-fg)',
+                backgroundColor: '#f5f5f7',
+                color: '#1d1d1f',
               }
         }
       >
@@ -564,8 +575,17 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   )
 }
 
-// ─── Carte zone structurée (chiffre €/h grand, demande %, pool) ──────
+/**
+ * Carte zone — détails Pieuvre Apple-grade
+ * Le grand chiffre €/h reste en NOIR APPLE pur (pas de gradient candy)
+ * L'accent violet est limité au pin et au badge "DONNÉES RÉELLES"
+ */
 function ZoneCardBubble({ stats }: { stats: ZoneStats }) {
+  // "il y a X min" pour la fraîcheur de la donnée
+  const minutesAgo = stats.last_updated
+    ? Math.max(0, Math.floor((Date.now() - new Date(stats.last_updated).getTime()) / 60000))
+    : null
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -576,64 +596,89 @@ function ZoneCardBubble({ stats }: { stats: ZoneStats }) {
       <div
         className="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-tl-sm overflow-hidden"
         style={{
-          backgroundColor: 'rgba(140, 82, 255, 0.06)',
-          border: '1px solid rgba(140, 82, 255, 0.18)',
+          backgroundColor: '#fafafa',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
         }}
       >
-        {/* Header carte */}
+        {/* Header carte — pin + zone match + badge "DONNÉES RÉELLES" */}
         <div
-          className="px-4 py-3 flex items-center gap-2 border-b"
-          style={{ borderColor: 'rgba(140, 82, 255, 0.15)' }}
+          className="px-4 py-3 flex items-center justify-between gap-2 border-b"
+          style={{ borderColor: 'rgba(0, 0, 0, 0.06)' }}
         >
-          <MapPin className="w-3.5 h-3.5 text-violet-700" />
-          <p
-            className="text-[10px] font-extrabold uppercase tabular-nums"
+          <div className="flex items-center gap-2 min-w-0">
+            <MapPin
+              className="w-3.5 h-3.5 flex-shrink-0"
+              style={{ color: '#6C3CE0' }}
+            />
+            <p
+              className="text-[11px] font-bold truncate"
+              style={{ color: '#1d1d1f' }}
+            >
+              {stats.zone_match}
+            </p>
+          </div>
+          <span
+            className="text-[9px] font-bold uppercase tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
             style={{
-              letterSpacing: '0.22em',
-              color: 'rgba(76, 47, 137, 0.85)',
+              letterSpacing: '0.18em',
+              color: '#6C3CE0',
+              backgroundColor: 'rgba(108, 60, 224, 0.08)',
             }}
           >
-            {stats.zone_match} · {stats.week_iso}
-          </p>
+            Données réelles
+          </span>
         </div>
 
-        {/* Grand chiffre */}
+        {/* Grand chiffre — NOIR APPLE pur */}
         <div className="px-4 py-4">
           <p
-            className="text-[10px] font-semibold uppercase mb-1"
+            className="text-[10px] font-semibold uppercase mb-1.5"
             style={{
               letterSpacing: '0.20em',
-              color: 'var(--text-cream-fg-muted)',
+              color: '#86868b',
             }}
           >
             Tarif horaire moyen ce soir
           </p>
-          <div className="flex items-baseline gap-2 mb-3">
+          <div className="flex items-baseline gap-2 mb-4">
             <span
-              className="text-3xl sm:text-4xl font-black tabular-nums bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-600 bg-clip-text text-transparent"
-              style={{ letterSpacing: '-0.04em' }}
+              className="text-4xl sm:text-5xl font-black tabular-nums"
+              style={{
+                letterSpacing: '-0.04em',
+                color: '#1d1d1f',
+              }}
             >
-              {stats.avg_hourly.toFixed(2).replace('.', ',')} €/h
+              {stats.avg_hourly.toFixed(2).replace('.', ',')}
+            </span>
+            <span
+              className="text-base font-semibold tabular-nums"
+              style={{ color: '#86868b' }}
+            >
+              €/h
             </span>
           </div>
 
           {/* Sub-stats : demande + pool */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <p
                 className="text-[10px] uppercase font-semibold mb-0.5"
                 style={{
                   letterSpacing: '0.18em',
-                  color: 'var(--text-cream-fg-muted)',
+                  color: '#86868b',
                 }}
               >
                 Demande
               </p>
-              <p className="text-sm font-bold tabular-nums flex items-center gap-1 text-green-700">
-                <TrendingUp className="w-3.5 h-3.5" />▲ {stats.demand_delta_pct}%
+              <p
+                className="text-sm font-bold tabular-nums flex items-center gap-1"
+                style={{ color: '#34C759' }}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                ▲ {stats.demand_delta_pct}%
                 <span
                   className="text-[10px] font-medium"
-                  style={{ color: 'var(--text-cream-fg-muted)' }}
+                  style={{ color: '#86868b' }}
                 >
                   vs lundi
                 </span>
@@ -645,14 +690,14 @@ function ZoneCardBubble({ stats }: { stats: ZoneStats }) {
                   className="text-[10px] uppercase font-semibold mb-0.5"
                   style={{
                     letterSpacing: '0.18em',
-                    color: 'var(--text-cream-fg-muted)',
+                    color: '#86868b',
                   }}
                 >
                   Pool optimal
                 </p>
                 <p
                   className="text-sm font-semibold leading-tight"
-                  style={{ color: 'var(--text-cream-fg)' }}
+                  style={{ color: '#1d1d1f' }}
                 >
                   {stats.top_pool}
                 </p>
@@ -660,13 +705,27 @@ function ZoneCardBubble({ stats }: { stats: ZoneStats }) {
             )}
           </div>
 
-          {/* Source honnête */}
-          <p
-            className="text-[10px] mt-3 tabular-nums"
-            style={{ color: 'var(--text-cream-fg-muted)' }}
+          {/* Footer — source + fraîcheur */}
+          <div
+            className="flex items-center justify-between gap-2 pt-2 border-t"
+            style={{ borderColor: 'rgba(0, 0, 0, 0.06)' }}
           >
-            Basé sur {stats.courses_count} courses · agrégé semaine {stats.week_iso}
-          </p>
+            <p
+              className="text-[10px] tabular-nums"
+              style={{ color: '#86868b' }}
+            >
+              {stats.courses_count} courses · sem. {stats.week_iso}
+            </p>
+            {minutesAgo !== null && (
+              <p
+                className="text-[10px] tabular-nums flex items-center gap-1"
+                style={{ color: '#86868b' }}
+              >
+                <Clock className="w-2.5 h-2.5" />
+                {minutesAgo === 0 ? 'à l’instant' : `il y a ${minutesAgo} min`}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
@@ -675,7 +734,6 @@ function ZoneCardBubble({ stats }: { stats: ZoneStats }) {
 
 /**
  * Mini-renderer markdown bold : convertit `**texte**` en <strong>.
- * Pas de lib externe — regex simple, suffisant pour notre usage.
  */
 function renderMarkdownBold(text: string): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*)/g)
