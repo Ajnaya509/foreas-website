@@ -94,16 +94,32 @@ export default function HomeHeaderCream() {
             >
               Connexion
             </Link>
-            <a
-              href={subscribeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 hover:bg-green-500 text-white text-[13px] font-semibold transition-all"
-              style={{ boxShadow: '0 6px 18px -4px rgba(16,185,129,0.45)' }}
-            >
-              <MessageCircle className="w-4 h-4" />
-              Souscrire
-            </a>
+            {/* Souscrire — outlined vert (moins agressif sur le crème) + sub "Sans CB" */}
+            <div className="ml-2 flex flex-col items-end">
+              <a
+                href={subscribeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:bg-green-600 hover:text-white hover:border-green-600"
+                style={{
+                  color: '#16a34a',
+                  border: '1.5px solid #16a34a',
+                  backgroundColor: 'rgba(22, 163, 74, 0.04)',
+                }}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Souscrire
+              </a>
+              <span
+                className="text-[9px] font-semibold uppercase mt-0.5 tabular-nums"
+                style={{
+                  letterSpacing: '0.18em',
+                  color: 'var(--text-cream-fg-muted)',
+                }}
+              >
+                Sans CB · 7 j offerts
+              </span>
+            </div>
           </div>
 
           {/* ── Mobile burger ──────────────────────────────────────────── */}

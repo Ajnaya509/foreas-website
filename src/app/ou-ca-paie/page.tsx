@@ -12,10 +12,10 @@ import ZoneFinalCTAWithPS from '@/components/zone/ZoneFinalCTAWithPS'
 export const metadata: Metadata = {
   title: 'Où ça paie ? — Tarifs réels par zone VTC · FOREAS',
   description:
-    'Tape ta zone. Ajnaya te dit où ça paie ce soir — tarif horaire moyen, demande relative, pool optimal. Données réelles flotte FOREAS, sans inscription.',
+    'Tapez votre zone. Ajnaya vous dit où ça paie ce soir — tarif horaire moyen, demande relative, pool optimal. Données réelles flotte FOREAS, sans inscription.',
   openGraph: {
     title: 'Où ça paie ? — FOREAS',
-    description: 'Gagne plus. Roule moins. L\'IA Ajnaya te dit où aller — basé sur la flotte FOREAS réelle.',
+    description: 'Gagnez plus. Roulez moins. L\'IA Ajnaya vous dit où aller — basé sur la flotte FOREAS réelle.',
     type: 'website',
     locale: 'fr_FR',
     url: 'https://foreas.xyz/ou-ca-paie',
@@ -49,7 +49,7 @@ const JSON_LD = {
       url: 'https://foreas.xyz/ou-ca-paie',
       name: 'Où ça paie ? — Tarifs réels par zone VTC · FOREAS',
       description:
-        'Tape ta zone. Ajnaya te dit où ça paie ce soir — tarif horaire moyen, demande relative, pool optimal. Données réelles flotte FOREAS, sans inscription.',
+        'Tapez votre zone. Ajnaya vous dit où ça paie ce soir — tarif horaire moyen, demande relative, pool optimal. Données réelles flotte FOREAS, sans inscription.',
       inLanguage: 'fr-FR',
       isPartOf: {
         '@type': 'WebSite',

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Footer from '@/components/Footer'
 import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
 import HomeHeroCream from '@/components/home2026/HomeHeroCream'
+import HomeProofStrip from '@/components/home2026/HomeProofStrip'
 import HomeBigDomino from '@/components/home2026/HomeBigDomino'
 import AjnayaFloatingBubble from '@/components/home2026/AjnayaFloatingBubble'
 import ZoneMechanismVisual from '@/components/zone/ZoneMechanismVisual'
@@ -103,6 +104,9 @@ export default function HomePage() {
 
       {/* SECTION 1 — Hero crème + barre de recherche → modal Ajnaya */}
       <HomeHeroCream />
+
+      {/* SECTION 1.5 — Mini-band preuve sociale (anti-objection chauffeur méfiant) */}
+      <HomeProofStrip />
 
       {/* SECTION 2 — Big Domino transition crème → noir */}
       <HomeBigDomino />

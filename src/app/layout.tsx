@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 import Preloader from '@/components/Preloader'
 import GrainOverlay from '@/components/GrainOverlay'
@@ -19,6 +20,26 @@ const inter = Inter({
   display: 'swap',
   variable: '--font-inter',
   weight: ['400', '500', '600', '700', '800', '900'],
+  preload: true,
+})
+
+// ═══ Genos — police signature display + slogans + logo ═══════════════════════
+// Variable Font (regular + italic) pour le rendu fluide géométrique signature
+const genos = localFont({
+  src: [
+    {
+      path: '../../public/fonts/Genos-VariableFont_wght.ttf',
+      weight: '100 900',
+      style: 'normal',
+    },
+    {
+      path: '../../public/fonts/Genos-Italic-VariableFont_wght.ttf',
+      weight: '100 900',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-genos',
+  display: 'swap',
   preload: true,
 })
 
@@ -65,7 +86,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr" className={inter.variable}>
+    <html lang="fr" className={`${inter.variable} ${genos.variable}`}>
       <head>
         {/* Favicon */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -76,22 +97,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://image.mux.com" />
         <link rel="preconnect" href="https://stream.mux.com" />
         <link rel="dns-prefetch" href="https://stream.mux.com" />
-
-        {/* Preload Genos Variable + Italic (logo + tagline + display moments) */}
-        <link
-          rel="preload"
-          href="/fonts/Genos-VariableFont_wght.ttf"
-          as="font"
-          type="font/ttf"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/Genos-Italic-VariableFont_wght.ttf"
-          as="font"
-          type="font/ttf"
-          crossOrigin="anonymous"
-        />
+        {/* Genos chargée via next/font/local (variable --font-genos) */}
       </head>
       <body className="bg-foreas-obsidian text-text-primary antialiased font-sans">
         {/* Tracking pixels — chargement conditionnel au consentement RGPD */}
