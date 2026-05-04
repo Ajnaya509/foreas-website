@@ -29,7 +29,9 @@ interface ZoneStats {
   week_iso: string
   last_updated: string
   has_data: boolean
-  fallback_zone?: { name: string; avg_hourly: number } | null
+  /** Zone de repli suggérée par la RPC (quand has_data=false).
+   *  note est un message optionnel libre (ex: "zone voisine la plus proche") */
+  fallback_zone: { name: string; avg_hourly: number; note?: string } | null
 }
 
 // ─── Mocks fallback (sécurité au cas où la RPC est indisponible) ────────────
@@ -43,6 +45,7 @@ const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: true,
+    fallback_zone: null,
   },
   orly: {
     zone_match: 'Aéroport Orly',
@@ -53,6 +56,7 @@ const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: true,
+    fallback_zone: null,
   },
   defense: {
     zone_match: 'La Défense',
@@ -63,6 +67,7 @@ const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: true,
+    fallback_zone: null,
   },
   bercy: {
     zone_match: 'Bercy / Gare de Lyon',
@@ -73,6 +78,7 @@ const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: true,
+    fallback_zone: null,
   },
   partdieu: {
     zone_match: 'Lyon Part-Dieu',
@@ -83,6 +89,7 @@ const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: true,
+    fallback_zone: null,
   },
   bordeauxgare: {
     zone_match: 'Bordeaux Saint-Jean',
@@ -93,6 +100,7 @@ const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: true,
+    fallback_zone: null,
   },
 }
 
