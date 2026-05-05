@@ -43,7 +43,8 @@ export interface PieuvreResponse {
   ok: boolean
   reply: {
     text: string
-    audio_url?: string | null    // Koraly TTS — nullable
+    tts_text?: string | null      // Koraly TTS clean (Pieuvre v1.1) — no emoji, numbers in words
+    audio_url?: string | null     // Koraly TTS audio URL — nullable
     llm_model: string
   }
   identity_id: string
@@ -54,6 +55,9 @@ export interface PieuvreResponse {
   next_actions?: Array<{ type: string; label: string; url: string }>
   should_capture_phone?: boolean
   suggest_handoff?: { target_canal: string; reason: string } | null
+  // Pieuvre v1.1 — home_modal_v1 signals for funnel tracking
+  clarify_branch_detected?: boolean
+  modal_zone_category?: string | null
   metadata?: {
     latency_ms: number
     cost_usd: number

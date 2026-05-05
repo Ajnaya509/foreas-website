@@ -304,6 +304,7 @@ export async function POST(request: NextRequest) {
     // Champs enrichis par Pieuvre v1.1 (workflow entry_widget_site versionId 8a4c1439)
     let pieuvreClarifyBranch: boolean = false
     let pieuvreZoneCategory: 'disney' | 'idf' | 'region' | 'unknown' | null = null
+    let pieuvreTtsText: string | null = null  // TTS clean Koraly — no emoji, numbers in words
 
     if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
       try {
@@ -337,12 +338,12 @@ export async function POST(request: NextRequest) {
           pieuvreIdentityId = result.identity_id ?? null
         }
 
-        // Pieuvre v1.1 ajoute clarify_branch_detected + modal_zone_category
-        // dans result.reply.metadata (fallback : reply direct, selon shape Pieuvre).
-        const replyAny = (result?.reply ?? {}) as Record<string, unknown>
-        const meta = (replyAny.metadata ?? {}) as Record<string, unknown>
-        pieuvreClarifyBranch = Boolean(meta.clarify_branch_detected ?? replyAny.clarify_branch_detected)
-        const cat = (meta.modal_zone_category ?? replyAny.modal_zone_category) as string | undefined
+        // Pieuvre v1.1 — tts_text séparé (clean: pas d'emoji, chiffres en lettres)
+        pieuvreTtsText = result?.reply?.tts_text ?? null
+
+        // Pieuvre v1.1 — signals home_modal à la racine de la réponse (pas dans reply.metadata)
+        pieuvreClarifyBranch = Boolean(result?.clarify_branch_detected)
+        const cat = result?.modal_zone_category
         if (cat === 'disney' || cat === 'idf' || cat === 'region' || cat === 'unknown') {
           pieuvreZoneCategory = cat
         }
@@ -374,8 +375,9 @@ export async function POST(request: NextRequest) {
         : 'Dites-moi votre zone exacte — je regarde les chiffres.'
     }
 
-    // 4. Generate TTS-clean version
-    const tts_text = cleanForTTS(text)
+    // 4. TTS-clean version — Pieuvre v1.1 fournit tts_text séparé (pas d'emoji, chiffres en lettres)
+    // Fallback : cleanForTTS(text) si Pieuvre absent ou path Haiku direct
+    const tts_text = pieuvreTtsText || cleanForTTS(text)
 
     // 5. Determine next turn + show social proof
     const turn_next: 1 | 2 | 3 = turn === 1 ? 2 : turn === 2 ? 3 : 3
