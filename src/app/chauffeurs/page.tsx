@@ -8,6 +8,7 @@ import GradientLine from '@/components/GradientLine'
 import Footer from '@/components/Footer'
 import { Smartphone, Fuel, Brain, BarChart3, CloudRain, Target } from 'lucide-react'
 import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
+import { authUrls } from '@/lib/auth-urls'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS /chauffeurs — BIG DOMINO CHAUFFEUR
@@ -798,6 +799,21 @@ export default function ChauffeursPage() {
         </div>
       </section>
 
+      {/* ── Already a member ─────────────────────────────────────────────────── */}
+      <section className="py-10 px-4 border-t border-white/[0.04]">
+        <div className="max-w-xl mx-auto text-center">
+          <p className="text-white/35 text-sm mb-3">
+            Déjà chauffeur FOREAS ?
+          </p>
+          <a
+            href={authUrls.loginDriver}
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#00D4FF]/80 hover:text-[#00D4FF] transition-colors duration-200"
+          >
+            Accéder à mon espace chauffeur →
+          </a>
+        </div>
+      </section>
+
       <Footer />
     </main>
   )
@@ -817,12 +833,12 @@ function MobileHero() {
       <FloatingParticles className="z-0" />
 
       <div className="relative max-w-6xl mx-auto px-6">
-        {/* Eyebrow */}
+        {/* Eyebrow + "Mon espace chauffeur" link */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-6"
+          className="mb-6 flex items-center justify-between gap-4"
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/15 rounded-full">
             <span className="relative flex h-2 w-2">
@@ -831,6 +847,12 @@ function MobileHero() {
             </span>
             Pour chauffeurs VTC
           </span>
+          <a
+            href={authUrls.loginDriver}
+            className="text-xs font-medium text-white/40 hover:text-[#00D4FF] transition-colors duration-200 shrink-0"
+          >
+            Mon espace →
+          </a>
         </motion.div>
 
         {/* Hero headline — Big Domino statement */}

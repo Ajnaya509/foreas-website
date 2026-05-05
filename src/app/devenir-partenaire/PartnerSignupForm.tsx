@@ -8,6 +8,7 @@ import {
   Building2, Mail, Phone, ChevronDown, CheckCircle2,
   ArrowRight, Users, TrendingUp, Copy, Check
 } from 'lucide-react'
+import { authUrls } from '@/lib/auth-urls'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CompanyType =
@@ -271,6 +272,15 @@ export default function PartnerSignupForm() {
         <div className="relative max-w-5xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-14">
+            {/* Espace Directeur link — top right of hero */}
+            <div className="flex justify-end mb-4">
+              <a
+                href={authUrls.loginPartner}
+                className="text-xs font-medium text-white/35 hover:text-violet-400 transition-colors duration-200"
+              >
+                Espace Directeur →
+              </a>
+            </div>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -568,6 +578,17 @@ export default function PartnerSignupForm() {
 
                     <p className="font-body text-xs text-white/25 text-center">
                       Vos données sont utilisées uniquement dans le cadre du programme CAP FOREAS.
+                    </p>
+
+                    {/* Already a partner */}
+                    <p className="font-body text-xs text-white/25 text-center pt-2">
+                      Déjà inscrit ?{' '}
+                      <a
+                        href={authUrls.loginPartner}
+                        className="text-violet-400/70 hover:text-violet-400 transition-colors duration-150 underline-offset-2 hover:underline"
+                      >
+                        Accéder à mon espace Directeur
+                      </a>
                     </p>
                   </motion.form>
                 )}

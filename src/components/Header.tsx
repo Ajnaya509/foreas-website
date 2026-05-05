@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence, useMotionValueEvent, useScroll } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { InkGradientButton } from '@/components/ui'
+import { authUrls } from '@/lib/auth-urls'
 
 /**
  * Header — Site2026v54
@@ -121,6 +122,12 @@ export default function Header() {
             >
               <span className="underline-grow">Contact</span>
             </Link>
+            <a
+              href={authUrls.loginGeneric}
+              className={`text-[13px] font-medium text-text-tertiary hover:text-text-primary transition-colors duration-200 min-h-[44px] flex items-center px-2 ${focusRing}`}
+            >
+              <span className="underline-grow">Mon espace</span>
+            </a>
             <InkGradientButton as="link" href="/tarifs2" size="sm">
               Essai gratuit
             </InkGradientButton>
@@ -169,6 +176,19 @@ export default function Header() {
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.22 }}
+                >
+                  <a
+                    href={authUrls.loginGeneric}
+                    className={`block py-3 text-base font-medium text-text-secondary hover:text-text-primary transition-colors duration-200 min-h-[48px] flex items-center px-2 ${focusRing}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Mon espace
+                  </a>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.25, duration: 0.22 }}
                   className="pt-4"
                 >
                   <InkGradientButton

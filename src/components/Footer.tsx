@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { authUrls } from '@/lib/auth-urls'
 
 /**
  * Footer — Site2026v44 (Phase 3.4)
@@ -115,7 +116,7 @@ export default function Footer() {
             <p className="text-caption text-text-muted">
               © 2026 FOREAS Labs
             </p>
-            <div className="flex items-center gap-md sm:gap-lg md:gap-xxl">
+            <div className="flex flex-wrap items-center justify-center gap-md sm:gap-lg md:gap-xxl">
               {legal.map((link) => (
                 <Link
                   key={link.name}
@@ -125,6 +126,18 @@ export default function Footer() {
                   <span className="underline-grow">{link.name}</span>
                 </Link>
               ))}
+              <a
+                href={authUrls.loginGeneric}
+                className={`text-caption text-text-muted hover:text-text-secondary transition-colors duration-fast ease-standard min-h-[44px] flex items-center px-xs ${focusRing}`}
+              >
+                <span className="underline-grow">Connexion</span>
+              </a>
+              <a
+                href={authUrls.authReset}
+                className={`text-caption text-text-muted hover:text-text-secondary transition-colors duration-fast ease-standard min-h-[44px] flex items-center px-xs ${focusRing}`}
+              >
+                <span className="underline-grow">Mot de passe oublié</span>
+              </a>
               <span className="text-caption text-text-muted">
                 Paris
               </span>

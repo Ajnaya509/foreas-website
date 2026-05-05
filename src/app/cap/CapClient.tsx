@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { CheckCircle2, Zap, Users, TrendingUp, Star, ArrowRight, Gift } from 'lucide-react'
+import { authUrls, loginWithNext } from '@/lib/auth-urls'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PartnerData {
@@ -308,6 +309,29 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
               0€ débité avant lundi 18h · Annulation en 1 clic
             </p>
           </motion.div>
+
+          {/* Already a driver — secondary link */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+            className="font-body text-xs text-white/25 mt-4"
+          >
+            Déjà chauffeur FOREAS ?{' '}
+            <a
+              href={loginWithNext('driver', '/driver')}
+              className="text-[#00D4FF]/60 hover:text-[#00D4FF] transition-colors duration-150 underline-offset-2 hover:underline"
+            >
+              Mon espace chauffeur
+            </a>
+            {' · '}
+            <a
+              href={authUrls.loginPartner}
+              className="text-violet-400/60 hover:text-violet-400 transition-colors duration-150 underline-offset-2 hover:underline"
+            >
+              Espace Directeur
+            </a>
+          </motion.p>
         </div>
       </section>
 

@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { trackInitiateCheckout } from '@/lib/tracking'   // v58 — Meta CAPI server+client
+import { authUrls } from '@/lib/auth-urls'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -711,6 +712,19 @@ function TarifsContent() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── Already a member ─────────────────────────────────────────────── */}
+      <div className="py-8 text-center border-t border-white/[0.04]">
+        <p className="text-white/30 text-sm">
+          Déjà abonné ?{' '}
+          <a
+            href={authUrls.loginGeneric}
+            className="text-[#00D4FF]/70 hover:text-[#00D4FF] transition-colors duration-150 underline-offset-2 hover:underline"
+          >
+            Accéder à mon espace →
+          </a>
+        </p>
+      </div>
 
       <Footer />
 
