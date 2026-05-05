@@ -352,6 +352,10 @@ export default function AjnayaConversationModal({
   const [isLoading, setIsLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playingMsgId, setPlayingMsgId] = useState<string | null>(null)
+  // Dimensions analytics provenant de Pieuvre v1.1 (mises à jour à chaque tour)
+  const [clarifyBranchDetected, setClarifyBranchDetected] = useState<boolean>(false)
+  const [modalZoneCategory, setModalZoneCategory] =
+    useState<'disney' | 'idf' | 'region' | 'unknown'>('unknown')
   const [sessionId] = useState(
     () => `hm-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   )
@@ -407,6 +411,8 @@ export default function AjnayaConversationModal({
         setIdentityId(null)
         setIsPlaying(false)
         setPlayingMsgId(null)
+        setClarifyBranchDetected(false)
+        setModalZoneCategory('unknown')
         initialSentRef.current = false
         if (audioRef.current) {
           audioRef.current.pause()
@@ -529,6 +535,9 @@ export default function AjnayaConversationModal({
           turn_next: 1 | 2 | 3
           testimonials: Testimonial[] | null
           identity_id: string | null
+          // Pieuvre v1.1 — dimensions analytics + drivers branche clarify
+          clarify_branch_detected?: boolean
+          modal_zone_category?: 'disney' | 'idf' | 'region' | 'unknown'
         }
 
         // Persist identity_id pour tracking cross-turn
@@ -536,6 +545,14 @@ export default function AjnayaConversationModal({
 
         // Zone data
         if (data.zone_data) setZoneData(data.zone_data)
+
+        // Dimensions Pieuvre v1.1 (clarify branch + zone bucket pour funnel)
+        if (typeof data.clarify_branch_detected === 'boolean') {
+          setClarifyBranchDetected(data.clarify_branch_detected)
+        }
+        if (data.modal_zone_category) {
+          setModalZoneCategory(data.modal_zone_category)
+        }
 
         // Build new messages
         const newMsgs: ChatMessage[] = []
@@ -760,13 +777,39 @@ export default function AjnayaConversationModal({
                         href={waUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() =>
+                        onClick={() => {
+                          // Funnel event Pieuvre — KPI ULTIME du widget.
+                          // sendBeacon résiste au close-tab quand WhatsApp s'ouvre.
+                          try {
+                            const payload = JSON.stringify({
+                              session_id: sessionId,
+                              turn,
+                              zone: zoneData?.zone_match ?? null,
+                              zone_category: modalZoneCategory,
+                              clarify_branch: clarifyBranchDetected,
+                              has_data: zoneData?.has_data ?? false,
+                            })
+                            if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+                              const blob = new Blob([payload], { type: 'application/json' })
+                              navigator.sendBeacon('/api/ajnaya/home-modal/wa-click', blob)
+                            } else {
+                              fetch('/api/ajnaya/home-modal/wa-click', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: payload,
+                                keepalive: true,
+                              }).catch(() => {})
+                            }
+                          } catch { /* silencieux */ }
+                          // Meta CAPI client-side
                           window.fbq?.('trackCustom', 'WhatsAppLinkClicked', {
                             section: 'modal_ajnaya',
                             turn,
                             zone: zoneData?.zone_match,
+                            zone_category: modalZoneCategory,
+                            clarify_branch: clarifyBranchDetected,
                           })
-                        }
+                        }}
                         className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-white font-semibold text-[14px] transition-all hover:opacity-92 active:scale-[0.98]"
                         style={{
                           backgroundColor: '#25D366',

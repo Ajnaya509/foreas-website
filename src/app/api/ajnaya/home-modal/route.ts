@@ -105,6 +105,31 @@ function pickTestimonialsForZone(zone: string | null | undefined): Testimonial[]
 }
 
 /**
+ * Catégorise une zone pour les funnel events / fbq dimensions.
+ * Aligné sur les buckets du brief Pieuvre PIEUVRE_HOME_MODAL_FIX.md §5.
+ *  - "disney"  : Disney / Marne-la-Vallée
+ *  - "idf"     : aéroports + gares + hubs Paris
+ *  - "region"  : régions hors IdF (Bordeaux, Lyon Part-Dieu, Marseille…)
+ *  - "unknown" : zone non matchée / fallback
+ *
+ * Sert de fallback côté site si Pieuvre ne renvoie pas `modal_zone_category`
+ * (ex. Pieuvre down → fallback Haiku).
+ */
+function inferZoneCategory(zone: string | null | undefined): 'disney' | 'idf' | 'region' | 'unknown' {
+  const z = (zone ?? '').toLowerCase()
+  if (!z) return 'unknown'
+  if (z.includes('disney') || z.includes('marne')) return 'disney'
+  if (z.includes('lyon part-dieu') || z.includes('lyon partdieu')) return 'region'
+  const regions = ['bordeaux', 'marseille', 'toulouse', 'nice', 'nantes',
+    'strasbourg', 'rennes', 'lille']
+  if (regions.some((k) => z.includes(k))) return 'region'
+  const idfKeywords = ['cdg', 'orly', 'défense', 'defense', 'bercy', 'gare',
+    'châtelet', 'chatelet', 'lazare', 'montparnasse', 'italie', 'paris', 'nord']
+  if (idfKeywords.some((k) => z.includes(k))) return 'idf'
+  return 'unknown'
+}
+
+/**
  * Détecte des stats incohérentes côté Pieuvre/Supabase et force `has_data: false`.
  * Évite d'afficher la card "31€/h · -100%" qui détruit la crédibilité.
  */
@@ -276,6 +301,9 @@ export async function POST(request: NextRequest) {
     // 2. Try Pieuvre Brain
     let text: string | null = null
     let pieuvreIdentityId: string | null = null
+    // Champs enrichis par Pieuvre v1.1 (workflow entry_widget_site versionId 8a4c1439)
+    let pieuvreClarifyBranch: boolean = false
+    let pieuvreZoneCategory: 'disney' | 'idf' | 'region' | 'unknown' | null = null
 
     if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
       try {
@@ -307,6 +335,16 @@ export async function POST(request: NextRequest) {
         if (result?.reply?.text) {
           text = result.reply.text
           pieuvreIdentityId = result.identity_id ?? null
+        }
+
+        // Pieuvre v1.1 ajoute clarify_branch_detected + modal_zone_category
+        // dans result.reply.metadata (fallback : reply direct, selon shape Pieuvre).
+        const replyAny = (result?.reply ?? {}) as Record<string, unknown>
+        const meta = (replyAny.metadata ?? {}) as Record<string, unknown>
+        pieuvreClarifyBranch = Boolean(meta.clarify_branch_detected ?? replyAny.clarify_branch_detected)
+        const cat = (meta.modal_zone_category ?? replyAny.modal_zone_category) as string | undefined
+        if (cat === 'disney' || cat === 'idf' || cat === 'region' || cat === 'unknown') {
+          pieuvreZoneCategory = cat
         }
       } catch (err) {
         console.warn('[home-modal] Pieuvre error, falling back:', (err as Error).message)
@@ -349,6 +387,33 @@ export async function POST(request: NextRequest) {
       ? pickTestimonialsForZone(resolvedZoneData?.zone_match ?? message)
       : null
 
+    // 6. Funnel events câblés post-Pieuvre v1.1 (brief PIEUVRE_HOME_MODAL_FIX.md §Métriques)
+    const zoneCategory: 'disney' | 'idf' | 'region' | 'unknown' =
+      pieuvreZoneCategory ?? inferZoneCategory(resolvedZoneData?.zone_match ?? message)
+
+    // home_modal_clarify_branch : utilisateur en confusion ("j'ai pas compris")
+    // → branche clarify activée, mesure la qualité du save côté Pieuvre.
+    if (pieuvreClarifyBranch) {
+      recordFunnelEvent('home_modal_clarify_branch', session_id, {
+        turn,
+        zone: resolvedZoneData?.zone_match,
+        zone_category: zoneCategory,
+        user_message_truncated: message.slice(0, 120),
+      })
+    }
+
+    // home_modal_wa_push : CTA WhatsApp affiché (turn ≥ 2). Compté à chaque
+    // affichage côté serveur — la dédup éventuelle se fait côté table funnel.
+    if (show_wa_cta) {
+      recordFunnelEvent('home_modal_wa_push', session_id, {
+        turn,
+        zone: resolvedZoneData?.zone_match,
+        zone_category: zoneCategory,
+        has_data: resolvedZoneData?.has_data ?? false,
+        clarify_branch: pieuvreClarifyBranch,
+      })
+    }
+
     return NextResponse.json({
       text,
       tts_text,
@@ -357,6 +422,10 @@ export async function POST(request: NextRequest) {
       turn_next,
       testimonials,
       identity_id: pieuvreIdentityId ?? identity_id,
+      // Pieuvre v1.1 — exposés pour tracking client (Meta CAPI fbq dimensions)
+      // et pour le firing client-side de home_modal_wa_clicked au clic effectif.
+      clarify_branch_detected: pieuvreClarifyBranch,
+      modal_zone_category: zoneCategory,
     })
   } catch (error) {
     console.error('[home-modal] Error:', (error as Error).message)
