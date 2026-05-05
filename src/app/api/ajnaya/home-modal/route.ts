@@ -45,26 +45,82 @@ export interface Testimonial {
 
 // ─── Real testimonials from TESTIMONIALS.md ──────────────────────────────────
 // Source : /FOREAS site vitrine/docs/testimonials/TESTIMONIALS.md
-const TESTIMONIALS: Testimonial[] = [
-  {
-    name: 'Binate A.',
-    zone: 'Disneyland',
-    quote: 'Travaille moins pour avoir plus. C\'est ça la différence.',
-    kpi: '+30% revenus',
-    vehicle: 'Tesla',
-    mux_id: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
-  },
-  {
-    name: 'Dragan P.',
-    zone: 'Paris',
-    quote: '2 ans sans problème de paiement. J\'y suis, j\'y reste.',
-  },
-  {
-    name: 'Haitham B.',
-    zone: 'Paris',
-    quote: 'On a une réponse instantanément. Je me vois encore avec FOREAS pendant un long moment.',
-  },
-]
+//
+// IMPORTANT — chaque témoignage cible un CONTEXTE précis. Le matching
+// `pickTestimonialsForZone` ci-dessous évite de pousser Binate (Disneyland Tesla)
+// à un chauffeur qui demande Bordeaux ou Lyon. Hors-contexte = perte de crédibilité.
+const TESTIMONIAL_BINATE: Testimonial = {
+  name: 'Binate A.',
+  zone: 'Disneyland',
+  quote: 'Travaille moins pour avoir plus. C\'est ça la différence.',
+  kpi: '+30% revenus',
+  vehicle: 'Tesla',
+  mux_id: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
+}
+const TESTIMONIAL_DRAGAN: Testimonial = {
+  name: 'Dragan P.',
+  zone: 'Paris',
+  quote: '2 ans sans problème de paiement. J\'y suis, j\'y reste.',
+}
+const TESTIMONIAL_HAITHAM: Testimonial = {
+  name: 'Haitham B.',
+  zone: 'Paris',
+  quote: 'On a une réponse instantanément.',
+}
+
+/**
+ * Sélectionne 1-2 témoignages pertinents pour la zone matchée.
+ *  - Disney/Marne-la-Vallée → Binate (lieu exact) + Dragan en backup
+ *  - Paris (CDG, Défense, gares, Bercy, Italie…) → Dragan + Haitham
+ *  - Régions hors IdF (Bordeaux, Lyon, Marseille…) → Dragan seul
+ *    (NE PAS pousser Binate Disneyland à un chauffeur Bordeaux : hors-contexte = churn)
+ *  - Zone inconnue / fallback → Dragan seul (le plus universel)
+ */
+function pickTestimonialsForZone(zone: string | null | undefined): Testimonial[] {
+  const z = (zone ?? '').toLowerCase()
+  if (!z) return [TESTIMONIAL_DRAGAN]
+
+  if (z.includes('disney') || z.includes('marne')) {
+    return [TESTIMONIAL_BINATE, TESTIMONIAL_DRAGAN]
+  }
+
+  // Île-de-France pools VTC standards
+  const idfKeywords = ['cdg', 'orly', 'défense', 'defense', 'bercy', 'lyon', 'gare',
+    'châtelet', 'chatelet', 'nord', 'lazare', 'montparnasse', 'italie', 'paris']
+  // Note: "lyon" inclus pour "Gare de Lyon" Paris, MAIS si la zone est exactement
+  // "Lyon Part-Dieu" on tombe dans la branche région ci-dessous via le check explicite.
+  if (z.includes('lyon part-dieu') || z.includes('lyon partdieu')) {
+    return [TESTIMONIAL_DRAGAN]
+  }
+  if (z.includes('bordeaux') || z.includes('marseille') || z.includes('toulouse') ||
+      z.includes('nice') || z.includes('nantes') || z.includes('strasbourg') ||
+      z.includes('rennes') || z.includes('lille')) {
+    return [TESTIMONIAL_DRAGAN]
+  }
+  if (idfKeywords.some((k) => z.includes(k))) {
+    return [TESTIMONIAL_DRAGAN, TESTIMONIAL_HAITHAM]
+  }
+
+  return [TESTIMONIAL_DRAGAN]
+}
+
+/**
+ * Détecte des stats incohérentes côté Pieuvre/Supabase et force `has_data: false`.
+ * Évite d'afficher la card "31€/h · -100%" qui détruit la crédibilité.
+ */
+function sanitizeZoneData(z: ZoneData | null): ZoneData | null {
+  if (!z) return null
+  const absurd =
+    z.avg_hourly < 5 ||                  // < 5€/h = donnée corrompue
+    z.avg_hourly > 200 ||                // > 200€/h = donnée corrompue
+    z.demand_delta_pct <= -90 ||         // -90%+ = imposible (= no-data déguisé)
+    z.demand_delta_pct >= 200 ||         // +200%+ = imposible
+    z.courses_count < 5                  // < 5 courses = échantillon non représentatif
+  if (absurd) {
+    return { ...z, has_data: false }
+  }
+  return z
+}
 
 // ─── Supabase helper ──────────────────────────────────────────────────────────
 async function getSupabase() {
@@ -112,28 +168,35 @@ async function recordFunnelEvent(
 }
 
 // ─── Fallback system prompt (Pieuvre down) ────────────────────────────────────
-function buildFallbackPrompt(zoneData: ZoneData | null, turn: number): string {
-  const zoneBlock = zoneData?.has_data
-    ? `DONNÉES ZONE RÉELLES :
-Zone : ${zoneData.zone_match}
-Tarif moyen : ${zoneData.avg_hourly.toFixed(0)}€/h
-Demande : ${zoneData.demand_delta_pct > 0 ? '+' : ''}${zoneData.demand_delta_pct}% vs semaine dernière
-Courses analysées : ${zoneData.courses_count} (données réelles VTC)
-Zone de pickup top : ${zoneData.top_pool}`
-    : zoneData?.fallback_zone
-    ? `Zone proche de référence : ${zoneData.fallback_zone.name} → ${zoneData.fallback_zone.avg_hourly.toFixed(0)}€/h`
-    : ''
+function buildFallbackPrompt(zoneData: ZoneData | null, turn: number, userZone: string): string {
+  const hasData = !!zoneData?.has_data
+  const zoneName = zoneData?.zone_match ?? userZone
 
-  const testimonialBlock = `PREUVES RÉELLES (à injecter au bon moment) :
-- Binate A. Tesla Disneyland : "+30% revenus. Travaille moins pour avoir plus."
-- Dragan P. Paris 9 ans : "2 ans sans problème de paiement."
-- Haitham B. Paris 7 ans : "On a une réponse instantanément."`
+  // Bloc DATA — uniquement si on a des chiffres CRÉDIBLES
+  const zoneBlock = hasData
+    ? `DONNÉES ZONE RÉELLES (à utiliser littéralement) :
+Zone : ${zoneData!.zone_match}
+Tarif moyen : ${zoneData!.avg_hourly.toFixed(0)}€/h
+Demande vs semaine dernière : ${zoneData!.demand_delta_pct > 0 ? '+' : ''}${zoneData!.demand_delta_pct}%
+Courses analysées : ${zoneData!.courses_count}
+Top pool : ${zoneData!.top_pool || 'multi-secteurs'}`
+    : `PAS DE DONNÉES TEMPS RÉEL pour "${userZone}".
+INTERDIT d'inventer un tarif horaire ou un % de demande.
+COMPORTEMENT ATTENDU : reconnaître honnêtement qu'on n'a pas les chiffres précis pour CETTE zone à CET instant, et orienter vers WhatsApp pour un audit personnalisé en 2 minutes.`
+
+  // Témoignages — matchés à la zone (pas de Binate Disneyland sur Bordeaux)
+  const picks = pickTestimonialsForZone(zoneName)
+  const testimonialBlock = `PREUVES PERTINENTES POUR CE CHAUFFEUR (à utiliser SI tour 2 ou 3) :
+${picks.map((t) => `- ${t.name}${t.vehicle ? ` (${t.vehicle})` : ''} ${t.zone}${t.kpi ? ` · ${t.kpi}` : ''} : "${t.quote}"`).join('\n')}
+INTERDIT : citer un témoignage hors-contexte (ex. Binate Disneyland Tesla pour un chauffeur qui demande Bordeaux).`
 
   const turnInstruction = turn === 1
-    ? `Tour 1 : Tu viens de recevoir les données de la zone. Donne les chiffres EXACTS avec précision chirurgicale. Puis pose UNE question sur le créneau visé.`
+    ? hasData
+      ? `Tour 1 : Donne UNIQUEMENT les chiffres exacts ci-dessus. Pas de spéculation. Pose ENSUITE une question SIMPLE et concrète sur le créneau ("Quel créneau vous visez ce soir ?").`
+      : `Tour 1 : Reconnais en 1 phrase qu'on n'a pas la donnée temps réel pour "${userZone}" CE soir. Propose un audit personnalisé via WhatsApp en 2 min. Pas de chiffres inventés. Pose UNE question pour montrer qu'on écoute ("Vous tournez plutôt aéroport, gare ou centre-ville ?").`
     : turn === 2
-    ? `Tour 2 : Le chauffeur a donné son créneau. Construis l'urgence : montre ce qu'il rate sans FOREAS sur ce créneau précis. Glisse un témoignage réel. Push vers WhatsApp naturellement.`
-    : `Tour 3 : Maximum d'engagement. Promet le plan personnalisé via WhatsApp + la vidéo complète de Binate. Ferme vers le bouton vert.`
+    ? `Tour 2 : Le chauffeur a répondu. Si la réponse est "j'ai pas compris" ou un signal de confusion → REPRENDS plus simple, en 1 phrase, sans répéter les mêmes chiffres. Si la réponse est cohérente → construis l'urgence sur SON créneau précis avec UN seul témoignage pertinent. Push vers WhatsApp.`
+    : `Tour 3 : Ferme. Promesse claire : plan personnalisé sur WhatsApp en 2 min, sans inscription, sans CB. Mentionne la vidéo du témoignage uniquement s'il est pertinent à la zone.`
 
   return `Tu es Ajnaya. Confidente des chauffeurs VTC — pas une IA, jamais "je suis une IA".
 
@@ -143,13 +206,14 @@ ${testimonialBlock}
 
 ${turnInstruction}
 
-RÈGLES ABSOLUES :
-- 2-3 phrases maximum. Direct. Comme un SMS d'un pote qui connaît le terrain.
-- Utilise les chiffres EXACTS de la zone si disponibles — pas de vagueries.
-- Ne dis JAMAIS "FOREAS" dans les tours 1-2. Parle de "votre zone", "ce créneau", "vos chiffres".
-- Le but de chaque message : avancer d'un cran vers le WhatsApp.
-- Tutoyez toujours. Jamais condescendant.
-- Audio tags autorisés UNE FOIS par message max : [sighs] [hmm] [laughs softly] — uniquement en début de phrase si pertinent.`
+RÈGLES ABSOLUES — VIOLATION = CHURN IMMÉDIAT :
+1. JAMAIS inventer un chiffre. Si pas de data → le dire, pas de fake "30,72€/h".
+2. JAMAIS un -100% / -90% / +200% : si tu vois ça dans les data, tu IGNORES et tu dis "données pas dispo ce soir".
+3. JAMAIS un témoignage hors-contexte (Tesla Disney pour un chauffeur Bordeaux = perte de crédibilité totale).
+4. Si l'utilisateur dit "j'ai pas compris" / "pas clair" / "?" → tu CHANGES d'angle, tu ne répètes PAS les mêmes infos formulées autrement. Tu reformules en 1 phrase concrète, ou tu poses une question plus précise.
+5. 2-3 phrases maximum. Direct. Comme un SMS d'un pote qui connaît le terrain.
+6. Vouvoie toujours. Jamais condescendant.
+7. Le but de chaque message : avancer d'un cran vers WhatsApp. Pas de blabla.`
 }
 
 // ─── Strip markdown for TTS ───────────────────────────────────────────────────
@@ -192,12 +256,15 @@ export async function POST(request: NextRequest) {
     // 1. Fetch zone data on turn 1
     let resolvedZoneData: ZoneData | null = clientZoneData
     if (turn === 1) {
-      resolvedZoneData = await getZoneData(message)
+      const raw = await getZoneData(message)
+      // Guard contre stats absurdes (-100% demand, 0€/h, échantillon < 5 courses)
+      resolvedZoneData = sanitizeZoneData(raw)
       // Fire funnel event (fire-and-forget)
       recordFunnelEvent('home_modal_zone_queried', session_id, {
         zone_query: message,
         has_data: resolvedZoneData?.has_data ?? false,
         zone_match: resolvedZoneData?.zone_match,
+        sanitized: raw && !resolvedZoneData?.has_data && raw.has_data ? true : false,
       })
     } else if (turn === 2) {
       recordFunnelEvent('home_modal_creneau_given', session_id, {
@@ -261,7 +328,7 @@ export async function POST(request: NextRequest) {
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 180,
         temperature: 0.6,
-        system: buildFallbackPrompt(resolvedZoneData, turn),
+        system: buildFallbackPrompt(resolvedZoneData, turn, message),
         messages: [{ role: 'user', content: message }],
       })
       text = response.content[0]?.type === 'text'
@@ -276,8 +343,11 @@ export async function POST(request: NextRequest) {
     const turn_next: 1 | 2 | 3 = turn === 1 ? 2 : turn === 2 ? 3 : 3
     const show_wa_cta = turn >= 2
 
-    // Social proof injected on turn 2+
-    const testimonials = turn >= 2 ? TESTIMONIALS : null
+    // Social proof injected on turn 2+ — matché à la zone (pas de Binate Disneyland
+    // à un chauffeur qui demande Bordeaux ; pas de Tesla à un chauffeur région).
+    const testimonials = turn >= 2
+      ? pickTestimonialsForZone(resolvedZoneData?.zone_match ?? message)
+      : null
 
     return NextResponse.json({
       text,

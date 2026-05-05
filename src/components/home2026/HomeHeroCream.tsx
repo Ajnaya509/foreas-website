@@ -104,7 +104,24 @@ export default function HomeHeroCream() {
         distance_km: number
       }
 
-      // Pré-remplit le champ et ouvre le modal directement avec la zone matchée
+      // Garde anti-faux-match : si la position détectée est HORS du rayon de
+      // la zone la plus proche (ou > 50 km), on ne pré-remplit PAS — sinon on
+      // affiche "Bordeaux Saint-Jean" à un chauffeur parisien qui a un GPS tordu.
+      const OUT_OF_RANGE_KM = 50
+      if (!data.in_range || data.distance_km > OUT_OF_RANGE_KM) {
+        setGeolocError(
+          `Vous êtes à ${data.distance_km} km de la zone FOREAS la plus proche (${data.zone_match}). Tapez la zone où vous comptez bosser ce soir.`
+        )
+        if (typeof window !== 'undefined' && window.fbq) {
+          window.fbq('trackCustom', 'GeolocationOutOfRange', {
+            nearest_zone: data.zone_match,
+            distance_km: data.distance_km,
+          })
+        }
+        return
+      }
+
+      // Position cohérente — pré-remplit le champ et ouvre le modal
       setZoneInput(data.zone_match)
       openModal(data.zone_match)
 
@@ -258,7 +275,7 @@ export default function HomeHeroCream() {
             className="max-w-xl mx-auto"
           >
             <div
-              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-[#0071E3]/30"
+              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10"
               style={{
                 backgroundColor: '#ffffff',
                 boxShadow:

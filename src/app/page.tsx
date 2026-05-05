@@ -4,7 +4,10 @@ import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
 import HomeHeroCream from '@/components/home2026/HomeHeroCream'
 import HomeProofStrip from '@/components/home2026/HomeProofStrip'
 import HomeBigDomino from '@/components/home2026/HomeBigDomino'
-import AjnayaFloatingBubble from '@/components/home2026/AjnayaFloatingBubble'
+// AjnayaFloatingBubble désactivé temporairement — Site2026v74
+// Conflit avec hero search bar + modal : 2 portes Ajnaya = attention splittée + churn
+// On focus sur UNE seule entrée (hero) qui convertit. Ré-activable plus tard sur scroll bottom.
+// import AjnayaFloatingBubble from '@/components/home2026/AjnayaFloatingBubble'
 import ZoneMechanismVisual from '@/components/zone/ZoneMechanismVisual'
 import ZoneSocialProof from '@/components/zone/ZoneSocialProof'
 import ZonePainCalculator from '@/components/zone/ZonePainCalculator'
@@ -134,8 +137,11 @@ export default function HomePage() {
         <Footer />
       </div>
 
-      {/* Bouton flottant Ajnaya — apparaît au scroll > 300px */}
-      <AjnayaFloatingBubble />
+      {/* AjnayaFloatingBubble désactivée Site2026v74 — focus sur funnel hero unique
+          Ré-activer en uncommentant l'import + la ligne ci-dessous quand on aura
+          décidé d'une stratégie scroll-aware (afficher SEULEMENT après le hero,
+          masquer si modal déjà ouvert ou WhatsApp déjà cliqué). */}
+      {/* <AjnayaFloatingBubble /> */}
     </main>
   )
 }

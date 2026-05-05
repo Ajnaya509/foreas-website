@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, MessageCircle } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import { authUrls } from '@/lib/auth-urls'
 
 /**
  * HomeHeaderCream — header blanc Apple absolu (Site2026v72)
@@ -79,13 +80,13 @@ export default function HomeHeaderCream() {
             >
               Pro
             </Link>
-            <Link
-              href="/dashboard/driver"
+            <a
+              href={authUrls.loginDriver}
               className="px-3 py-2 text-[13px] font-medium transition-colors hover:underline underline-offset-4"
               style={{ color: '#1d1d1f' }}
             >
               Connexion
-            </Link>
+            </a>
             {/* Souscrire — noir Apple solide */}
             <div className="ml-3 flex flex-col items-end">
               <a
@@ -150,14 +151,14 @@ export default function HomeHeaderCream() {
                 >
                   Pro
                 </Link>
-                <Link
-                  href="/dashboard/driver"
+                <a
+                  href={authUrls.loginDriver}
                   onClick={() => setMobileOpen(false)}
                   className="px-2 py-3 text-base font-medium hover:underline underline-offset-4"
                   style={{ color: '#1d1d1f' }}
                 >
                   Connexion
-                </Link>
+                </a>
                 <a
                   href={subscribeUrl}
                   target="_blank"
