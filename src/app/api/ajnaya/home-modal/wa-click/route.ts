@@ -54,16 +54,18 @@ export async function POST(request: NextRequest) {
       const sb = await getSupabase()
       if (!sb) return
       await sb.rpc('record_funnel_event', {
-        p_event_name: 'home_modal_wa_clicked',
-        p_session_id: body.session_id,
-        p_canal: 'home_modal',
-        p_metadata: {
-          turn: body.turn ?? null,
-          zone: body.zone ?? null,
-          zone_category: body.zone_category ?? null,
+        p_step_code:    'home_modal_wa_clicked',
+        p_step_label:   'home_modal_wa_clicked',
+        p_session_id:   body.session_id,
+        p_canal_source: 'home_modal',
+        p_zone_match:   body.zone ?? null,
+        p_context: {
+          turn:           body.turn ?? null,
+          zone:           body.zone ?? null,
+          zone_category:  body.zone_category ?? null,
           clarify_branch: Boolean(body.clarify_branch),
-          has_data: Boolean(body.has_data),
-          ts: new Date().toISOString(),
+          has_data:       Boolean(body.has_data),
+          ts:             new Date().toISOString(),
         },
       })
     } catch {

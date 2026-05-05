@@ -183,13 +183,16 @@ async function recordFunnelEvent(
   try {
     const sb = await getSupabase()
     if (!sb) return
+    // RPC params : p_step_code / p_session_id / p_canal_source / p_zone_match / p_context
     await sb.rpc('record_funnel_event', {
-      p_event_name: event,
-      p_session_id: sessionId,
-      p_canal: 'home_modal',
-      p_metadata: meta,
+      p_step_code:    event,
+      p_step_label:   event,
+      p_session_id:   sessionId,
+      p_canal_source: 'home_modal',
+      p_zone_match:   (meta.zone_match as string | undefined) ?? (meta.zone as string | undefined) ?? null,
+      p_context:      meta,
     })
-  } catch { /* silencieux */ }
+  } catch { /* silencieux — fire-and-forget */ }
 }
 
 // ─── Fallback system prompt (Pieuvre down) ────────────────────────────────────
