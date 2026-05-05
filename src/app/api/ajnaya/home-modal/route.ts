@@ -289,10 +289,11 @@ export async function POST(request: NextRequest) {
       resolvedZoneData = sanitizeZoneData(raw)
       // Fire funnel event (fire-and-forget)
       recordFunnelEvent('home_modal_zone_queried', session_id, {
-        zone_query: message,
-        has_data: resolvedZoneData?.has_data ?? false,
-        zone_match: resolvedZoneData?.zone_match,
-        sanitized: raw && !resolvedZoneData?.has_data && raw.has_data ? true : false,
+        zone_query:    message,
+        has_data:      resolvedZoneData?.has_data ?? false,
+        zone_match:    resolvedZoneData?.zone_match,
+        zone_category: inferZoneCategory(resolvedZoneData?.zone_match ?? message),
+        sanitized:     raw && !resolvedZoneData?.has_data && raw.has_data ? true : false,
       })
     } else if (turn === 2) {
       recordFunnelEvent('home_modal_creneau_given', session_id, {
