@@ -58,6 +58,8 @@ export interface PieuvreResponse {
   // Pieuvre v1.1 — home_modal_v1 signals for funnel tracking
   clarify_branch_detected?: boolean
   modal_zone_category?: string | null
+  // Pieuvre v1.7 — zone landmarks (Brief PIEUVRE_ZONE_LANDMARKS_BRIEF)
+  landmarks?: Array<{ name: string; type: string; vibe?: string | null; rank: number }>
   metadata?: {
     latency_ms: number
     cost_usd: number

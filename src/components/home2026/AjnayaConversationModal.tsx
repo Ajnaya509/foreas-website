@@ -31,6 +31,7 @@ interface ZoneData {
   week_iso: string
   has_data: boolean
   fallback_zone?: { name: string; avg_hourly: number; note?: string } | null
+  landmarks?: Array<{ name: string; type: string; vibe?: string | null; rank: number }>
 }
 
 interface Testimonial {
@@ -166,6 +167,12 @@ function ZoneCard({ data }: { data: ZoneData }) {
             RÉEL
           </span>
         </div>
+        {/* CONTRACTS v1.7 — Brief PIEUVRE_ZONE_LANDMARKS — affiche max 2 lieux séparés par · */}
+        {data.landmarks && data.landmarks.length > 0 && (
+          <p className="text-[11px] mt-1.5 truncate" style={{ color: '#86868b' }}>
+            {data.landmarks.slice(0, 2).map((l) => l.name).join(' · ')}
+          </p>
+        )}
       </div>
     </motion.div>
   )

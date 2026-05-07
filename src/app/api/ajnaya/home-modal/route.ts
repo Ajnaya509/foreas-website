@@ -22,6 +22,13 @@ export const runtime = 'nodejs'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface ZoneLandmark {
+  name: string
+  type: string
+  vibe?: string | null
+  rank: number
+}
+
 export interface ZoneData {
   zone_match: string
   avg_hourly: number
@@ -32,6 +39,7 @@ export interface ZoneData {
   has_data: boolean
   last_updated?: string
   fallback_zone?: { name: string; avg_hourly: number; note?: string } | null
+  landmarks?: ZoneLandmark[] // CONTRACTS v1.7 — Brief PIEUVRE_ZONE_LANDMARKS_BRIEF
 }
 
 export interface Testimonial {
@@ -309,6 +317,8 @@ export async function POST(request: NextRequest) {
     let pieuvreClarifyBranch: boolean = false
     let pieuvreZoneCategory: 'disney' | 'idf' | 'region' | 'unknown' | null = null
     let pieuvreTtsText: string | null = null  // TTS clean Koraly — no emoji, numbers in words
+    // Pieuvre v1.7 — zone landmarks (Brief PIEUVRE_ZONE_LANDMARKS_BRIEF)
+    let pieuvreLandmarks: ZoneLandmark[] = []
 
     if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
       try {
@@ -350,6 +360,10 @@ export async function POST(request: NextRequest) {
         const cat = result?.modal_zone_category
         if (cat === 'disney' || cat === 'idf' || cat === 'region' || cat === 'unknown') {
           pieuvreZoneCategory = cat
+        }
+        // Pieuvre v1.7 — landmarks (Brief PIEUVRE_ZONE_LANDMARKS) à la racine
+        if (Array.isArray(result?.landmarks)) {
+          pieuvreLandmarks = result.landmarks as ZoneLandmark[]
         }
       } catch (err) {
         console.warn('[home-modal] Pieuvre error, falling back:', (err as Error).message)
@@ -420,18 +434,24 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Inject landmarks dans zone_data (CONTRACTS v1.7 — Brief PIEUVRE_ZONE_LANDMARKS)
+    const zoneDataWithLandmarks = resolvedZoneData
+      ? { ...resolvedZoneData, landmarks: pieuvreLandmarks }
+      : null
+
     return NextResponse.json({
       text,
       tts_text,
-      zone_data: resolvedZoneData,
+      zone_data: zoneDataWithLandmarks,
       show_wa_cta,
       turn_next,
       testimonials,
       identity_id: pieuvreIdentityId ?? identity_id,
       // Pieuvre v1.1 — exposés pour tracking client (Meta CAPI fbq dimensions)
-      // et pour le firing client-side de home_modal_wa_clicked au clic effectif.
       clarify_branch_detected: pieuvreClarifyBranch,
       modal_zone_category: zoneCategory,
+      // Pieuvre v1.7 — landmarks aussi exposés à la racine (compat futurs canaux)
+      landmarks: pieuvreLandmarks,
     })
   } catch (error) {
     console.error('[home-modal] Error:', (error as Error).message)
