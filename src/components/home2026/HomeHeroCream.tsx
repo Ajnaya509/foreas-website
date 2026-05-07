@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, ArrowRight, LocateFixed, Loader2 } from 'lucide-react'
+import { MapPin, ArrowRight, LocateFixed } from 'lucide-react'
 import { useTypewriter } from '@/hooks/useTypewriter'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import AjnayaConversationModal from './AjnayaConversationModal'
@@ -40,8 +40,28 @@ export default function HomeHeroCream() {
   const [modalOpen, setModalOpen] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [geolocError, setGeolocError] = useState<string | null>(null)
+  // Site2026v77 nano-detail #9 : compteur live driver count (RPC + fallback)
+  const [liveDriverCount, setLiveDriverCount] = useState<number>(147)
   const inputRef = useRef<HTMLInputElement>(null)
   const geo = useGeolocation()
+
+  // Fetch driver count au mount + refresh toutes les 60s
+  useEffect(() => {
+    let cancelled = false
+    const fetchCount = async () => {
+      try {
+        const res = await fetch('/api/live-driver-count', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = (await res.json()) as { count?: number }
+        if (!cancelled && typeof data.count === 'number') {
+          setLiveDriverCount(data.count)
+        }
+      } catch { /* fallback statique 147 */ }
+    }
+    fetchCount()
+    const id = setInterval(fetchCount, 60_000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [])
 
   const animatedPlaceholder = useTypewriter({
     texts: PLACEHOLDER_ZONES,
@@ -214,10 +234,10 @@ export default function HomeHeroCream() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
             <span
-              className="text-[11px] sm:text-xs font-semibold tabular-nums"
+              className="text-[11px] sm:text-xs font-semibold"
               style={{ color: '#1d1d1f' }}
             >
-              147 chauffeurs FOREAS en ligne ce soir
+              <span className="tabular-nums" id="hero-live-driver-count">{liveDriverCount}</span> chauffeurs FOREAS en ligne ce soir
             </span>
           </motion.div>
 
@@ -229,7 +249,9 @@ export default function HomeHeroCream() {
             className="font-semibold leading-[0.95] mb-5"
             style={{
               fontFamily: 'var(--font-genos), system-ui, sans-serif',
-              letterSpacing: '-0.025em',
+              // Design System §5 + §17 : letter-spacing -0.04em sur display ≥ 56px
+              // Effet Apple-grade lettres serrées (Genos display weight 600+)
+              letterSpacing: '-0.04em',
               color: '#1d1d1f',
               fontSize: 'clamp(2.75rem, 9.5vw, 6rem)',
             }}
@@ -275,7 +297,7 @@ export default function HomeHeroCream() {
             className="max-w-xl mx-auto"
           >
             <div
-              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10"
+              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10 overflow-hidden"
               style={{
                 backgroundColor: '#ffffff',
                 boxShadow:
@@ -283,6 +305,19 @@ export default function HomeHeroCream() {
               }}
               onClick={() => inputRef.current?.focus()}
             >
+              {/* Shimmer cyan pendant fetch géoloc — Design System §16 :
+                  "loader grey rotating spinner → utiliser shimmer cyan" */}
+              {isLocating && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, transparent 0%, rgba(0, 212, 255, 0.18) 45%, rgba(140, 82, 255, 0.12) 55%, transparent 100%)',
+                    animation: 'foreas-shimmer-cyan 1.4s linear infinite',
+                  }}
+                />
+              )}
               <MapPin
                 className="w-5 h-5 flex-shrink-0"
                 style={{ color: isLocated ? '#1d1d1f' : '#86868b' }}
@@ -330,19 +365,32 @@ export default function HomeHeroCream() {
                   color: isLocated ? '#8C52FF' : '#86868b',
                 }}
               >
-                {isLocating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <LocateFixed className="w-4 h-4" />
-                )}
+                {/* Pas de Loader2 spin — le shimmer cyan sur la search bar fait le boulot.
+                    On garde juste l'icône fixe (avec opacité réduite si isLocating). */}
+                <LocateFixed
+                  className="w-4 h-4 transition-opacity"
+                  style={{ opacity: isLocating ? 0.4 : 1 }}
+                />
                 {isLocated && (
-                  <span
-                    className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-violet-500"
-                    aria-hidden="true"
-                    style={{
-                      boxShadow: '0 0 0 3px rgba(140, 82, 255, 0.20)',
-                    }}
-                  />
+                  <>
+                    {/* Dot violet — point central */}
+                    <span
+                      className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-violet-500"
+                      aria-hidden="true"
+                      style={{
+                        boxShadow: '0 0 0 3px rgba(140, 82, 255, 0.20)',
+                      }}
+                    />
+                    {/* Halo pulse 1.8s — Design System §17 respiration humaine 33 BPM */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 animate-halo-pulse"
+                      style={{
+                        animation: 'foreas-locate-pulse 1.8s ease-in-out infinite',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </>
                 )}
               </button>
 

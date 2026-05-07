@@ -29,6 +29,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X, Sparkles, ArrowRight } from 'lucide-react'
+import { haptic } from '@/lib/haptic'
 
 const SESSION_KEY = 'foreas_exit_intent_shown'
 const ENGAGEMENT_KEY = 'foreas_widget_opened'
@@ -143,6 +144,7 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
   }
 
   const handleWaClick = () => {
+    haptic('medium') // Design System §10 : haptic sur action importante
     try {
       ;(window as unknown as { fbq?: (...args: unknown[]) => void }).fbq?.(
         'trackCustom',

@@ -113,6 +113,15 @@ export default function LiveSocialProofToasts() {
     // Désactivé si viewport < 380px (mobile très étroit)
     if (window.innerWidth < 380) return
 
+    // Site2026v77 nano-detail #5 : respect du data-saver Chrome / save-data hint.
+    // Si le user est en data-saver mode, on ne charge rien d'auxiliaire.
+    try {
+      const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection
+      if (conn?.saveData) return
+      // Media query prefers-reduced-data (Chrome 85+)
+      if (window.matchMedia('(prefers-reduced-data: reduce)').matches) return
+    } catch { /* API absente — on continue */ }
+
     const KICKOFF_MS = 9000
     const DWELL_MS = 5500
     // Délai entre 2 toasts (randomisé 18-30s)

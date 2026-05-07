@@ -278,7 +278,7 @@ function TarifsContent() {
       <div className="relative border-b border-white/5 bg-black/30 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3">
           <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />147 chauffeurs actifs ce soir
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /><span className="tabular-nums">147</span> chauffeurs actifs ce soir
           </span>
           <span className="text-white/20">·</span>
           <span className="text-white/50 text-xs">Plus que <span className="text-orange-400 font-semibold">23 places</span> au tarif découverte</span>
@@ -301,7 +301,7 @@ function TarifsContent() {
             <p className="text-white/60 text-lg sm:text-xl mb-2 max-w-2xl mx-auto leading-relaxed">
               Parce qu'ils ont FOREAS. L'IA qui prédit les zones, élimine le temps mort, et transforme chaque heure en chiffre d'affaires.
             </p>
-            <p className="text-white/60 text-sm mb-10">147 chauffeurs · 3 villes · +38% CA moyen documenté</p>
+            <p className="text-white/60 text-sm mb-10"><span className="tabular-nums">147</span> chauffeurs · 3 villes · +38% CA moyen documenté</p>
 
             {/* Toggle */}
             <div className="flex items-center justify-center gap-4 mb-8">

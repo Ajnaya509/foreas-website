@@ -92,11 +92,17 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
 
-        {/* Preconnect critical CDNs */}
+        {/* Preconnect critical CDNs (Site2026v77 nano-detail #3) */}
         <link rel="preconnect" href="https://image.mux.com" />
         <link rel="dns-prefetch" href="https://image.mux.com" />
         <link rel="preconnect" href="https://stream.mux.com" />
         <link rel="dns-prefetch" href="https://stream.mux.com" />
+        {/* Supabase — fetch zone-by-coords + RPC widget */}
+        <link rel="preconnect" href="https://fihvdvlhftcxhlnocqiq.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fihvdvlhftcxhlnocqiq.supabase.co" />
+        {/* Railway backend — TTS Koraly + handoff tokens */}
+        <link rel="preconnect" href="https://foreas-stripe-backend-production.up.railway.app" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://foreas-stripe-backend-production.up.railway.app" />
         {/* Genos chargée via next/font/local (variable --font-genos) */}
       </head>
       <body className="bg-foreas-obsidian text-text-primary antialiased font-sans">

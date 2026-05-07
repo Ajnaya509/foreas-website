@@ -291,7 +291,7 @@ function TarifsContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
             </span>
-            147 chauffeurs en essai cette semaine
+            <span className="tabular-nums">147</span> chauffeurs en essai cette semaine
           </span>
           <span className="text-white/20 hidden sm:inline">·</span>
           <span className="text-white/55 text-xs">
