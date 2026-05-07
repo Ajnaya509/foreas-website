@@ -61,26 +61,38 @@ async function saveMessage(msg: Record<string, unknown>) {
 // quand il répond, mais ici on bypass — donc on doit l'écrire nous-mêmes.
 async function writeCanalMemory(
   identity_id: string,
-  canal: 'web' | 'voice_agent',
+  source: 'web' | 'voice_agent',
   fragments: Record<string, unknown>
 ) {
   try {
     const sb = await getSupabase()
     if (!sb) return
-    // Une row par (identity_id, canal, context_key) — upsert pour update si existe
+    // FIX 2026-05-07 : `canal_memory.canal` a un CHECK constraint qui n'accepte
+    // que `widget|whatsapp|app|telegram|xyz`. On forçait avant 'web'/'voice_agent'
+    // → 100% des INSERT échouaient silencieusement (catch swallow).
+    // Solution : canal='widget' (canal officiel pour ce fil), source préservée
+    // dans context_value jsonb sous la clé `_source` pour analytics downstream.
     const upserts = Object.entries(fragments).map(([context_key, context_value]) => ({
       identity_id,
-      canal,
+      canal: 'widget' as const,
       context_key,
-      context_value,
+      context_value: typeof context_value === 'object' && context_value !== null
+        ? { ...context_value, _source: source }
+        : { value: context_value, _source: source },
       updated_at: new Date().toISOString(),
     }))
     if (upserts.length === 0) return
-    await sb.from('canal_memory').upsert(upserts, {
+    const { error } = await sb.from('canal_memory').upsert(upserts, {
       onConflict: 'identity_id,canal,context_key',
       ignoreDuplicates: false,
     })
-  } catch { /* silent — never block response */ }
+    if (error) {
+      // Log non-bloquant — l'ancien `catch silent` masquait les 23514 (CHECK violation)
+      console.warn('[canal_memory] upsert error:', error.code, error.message)
+    }
+  } catch (err) {
+    console.warn('[canal_memory] write exception:', (err as Error).message)
+  }
 }
 
 // ─── Update prospect ─────────────────────────────────────────────────────────
