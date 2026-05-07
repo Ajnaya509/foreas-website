@@ -202,17 +202,19 @@ function ProofToast({
         transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
       >
         {entry.initial}
+        {/* Design System §16 : border 1px max — opacité compensée pour rester visible */}
         <motion.span
           className="absolute inset-0 rounded-full"
-          style={{ border: `2px solid ${accent.ring}` }}
-          animate={{ scale: [1, 1.45], opacity: [0.55, 0] }}
+          style={{ border: `1px solid ${accent.ring}` }}
+          animate={{ scale: [1, 1.5], opacity: [0.85, 0] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
         />
         {/* Petite pastille verte WhatsApp si action WA */}
         {entry.action !== 'trial_started' && (
           <span
             className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: '#25D366', border: '1.5px solid #fff' }}
+            // Design System §16 : borderWidth toujours 1px (jamais 2+)
+            style={{ backgroundColor: '#25D366', border: '1px solid #fff' }}
             aria-hidden
           >
             <MessageCircle className="w-2 h-2 text-white" strokeWidth={3} />

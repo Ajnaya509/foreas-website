@@ -182,7 +182,10 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
           transition={{ duration: 0.25 }}
           className="fixed inset-0 z-[100] flex items-end md:items-center justify-center"
           style={{
-            backgroundColor: 'rgba(15, 8, 30, 0.62)',
+            // Design System §16 : modal backdrop rgba(0,0,0,0.66) avec halo violet
+            // derrière. Ici on garde une légère teinte violet-foncé (15,8,30) pour
+            // s'accorder à la palette FOREAS plutôt que noir pur.
+            backgroundColor: 'rgba(15, 8, 30, 0.66)',
             backdropFilter: 'blur(6px)',
             WebkitBackdropFilter: 'blur(6px)',
           }}
@@ -230,7 +233,8 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
               <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full bg-violet-50 border border-violet-200/70">
                 <Sparkles className="w-3.5 h-3.5 text-violet-600" />
                 <span
-                  className="text-[10px] font-extrabold uppercase tracking-[0.20em]"
+                  // Design System §5 + §17 : eyebrow 10px weight 800 ls 2.5 (= 0.25em) uppercase
+                  className="text-[10px] font-extrabold uppercase tracking-[0.25em]"
                   style={{ color: '#6C3CE0' }}
                 >
                   Avant de partir

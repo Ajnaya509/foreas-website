@@ -263,11 +263,11 @@ function FlyingCard({ card, align }: { card: OrbitCard; align: 'left' | 'right' 
         transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
       >
         <span aria-hidden>{card.initial}</span>
-        {/* ring pulse externe */}
+        {/* ring pulse externe — Design System §16 : border 1px max */}
         <motion.span
           className="absolute inset-0 rounded-full"
-          style={{ border: `2px solid ${accent.ring}` }}
-          animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
+          style={{ border: `1px solid ${accent.ring}` }}
+          animate={{ scale: [1, 1.6], opacity: [0.85, 0] }}
           transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }}
         />
       </motion.div>
