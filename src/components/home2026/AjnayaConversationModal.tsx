@@ -6,6 +6,7 @@ import { X, Send, MapPin, TrendingUp, TrendingDown, Volume2, MessageCircle, Volu
 import { buildWAUrl } from '@/lib/whatsappLink'
 import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
+import { expandPoolCode } from '@/lib/expandPoolCode'
 
 /**
  * AjnayaConversationModal — Pieuvre Brain + ElevenLabs v3 (Site2026v73)
@@ -108,7 +109,10 @@ function ThinkingDots() {
 // ─── Zone card ────────────────────────────────────────────────────────────────
 function ZoneCard({ data }: { data: ZoneData }) {
   const trend = data.demand_delta_pct
-  const isUp = trend >= 0
+  // Design System §4 sémantique : success/danger/neutre selon seuil ±5%.
+  // Anti-pattern fixé : avant on affichait "+0% vert ↗" = mensonge visuel.
+  const trendStatus: 'up' | 'down' | 'stable' =
+    trend > 5 ? 'up' : trend < -5 ? 'down' : 'stable'
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.93, y: 10 }}
@@ -123,7 +127,8 @@ function ZoneCard({ data }: { data: ZoneData }) {
           <MapPin className="w-3 h-3 flex-shrink-0" style={{ color: '#6C3CE0' }} />
           <span
             className="text-[10px] font-bold uppercase tracking-widest truncate"
-            style={{ color: '#6e6e73', letterSpacing: '0.16em' }}
+            // Design System §5 + §17 : eyebrow ls 2.5 = 0.22em (était 0.16em off-spec)
+            style={{ color: '#6e6e73', letterSpacing: '0.22em' }}
           >
             {data.zone_match}
           </span>
@@ -138,14 +143,25 @@ function ZoneCard({ data }: { data: ZoneData }) {
             {data.avg_hourly.toFixed(0)}
           </span>
           <span className="text-sm font-semibold mb-1" style={{ color: '#6e6e73' }}>€/h</span>
-          <div
-            className={`ml-auto flex items-center gap-0.5 text-xs font-bold ${isUp ? 'text-emerald-600' : 'text-rose-500'}`}
-          >
-            {isUp
-              ? <TrendingUp className="w-3.5 h-3.5" />
-              : <TrendingDown className="w-3.5 h-3.5" />}
-            {isUp ? '+' : ''}{trend}%
-          </div>
+          {trendStatus === 'stable' ? (
+            <div
+              className="ml-auto text-xs font-semibold tabular-nums"
+              style={{ color: '#86868b' }}
+            >
+              stable
+            </div>
+          ) : (
+            <div
+              className={`ml-auto flex items-center gap-0.5 text-xs font-bold tabular-nums ${
+                trendStatus === 'up' ? 'text-emerald-600' : 'text-rose-500'
+              }`}
+            >
+              {trendStatus === 'up'
+                ? <TrendingUp className="w-3.5 h-3.5" />
+                : <TrendingDown className="w-3.5 h-3.5" />}
+              {trendStatus === 'up' ? '+' : ''}{trend}%
+            </div>
+          )}
         </div>
 
         {/* Meta row */}
@@ -153,8 +169,8 @@ function ZoneCard({ data }: { data: ZoneData }) {
           className="flex items-center justify-between pt-2.5 border-t"
           style={{ borderColor: 'rgba(0,0,0,0.06)' }}
         >
-          <span className="text-[10px] font-medium" style={{ color: '#86868b' }}>
-            {data.courses_count} courses · {data.top_pool}
+          <span className="text-[10px] font-medium tabular-nums" style={{ color: '#86868b' }}>
+            {data.courses_count} courses · {expandPoolCode(data.top_pool)}
           </span>
           <span
             className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full"
@@ -704,6 +720,24 @@ export default function AjnayaConversationModal({
             aria-hidden="true"
           />
 
+          {/* ── Halo pulse arrière (variant pulse §13 — Ajnaya réfléchit) ── */}
+          {/* Couche 2 du gâteau Apple : halo violet + cyan diffus qui pulse 0.9s */}
+          <div
+            aria-hidden
+            className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
+          >
+            <div
+              className="w-[680px] h-[680px] rounded-full"
+              style={{
+                background:
+                  'radial-gradient(circle at 50% 50%, rgba(140, 82, 255, 0.22) 0%, rgba(0, 212, 255, 0.10) 40%, transparent 70%)',
+                filter: 'blur(60px)',
+                animation: 'halo-pulse-fast 0.9s ease-in-out infinite alternate',
+                willChange: 'opacity',
+              }}
+            />
+          </div>
+
           {/* ── Modal container ── */}
           <div
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none"
@@ -857,11 +891,12 @@ export default function AjnayaConversationModal({
                         <MessageCircle className="w-4 h-4" />
                         Continuer sur WhatsApp
                       </a>
+                      {/* §17 brièveté radicale : 3 mots-totem séparés par · */}
                       <p
-                        className="text-center text-[10px] font-medium mt-1.5"
+                        className="text-center text-[10px] font-medium mt-1.5 tabular-nums"
                         style={{ color: '#86868b' }}
                       >
-                        Plan personnalisé · 2 min · Aucune inscription
+                        Gratuit · 2 min · Sans inscription
                       </p>
                     </motion.div>
                   )}
@@ -902,22 +937,25 @@ export default function AjnayaConversationModal({
                       type="text"
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
-                      placeholder={
-                        turn === 1
-                          ? 'Votre zone... (ex: Bercy, CDG, Lyon)'
-                          : 'Votre créneau... (ex: ce soir 19h)'
-                      }
+                      // §17 brièveté radicale : phrases ≤ 5 mots / aucune phrase
+                      placeholder={turn === 1 ? 'Votre zone ?' : 'Votre créneau ?'}
+                      inputMode="search"
+                      enterKeyHint="send"
+                      autoCapitalize="words"
+                      // Design System §11 : input field focus border cyanElectric + glowCyan
                       className="flex-1 text-[14px] px-3.5 py-2.5 rounded-xl outline-none transition-all"
                       style={{
                         backgroundColor: '#f5f5f7',
-                        border: '1.5px solid transparent',
+                        border: '1px solid transparent',
                         color: '#1d1d1f',
                       }}
                       onFocus={(e) => {
-                        e.target.style.borderColor = 'rgba(108,60,224,0.35)'
+                        e.target.style.borderColor = 'rgba(0, 212, 255, 0.45)'
+                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 212, 255, 0.18)'
                       }}
                       onBlur={(e) => {
                         e.target.style.borderColor = 'transparent'
+                        e.target.style.boxShadow = 'none'
                       }}
                       disabled={isLoading}
                       autoComplete="off"

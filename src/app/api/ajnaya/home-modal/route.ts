@@ -206,6 +206,13 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
     // Merge landmarks (peut être null si RPC pas encore créée côté Pieuvre)
     if (zoneData && Array.isArray(landmarksRes) && landmarksRes.length > 0) {
       zoneData.landmarks = landmarksRes as ZoneData['landmarks']
+    } else if (zoneData) {
+      // Fallback hardcoded site (CDG / Orly / Disney / Défense / Bercy / Paris 12ᵉ…)
+      // Comme ça le user voit "Terminal 1 · Terminal 2E" même si Pieuvre tarde à
+      // propager le seed Wikidata.
+      const { getLandmarksFallback } = await import('@/lib/landmarksFallback')
+      const fb = getLandmarksFallback(zoneData.zone_match)
+      if (fb && fb.length > 0) zoneData.landmarks = fb
     }
 
     return zoneData
@@ -260,11 +267,11 @@ INTERDIT : citer un témoignage hors-contexte (ex. Binate Disneyland Tesla pour 
 
   const turnInstruction = turn === 1
     ? hasData
-      ? `Tour 1 : Donne UNIQUEMENT les chiffres exacts ci-dessus. Pas de spéculation. Pose ENSUITE une question SIMPLE et concrète sur le créneau ("Quel créneau vous visez ce soir ?").`
-      : `Tour 1 : Reconnais en 1 phrase qu'on n'a pas la donnée temps réel pour "${userZone}" CE soir. Propose un audit personnalisé via WhatsApp en 2 min. Pas de chiffres inventés. Pose UNE question pour montrer qu'on écoute ("Vous tournez plutôt aéroport, gare ou centre-ville ?").`
+      ? `Tour 1 : Sors UNIQUEMENT les chiffres exacts en format SMS court. Format obligatoire : "Zone · X€/h · stable/+X%/-X%. Quel créneau ?" (max 12 mots TOTAL).`
+      : `Tour 1 : 1 phrase max 8 mots qui dit qu'on n'a pas la data ce soir. Puis 1 question 4 mots max. Ex : "Pas de data temps réel ici. Aéroport, gare ou centre ?"`
     : turn === 2
-    ? `Tour 2 : Le chauffeur a répondu. Si la réponse est "j'ai pas compris" ou un signal de confusion → REPRENDS plus simple, en 1 phrase, sans répéter les mêmes chiffres. Si la réponse est cohérente → construis l'urgence sur SON créneau précis avec UN seul témoignage pertinent. Push vers WhatsApp.`
-    : `Tour 3 : Ferme. Promesse claire : plan personnalisé sur WhatsApp en 2 min, sans inscription, sans CB. Mentionne la vidéo du témoignage uniquement s'il est pertinent à la zone.`
+    ? `Tour 2 : Si confusion ("pas compris", "?") → CHANGE d'angle, 1 phrase 5 mots max. Sinon → 1 phrase concrète + push WA. Max 15 mots TOTAL.`
+    : `Tour 3 : Ferme en 2 phrases courtes. Ex : "Je vous envoie le plan sur WhatsApp. 2 minutes, sans inscription." Max 15 mots TOTAL.`
 
   return `Tu es Ajnaya. Confidente des chauffeurs VTC — pas une IA, jamais "je suis une IA".
 
@@ -275,13 +282,16 @@ ${testimonialBlock}
 ${turnInstruction}
 
 RÈGLES ABSOLUES — VIOLATION = CHURN IMMÉDIAT :
-1. JAMAIS inventer un chiffre. Si pas de data → le dire, pas de fake "30,72€/h".
-2. JAMAIS un -100% / -90% / +200% : si tu vois ça dans les data, tu IGNORES et tu dis "données pas dispo ce soir".
-3. JAMAIS un témoignage hors-contexte (Tesla Disney pour un chauffeur Bordeaux = perte de crédibilité totale).
-4. Si l'utilisateur dit "j'ai pas compris" / "pas clair" / "?" → tu CHANGES d'angle, tu ne répètes PAS les mêmes infos formulées autrement. Tu reformules en 1 phrase concrète, ou tu poses une question plus précise.
-5. 2-3 phrases maximum. Direct. Comme un SMS d'un pote qui connaît le terrain.
-6. Vouvoie toujours. Jamais condescendant.
-7. Le but de chaque message : avancer d'un cran vers WhatsApp. Pas de blabla.`
+1. PHRASES ULTRA-COURTES : max 5 mots par phrase. Pas de subordonnées. Style SMS.
+2. SÉPARATEUR · au lieu de virgules ou "et". Ex : "CDG · 39€/h · stable. Quel créneau ?"
+3. PAS de "FOREAS" Tour 1-2. Pas de bullshit corporate. Pas de "je vous propose…", "je peux vous…".
+4. JAMAIS inventer un chiffre. Si pas de data → le dire en 5 mots max.
+5. JAMAIS un -100% / -90% / +200% : si tu vois ça, tu dis "data indispo" point.
+6. JAMAIS un témoignage hors-contexte (Tesla Disney pour Bordeaux = mort instantanée).
+7. Si confusion ("pas compris") → CHANGE d'angle, ne répète pas. Reformule en 1 phrase 5 mots.
+8. Tour 3 : pousse WhatsApp en 2 phrases SMS. Pas plus.
+9. Vouvoie toujours. Jamais "tu". Jamais condescendant.
+10. Chaque message = avancer d'un cran vers WhatsApp. Zéro blabla.`
 }
 
 // ─── Strip markdown for TTS ───────────────────────────────────────────────────
