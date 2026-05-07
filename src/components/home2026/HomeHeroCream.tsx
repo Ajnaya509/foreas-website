@@ -6,6 +6,7 @@ import { MapPin, ArrowRight, LocateFixed, Loader2 } from 'lucide-react'
 import { useTypewriter } from '@/hooks/useTypewriter'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import AjnayaConversationModal from './AjnayaConversationModal'
+import HeroSearchOrbit from './HeroSearchOrbit'
 
 const PLACEHOLDER_ZONES = [
   'Aéroport CDG…',
@@ -164,12 +165,12 @@ export default function HomeHeroCream() {
               willChange: 'transform',
             }}
           />
-          {/* Blob 2 — Cyan brand top-right (Ajnaya signature) */}
+          {/* Blob 2 — Violet secondaire top-right (remplace ancien cyan qui teintait la search bar) */}
           <div
             className="absolute -top-[5%] -right-[12%] w-[48%] h-[48%] rounded-full animate-vision-b"
             style={{
               background:
-                'radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.22) 0%, rgba(0, 212, 255, 0.05) 55%, transparent 80%)',
+                'radial-gradient(circle at 50% 50%, rgba(108, 60, 224, 0.18) 0%, rgba(108, 60, 224, 0.04) 55%, transparent 80%)',
               filter: 'blur(48px)',
               willChange: 'transform',
             }}
@@ -266,16 +267,20 @@ export default function HomeHeroCream() {
             + 4 autres plateformes — vous dit où foncer ce soir.
           </motion.p>
 
-          {/* Search bar — blanc pur Apple avec ombre précise */}
+          {/* Search bar — blanc pur Apple avec ombre précise + orbit testimonials */}
           <motion.form
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.25 }}
             onSubmit={handleSubmit}
-            className="max-w-xl mx-auto"
+            className="max-w-xl mx-auto relative"
           >
+            {/* Orbit testimonials — 8 cards qui jaillissent autour de la barre */}
+            {/* paused quand le user a déjà tapé qqch pour ne pas le distraire */}
+            <HeroSearchOrbit paused={hasInteracted && zoneInput.length > 0} />
+
             <div
-              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10"
+              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10 z-[2]"
               style={{
                 backgroundColor: '#ffffff',
                 boxShadow:

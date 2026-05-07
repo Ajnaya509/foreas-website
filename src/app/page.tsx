@@ -8,6 +8,8 @@ import HomeBigDomino from '@/components/home2026/HomeBigDomino'
 // Conflit avec hero search bar + modal : 2 portes Ajnaya = attention splittée + churn
 // On focus sur UNE seule entrée (hero) qui convertit. Ré-activable plus tard sur scroll bottom.
 // import AjnayaFloatingBubble from '@/components/home2026/AjnayaFloatingBubble'
+import LiveSocialProofToasts from '@/components/home2026/LiveSocialProofToasts'
+import ExitIntentModal from '@/components/home2026/ExitIntentModal'
 import ZoneMechanismVisual from '@/components/zone/ZoneMechanismVisual'
 import ZoneSocialProof from '@/components/zone/ZoneSocialProof'
 import ZonePainCalculator from '@/components/zone/ZonePainCalculator'
@@ -142,6 +144,12 @@ export default function HomePage() {
           décidé d'une stratégie scroll-aware (afficher SEULEMENT après le hero,
           masquer si modal déjà ouvert ou WhatsApp déjà cliqué). */}
       {/* <AjnayaFloatingBubble /> */}
+
+      {/* ─── Marketing UX agressif (Site2026v75) ──────────────────────────── */}
+      {/* Toasts "live" Provely-style en bas-à-gauche : Bakary, Driss, Karim… */}
+      <LiveSocialProofToasts />
+      {/* Exit-intent modal : mouseleave top (desktop) + back button (mobile) */}
+      <ExitIntentModal />
     </main>
   )
 }
