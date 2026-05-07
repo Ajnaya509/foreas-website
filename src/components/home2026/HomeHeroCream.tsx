@@ -298,8 +298,19 @@ export default function HomeHeroCream() {
                 }
                 autoComplete="off"
                 spellCheck={false}
-                className="flex-1 bg-transparent border-none outline-none text-base sm:text-lg font-medium placeholder-[#86868b] tabular-nums min-w-0 py-1"
-                style={{ color: '#1d1d1f' }}
+                inputMode="search"
+                enterKeyHint="search"
+                autoCapitalize="words"
+                className="flex-1 bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none text-base sm:text-lg font-medium placeholder-[#86868b] tabular-nums min-w-0 py-1"
+                style={{
+                  color: '#1d1d1f',
+                  // Override la règle globale `*:focus-visible { outline: 2px solid cyan }`
+                  // de globals.css — le focus-within ring noir/10% du wrapper suffit pour
+                  // l'accessibilité WCAG AA (indicateur visuel sur la pill entière).
+                  outline: 'none',
+                  boxShadow: 'none',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
                 aria-label="Votre zone d'opération"
               />
 
