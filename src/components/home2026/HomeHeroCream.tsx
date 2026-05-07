@@ -6,7 +6,6 @@ import { MapPin, ArrowRight, LocateFixed, Loader2 } from 'lucide-react'
 import { useTypewriter } from '@/hooks/useTypewriter'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import AjnayaConversationModal from './AjnayaConversationModal'
-import HeroSearchOrbit from './HeroSearchOrbit'
 
 const PLACEHOLDER_ZONES = [
   'Aéroport CDG…',
@@ -267,20 +266,16 @@ export default function HomeHeroCream() {
             + 4 autres plateformes — vous dit où foncer ce soir.
           </motion.p>
 
-          {/* Search bar — blanc pur Apple avec ombre précise + orbit testimonials */}
+          {/* Search bar — blanc pur Apple avec ombre précise */}
           <motion.form
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.25 }}
             onSubmit={handleSubmit}
-            className="max-w-xl mx-auto relative"
+            className="max-w-xl mx-auto"
           >
-            {/* Orbit testimonials — 8 cards qui jaillissent autour de la barre */}
-            {/* paused quand le user a déjà tapé qqch pour ne pas le distraire */}
-            <HeroSearchOrbit paused={hasInteracted && zoneInput.length > 0} />
-
             <div
-              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10 z-[2]"
+              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10"
               style={{
                 backgroundColor: '#ffffff',
                 boxShadow:

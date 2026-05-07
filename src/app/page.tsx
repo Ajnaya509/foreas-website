@@ -9,7 +9,6 @@ import HomeBigDomino from '@/components/home2026/HomeBigDomino'
 // On focus sur UNE seule entrée (hero) qui convertit. Ré-activable plus tard sur scroll bottom.
 // import AjnayaFloatingBubble from '@/components/home2026/AjnayaFloatingBubble'
 import LiveSocialProofToasts from '@/components/home2026/LiveSocialProofToasts'
-import ExitIntentModal from '@/components/home2026/ExitIntentModal'
 import ZoneMechanismVisual from '@/components/zone/ZoneMechanismVisual'
 import ZoneSocialProof from '@/components/zone/ZoneSocialProof'
 import ZonePainCalculator from '@/components/zone/ZonePainCalculator'
@@ -145,11 +144,8 @@ export default function HomePage() {
           masquer si modal déjà ouvert ou WhatsApp déjà cliqué). */}
       {/* <AjnayaFloatingBubble /> */}
 
-      {/* ─── Marketing UX agressif (Site2026v75) ──────────────────────────── */}
-      {/* Toasts "live" Provely-style en bas-à-gauche : Bakary, Driss, Karim… */}
+      {/* ─── Toasts "live" Provely-style bottom-left (Site2026v76) ────────── */}
       <LiveSocialProofToasts />
-      {/* Exit-intent modal : mouseleave top (desktop) + back button (mobile) */}
-      <ExitIntentModal />
     </main>
   )
 }
