@@ -164,19 +164,51 @@ async function getSupabase() {
   return createClient(url, key)
 }
 
-// ─── Fetch zone intelligence (try v3 first, fallback v2) ──────────────────────
+// ─── Fetch zone intelligence + landmarks en parallèle ────────────────────────
+// CONTRACTS v1.7 — On NE dépend PAS de Pieuvre pour récupérer les landmarks.
+// Le site fait son propre RPC direct sur Supabase, en parallèle de zone_intelligence.
+// → Zone-card affiche les POIs IMMÉDIATEMENT, même si Pieuvre N8N tarde à propager
+//   le brief zone_landmarks (queue mode workers, cache prompt, etc.).
 async function getZoneData(zone: string): Promise<ZoneData | null> {
   try {
     const sb = await getSupabase()
     if (!sb) return null
 
-    // Try get_zone_intelligence v3 (wrapper rétro-compat + signals slot)
-    const { data: v3, error: e3 } = await sb.rpc('get_zone_intelligence', { zone_input: zone })
-    if (!e3 && v3) return v3 as ZoneData
+    // Brief PIEUVRE_ZONE_LANDMARKS_BRIEF — top 3 POIs ordonnés par rank.
+    // Wrappé en async fn pour pouvoir try/catch (la RPC peut ne pas exister
+    // tant que Pieuvre n'a pas appliqué la migration).
+    const fetchLandmarks = async () => {
+      try {
+        const { data, error } = await sb.rpc('get_zone_landmarks', { zone_input: zone })
+        if (error) return null
+        return data as ZoneLandmark[] | null
+      } catch {
+        return null
+      }
+    }
 
-    // Fallback to get_zone_stats v2
-    const { data: v2 } = await sb.rpc('get_zone_stats', { zone_input: zone })
-    return (v2 as ZoneData) ?? null
+    // Promise.all : 2 RPCs en parallèle = pas de latence ajoutée
+    const [zoneRes, landmarksRes] = await Promise.all([
+      // Try get_zone_intelligence v3 (wrapper rétro-compat + signals slot)
+      sb.rpc('get_zone_intelligence', { zone_input: zone }),
+      fetchLandmarks(),
+    ])
+
+    let zoneData: ZoneData | null = null
+    if (!zoneRes.error && zoneRes.data) {
+      zoneData = zoneRes.data as ZoneData
+    } else {
+      // Fallback get_zone_stats v2 (pas de landmarks dedans, mais zone OK)
+      const { data: v2 } = await sb.rpc('get_zone_stats', { zone_input: zone })
+      zoneData = (v2 as ZoneData) ?? null
+    }
+
+    // Merge landmarks (peut être null si RPC pas encore créée côté Pieuvre)
+    if (zoneData && Array.isArray(landmarksRes) && landmarksRes.length > 0) {
+      zoneData.landmarks = landmarksRes as ZoneData['landmarks']
+    }
+
+    return zoneData
   } catch {
     return null
   }
