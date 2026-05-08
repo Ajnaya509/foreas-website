@@ -476,9 +476,13 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Inject landmarks dans zone_data (CONTRACTS v1.7 — Brief PIEUVRE_ZONE_LANDMARKS)
+    // CONTRACTS v1.7 — Merge landmarks : préfère Site fetch (Promise.all RPC direct
+    // fait dans getZoneData), fallback sur pieuvreLandmarks (N8N) si Site fetch vide.
+    // Évite de perdre les landmarks quand Pieuvre N8N tarde à propager le brief.
+    const siteLandmarks = resolvedZoneData?.landmarks ?? []
+    const finalLandmarks = siteLandmarks.length > 0 ? siteLandmarks : pieuvreLandmarks
     const zoneDataWithLandmarks = resolvedZoneData
-      ? { ...resolvedZoneData, landmarks: pieuvreLandmarks }
+      ? { ...resolvedZoneData, landmarks: finalLandmarks }
       : null
 
     return NextResponse.json({
@@ -492,8 +496,8 @@ export async function POST(request: NextRequest) {
       // Pieuvre v1.1 — exposés pour tracking client (Meta CAPI fbq dimensions)
       clarify_branch_detected: pieuvreClarifyBranch,
       modal_zone_category: zoneCategory,
-      // Pieuvre v1.7 — landmarks aussi exposés à la racine (compat futurs canaux)
-      landmarks: pieuvreLandmarks,
+      // CONTRACTS v1.7 — landmarks à la racine (compat futurs canaux)
+      landmarks: finalLandmarks,
     })
   } catch (error) {
     console.error('[home-modal] Error:', (error as Error).message)
