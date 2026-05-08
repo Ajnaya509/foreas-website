@@ -183,18 +183,40 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
     if (!sb) return null
 
     // Brief PIEUVRE_ZONE_LANDMARKS_BRIEF v1.1 — top 3 POIs avec image_url + center.
-    // Try v2 d'abord (image_url + center_lat/lng pour la map), fallback v1 (sans).
-    const fetchLandmarks = async () => {
+    // BYPASS supabase-js : REST direct (curl-style) marche mieux pour TABLE-returning RPCs
+    // (le client JS avait un quirk avec v2 — fallback hardcoded déclenché à tort).
+    const fetchLandmarks = async (): Promise<ZoneLandmark[] | null> => {
+      const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (!supaUrl || !supaKey) return null
       try {
-        const v2 = await sb.rpc('get_zone_landmarks_v2', { zone_input: zone })
-        if (!v2.error && Array.isArray(v2.data) && v2.data.length > 0) {
-          return v2.data as ZoneLandmark[]
+        const res = await fetch(`${supaUrl}/rest/v1/rpc/get_zone_landmarks_v2`, {
+          method: 'POST',
+          headers: {
+            'apikey': supaKey,
+            'Authorization': `Bearer ${supaKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ zone_input: zone }),
+          // Edge cache : 1h (les POIs changent rarement)
+          next: { revalidate: 3600 },
+        })
+        if (!res.ok) {
+          // Fallback v1 (sans images mais zone OK)
+          const r1 = await fetch(`${supaUrl}/rest/v1/rpc/get_zone_landmarks`, {
+            method: 'POST',
+            headers: {
+              'apikey': supaKey,
+              'Authorization': `Bearer ${supaKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ zone_input: zone }),
+            next: { revalidate: 3600 },
+          })
+          if (!r1.ok) return null
+          return (await r1.json()) as ZoneLandmark[]
         }
-      } catch { /* fallback ci-dessous */ }
-      try {
-        const v1 = await sb.rpc('get_zone_landmarks', { zone_input: zone })
-        if (v1.error) return null
-        return v1.data as ZoneLandmark[] | null
+        return (await res.json()) as ZoneLandmark[]
       } catch {
         return null
       }
