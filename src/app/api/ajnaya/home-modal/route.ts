@@ -27,6 +27,14 @@ export interface ZoneLandmark {
   type: string
   vibe?: string | null
   rank: number
+  // v1.1 — RPC v2 enrichit avec image POI + lat/lng + center zone (Mapbox Static)
+  image_url?: string | null
+  image_attribution?: string | null
+  lat?: number | null
+  lng?: number | null
+  center_lat?: number | null
+  center_lng?: number | null
+  zoom?: number | null
 }
 
 export interface ZoneData {
@@ -174,14 +182,19 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
     const sb = await getSupabase()
     if (!sb) return null
 
-    // Brief PIEUVRE_ZONE_LANDMARKS_BRIEF — top 3 POIs ordonnés par rank.
-    // Wrappé en async fn pour pouvoir try/catch (la RPC peut ne pas exister
-    // tant que Pieuvre n'a pas appliqué la migration).
+    // Brief PIEUVRE_ZONE_LANDMARKS_BRIEF v1.1 — top 3 POIs avec image_url + center.
+    // Try v2 d'abord (image_url + center_lat/lng pour la map), fallback v1 (sans).
     const fetchLandmarks = async () => {
       try {
-        const { data, error } = await sb.rpc('get_zone_landmarks', { zone_input: zone })
-        if (error) return null
-        return data as ZoneLandmark[] | null
+        const v2 = await sb.rpc('get_zone_landmarks_v2', { zone_input: zone })
+        if (!v2.error && Array.isArray(v2.data) && v2.data.length > 0) {
+          return v2.data as ZoneLandmark[]
+        }
+      } catch { /* fallback ci-dessous */ }
+      try {
+        const v1 = await sb.rpc('get_zone_landmarks', { zone_input: zone })
+        if (v1.error) return null
+        return v1.data as ZoneLandmark[] | null
       } catch {
         return null
       }

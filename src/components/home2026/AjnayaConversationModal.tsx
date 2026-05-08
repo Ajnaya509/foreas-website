@@ -32,7 +32,14 @@ interface ZoneData {
   week_iso: string
   has_data: boolean
   fallback_zone?: { name: string; avg_hourly: number; note?: string } | null
-  landmarks?: Array<{ name: string; type: string; vibe?: string | null; rank: number }>
+  landmarks?: Array<{
+    name: string
+    type: string
+    vibe?: string | null
+    rank: number
+    image_url?: string | null
+    image_attribution?: string | null
+  }>
 }
 
 interface Testimonial {
@@ -113,6 +120,11 @@ function ZoneCard({ data }: { data: ZoneData }) {
   // Anti-pattern fixé : avant on affichait "+0% vert ↗" = mensonge visuel.
   const trendStatus: 'up' | 'down' | 'stable' =
     trend > 5 ? 'up' : trend < -5 ? 'down' : 'stable'
+  // CONTRACTS v1.7 — image POI dominant (rank=0 avec image_url) pour bandeau bottom
+  const dominantPOI = (data.landmarks || []).find((l) => l.image_url) || null
+  // Brief PIEUVRE_ZONE_LANDMARKS v1.1 — Mapbox Static via /api/home/zone-map
+  // (proxy server-side qui cache 24h ; URL safe, pas de token client-side)
+  const mapUrl = `/api/home/zone-map?zone=${encodeURIComponent(data.zone_match)}&w=320&h=80`
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.93, y: 10 }}
@@ -121,6 +133,19 @@ function ZoneCard({ data }: { data: ZoneData }) {
       className="rounded-2xl overflow-hidden border w-full"
       style={{ borderColor: 'rgba(0,0,0,0.08)', backgroundColor: '#f5f5f7' }}
     >
+      {/* PRIORITÉ B — Map static Mapbox en tête de card. 80px hauteur. Lazy. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={mapUrl}
+        alt={`Carte ${data.zone_match}`}
+        className="w-full block"
+        style={{ height: 80, objectFit: 'cover', backgroundColor: '#e5e5ea' }}
+        loading="lazy"
+        onError={(e) => {
+          // Si Mapbox down ou zone sans centroid → cache l'élément silencieusement
+          ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+        }}
+      />
       <div className="px-4 pt-3.5 pb-3">
         {/* Zone label */}
         <div className="flex items-center gap-1.5 mb-1.5">
@@ -190,6 +215,35 @@ function ZoneCard({ data }: { data: ZoneData }) {
           </p>
         )}
       </div>
+      {/* PRIORITÉ C (bonus) — bandeau photo POI dominant (rank=0 avec image_url).
+          Affiché uniquement si le POI a une vraie image Wikipedia/Commons indexée. */}
+      {dominantPOI && dominantPOI.image_url && (
+        <div className="relative w-full" style={{ height: 60 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={dominantPOI.image_url}
+            alt={dominantPOI.name}
+            className="w-full h-full block"
+            style={{ objectFit: 'cover' }}
+            loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
+          {/* Overlay nom POI bas-gauche, gradient noir → transparent */}
+          <div
+            className="absolute inset-0 flex items-end px-3 pb-1.5 pointer-events-none"
+            style={{
+              background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 60%)',
+            }}
+          >
+            <span
+              className="text-[11px] font-semibold text-white truncate drop-shadow-sm"
+              style={{ letterSpacing: '0.01em' }}
+            >
+              {dominantPOI.name}
+            </span>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
