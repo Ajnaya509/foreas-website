@@ -6,6 +6,7 @@ import { MapPin, ArrowRight, LocateFixed } from 'lucide-react'
 import { useTypewriter } from '@/hooks/useTypewriter'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import AjnayaConversationModal from './AjnayaConversationModal'
+import ZoneAutocomplete from './ZoneAutocomplete'
 
 const PLACEHOLDER_ZONES = [
   'Aéroport CDG…',
@@ -42,6 +43,12 @@ export default function HomeHeroCream() {
   const [geolocError, setGeolocError] = useState<string | null>(null)
   // Site2026v77 nano-detail #9 : compteur live driver count (RPC + fallback)
   const [liveDriverCount, setLiveDriverCount] = useState<number>(147)
+  // Site2026v79 : feedback géoloc précis (zone détectée + distance + accuracy)
+  const [locateFeedback, setLocateFeedback] = useState<{
+    zone: string
+    distance_km: number
+    accuracy_m: number
+  } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const geo = useGeolocation()
 
@@ -95,6 +102,7 @@ export default function HomeHeroCream() {
    */
   const handleLocate = async () => {
     setGeolocError(null)
+    setLocateFeedback(null)
     setHasInteracted(true)
 
     // Haptic feedback web (iOS / Android compatibles)
@@ -141,15 +149,23 @@ export default function HomeHeroCream() {
         return
       }
 
-      // Position cohérente — pré-remplit le champ et ouvre le modal
+      // Position cohérente — pré-remplit le champ + affiche feedback précis
       setZoneInput(data.zone_match)
-      openModal(data.zone_match)
+      setLocateFeedback({
+        zone: data.zone_match,
+        distance_km: data.distance_km,
+        accuracy_m: Math.round(coords.accuracy),
+      })
+      // Petit délai (1.2s) pour que l'user voie le feedback "détectée à 0.4 km"
+      // avant que le modal s'ouvre — c'est ce qui crée la confiance dans la précision
+      setTimeout(() => openModal(data.zone_match), 900)
 
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('trackCustom', 'GeolocationMatched', {
           zone: data.zone_match,
           in_range: data.in_range,
           distance_km: data.distance_km,
+          accuracy_m: Math.round(coords.accuracy),
         })
       }
     } catch {
@@ -294,7 +310,7 @@ export default function HomeHeroCream() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.25 }}
             onSubmit={handleSubmit}
-            className="max-w-xl mx-auto"
+            className="max-w-xl mx-auto relative"
           >
             <div
               className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10 overflow-hidden"
@@ -420,6 +436,49 @@ export default function HomeHeroCream() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Site2026v79 nano-detail #saisie : autocomplete des 51 zones canoniques */}
+            {/* Position absolute → ne décale pas le layout sous la barre */}
+            <ZoneAutocomplete
+              value={zoneInput}
+              onSelect={(zone) => {
+                setZoneInput(zone)
+                openModal(zone)
+              }}
+            />
+
+            {/* Site2026v79 : feedback géoloc précis (rassure sur la précision) */}
+            {/* Format : "📍 Aéroport CDG · 0.4 km · ± 8 m" */}
+            {locateFeedback && !geolocError && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="flex items-center justify-center gap-2 mt-3"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                  style={{
+                    backgroundColor: 'rgba(140, 82, 255, 0.10)',
+                    border: '1px solid rgba(140, 82, 255, 0.20)',
+                  }}
+                >
+                  <MapPin className="w-3 h-3" style={{ color: '#6C3CE0' }} />
+                  <span className="text-[11px] font-semibold tabular-nums" style={{ color: '#6C3CE0' }}>
+                    {locateFeedback.zone}
+                  </span>
+                  <span className="text-[10px] tabular-nums" style={{ color: '#86868b' }}>
+                    · {locateFeedback.distance_km < 1
+                      ? `${Math.round(locateFeedback.distance_km * 1000)} m`
+                      : `${locateFeedback.distance_km.toFixed(1)} km`}
+                    · ± {locateFeedback.accuracy_m} m
+                  </span>
+                </span>
+              </motion.div>
+            )}
 
             {/* Erreur géoloc — message subtil sous la search bar */}
             {geolocError && (
