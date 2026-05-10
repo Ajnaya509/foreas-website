@@ -1,24 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-// ─── Price IDs — source de vérité : FOREAS-SHARED/STRIPE_MLM_CROSSFIL_MASTER.md §1
-// TEST IDs (6 = 3 tiers × 2 périodes). À remplacer par LIVE IDs via env vars sur Vercel.
-// Format clé : {tier}_{period}  — tier: essentiel|pro|elite  · period: weekly|annual
-const PRICE_IDS: Record<string, string> = {
-  // ── Essentiel — 12,97 €/sem · 539,55 €/an (−20%)
-  essentiel_weekly: process.env.STRIPE_PRICE_ESSENTIEL_WEEKLY || 'price_1TSf65K89oTss0SbYYW3wJvM',
-  essentiel_annual: process.env.STRIPE_PRICE_ESSENTIEL_ANNUAL || 'price_1TSf65K89oTss0SbIptbv1tS',
-  // ── Pro — 14,97 €/sem · 622,75 €/an (−20%)
-  pro_weekly:       process.env.STRIPE_PRICE_PRO_WEEKLY       || 'price_1TSf66K89oTss0SbrgIWSg7V',
-  pro_annual:       process.env.STRIPE_PRICE_PRO_ANNUAL       || 'price_1TSf66K89oTss0SbhFbsSUPV',
-  // ── Elite — 34,97 €/sem · 1 454,75 €/an (−20%)
-  elite_weekly:     process.env.STRIPE_PRICE_ELITE_WEEKLY     || 'price_1TSf66K89oTss0SbSx44SXda',
-  elite_annual:     process.env.STRIPE_PRICE_ELITE_ANNUAL     || 'price_1TSf67K89oTss0SbcjzKb9Q6',
-  // ── Aliases compat page /tarifs2 (VIP → Elite) + legacy weekly/annual (→ Pro)
-  vip_weekly:       process.env.STRIPE_PRICE_ELITE_WEEKLY     || 'price_1TSf66K89oTss0SbSx44SXda',
-  vip_annual:       process.env.STRIPE_PRICE_ELITE_ANNUAL     || 'price_1TSf67K89oTss0SbcjzKb9Q6',
-  weekly:           process.env.STRIPE_PRICE_PRO_WEEKLY       || 'price_1TSf66K89oTss0SbrgIWSg7V',
-  annual:           process.env.STRIPE_PRICE_PRO_ANNUAL       || 'price_1TSf66K89oTss0SbhFbsSUPV',
+// ─── Price IDs LIVE post-Phase A 10/05/2026 (Chandler verrouillé) ───────────
+// Source : FOREAS-SHARED/STRIPE_MLM_CROSSFIL_MASTER.md §1 + PRICING_FEATURES_MASTER.md §1.1
+// Lecture EXCLUSIVE depuis env vars Vercel (les 4 vars ont été setées par fil App 10/05 19:50).
+// Pas de fallback hardcoded : les anciens prices (Essentiel 12,97 / Pro 14,97 / Elite 34,97)
+// sont ARCHIVÉS Stripe et déclencheraient un checkout fail si utilisés.
+//
+// Format clé : {tier}_{period}  — tier: pro|elite  · period: weekly|annual
+//
+// Aliases :
+//   - `vip_*`     → Elite (compat ancien naming /tarifs2 avant refonte 21:45)
+//   - `weekly` / `annual` (sans tier) → Pro (legacy aliases de page /tarifs)
+const PRICE_IDS: Record<string, string | undefined> = {
+  // ── Pro — 19,97 €/sem · 830,75 €/an (−20%)
+  pro_weekly:    process.env.STRIPE_PRICE_ID_PRO_WEEKLY,
+  pro_annual:    process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
+  // ── Elite — 44,97 €/sem · 1 870,75 €/an (−20%)
+  elite_weekly:  process.env.STRIPE_PRICE_ID_ELITE_WEEKLY,
+  elite_annual:  process.env.STRIPE_PRICE_ID_ELITE_ANNUAL,
+  // ── Aliases compat (anciens IDs page /tarifs et /tarifs2 avant Phase A)
+  vip_weekly:    process.env.STRIPE_PRICE_ID_ELITE_WEEKLY,
+  vip_annual:    process.env.STRIPE_PRICE_ID_ELITE_ANNUAL,
+  weekly:        process.env.STRIPE_PRICE_ID_PRO_WEEKLY,
+  annual:        process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
 }
 
 // Lazy init to avoid build-time error when STRIPE_SECRET_KEY is not set
@@ -64,15 +69,26 @@ export async function POST(request: NextRequest) {
     const cookieRefMatch = cookieHeader.match(/foreas_partner_ref=([^;]+)/)
     const effectiveReferralCode = (referral_code || cookieRefMatch?.[1] || '').trim().toUpperCase() || null
 
-    if (!plan || !PRICE_IDS[plan]) {
-      return NextResponse.json({ error: 'Plan invalide' }, { status: 400 })
+    if (!plan) {
+      return NextResponse.json({ error: 'Plan requis' }, { status: 400 })
+    }
+    const priceId = PRICE_IDS[plan]
+    if (!priceId) {
+      // Soit le plan n'existe pas (ex: free_*, essentiel_* archivé), soit l'env
+      // var Vercel n'est pas configurée. Message explicite côté client.
+      return NextResponse.json(
+        {
+          error: `Plan invalide ou env var manquante : ${plan}. Vérifier STRIPE_PRICE_ID_<TIER>_<BILLING> sur Vercel.`,
+        },
+        { status: 400 },
+      )
     }
     const origin = request.nextUrl.origin
     const trialEnd = getNextMonday18hParis()
     const isEmbedded = mode === 'embedded'
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
-      line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       locale: 'fr',

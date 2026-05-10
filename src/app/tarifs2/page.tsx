@@ -168,51 +168,57 @@ interface Plan {
   cta: string; style: string; popular?: boolean
 }
 
+// ─── PLANS — Phase A 10/05/2026 (Chandler verrouillé 12:30) ────────────────
+// Source : FOREAS-SHARED/PRICING_FEATURES_MASTER.md §1.1 + §2 features matrice
+// Cascade MLM 10/4/2 (statu quo Chandler 13:35 — pas 20/8/4)
+// Annuel = -20% du hebdo. annualWeeklyPrice = (annual / 52) = weeklyPrice × 0.8
+//   - Pro :   19,97 × 0.8 = 15,976 ≈ 15,98  (annuel = 830,75 €/an)
+//   - Elite : 44,97 × 0.8 = 35,976 ≈ 35,98  (annuel = 1 870,75 €/an)
 const PLANS: Plan[] = [
   {
-    id: 'essentiel', name: 'Essentiel', tagline: 'Le minimum pour ne pas conduire à l\'aveugle.',
-    weeklyPrice: 9.97, annualWeeklyPrice: 7.97,
+    id: 'free', name: 'Free', tagline: 'Heatmap. Sans CB. Sans engagement.',
+    weeklyPrice: 0, annualWeeklyPrice: 0,
     features: [
-      { text: 'Tableau de bord toutes plateformes (Uber, Bolt, Heetch)', ok: true },
-      { text: 'Tes vrais chiffres (€/h, €/km, marge nette)', ok: true },
-      { text: 'Communauté FOREAS (1 200+ chauffeurs)', ok: true },
-      { text: 'Abonnement plateforme VTC inclus', ok: true },
-      { text: 'Ajnaya IA — celle qui vous dit où aller', ok: false },
-      { text: 'Votre site driver perso (foreas.xyz/votre-prénom)', ok: false },
-      { text: 'Parrainage 10€/filleul à vie', ok: false },
-      { text: 'Compta IA (livre recettes auto)', ok: false },
+      { text: 'Heatmap basique (3 zones max)', ok: true },
+      { text: 'Chat communauté FOREAS', ok: true },
+      { text: 'Compta IA basique (saisie manuelle)', ok: true },
+      { text: 'Ajnaya 3 messages/jour', ok: true },
+      { text: 'Coach courses verdict accept/refuse', ok: false },
+      { text: 'Site driver perso (foreas.xyz/votre-prénom)', ok: false },
+      { text: 'Compta IA OCR + URSSAF auto', ok: false },
+      { text: 'Courses FOREAS prioritaires', ok: false },
     ],
-    cta: 'Démarrer Essentiel', style: 'bg-white/[0.06] border border-white/15 hover:bg-white/10 text-white',
+    cta: 'Commencer gratuit', style: 'bg-white/[0.06] border border-white/15 hover:bg-white/10 text-white',
   },
   {
     id: 'pro', name: 'Pro', tagline: 'Le plan que 8 chauffeurs sur 10 prennent.',
-    weeklyPrice: 12.97, annualWeeklyPrice: 10.37, popular: true,
+    weeklyPrice: 19.97, annualWeeklyPrice: 15.98, popular: true,
     features: [
-      { text: 'Tout Essentiel inclus', ok: true, star: true },
-      { text: 'Ajnaya IA — vocal + texte, vous dit où aller', ok: true, star: true },
-      { text: 'Votre site driver perso (foreas.xyz/votre-prénom)', ok: true, star: true },
+      { text: 'Tout Free inclus', ok: true, star: true },
+      { text: 'Heatmap full multi-source (PredictHQ + SNCF + météo)', ok: true, star: true },
+      { text: 'Ajnaya illimitée + voix Koraly (TTS ElevenLabs)', ok: true, star: true },
+      { text: 'Coach courses verdict 0.3s (accept/refuse Uber/Bolt)', ok: true },
+      { text: 'Concierge B2B Témoin Vivant (outreach + delivery)', ok: true },
+      { text: 'Site driver perso (foreas.xyz/votre-prénom)', ok: true },
+      { text: 'Compta IA OCR + Tirelire URSSAF auto', ok: true },
       { text: 'Parrainage 10€/filleul à vie (4€ N2 · 2€ N3)', ok: true },
-      { text: 'Surge temps réel Uber + Bolt + Heetch', ok: true },
-      { text: 'Alertes zones chaudes (push + vocal)', ok: true },
-      { text: 'Stats €/h, €/km, retour à vide', ok: true },
-      { text: 'Compta IA (livre recettes auto)', ok: false },
     ],
     cta: 'Activer Ajnaya — 7 jours gratuit', style: 'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white shadow-lg shadow-violet-900/40',
   },
   {
-    id: 'vip', name: 'VIP', tagline: 'Tout Pro + votre compta tourne toute seule.',
-    weeklyPrice: 24.97, annualWeeklyPrice: 19.97,
+    id: 'elite', name: 'Elite', tagline: 'Courses FOREAS prioritaires + early access.',
+    weeklyPrice: 44.97, annualWeeklyPrice: 35.98,
     features: [
       { text: 'Tout Pro inclus', ok: true, star: true },
-      { text: 'Compta IA illimitée (livre recettes + export URSSAF)', ok: true, star: true },
-      { text: 'Support 24/7 prioritaire (réponse < 4h)', ok: true, star: true },
-      { text: 'Badge VIP dans la communauté', ok: true },
-      { text: 'Accès beta avant tout le monde', ok: true },
+      { text: 'Courses FOREAS prioritaires — dispatch Elite-first (+200€/sem)', ok: true, star: true },
+      { text: 'Early access nouvelles features (preview avant tout le monde)', ok: true, star: true },
+      { text: 'Coaching Ajnaya privé (mode advisor 1-to-1)', ok: true },
+      { text: 'Support 1ère ligne (réponse < 1h jours ouvrés)', ok: true },
       { text: 'Audit IA hebdo de tes courses', ok: true },
-      { text: 'Parrainage cascade complète (N1 + N2 + N3)', ok: true },
-      { text: 'Prédiction zones rentables 7 jours à l\'avance', ok: true },
+      { text: 'Badge Elite or dans la communauté', ok: true },
+      { text: 'Parrainage cascade complète N1 + N2 + N3', ok: true },
     ],
-    cta: 'Passer en VIP', style: 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold shadow-lg shadow-amber-900/30',
+    cta: 'Passer Elite', style: 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold shadow-lg shadow-amber-900/30',
   },
 ]
 
@@ -225,6 +231,13 @@ function TarifsContent() {
   const [flowState, setFlowState] = useState<'idle' | 'bridge' | 'checkout'>('idle')
 
   const openFlow = (plan: Plan) => {
+    // Free n'a pas de Stripe — auth Supabase only via /free-signup (Phase A 10/05/2026)
+    // Redirection directe pour ne pas afficher TrialBridge "0€ aujourd'hui" qui n'a
+    // pas de sens pour un plan déjà gratuit.
+    if (plan.id === 'free') {
+      window.location.href = '/free-signup'
+      return
+    }
     setSelectedPlan(plan)
     setFlowState('bridge')
     // v58 — Meta CAPI InitiateCheckout (Lead + InitiateCheckout = backbone attribution CTWA)
@@ -236,14 +249,16 @@ function TarifsContent() {
   const confirmCheckout = () => setFlowState('checkout')
 
   const faqs = [
-    { q: "Quelle est la vraie différence entre les 3 plans ?", a: "Essentiel = vous avez les chiffres, vous décidez seul. Pro = Ajnaya décide AVEC vous (le plan choisi par 8 chauffeurs sur 10). VIP = en plus, votre compta tourne toute seule (livre recettes auto, export URSSAF, fini le comptable à 90€/h)." },
-    { q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Stripe la garde de côté pour activer votre abonnement APRÈS l'essai — pas avant. 0€ jusqu'à dimanche 18h. Vous annulez en 1 clic depuis l'app, où que vous soyez. Si vous annulez avant dimanche, il n'y a rien à payer. Point." },
-    { q: "10€/filleul à vie, est-ce un piège ?", a: "Non. Tant que votre filleul reste abonné ET que vous aussi, vous touchez 10€/mois sur lui (N1). Plus 4€ s'il parraine quelqu'un (N2). Plus 2€ s'il parraine encore (N3). Versé après 4 semaines complètes, virement automatique. Pas de plafond, pas d'expiration." },
-    { q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres vous donnent des données — vous devez faire le tri. Ajnaya vous dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec vous en temps réel." },
-    { q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme vous coupe, vous redistribuez votre temps sur les autres en 1 minute. La communauté FOREAS vous briefe aussi sur les bons réflexes pour récupérer votre compte." },
-    { q: "Ajnaya, est-ce une IA qui parle ou un outil qui m'observe ?", a: "Les deux, à votre choix. Vous lui parlez (vocal naturel) ou vous lisez. Elle voit en temps réel les zones, le trafic, les événements, le surge multi-plateformes. Elle vous dit où aller — et où NE PAS aller. Disponible à partir du plan Pro." },
-    { q: "Puis-je changer de plan en cours ?", a: "Oui, à tout moment. Up ou down. Prorata calculé automatiquement. Pas de pénalité, pas d'appel à un commercial à 19h le vendredi." },
-    { q: "Et si je veux arrêter dans 3 mois ?", a: "Vous cliquez 'Annuler', vous confirmez, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement." },
+    { q: "Quelle est la vraie différence entre les 3 plans ?", a: "Free = heatmap 3 zones + chat communauté + Ajnaya 3 messages/jour, sans CB. Pro = Ajnaya illimitée + voix Koraly + Coach courses verdict 0.3s + Concierge B2B + site perso + Compta IA OCR (le plan choisi par 8 chauffeurs sur 10). Elite = en plus, courses FOREAS prioritaires (dispatch direct des clients FOREAS aux Elite avant les autres, +200€/sem en moyenne) + early access nouvelles features + coaching Ajnaya privé + support <1h." },
+    { q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro et Elite : Stripe garde votre carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0€ jusqu'à dimanche 18h. Vous annulez en 1 clic depuis l'app. Si vous annulez avant dimanche, il n'y a rien à payer. Point." },
+    { q: "Free, c'est combien de temps gratuit ?", a: "Indéfiniment. Free n'est PAS un essai. Vous gardez la heatmap 3 zones + le chat communauté + Ajnaya 3 messages/jour aussi longtemps que vous voulez. Sans CB. Vous passez à Pro le jour où vous voulez Ajnaya illimitée + voix Koraly + Coach courses." },
+    { q: "10€/filleul à vie, est-ce un piège ?", a: "Non. Tant que votre filleul reste abonné Pro ou Elite ET que vous aussi, vous touchez 10€/mois sur lui (N1). Plus 4€ s'il parraine quelqu'un (N2). Plus 2€ s'il parraine encore (N3). Versé après 4 semaines complètes, virement automatique. Pas de plafond, pas d'expiration." },
+    { q: "Elite, ça veut dire quoi exactement \"courses FOREAS prioritaires\" ?", a: "FOREAS développe son propre dispatch de clients privés (hôtels, Airbnb, corporate) qui réservent directement via foreas.xyz — sans passer par Uber/Bolt. Quand un client réserve, on dispatch d'abord aux Elite dans le rayon (5 min), puis aux Pro (10 min), puis Free (15 min). C'est la différenciation qui justifie les +25€/sem entre Pro et Elite — vous capturez les clients premium FOREAS direct avant tout le monde." },
+    { q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres vous donnent des données — vous devez faire le tri. Ajnaya vous dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec vous en temps réel. Le tier Free vous laisse tester la heatmap sans CB pour vous faire votre propre idée." },
+    { q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme vous coupe, vous redistribuez votre temps sur les autres en 1 minute. La communauté FOREAS (chat Telegram-like inclus dès Free) vous briefe sur les bons réflexes pour récupérer votre compte." },
+    { q: "Ajnaya, est-ce une IA qui parle ou un outil qui m'observe ?", a: "Les deux, à votre choix. Vous lui parlez (vocal Koraly à partir de Pro) ou vous lisez. Elle voit en temps réel les zones, le trafic, les événements, le surge multi-plateformes. Elle vous dit où aller — et où NE PAS aller. Disponible illimitée à partir du plan Pro (3 messages/jour seulement en Free)." },
+    { q: "Puis-je changer de plan en cours ?", a: "Oui, à tout moment. Free → Pro → Elite ou downgrade. Prorata calculé automatiquement. Pas de pénalité, pas d'appel à un commercial à 19h le vendredi." },
+    { q: "Et si je veux arrêter dans 3 mois ?", a: "Vous cliquez 'Annuler', vous confirmez, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Et si vous voulez juste downgrade vers Free, vous gardez l'accès heatmap basique sans payer." },
   ]
 
   return (

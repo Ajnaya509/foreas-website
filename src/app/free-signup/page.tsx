@@ -3,7 +3,7 @@
 /**
  * /free-signup — Inscription tier Free FOREAS (auth Supabase only)
  *
- * Différence vs /subscribe :
+ * Différence vs /tarifs2 (Pro/Elite) :
  *  - Aucune CB demandée (cohérent avec H3 Freemium "Cheval de Troie")
  *  - Auth Supabase magic link (passwordless OTP) ou phone-only signup
  *  - Crée un row dans `public.user_profiles` avec tier='free' (trigger via webhook)
@@ -280,7 +280,7 @@ function FreeSignupContent() {
 
         <button
           type="button"
-          onClick={() => router.push('/subscribe')}
+          onClick={() => router.push('/tarifs2')}
           className="block mx-auto mt-6 text-[12px]"
           style={{ color: 'rgba(248, 250, 252, 0.52)' }}
         >
