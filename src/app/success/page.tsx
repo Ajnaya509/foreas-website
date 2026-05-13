@@ -1,251 +1,320 @@
-'use client'
+/**
+ * /success — Page de confirmation post-checkout (server component)
+ *
+ * Refactor Phase A 14/05/2026 : conversion client component → server component
+ * pour (a) charger Stripe côté serveur (pas d'aller-retour browser→API),
+ * (b) émettre du HTML SSR avec metadata custom (`<title>` branded), (c) afficher
+ * du contenu pertinent dès la 1ère paint au lieu d'un spinner.
+ *
+ * Flow :
+ *  1. Query `?session_id=cs_live_...` (CHECKOUT_SESSION_ID injecté par Stripe)
+ *  2. `stripe.checkout.sessions.retrieve(id, {expand: ['subscription','customer','total_details.breakdown']})`
+ *  3. Détection tier réel via `price.lookup_key` (foreas_pro_*_v2 / foreas_elite_*_v2)
+ *  4. Détection coupon actif (BETA60 → "Aucun débit avant [date trial_end]")
+ *  5. Message rétention chaleureux avec prénom + tier + date trial_end
+ *  6. 3 cards prochaines étapes : Play Store / Profil chauffeur / Communauté zone
+ *  7. CTA secondaire "Gérer mon abonnement" → /api/customer-portal
+ *
+ * Source de vérité tier : pricing.ts SSOT supprimé (Site2026v83), mapping inline ici.
+ *
+ * Design : DESIGN_SYSTEM_MASTER §13 variant pulse (Ajnaya réfléchit) cohérent /tarifs2 :
+ *  fond noir Apple #000, halo violet+cyan animate-halo-pulse, micro-grain anti-banding,
+ *  texte ivoire #F8FAFC, brièveté radicale (≤ 5 mots/phrase), Genos display pour H1.
+ */
 
-import { Suspense, useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { useSearchParams } from 'next/navigation'
+import type { Metadata } from 'next'
+import Stripe from 'stripe'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import SuccessChecmark from './SuccessCheckmark'
 
-interface VerifyData {
-  success: boolean
-  email?: string
-  name?: string
-  plan?: string
-  trialEnd?: string
-  subscriptionId?: string
-  error?: string
+export const dynamic = 'force-dynamic' // session unique → pas de cache CDN
+export const runtime = 'nodejs'
+
+// ─── Metadata branded (override layout title FOREAS générique) ────────────────
+export const metadata: Metadata = {
+  title: 'Bienvenue dans FOREAS · Essai activé',
+  description: 'Votre essai FOREAS est activé. Prochaines étapes : télécharger l\'app, configurer votre profil chauffeur, rejoindre la communauté.',
+  robots: { index: false, follow: false }, // page transactionnelle privée
 }
 
-const APP_STORE = 'https://apps.apple.com/app/foreas/id000000000'
-const PLAY_STORE = 'https://play.google.com/store/apps/details?id=com.foreas.app'
+// ─── Mapping lookup_key → tier ────────────────────────────────────────────────
+function detectTier(lookupKey: string | null | undefined): 'pro' | 'elite' | 'unknown' {
+  if (!lookupKey) return 'unknown'
+  if (lookupKey.startsWith('foreas_pro_')) return 'pro'
+  if (lookupKey.startsWith('foreas_elite_')) return 'elite'
+  return 'unknown'
+}
 
-function AnimatedCheck() {
+function tierLabel(tier: 'pro' | 'elite' | 'unknown'): string {
+  if (tier === 'pro') return 'Pro'
+  if (tier === 'elite') return 'Elite'
+  return 'FOREAS'
+}
+
+function formatDateFR(date: Date): string {
+  return date.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+// ─── Server component principal ───────────────────────────────────────────────
+
+interface PageProps {
+  searchParams: Promise<{ session_id?: string }>
+}
+
+export default async function SuccessPage({ searchParams }: PageProps) {
+  const { session_id: sessionId } = await searchParams
+
+  // Pas de session_id → état "no session"
+  if (!sessionId) {
+    return <NoSessionState />
+  }
+
+  // Pas de clé Stripe configurée → état dégradé
+  const stripeKey = (process.env.STRIPE_SECRET_KEY ?? '').replace(/\s/g, '')
+  if (!stripeKey) {
+    return <ErrorState reason="Configuration Stripe manquante" />
+  }
+
+  // Retrieve la session Stripe côté serveur
+  let session: Stripe.Checkout.Session
+  try {
+    const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['subscription', 'customer', 'total_details.breakdown.discounts'],
+    })
+  } catch (err) {
+    console.error('[success] Stripe retrieve failed:', (err as Error).message)
+    return <ErrorState reason="Session introuvable ou invalide" />
+  }
+
+  // Garde : session non complétée
+  if (session.status !== 'complete' && session.payment_status !== 'paid' && session.status !== 'open') {
+    return <ErrorState reason="Paiement non finalisé" />
+  }
+
+  // Extraction données
+  const subscription = session.subscription as Stripe.Subscription | null
+  const customer = session.customer as Stripe.Customer | null
+  const customerEmail =
+    session.customer_details?.email ?? customer?.email ?? ''
+  const customerName =
+    session.customer_details?.name ?? customer?.name ?? ''
+  const firstName = customerName.split(' ')[0] || 'chauffeur'
+
+  // Tier réel via price.lookup_key (préférable au metadata.plan qui peut diverger)
+  const firstItem = subscription?.items?.data?.[0]
+  const lookupKey = firstItem?.price?.lookup_key
+  const interval = firstItem?.price?.recurring?.interval // 'week' | 'year'
+  const tier = detectTier(lookupKey)
+  const tierName = tierLabel(tier)
+  const billingLabel = interval === 'year' ? 'annuel' : 'hebdomadaire'
+
+  // Trial end (Stripe trial_period_days ou trial_end natif)
+  const trialEndUnix = subscription?.trial_end
+  const trialEndDate = trialEndUnix ? new Date(trialEndUnix * 1000) : null
+  const trialEndFormatted = trialEndDate ? formatDateFR(trialEndDate) : null
+
+  // Détection coupon actif (BETA60 / WELCOME20 / MLM25)
+  const discounts =
+    session.total_details?.breakdown?.discounts ?? []
+  const activeDiscount = discounts[0]?.discount
+  const promoCode =
+    activeDiscount?.promotion_code && typeof activeDiscount.promotion_code === 'string'
+      ? activeDiscount.promotion_code
+      : null
+  const couponName = activeDiscount?.coupon?.name ?? null
+  const hasBeta60 = couponName?.includes('BETA60') || promoCode?.toUpperCase() === 'BETA60'
+
+  // Customer ID pour Customer Portal
+  const customerId =
+    typeof session.customer === 'string'
+      ? session.customer
+      : session.customer?.id ?? null
+
+  // Zone (city_slug) pour suggestion groupe communauté
+  const customFields = session.custom_fields ?? []
+  const cityField = customFields.find((f) => f.key === 'city')
+  const city = cityField?.text?.value?.trim() ?? null
+  const communityGroup = inferCommunityGroup(city)
+
   return (
-    <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.2 }}
-      className="w-20 h-20 mx-auto mb-8 rounded-full bg-accent-green/10 border-2 border-accent-green/30 flex items-center justify-center"
+    <main
+      className="min-h-screen relative overflow-x-hidden"
+      style={{ backgroundColor: '#000' }}
     >
-      <svg className="w-10 h-10 text-accent-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <motion.path
-          d="M4 12l5 5L20 7"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.5, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        />
-      </svg>
-    </motion.div>
-  )
-}
+      {/* Halo couche 2 — variant pulse §13 (Ajnaya réfléchit, 0.9s) */}
+      <div
+        aria-hidden
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 55% 45% at 50% 15%, rgba(16, 185, 129, 0.18) 0%, transparent 70%),' +
+            'radial-gradient(ellipse 50% 40% at 25% 70%, rgba(140, 82, 255, 0.22) 0%, transparent 70%),' +
+            'radial-gradient(ellipse 45% 35% at 80% 80%, rgba(0, 212, 255, 0.14) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
+      {/* Micro-grain anti-banding §17 */}
+      <div
+        aria-hidden
+        className="fixed inset-0 pointer-events-none"
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.012)' }}
+      />
 
-function StepItem({ step, title, subtitle, status }: {
-  step: number; title: string; subtitle: string; status: 'done' | 'current' | 'upcoming'
-}) {
-  const colors = {
-    done: 'bg-accent-green/15 border-accent-green/30 text-accent-green',
-    current: 'bg-accent-cyan/15 border-accent-cyan/30 text-accent-cyan',
-    upcoming: 'bg-white/5 border-white/10 text-white/30',
-  }
-  const icons = {
-    done: '✓',
-    current: '→',
-    upcoming: '⏳',
-  }
-  return (
-    <div className="flex items-start gap-4">
-      <div className={`flex-shrink-0 w-10 h-10 rounded-full border ${colors[status]} flex items-center justify-center text-sm font-bold`}>
-        {icons[status]}
-      </div>
-      <div className="pt-1">
-        <p className="font-title text-base font-semibold text-white">{title}</p>
-        <p className="text-sm text-white/40 mt-0.5">{subtitle}</p>
-      </div>
-    </div>
-  )
-}
-
-function SuccessContent() {
-  const searchParams = useSearchParams()
-  const sessionId = searchParams.get('session_id')
-  const [data, setData] = useState<VerifyData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!sessionId) {
-      setData({ success: false, error: 'Aucune session trouvée' })
-      setLoading(false)
-      return
-    }
-    fetch(`/api/checkout/verify?session_id=${sessionId}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => { setData({ success: false, error: 'Erreur de vérification' }); setLoading(false) })
-  }, [sessionId])
-
-  const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-
-  return (
-    <main className="min-h-screen bg-[#050508]">
       <Header />
 
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28">
-        {/* Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-accent-green/6 via-accent-cyan/3 to-transparent rounded-full blur-[120px] pointer-events-none" />
+      <section className="relative max-w-2xl mx-auto px-5 sm:px-8 pt-24 pb-20 sm:pt-32">
+        {/* ─── Animated check (client wrapper pour Framer Motion) ───────────── */}
+        <SuccessChecmark />
 
-        <div className="relative max-w-2xl mx-auto px-6">
+        {/* Eyebrow */}
+        <p
+          className="text-[10px] font-extrabold uppercase text-center mb-4 tabular-nums"
+          style={{ color: '#10B981', letterSpacing: '0.25em' }}
+        >
+          FOREAS · ESSAI ACTIVÉ
+        </p>
 
-          {/* ─── Chargement ─── */}
-          {loading && (
-            <div className="text-center py-20">
-              <div className="w-12 h-12 mx-auto mb-6 rounded-full border-2 border-accent-cyan/30 border-t-accent-cyan animate-spin" />
-              <p className="font-body text-base text-white/50">Vérification de ton paiement...</p>
-            </div>
-          )}
+        {/* H1 brièveté radicale (≤ 5 mots/phrase) — Genos display */}
+        <h1
+          className="text-4xl sm:text-5xl font-black text-center leading-[0.92] mb-3"
+          style={{
+            color: '#F8FAFC',
+            letterSpacing: '-0.04em',
+            fontFamily: 'var(--font-genos), system-ui, sans-serif',
+          }}
+        >
+          Bienvenue,{' '}
+          <span
+            style={{
+              backgroundImage:
+                'linear-gradient(135deg, #6C3CE0 0%, #8C52FF 50%, #00D4FF 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            {firstName}.
+          </span>
+        </h1>
 
-          {/* ─── Erreur ─── */}
-          {!loading && (!data?.success) && (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                <span className="text-3xl">⚠️</span>
-              </div>
-              <h1 className="font-title text-2xl md:text-3xl font-semibold text-white mb-3">
-                Quelque chose s'est mal passé
-              </h1>
-              <p className="font-body text-base text-white/50 mb-6">
-                {data?.error || 'Impossible de vérifier le paiement.'}
-              </p>
-              <a href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white transition-all">
-                Contacter le support
-              </a>
-            </div>
-          )}
-
-          {/* ─── Succès ─── */}
-          {!loading && data?.success && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {/* A) Check animé + titre */}
-              <AnimatedCheck />
-
-              <motion.h1
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="font-title text-3xl md:text-4xl font-semibold text-center mb-3"
-              >
-                <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
-                  Bienvenue dans FOREAS.
-                </span>
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="font-body text-base text-white/50 text-center mb-10"
-              >
-                Ton essai gratuit est activé. Voici la suite.
-              </motion.p>
-
-              {/* B) Timeline des étapes */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="space-y-6 mb-12 p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]"
-              >
-                <StepItem
-                  step={1}
-                  title="Inscription validée"
-                  subtitle={today}
-                  status="done"
-                />
-                <div className="ml-5 w-px h-4 bg-white/10" />
-                <StepItem
-                  step={2}
-                  title="Télécharge l'app"
-                  subtitle="Disponible sur iOS et Android"
-                  status="current"
-                />
-                <div className="ml-5 w-px h-4 bg-white/10" />
-                <StepItem
-                  step={3}
-                  title="Premier prélèvement"
-                  subtitle={data.trialEnd ? `${data.trialEnd} · Plan ${data.plan}` : `Plan ${data.plan}`}
-                  status="upcoming"
-                />
-              </motion.div>
-
-              {/* C) Boutons téléchargement */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-                className="text-center mb-10"
-              >
-                <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
-                  <a
-                    href={APP_STORE}
-                    className="inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl border border-white/10 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/20 transition-all"
+        <p
+          className="text-center text-base mb-8"
+          style={{ color: 'rgba(248, 250, 252, 0.78)' }}
+        >
+          Votre tier <strong style={{ color: '#F8FAFC' }}>{tierName}</strong> est actif.{' '}
+          {trialEndFormatted ? (
+            <>
+              <br className="hidden sm:block" />
+              {hasBeta60 ? (
+                <>
+                  Aucun débit avant le{' '}
+                  <strong style={{ color: '#10B981' }}>{trialEndFormatted}</strong> · code{' '}
+                  <span
+                    className="font-mono font-bold tabular-nums px-1.5 py-0.5 rounded"
+                    style={{
+                      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                      color: '#10B981',
+                    }}
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                    <div className="text-left">
-                      <div className="text-[10px] text-white/40 leading-none">Télécharger sur</div>
-                      <div className="text-sm font-semibold">App Store</div>
-                    </div>
-                  </a>
-                  <a
-                    href={PLAY_STORE}
-                    className="inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl border border-white/10 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/20 transition-all"
-                  >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.25c-.44-.25-.68-.71-.68-1.22V1.97c0-.51.24-.97.68-1.22l11.2 11.25-11.2 11.25zM14.89 14.5L5.62 23.18l12.15-6.82-2.88-1.86zm2.88-1.86l3.23 2.09c.44.28.73.78.73 1.27s-.29.99-.73 1.27l-3.23 2.09-3.18-3.36 3.18-3.36zM5.62.82L14.89 9.5 12.01 11.36 5.62.82z"/></svg>
-                    <div className="text-left">
-                      <div className="text-[10px] text-white/40 leading-none">Télécharger sur</div>
-                      <div className="text-sm font-semibold">Google Play</div>
-                    </div>
-                  </a>
-                </div>
-                <p className="text-sm text-white/30">Tu recevras aussi le lien par email et SMS.</p>
-              </motion.div>
-
-              {/* D) Infos compte */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2 mb-10"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/40">Ton compte</span>
-                  <span className="text-sm text-white/70 font-mono">{data.email}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/40">Plan</span>
-                  <span className="text-sm text-white/70">{data.plan} — Essai gratuit jusqu'au {data.trialEnd}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/40">Support</span>
-                  <a href="mailto:support@foreas.net" className="text-sm text-accent-cyan/60 hover:text-accent-cyan transition-colors">support@foreas.net</a>
-                </div>
-              </motion.div>
-
-              {/* E) CTA secondaire */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.9 }}
-                className="text-center"
-              >
-                <a href="/chauffeurs" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-accent-cyan transition-colors">
-                  En attendant, explore ce qu'Ajnaya peut faire pour toi →
-                </a>
-              </motion.div>
-            </motion.div>
+                    BETA60
+                  </span>
+                </>
+              ) : (
+                <>
+                  Aucun débit avant{' '}
+                  <strong style={{ color: '#F8FAFC' }}>{trialEndFormatted}</strong>
+                </>
+              )}
+            </>
+          ) : (
+            <>Premier débit selon votre cycle {billingLabel}.</>
           )}
+        </p>
+
+        {/* Trust micros (brièveté radicale) */}
+        <div
+          className="flex items-center justify-center gap-4 mb-10 text-[10px] tabular-nums"
+          style={{ color: 'rgba(248, 250, 252, 0.32)', letterSpacing: '0.04em' }}
+        >
+          <span>🔒 Stripe sécurisé</span>
+          <span>·</span>
+          <span>Annulation 1 clic</span>
+          <span>·</span>
+          <span>Sans engagement</span>
         </div>
+
+        {/* ─── 3 cards prochaines étapes ───────────────────────────────────── */}
+        <h2
+          className="text-[10px] font-extrabold uppercase mb-5 tabular-nums"
+          style={{ color: '#00D4FF', letterSpacing: '0.25em' }}
+        >
+          Vos 3 prochaines étapes
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
+          <NextStepCard
+            number={1}
+            title="Téléchargez l'app"
+            description="Android — disponible Play Store. iOS bientôt."
+            ctaLabel="Play Store →"
+            ctaHref="https://play.google.com/store/apps/details?id=com.foreas.driver"
+            external
+            accent="violet"
+          />
+          <NextStepCard
+            number={2}
+            title="Configurez votre profil"
+            description="Zone, véhicule, plateformes actives. 2 minutes."
+            ctaLabel="Mon profil →"
+            ctaHref="https://partners.foreas.xyz/driver"
+            external
+            accent="cyan"
+          />
+          <NextStepCard
+            number={3}
+            title="Rejoignez votre communauté"
+            description={communityGroup ? `Groupe ${communityGroup}. Chat live chauffeurs.` : 'Chat live chauffeurs par zone.'}
+            ctaLabel="Communauté →"
+            ctaHref="https://partners.foreas.xyz/driver?tab=community"
+            external
+            accent="rose"
+          />
+        </div>
+
+        {/* ─── CTA secondaire : gérer abonnement ──────────────────────────── */}
+        {customerId && (
+          <div className="text-center">
+            <a
+              href={`/api/customer-portal?customer_id=${customerId}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-[13px] font-medium transition-all hover:bg-white/[0.06]"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.10)',
+                color: 'rgba(248, 250, 252, 0.78)',
+              }}
+            >
+              Gérer mon abonnement →
+            </a>
+          </div>
+        )}
+
+        {/* Confirmation email — micro */}
+        {customerEmail && (
+          <p
+            className="text-center mt-6 text-[11px]"
+            style={{ color: 'rgba(248, 250, 252, 0.32)' }}
+          >
+            Email de confirmation envoyé à{' '}
+            <strong style={{ color: 'rgba(248, 250, 252, 0.52)' }}>{customerEmail}</strong>
+          </p>
+        )}
       </section>
 
       <Footer />
@@ -253,14 +322,188 @@ function SuccessContent() {
   )
 }
 
-export default function SuccessPage() {
+// ─── Card prochaine étape ─────────────────────────────────────────────────────
+function NextStepCard({
+  number,
+  title,
+  description,
+  ctaLabel,
+  ctaHref,
+  external,
+  accent,
+}: {
+  number: number
+  title: string
+  description: string
+  ctaLabel: string
+  ctaHref: string
+  external?: boolean
+  accent: 'violet' | 'cyan' | 'rose'
+}) {
+  const accentColors = {
+    violet: { ring: 'rgba(140, 82, 255, 0.28)', text: '#8C52FF' },
+    cyan: { ring: 'rgba(0, 212, 255, 0.28)', text: '#00D4FF' },
+    rose: { ring: 'rgba(255, 102, 153, 0.28)', text: '#FF6699' },
+  }
+  const accentColor = accentColors[accent]
   return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-[#050508] flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-2 border-accent-cyan/30 border-t-accent-cyan animate-spin" />
-      </main>
-    }>
-      <SuccessContent />
-    </Suspense>
+    <div
+      className="relative rounded-3xl p-5 flex flex-col"
+      style={{
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        border: `1px solid rgba(255, 255, 255, 0.06)`,
+        boxShadow: `0 0 0 1px ${accentColor.ring}, 0 12px 32px -16px rgba(0, 0, 0, 0.40)`,
+      }}
+    >
+      <div
+        className="w-7 h-7 rounded-full flex items-center justify-center mb-3 font-extrabold text-[12px] tabular-nums"
+        style={{
+          backgroundColor: accentColor.ring,
+          color: accentColor.text,
+        }}
+      >
+        {number}
+      </div>
+      <h3
+        className="text-[15px] font-bold leading-tight mb-1"
+        style={{ color: '#F8FAFC', letterSpacing: '-0.01em' }}
+      >
+        {title}
+      </h3>
+      <p
+        className="text-[12px] mb-4 flex-1"
+        style={{ color: 'rgba(248, 250, 252, 0.52)' }}
+      >
+        {description}
+      </p>
+      <a
+        href={ctaHref}
+        {...(external
+          ? { target: '_blank', rel: 'noopener noreferrer' }
+          : {})}
+        className="text-[13px] font-bold transition-colors hover:underline"
+        style={{ color: accentColor.text }}
+      >
+        {ctaLabel}
+      </a>
+    </div>
+  )
+}
+
+// ─── Map ville → groupe communauté FOREAS (cohérent migration §8 master) ──────
+function inferCommunityGroup(city: string | null): string | null {
+  if (!city) return null
+  const c = city.toLowerCase().trim()
+  if (c.includes('paris')) return 'Paris Centre'
+  if (
+    c.includes('saint-denis') ||
+    c.includes('bobigny') ||
+    c.includes('saint-ouen') ||
+    c.includes('aubervilliers') ||
+    c.includes('argenteuil')
+  ) {
+    return 'Banlieue Nord'
+  }
+  if (
+    c.includes('vitry') ||
+    c.includes('créteil') ||
+    c.includes('creteil') ||
+    c.includes('orly') ||
+    c.includes('villejuif')
+  ) {
+    return 'Banlieue Sud'
+  }
+  if (
+    c.includes('boulogne') ||
+    c.includes('nanterre') ||
+    c.includes('défense') ||
+    c.includes('defense') ||
+    c.includes('versailles')
+  ) {
+    return 'Banlieue Ouest'
+  }
+  if (c.includes('marne') || c.includes('disney')) return 'Disneyland Paris'
+  if (c.includes('cdg') || c.includes('roissy')) return 'CDG Aéroport'
+  return null
+}
+
+// ─── États dégradés (server-rendered, pas de spinner) ─────────────────────────
+
+function NoSessionState() {
+  return (
+    <main className="min-h-screen relative" style={{ backgroundColor: '#000' }}>
+      <Header />
+      <section className="max-w-xl mx-auto px-5 pt-32 pb-20 text-center">
+        <h1
+          className="text-3xl font-black mb-4"
+          style={{
+            color: '#F8FAFC',
+            letterSpacing: '-0.03em',
+            fontFamily: 'var(--font-genos), system-ui, sans-serif',
+          }}
+        >
+          Aucune session.
+        </h1>
+        <p className="text-[14px] mb-6" style={{ color: 'rgba(248, 250, 252, 0.52)' }}>
+          Cette page confirme une souscription Stripe. Lien direct invalide.
+        </p>
+        <a
+          href="/tarifs2"
+          className="inline-flex px-5 py-3 rounded-2xl font-bold text-[14px]"
+          style={{
+            background: 'linear-gradient(135deg, #8C52FF 0%, #6C3CE0 100%)',
+            color: '#F8FAFC',
+            boxShadow: '0 8px 24px -8px rgba(140, 82, 255, 0.55)',
+          }}
+        >
+          Voir les tarifs
+        </a>
+      </section>
+      <Footer />
+    </main>
+  )
+}
+
+function ErrorState({ reason }: { reason: string }) {
+  return (
+    <main className="min-h-screen relative" style={{ backgroundColor: '#000' }}>
+      <Header />
+      <section className="max-w-xl mx-auto px-5 pt-32 pb-20 text-center">
+        <div
+          className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center text-2xl"
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.10)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+          }}
+        >
+          ⚠️
+        </div>
+        <h1
+          className="text-3xl font-black mb-3"
+          style={{
+            color: '#F8FAFC',
+            letterSpacing: '-0.03em',
+            fontFamily: 'var(--font-genos), system-ui, sans-serif',
+          }}
+        >
+          Session introuvable.
+        </h1>
+        <p className="text-[14px] mb-6" style={{ color: 'rgba(248, 250, 252, 0.52)' }}>
+          {reason}. Si vous venez de payer, vous recevrez un email de confirmation Stripe.
+        </p>
+        <a
+          href="/contact"
+          className="inline-flex px-5 py-3 rounded-2xl font-bold text-[14px]"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            color: '#F8FAFC',
+          }}
+        >
+          Contacter le support
+        </a>
+      </section>
+      <Footer />
+    </main>
   )
 }
