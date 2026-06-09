@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-// ─── Price IDs LIVE post-Phase A 10/05/2026 (Chandler verrouillé) ───────────
-// Source : FOREAS-SHARED/STRIPE_MLM_CROSSFIL_MASTER.md §1 + PRICING_FEATURES_MASTER.md §1.1
-// Lecture EXCLUSIVE depuis env vars Vercel (les 4 vars ont été setées par fil App 10/05 19:50).
-// Pas de fallback hardcoded : les anciens prices (Essentiel 12,97 / Pro 14,97 / Elite 34,97)
-// sont ARCHIVÉS Stripe et déclencheraient un checkout fail si utilisés.
-//
-// Format clé : {tier}_{period}  — tier: pro|elite  · period: weekly|annual
-//
-// Aliases :
-//   - `vip_*`     → Elite (compat ancien naming /tarifs2 avant refonte 21:45)
-//   - `weekly` / `annual` (sans tier) → Pro (legacy aliases de page /tarifs)
+// ─── Price IDs LIVE Pricing V2 09/06/2026 (Chandler verrouillé) ─────────────
+// Source : FOREAS-SHARED/PRICING_FEATURES_MASTER.md §1.1 (Pricing V2)
+// Passage weekly → mensuel. Env vars Vercel à setter :
+//   STRIPE_PRICE_ID_PRO_MONTHLY   = price_1TgVSvK89oTss0SbIwh0ukMZ  (97€/mois)
+//   STRIPE_PRICE_ID_ELITE_MONTHLY = price_1TgVSwK89oTss0Sba3HYDjf6  (247€/mois)
+//   STRIPE_PRICE_ID_PRO_ANNUAL    = price_1TgVSwK89oTss0SbYyQVTKbz  (970€/an)
+//   STRIPE_PRICE_ID_ELITE_ANNUAL  = price_1TgVSxK89oTss0Sb2DLX3pUu  (2470€/an)
+// Grandfathering weekly (NE PAS SUPPRIMER — abonnés Phase A existants) :
+//   STRIPE_PRICE_ID_PRO_WEEKLY / STRIPE_PRICE_ID_ELITE_WEEKLY (inchangés)
 const PRICE_IDS: Record<string, string | undefined> = {
-  // ── Pro — 19,97 €/sem · 830,75 €/an (−20%)
-  pro_weekly:    process.env.STRIPE_PRICE_ID_PRO_WEEKLY,
+  // ── Pro V3 — 97 €/mois · 970 €/an (2 mois offerts)
+  pro_monthly:   process.env.STRIPE_PRICE_ID_PRO_MONTHLY,
   pro_annual:    process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
-  // ── Elite — 44,97 €/sem · 1 870,75 €/an (−20%)
-  elite_weekly:  process.env.STRIPE_PRICE_ID_ELITE_WEEKLY,
+  // ── Elite V3 — 247 €/mois · 2 470 €/an (2 mois offerts)
+  elite_monthly: process.env.STRIPE_PRICE_ID_ELITE_MONTHLY,
   elite_annual:  process.env.STRIPE_PRICE_ID_ELITE_ANNUAL,
-  // ── Aliases compat (anciens IDs page /tarifs et /tarifs2 avant Phase A)
+  // ── Grandfathering Phase A weekly (NE PAS SUPPRIMER)
+  pro_weekly:    process.env.STRIPE_PRICE_ID_PRO_WEEKLY,
+  elite_weekly:  process.env.STRIPE_PRICE_ID_ELITE_WEEKLY,
   vip_weekly:    process.env.STRIPE_PRICE_ID_ELITE_WEEKLY,
   vip_annual:    process.env.STRIPE_PRICE_ID_ELITE_ANNUAL,
+  // ── Legacy alias page /tarifs
   weekly:        process.env.STRIPE_PRICE_ID_PRO_WEEKLY,
   annual:        process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
 }

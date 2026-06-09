@@ -7,7 +7,7 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { trackInitiateCheckout } from '@/lib/tracking'   // v58 — Meta CAPI server+client
+import { trackInitiateCheckout } from '@/lib/tracking'
 import { authUrls } from '@/lib/auth-urls'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
@@ -50,10 +50,10 @@ function AnimatedCounter({ target, suffix = '', duration = 2000 }: { target: num
   return <span ref={ref}>{value}{suffix}</span>
 }
 
-function FaqItem({ q, a }: { q: string; a: string }) {
+function FaqItem({ q, a, id }: { q: string; a: string; id?: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="border-b border-white/10">
+    <div id={id} className="border-b border-white/10">
       <button onClick={() => setOpen(o => !o)} className="w-full flex justify-between items-center py-5 text-left gap-4 group">
         <span className="text-white/90 font-medium text-sm sm:text-base group-hover:text-white transition-colors">{q}</span>
         <span className={`text-violet-400 text-xl transition-transform flex-shrink-0 ${open ? 'rotate-45' : ''}`}>+</span>
@@ -127,7 +127,7 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
 }
 
 // ─── Checkout Modal ──────────────────────────────────────────────────────────
-function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 'weekly' | 'annual'; onClose: () => void }) {
+function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 'monthly' | 'annual'; onClose: () => void }) {
   const nextMonday = getNextMonday18hParis()
   const fetchClientSecret = useCallback(async () => {
     const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: `${planId}_${billing}`, mode: 'embedded' }) })
@@ -160,65 +160,74 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
   )
 }
 
-// ─── Plan Data ───────────────────────────────────────────────────────────────
+// ─── Plan Data — Pricing V2 09/06/2026 (Chandler verrouillé) ─────────────────
+// Pro 97€/mois · Elite 247€/mois · Annuel 2 mois offerts
+// Free = tout ✗ (FOMO design — Apple decoy 3 colonnes)
+// Cascade MLM V2 : 25€/8€/2€
 interface Plan {
   id: string; name: string; tagline: string
-  weeklyPrice: number; annualWeeklyPrice: number
+  monthlyPrice: number; annualMonthlyPrice: number; annualTotal: number
   features: { text: string; ok: boolean; star?: boolean }[]
-  cta: string; style: string; popular?: boolean
+  cta: string; ctaVariant: 'ghost' | 'primary' | 'elite'
+  popular?: boolean; isDecoy?: boolean
 }
 
-// ─── PLANS — Phase A 10/05/2026 (Chandler verrouillé 12:30) ────────────────
-// Source : FOREAS-SHARED/PRICING_FEATURES_MASTER.md §1.1 + §2 features matrice
-// Cascade MLM 10/4/2 (statu quo Chandler 13:35 — pas 20/8/4)
-// Annuel = -20% du hebdo. annualWeeklyPrice = (annual / 52) = weeklyPrice × 0.8
-//   - Pro :   19,97 × 0.8 = 15,976 ≈ 15,98  (annuel = 830,75 €/an)
-//   - Elite : 44,97 × 0.8 = 35,976 ≈ 35,98  (annuel = 1 870,75 €/an)
 const PLANS: Plan[] = [
   {
-    id: 'free', name: 'Free', tagline: 'Heatmap. Sans CB. Sans engagement.',
-    weeklyPrice: 0, annualWeeklyPrice: 0,
+    id: 'free',
+    name: 'Free',
+    tagline: 'Découvrir FOREAS. Sans CB.',
+    monthlyPrice: 0, annualMonthlyPrice: 0, annualTotal: 0,
     features: [
-      { text: 'Heatmap basique (3 zones max)', ok: true },
-      { text: 'Chat communauté FOREAS', ok: true },
-      { text: 'Compta IA basique (saisie manuelle)', ok: true },
-      { text: 'Ajnaya 3 messages/jour', ok: true },
-      { text: 'Coach courses verdict accept/refuse', ok: false },
-      { text: 'Site driver perso (foreas.xyz/votre-prénom)', ok: false },
+      { text: 'Heatmap full multi-source', ok: false },
+      { text: 'Ajnaya IA illimitée', ok: false },
+      { text: 'Voix Koraly (TTS)', ok: false },
+      { text: 'Coach courses (verdict 0.3s)', ok: false },
+      { text: 'Concierge B2B Témoin Vivant', ok: false },
+      { text: 'Site driver perso', ok: false },
       { text: 'Compta IA OCR + URSSAF auto', ok: false },
       { text: 'Courses FOREAS prioritaires', ok: false },
     ],
-    cta: 'Commencer gratuit', style: 'bg-white/[0.06] border border-white/15 hover:bg-white/10 text-white',
+    cta: 'Commencer gratuit',
+    ctaVariant: 'ghost',
   },
   {
-    id: 'pro', name: 'Pro', tagline: 'Le plan que 8 chauffeurs sur 10 prennent.',
-    weeklyPrice: 19.97, annualWeeklyPrice: 15.98, popular: true,
+    id: 'pro',
+    name: 'Pro',
+    tagline: 'Le plan que 8 chauffeurs sur 10 choisissent.',
+    monthlyPrice: 97, annualMonthlyPrice: 80.83, annualTotal: 970,
+    popular: true,
     features: [
-      { text: 'Tout Free inclus', ok: true, star: true },
       { text: 'Heatmap full multi-source (PredictHQ + SNCF + météo)', ok: true, star: true },
-      { text: 'Ajnaya illimitée + voix Koraly (TTS ElevenLabs)', ok: true, star: true },
-      { text: 'Coach courses verdict 0.3s (accept/refuse Uber/Bolt)', ok: true },
+      { text: 'Ajnaya IA illimitée + voix Koraly', ok: true, star: true },
+      { text: 'Coach courses verdict 0.3s (accept/refuse Uber/Bolt)', ok: true, star: true },
       { text: 'Concierge B2B Témoin Vivant (outreach + delivery)', ok: true },
       { text: 'Site driver perso (foreas.xyz/votre-prénom)', ok: true },
       { text: 'Compta IA OCR + Tirelire URSSAF auto', ok: true },
-      { text: 'Parrainage 10€/filleul à vie (4€ N2 · 2€ N3)', ok: true },
+      { text: 'Parrainage 25€/filleul à vie (8€ N2 · 2€ N3)', ok: true },
+      { text: 'Chat communauté + support standard', ok: true },
     ],
-    cta: 'Activer Ajnaya — 7 jours gratuit', style: 'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white shadow-lg shadow-violet-900/40',
+    cta: 'Essayer 7 jours — 0€ aujourd\'hui',
+    ctaVariant: 'primary',
   },
   {
-    id: 'elite', name: 'Elite', tagline: 'Courses FOREAS prioritaires + early access.',
-    weeklyPrice: 44.97, annualWeeklyPrice: 35.98,
+    id: 'elite',
+    name: 'Elite',
+    tagline: 'Courses FOREAS prioritaires + coaching privé.',
+    monthlyPrice: 247, annualMonthlyPrice: 205.83, annualTotal: 2470,
+    isDecoy: true,
     features: [
       { text: 'Tout Pro inclus', ok: true, star: true },
-      { text: 'Courses FOREAS prioritaires — dispatch Elite-first (+200€/sem)', ok: true, star: true },
-      { text: 'Early access nouvelles features (preview avant tout le monde)', ok: true, star: true },
+      { text: 'Courses FOREAS prioritaires — Elite-first (+200€/sem)', ok: true, star: true },
+      { text: 'Early access nouvelles features', ok: true, star: true },
       { text: 'Coaching Ajnaya privé (mode advisor 1-to-1)', ok: true },
       { text: 'Support 1ère ligne (réponse < 1h jours ouvrés)', ok: true },
       { text: 'Audit IA hebdo de tes courses', ok: true },
       { text: 'Badge Elite or dans la communauté', ok: true },
-      { text: 'Parrainage cascade complète N1 + N2 + N3', ok: true },
+      { text: 'Cascade MLM complète N1 + N2 + N3', ok: true },
     ],
-    cta: 'Passer Elite', style: 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold shadow-lg shadow-amber-900/30',
+    cta: 'En savoir plus →',
+    ctaVariant: 'elite',
   },
 ]
 
@@ -226,39 +235,37 @@ const PLANS: Plan[] = [
 function TarifsContent() {
   const searchParams = useSearchParams()
   const isSuccess = searchParams.get('success') === 'true'
-  const [billing, setBilling] = useState<'weekly' | 'annual'>('weekly')
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [flowState, setFlowState] = useState<'idle' | 'bridge' | 'checkout'>('idle')
 
   const openFlow = (plan: Plan) => {
-    // Free n'a pas de Stripe — auth Supabase only via /free-signup (Phase A 10/05/2026)
-    // Redirection directe pour ne pas afficher TrialBridge "0€ aujourd'hui" qui n'a
-    // pas de sens pour un plan déjà gratuit.
     if (plan.id === 'free') {
       window.location.href = '/free-signup'
       return
     }
+    if (plan.isDecoy) {
+      // Elite décoy → scroll FAQ #elite
+      document.getElementById('faq-elite')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
     setSelectedPlan(plan)
     setFlowState('bridge')
-    // v58 — Meta CAPI InitiateCheckout (Lead + InitiateCheckout = backbone attribution CTWA)
-    // tracking.ts envoie en parallèle pixel client (fbq) + CAPI server-side avec eventID dedup
-    const price = billing === 'weekly' ? plan.weeklyPrice : plan.annualWeeklyPrice
+    const price = billing === 'monthly' ? plan.monthlyPrice : plan.annualMonthlyPrice
     trackInitiateCheckout(plan.name, price)
   }
   const closeAll = () => { setFlowState('idle'); setSelectedPlan(null) }
   const confirmCheckout = () => setFlowState('checkout')
 
   const faqs = [
-    { q: "Quelle est la vraie différence entre les 3 plans ?", a: "Free = heatmap 3 zones + chat communauté + Ajnaya 3 messages/jour, sans CB. Pro = Ajnaya illimitée + voix Koraly + Coach courses verdict 0.3s + Concierge B2B + site perso + Compta IA OCR (le plan choisi par 8 chauffeurs sur 10). Elite = en plus, courses FOREAS prioritaires (dispatch direct des clients FOREAS aux Elite avant les autres, +200€/sem en moyenne) + early access nouvelles features + coaching Ajnaya privé + support <1h." },
-    { q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro et Elite : Stripe garde votre carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0€ jusqu'à dimanche 18h. Vous annulez en 1 clic depuis l'app. Si vous annulez avant dimanche, il n'y a rien à payer. Point." },
-    { q: "Free, c'est combien de temps gratuit ?", a: "Indéfiniment. Free n'est PAS un essai. Vous gardez la heatmap 3 zones + le chat communauté + Ajnaya 3 messages/jour aussi longtemps que vous voulez. Sans CB. Vous passez à Pro le jour où vous voulez Ajnaya illimitée + voix Koraly + Coach courses." },
-    { q: "10€/filleul à vie, est-ce un piège ?", a: "Non. Tant que votre filleul reste abonné Pro ou Elite ET que vous aussi, vous touchez 10€/mois sur lui (N1). Plus 4€ s'il parraine quelqu'un (N2). Plus 2€ s'il parraine encore (N3). Versé après 4 semaines complètes, virement automatique. Pas de plafond, pas d'expiration." },
-    { q: "Elite, ça veut dire quoi exactement \"courses FOREAS prioritaires\" ?", a: "FOREAS développe son propre dispatch de clients privés (hôtels, Airbnb, corporate) qui réservent directement via foreas.xyz — sans passer par Uber/Bolt. Quand un client réserve, on dispatch d'abord aux Elite dans le rayon (5 min), puis aux Pro (10 min), puis Free (15 min). C'est la différenciation qui justifie les +25€/sem entre Pro et Elite — vous capturez les clients premium FOREAS direct avant tout le monde." },
-    { q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres vous donnent des données — vous devez faire le tri. Ajnaya vous dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec vous en temps réel. Le tier Free vous laisse tester la heatmap sans CB pour vous faire votre propre idée." },
-    { q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme vous coupe, vous redistribuez votre temps sur les autres en 1 minute. La communauté FOREAS (chat Telegram-like inclus dès Free) vous briefe sur les bons réflexes pour récupérer votre compte." },
-    { q: "Ajnaya, est-ce une IA qui parle ou un outil qui m'observe ?", a: "Les deux, à votre choix. Vous lui parlez (vocal Koraly à partir de Pro) ou vous lisez. Elle voit en temps réel les zones, le trafic, les événements, le surge multi-plateformes. Elle vous dit où aller — et où NE PAS aller. Disponible illimitée à partir du plan Pro (3 messages/jour seulement en Free)." },
-    { q: "Puis-je changer de plan en cours ?", a: "Oui, à tout moment. Free → Pro → Elite ou downgrade. Prorata calculé automatiquement. Pas de pénalité, pas d'appel à un commercial à 19h le vendredi." },
-    { q: "Et si je veux arrêter dans 3 mois ?", a: "Vous cliquez 'Annuler', vous confirmez, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Et si vous voulez juste downgrade vers Free, vous gardez l'accès heatmap basique sans payer." },
+    { id: 'faq-diff', q: "Quelle est la vraie différence entre les 3 plans ?", a: "Free = rien (c'est fait pour ça — pour vous montrer ce que vous ratez). Pro = tout ce qui fait gagner du temps et de l'argent : Ajnaya illimitée + voix Koraly + Coach courses verdict 0.3s + Concierge B2B + site perso + Compta IA OCR (le plan choisi par 8 chauffeurs sur 10). Elite = en plus, courses FOREAS prioritaires (dispatch direct des clients FOREAS aux Elite avant les autres, +200€/sem en moyenne) + early access nouvelles features + coaching Ajnaya privé + support <1h." },
+    { id: 'faq-carte', q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro : Stripe garde votre carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0€ jusqu'à lundi 18h. Vous annulez en 1 clic depuis l'app. Si vous annulez avant, il n'y a rien à payer. Point." },
+    { id: 'faq-mensuel', q: "Pourquoi mensuel et non hebdomadaire ?", a: "Simple : plus lisible. 97€/mois = 3,23€/jour. Vous savez exactement ce que vous payez. Pas de calcul. L'annuel à 970€ vous donne 2 mois offerts — c'est 194€ économisés si vous restez toute l'année." },
+    { id: 'faq-parrainage', q: "25€/filleul à vie, est-ce un piège ?", a: "Non. Tant que votre filleul reste abonné Pro ou Elite ET que vous aussi, vous touchez 25€/mois sur lui (N1). Plus 8€ s'il parraine quelqu'un (N2). Plus 2€ au niveau 3. Activé dès le 1er paiement de votre filleul. Virement automatique. Pas de plafond, pas d'expiration. Un lien parrain donne -20% à vie sur le mensuel à votre filleul." },
+    { id: 'faq-elite', q: "Elite, ça veut dire quoi exactement \"courses FOREAS prioritaires\" ?", a: "FOREAS dispatch ses propres clients privés (hôtels, Airbnb, corporate) qui réservent directement via foreas.xyz — sans Uber/Bolt. Quand un client réserve, on dispatch d'abord aux Elite dans le rayon (5 min), puis aux Pro (10 min). C'est ce qui justifie le delta Elite/Pro — vous capturez les clients premium FOREAS direct avant tout le monde. En moyenne +200€/sem sur les chauffeurs Elite actifs (Paris)." },
+    { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres vous donnent des données — vous devez faire le tri. Ajnaya vous dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec vous en temps réel. Le tier Pro vous laisse tester 7 jours sans payer pour vous faire votre propre idée." },
+    { id: 'faq-desactivation', q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme vous coupe, vous redistribuez votre temps sur les autres en 1 minute. La communauté FOREAS vous briefe sur les bons réflexes pour récupérer votre compte." },
+    { id: 'faq-annulation', q: "Et si je veux arrêter dans 3 mois ?", a: "Vous cliquez 'Annuler', vous confirmez, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Et si vous voulez juste downgrade vers Free, vous gardez l'accès heatmap basique sans payer." },
   ]
 
   return (
@@ -269,9 +276,8 @@ function TarifsContent() {
         </motion.div>
       )}
 
-      {/* Background — variant CYAN (data argent) + violet accent + rose subtle */}
+      {/* Background halos — design system §8 variant cyan */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Halo pulse 1.8s — design system §8 */}
         <div
           className="absolute inset-0 animate-halo-pulse"
           style={{
@@ -281,24 +287,16 @@ function TarifsContent() {
               'radial-gradient(ellipse 70% 60% at 50% 90%, rgba(140,82,255,0.08) 0%, transparent 75%)',
           }}
         />
-        {/* Halo rose subtle — accent warm chaleureux design system §4 */}
         <div
           className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 40% 30% at 90% 70%, rgba(255,102,153,0.07) 0%, transparent 70%)',
-          }}
+          style={{ background: 'radial-gradient(ellipse 40% 30% at 90% 70%, rgba(255,102,153,0.07) 0%, transparent 70%)' }}
         />
-        {/* Micro-grain anti-banding — design system §8 (casse les bandes OLED) */}
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: 'rgba(255,255,255,0.012)' }}
-        />
+        <div className="absolute inset-0" style={{ backgroundColor: 'rgba(255,255,255,0.012)' }} />
       </div>
 
       <Header />
 
-      {/* Live bar — preuve sociale temps réel + scarcity vraie */}
+      {/* Live bar */}
       <div className="relative border-b border-white/[0.06] bg-black/40 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap">
           <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium tabular-nums">
@@ -315,27 +313,19 @@ function TarifsContent() {
         </div>
       </div>
 
-      {/* ── HERO — F-pattern niveau L2 ── */}
+      {/* ── HERO ── */}
       <section className="relative pt-16 pb-8 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            {/* Eyebrow officielle — design system §11 */}
-            <p
-              className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-6"
-              style={{ letterSpacing: '0.25em' }}
-            >
+            <p className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-6" style={{ letterSpacing: '0.25em' }}>
               FOREAS · TARIFS DÉCOUVERTE
             </p>
-
-            {/* Risk reversal badge — Hormozi */}
             <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-1.5 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               <span className="text-green-300 text-xs font-semibold uppercase" style={{ letterSpacing: '0.1em' }}>
                 0€ aujourd'hui · Annulation 1 clic
               </span>
             </div>
-
-            {/* H1 display — letter-spacing négatif §17 + textHero ivoire §5 */}
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] mb-5 text-[#F8FAFC]"
               style={{ letterSpacing: '-0.04em' }}
@@ -345,8 +335,6 @@ function TarifsContent() {
                 cette semaine&nbsp;?
               </span>
             </h1>
-
-            {/* Sub — preuve nominée + identification */}
             <p className="text-white/75 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
               Haitham, Paris&nbsp;: <span className="text-[#F8FAFC] font-semibold tabular-nums">+387&nbsp;€</span> ce mois-ci. Sans une heure en plus.
             </p>
@@ -357,65 +345,109 @@ function TarifsContent() {
         </div>
       </section>
 
-      {/* ── TOGGLE ── */}
-      <div className="flex items-center justify-center gap-4 mb-10">
-        <span className={'text-sm font-medium transition-colors ' + (billing === 'weekly' ? 'text-white' : 'text-white/40')}>Hebdo (sans engagement)</span>
-        <button onClick={() => setBilling(c => c === 'weekly' ? 'annual' : 'weekly')} className={'relative w-12 h-6 rounded-full transition-colors ' + (billing === 'annual' ? 'bg-violet-500' : 'bg-white/20')}>
-          <span className={'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ' + (billing === 'annual' ? 'translate-x-6' : '')} />
+      {/* ── TOGGLE Mensuel / Annuel ── */}
+      <div className="flex items-center justify-center gap-4 mb-10 px-4">
+        <button
+          onClick={() => setBilling('monthly')}
+          className={`text-sm font-semibold px-4 py-2 rounded-xl transition-all ${billing === 'monthly' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}
+        >
+          Mensuel
         </button>
-        <span className={'text-sm font-medium transition-colors flex items-center gap-2 ' + (billing === 'annual' ? 'text-white' : 'text-white/40')}>
-          Annuel <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full font-semibold">−135€/an</span>
-        </span>
+        <button
+          onClick={() => setBilling(c => c === 'monthly' ? 'annual' : 'monthly')}
+          className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${billing === 'annual' ? 'bg-violet-500' : 'bg-white/20'}`}
+          aria-label="Basculer annuel/mensuel"
+        >
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${billing === 'annual' ? 'translate-x-6' : ''}`} />
+        </button>
+        <button
+          onClick={() => setBilling('annual')}
+          className={`text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${billing === 'annual' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
+        >
+          Annuel
+          <span className="bg-green-500/20 text-green-400 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap" style={{ letterSpacing: '0.05em' }}>
+            2 MOIS OFFERTS
+          </span>
+        </button>
       </div>
 
-      {/* ── 3 PRICING CARDS ── */}
+      {/* ── 3 PRICING CARDS — Apple decoy ── */}
       <section className="px-4 pb-20">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
           {PLANS.map((plan, i) => {
-            const price = billing === 'weekly' ? plan.weeklyPrice : plan.annualWeeklyPrice
-            const perDay = (price / 7).toFixed(2).replace('.', ',')
+            const price = billing === 'monthly' ? plan.monthlyPrice : plan.annualMonthlyPrice
+            const perDay = plan.monthlyPrice > 0 ? (plan.monthlyPrice / 30).toFixed(2).replace('.', ',') : null
+            const isFree = plan.id === 'free'
+            const isPro = plan.popular
+            const isElite = plan.isDecoy
+
             return (
-              <motion.div key={plan.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1, duration: 0.5 }}
-                className={`relative rounded-2xl p-6 sm:p-7 border transition-all ${plan.popular ? 'border-violet-500/40 bg-gradient-to-b from-violet-900/15 to-black md:-mt-4 md:pb-10' : 'border-white/[0.06] bg-white/[0.04] hover:border-white/[0.18]'}`}
-                style={plan.popular ? { boxShadow: '0 0 60px rgba(140,82,255,0.18), inset 0 0 0 1px rgba(140,82,255,0.20)' } : undefined}
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className={`relative rounded-2xl p-6 sm:p-7 border transition-all ${
+                  isPro
+                    ? 'border-violet-500/40 bg-gradient-to-b from-violet-900/15 to-black md:-mt-4 md:pb-10'
+                    : isElite
+                    ? 'border-amber-500/20 bg-gradient-to-b from-amber-900/08 to-black'
+                    : 'border-white/[0.06] bg-white/[0.02]'
+                }`}
+                style={isPro ? { boxShadow: '0 0 60px rgba(140,82,255,0.18), inset 0 0 0 1px rgba(140,82,255,0.20)' } : undefined}
               >
-                {plan.popular && (
+                {isPro && (
                   <div
                     className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-600 to-violet-500 text-white text-[10px] font-extrabold uppercase px-4 py-1 rounded-full whitespace-nowrap"
                     style={{ letterSpacing: '0.18em', boxShadow: '0 0 20px rgba(140,82,255,0.45)' }}
                   >
-                    Le plus pris · 8/10 chauffeurs
+                    LE PLUS CHOISI · 8/10 chauffeurs
                   </div>
                 )}
-                <p
-                  className="text-[10px] font-extrabold text-[#00D4FF]/85 uppercase mb-2"
-                  style={{ letterSpacing: '0.25em' }}
-                >
+
+                <p className="text-[10px] font-extrabold text-[#00D4FF]/85 uppercase mb-2" style={{ letterSpacing: '0.25em' }}>
                   {plan.name}
                 </p>
                 <p className="text-sm text-white/75 mb-5 min-h-[36px] leading-snug">{plan.tagline}</p>
 
                 <motion.div key={billing} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
-                  <div className="flex items-end gap-1.5 mb-1">
-                    {billing === 'annual' && (
-                      <span className="text-white/30 line-through text-lg mb-1 tabular-nums">{plan.weeklyPrice.toFixed(2).replace('.', ',')}€</span>
-                    )}
-                    <span
-                      className="text-4xl sm:text-5xl font-black text-[#F8FAFC] tabular-nums"
-                      style={{ letterSpacing: '-0.045em' }}
-                    >
-                      {price.toFixed(2).replace('.', ',')}€
-                    </span>
-                    <span className="text-white/50 text-sm mb-2">/sem</span>
-                  </div>
-                  <p className="text-cyan-300/80 text-xs mb-1 tabular-nums">
-                    soit {perDay}€/jour {plan.popular && <span className="text-cyan-200 font-semibold">— le prix d'un péage</span>}
-                  </p>
-                  {plan.popular && (
-                    <p className="text-green-400/85 text-[11px] font-semibold mt-1.5">💡 Une seule course no-show = votre mois remboursé</p>
-                  )}
-                  {billing === 'annual' && (
-                    <p className="text-white/40 text-xs mt-1.5 tabular-nums">Facturé {(plan.annualWeeklyPrice * 52).toFixed(2).replace('.', ',')}€/an · sans engagement</p>
+                  {isFree ? (
+                    <div className="mb-5">
+                      <span className="text-4xl sm:text-5xl font-black text-[#F8FAFC] tabular-nums" style={{ letterSpacing: '-0.045em' }}>0€</span>
+                      <span className="text-white/50 text-sm ml-1">/mois</span>
+                      <p className="text-white/35 text-xs mt-1.5">Sans CB · Accès limité</p>
+                    </div>
+                  ) : (
+                    <div className="mb-5">
+                      <div className="flex items-end gap-1.5 mb-1">
+                        {billing === 'annual' && (
+                          <span className="text-white/30 line-through text-lg mb-1 tabular-nums">{plan.monthlyPrice}€</span>
+                        )}
+                        <span className="text-4xl sm:text-5xl font-black text-[#F8FAFC] tabular-nums" style={{ letterSpacing: '-0.045em' }}>
+                          {billing === 'monthly'
+                            ? `${plan.monthlyPrice}€`
+                            : `${plan.annualMonthlyPrice.toFixed(2).replace('.', ',')}€`
+                          }
+                        </span>
+                        <span className="text-white/50 text-sm mb-2">/mois</span>
+                      </div>
+                      {billing === 'monthly' && perDay && (
+                        <p className="text-cyan-300/80 text-xs mb-1 tabular-nums">
+                          soit {perDay}€/jour{isPro && <span className="text-cyan-200 font-semibold"> — le prix d'un péage</span>}
+                        </p>
+                      )}
+                      {billing === 'annual' && (
+                        <p className="text-white/40 text-xs mt-1 tabular-nums">
+                          Facturé {plan.annualTotal.toLocaleString('fr-FR')}€/an
+                          {' · '}<span className="text-green-400 font-semibold">
+                            économise {(plan.monthlyPrice * 12 - plan.annualTotal).toLocaleString('fr-FR')}€
+                          </span>
+                        </p>
+                      )}
+                      {isPro && billing === 'monthly' && (
+                        <p className="text-green-400/85 text-[11px] font-semibold mt-1.5">💡 Une seule course no-show = votre mois remboursé</p>
+                      )}
+                    </div>
                   )}
                 </motion.div>
 
@@ -424,41 +456,74 @@ function TarifsContent() {
                 <div className="space-y-1.5 mb-6">
                   {plan.features.map((f, j) => (
                     <div key={j} className="flex items-start gap-2.5 py-0.5">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${f.ok ? (f.star ? 'bg-violet-500/25 ring-1 ring-violet-400/30' : 'bg-violet-500/15') : 'bg-white/[0.04]'}`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        f.ok
+                          ? (f.star ? 'bg-violet-500/25 ring-1 ring-violet-400/30' : 'bg-violet-500/15')
+                          : 'bg-white/[0.04]'
+                      }`}>
                         {f.ok ? (
                           <svg className={`w-3 h-3 ${f.star ? 'text-violet-200' : 'text-violet-400/85'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                         ) : (
                           <span className="text-white/25 text-xs">×</span>
                         )}
                       </div>
-                      <span className={`text-sm leading-tight ${f.ok ? (f.star ? 'text-[#F8FAFC] font-semibold' : 'text-white/80') : 'text-white/30 line-through'}`}>{f.text}</span>
+                      <span className={`text-sm leading-tight ${
+                        f.ok
+                          ? (f.star ? 'text-[#F8FAFC] font-semibold' : 'text-white/80')
+                          : 'text-white/30 line-through'
+                      }`}>{f.text}</span>
                     </div>
                   ))}
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => openFlow(plan)}
-                  className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all ${plan.style}`}
-                  style={plan.popular ? { boxShadow: '0 0 28px rgba(140,82,255,0.40)' } : undefined}
-                >
-                  {plan.cta} →
-                </motion.button>
-                <p className="text-center text-white/45 text-[10px] mt-3 tabular-nums">0€ aujourd'hui · 0€ jusqu'à dimanche · Annulation 1 clic</p>
+                {/* CTA par variante */}
+                {plan.ctaVariant === 'ghost' && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => openFlow(plan)}
+                    className="w-full py-3.5 rounded-xl text-sm font-bold transition-all bg-white/[0.06] border border-white/15 hover:bg-white/10 text-white"
+                  >
+                    {plan.cta} →
+                  </motion.button>
+                )}
+                {plan.ctaVariant === 'primary' && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => openFlow(plan)}
+                    className="w-full py-3.5 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white"
+                    style={{ boxShadow: '0 0 28px rgba(140,82,255,0.40)' }}
+                  >
+                    {plan.cta}
+                  </motion.button>
+                )}
+                {plan.ctaVariant === 'elite' && (
+                  <motion.button
+                    whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                    onClick={() => openFlow(plan)}
+                    className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all bg-white/[0.04] border border-amber-500/20 text-amber-300/80 hover:border-amber-500/40 hover:text-amber-200"
+                  >
+                    {plan.cta}
+                  </motion.button>
+                )}
+
+                {isPro && (
+                  <p className="text-center text-white/45 text-[10px] mt-3 tabular-nums">0€ aujourd'hui · Annulation 1 clic</p>
+                )}
               </motion.div>
             )
           })}
         </div>
+
+        {/* Note parrain sous les cards */}
+        <p className="text-center text-white/40 text-xs mt-6 max-w-lg mx-auto">
+          Vous avez un lien parrain ? Votre mensuel est à <span className="text-white/70 font-semibold tabular-nums">−20% à vie</span> (Pro à 77,60€/mois · Elite à 197,60€/mois). L'annuel est au tarif fixe.
+        </p>
       </section>
 
-      {/* ── KPIs — F-pattern niveau L1 displayXXL ── */}
+      {/* ── KPIs ── */}
       <section className="py-14 sm:py-16 px-4 border-y border-white/[0.06]">
         <div className="max-w-4xl mx-auto">
-          <p
-            className="text-center text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-8"
-            style={{ letterSpacing: '0.28em' }}
-          >
+          <p className="text-center text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-8" style={{ letterSpacing: '0.28em' }}>
             MOYENNE 60 JOURS · 247 CHAUFFEURS PRO
           </p>
           <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
@@ -468,10 +533,7 @@ function TarifsContent() {
               { target: 90, suffix: 'sec', label: "pour votre 1ᵉʳ insight Ajnaya", color: 'from-green-300 via-green-200 to-cyan-200' },
             ].map((kpi, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                <div
-                  className={'text-4xl sm:text-6xl font-black bg-gradient-to-r ' + kpi.color + ' bg-clip-text text-transparent mb-2 tabular-nums'}
-                  style={{ letterSpacing: '-0.04em' }}
-                >
+                <div className={'text-4xl sm:text-6xl font-black bg-gradient-to-r ' + kpi.color + ' bg-clip-text text-transparent mb-2 tabular-nums'} style={{ letterSpacing: '-0.04em' }}>
                   <AnimatedCounter target={kpi.target} suffix={kpi.suffix} />
                 </div>
                 <p className="text-white/55 text-[11px] sm:text-sm leading-tight">{kpi.label}</p>
@@ -481,36 +543,19 @@ function TarifsContent() {
         </div>
       </section>
 
-      {/* ── COMPARISON · Sans FOREAS vs Avec FOREAS — Heath Concrete + Schwartz mécanisme ── */}
+      {/* ── COMPARISON Sans vs Avec FOREAS ── */}
       <section className="py-16 sm:py-20 px-4 border-b border-white/[0.06]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <p
-              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
-              style={{ letterSpacing: '0.28em' }}
-            >
-              LA VRAIE DIFFÉRENCE
-            </p>
-            <h2
-              className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] leading-tight"
-              style={{ letterSpacing: '-0.03em' }}
-            >
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>LA VRAIE DIFFÉRENCE</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] leading-tight" style={{ letterSpacing: '-0.03em' }}>
               Le même chauffeur. La même journée.<br className="hidden sm:block" />
               <span className="bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">Deux trajectoires.</span>
             </h2>
           </div>
-
           <div className="grid md:grid-cols-2 gap-4 sm:gap-5">
-            {/* SANS FOREAS — la version "à l'aveugle" */}
-            <div
-              className="rounded-2xl p-6 sm:p-7 border border-white/[0.06] bg-white/[0.02] relative"
-            >
-              <p
-                className="text-white/40 text-[10px] font-extrabold uppercase mb-4"
-                style={{ letterSpacing: '0.28em' }}
-              >
-                SANS FOREAS · LA NORME
-              </p>
+            <div className="rounded-2xl p-6 sm:p-7 border border-white/[0.06] bg-white/[0.02] relative">
+              <p className="text-white/40 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>SANS FOREAS · LA NORME</p>
               <ul className="space-y-3 text-[15px] text-white/65 leading-relaxed">
                 <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Vous tournez en attendant que ça pingue.</span></li>
                 <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Vous acceptez la course parce qu'elle est là — pas parce qu'elle paie.</span></li>
@@ -523,17 +568,9 @@ function TarifsContent() {
                 <p className="text-2xl font-black text-white/70 tabular-nums" style={{ letterSpacing: '-0.03em' }}>2 840 €<span className="text-sm text-white/40 font-medium">&nbsp;/ mois</span></p>
               </div>
             </div>
-
-            {/* AVEC FOREAS — la version Pro */}
-            <div
-              className="rounded-2xl p-6 sm:p-7 border border-violet-500/30 bg-gradient-to-b from-violet-900/15 to-black relative"
-              style={{ boxShadow: '0 0 60px rgba(140,82,255,0.15)' }}
-            >
-              <p
-                className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-4"
-                style={{ letterSpacing: '0.28em' }}
-              >
-                AVEC FOREAS PRO · 12,97&nbsp;€/SEM
+            <div className="rounded-2xl p-6 sm:p-7 border border-violet-500/30 bg-gradient-to-b from-violet-900/15 to-black relative" style={{ boxShadow: '0 0 60px rgba(140,82,255,0.15)' }}>
+              <p className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>
+                AVEC FOREAS PRO · 97&nbsp;€/MOIS
               </p>
               <ul className="space-y-3 text-[15px] text-[#F8FAFC]/90 leading-relaxed">
                 <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span><strong className="text-[#F8FAFC]">Ajnaya te briefe le matin</strong> : 3 zones chaudes du jour, ordre optimal.</span></li>
@@ -544,18 +581,13 @@ function TarifsContent() {
               </ul>
               <div className="mt-6 pt-5 border-t border-violet-500/15">
                 <p className="text-cyan-300/85 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Net moyen</p>
-                <p
-                  className="text-2xl font-black tabular-nums bg-gradient-to-r from-violet-300 to-cyan-200 bg-clip-text text-transparent"
-                  style={{ letterSpacing: '-0.03em' }}
-                >
+                <p className="text-2xl font-black tabular-nums bg-gradient-to-r from-violet-300 to-cyan-200 bg-clip-text text-transparent" style={{ letterSpacing: '-0.03em' }}>
                   3 227 €<span className="text-sm text-cyan-300/70 font-medium">&nbsp;/ mois</span>
                 </p>
                 <p className="text-green-400/85 text-[11px] font-semibold mt-1">+387&nbsp;€ · soit 13,6&nbsp;% de marge en plus</p>
               </div>
             </div>
           </div>
-
-          {/* Bandeau honnêteté — Halbert anti-bullshit */}
           <p className="text-center text-white/45 text-xs mt-6 max-w-2xl mx-auto">
             Ces chiffres sortent de la moyenne sur 247 chauffeurs Pro après 60 jours. Pas tout le monde fait pareil. Karim fait +18&nbsp;%. Théodore fait +9&nbsp;% (et conduit 3h de moins).
           </p>
@@ -566,18 +598,8 @@ function TarifsContent() {
       <section className="py-16 px-4 bg-white/[0.02] border-b border-white/[0.06]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <p
-              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
-              style={{ letterSpacing: '0.28em' }}
-            >
-              VRAIS CHAUFFEURS · VRAIS VIREMENTS
-            </p>
-            <h2
-              className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3"
-              style={{ letterSpacing: '-0.03em' }}
-            >
-              Pas des promesses. Des virements.
-            </h2>
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>VRAIS CHAUFFEURS · VRAIS VIREMENTS</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3" style={{ letterSpacing: '-0.03em' }}>Pas des promesses. Des virements.</h2>
             <p className="text-white/55">3 chauffeurs. 3 villes. 3 trajectoires.</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-5">
@@ -586,12 +608,7 @@ function TarifsContent() {
               { name: 'Soufiane M.', city: 'Lyon · 2 ans VTC', avatar: 'SM', gain: '+412 €/mois', detail: 'Mois 1 vs mois 0', quote: "412 € de plus le premier mois. L'abo se paie en une course. Le reste, c'est du bonus que je mets de côté pour passer en SAS.", stars: 5 },
               { name: 'Théodore R.', city: 'Bordeaux · 6 ans VTC', avatar: 'TR', gain: '-3h/jour à vide', detail: 'Au lieu de 11h, je rentre en 8h', quote: "Le vrai gain n'est pas dans mon compte. Il est dans ma tête. Je conduis 3h de moins, je gagne autant. Mes lombaires me remercient.", stars: 5 },
             ].map((t, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+              <motion.div key={i} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 hover:border-violet-500/30 transition-all"
               >
                 <div className="flex items-center gap-3 mb-3">
@@ -613,81 +630,43 @@ function TarifsContent() {
         </div>
       </section>
 
-      {/* ── GUARANTEE — Hormozi risk reversal × design system glass card ── */}
+      {/* ── GUARANTEE ── */}
       <section className="py-14 sm:py-16 px-4">
         <div className="max-w-lg mx-auto text-center">
-          <div
-            className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm relative"
-            style={{ boxShadow: '0 0 40px rgba(0,212,255,0.08)' }}
-          >
+          <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm relative" style={{ boxShadow: '0 0 40px rgba(0,212,255,0.08)' }}>
             <div className="text-4xl mb-4">🛡️</div>
-            <p
-              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
-              style={{ letterSpacing: '0.28em' }}
-            >
-              GARANTIE FERME
-            </p>
-            <h3
-              className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-3 leading-tight"
-              style={{ letterSpacing: '-0.025em' }}
-            >
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>GARANTIE FERME</p>
+            <h3 className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-3 leading-tight" style={{ letterSpacing: '-0.025em' }}>
               Si vous n&apos;êtes pas convaincu en 7 jours,<br />vous ne payez rien.
             </h3>
             <p className="text-white/65 text-sm leading-relaxed">
-              0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ jusqu&apos;à dimanche 18h. Si vous avez un doute, vous fermez l&apos;app — il n&apos;y a rien à annuler. Si vous restez, c&apos;est que ça vaut le coup. <span className="text-white/80">Point.</span>
+              0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ jusqu&apos;à lundi 18h. Si vous avez un doute, vous fermez l&apos;app — il n&apos;y a rien à annuler. Si vous restez, c&apos;est que ça vaut le coup. <span className="text-white/80">Point.</span>
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── FAQ — objections inversées ── */}
+      {/* ── FAQ ── */}
       <section className="py-16 sm:py-20 px-4 border-t border-white/[0.06]">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
-            <p
-              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
-              style={{ letterSpacing: '0.28em' }}
-            >
-              QUESTIONS — RÉPONSES SANS LANGUE DE BOIS
-            </p>
-            <h2
-              className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3"
-              style={{ letterSpacing: '-0.03em' }}
-            >
-              Les questions qu'on nous pose tout le temps.
-            </h2>
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>QUESTIONS — RÉPONSES SANS LANGUE DE BOIS</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3" style={{ letterSpacing: '-0.03em' }}>Les questions qu'on nous pose tout le temps.</h2>
             <p className="text-white/55 text-sm">Si vous hésitez, c&apos;est normal — voilà les vraies réponses.</p>
           </div>
-          {faqs.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} />)}
+          {faqs.map((faq, i) => <FaqItem key={i} id={faq.id} q={faq.q} a={faq.a} />)}
         </div>
       </section>
 
-      {/* ── FINAL CTA — F-pattern niveau L2 hero + Loss aversion + PS humain ── */}
+      {/* ── FINAL CTA ── */}
       <section className="py-16 sm:py-24 px-4 relative">
-        {/* Halo CTA renforcé sous le bouton */}
-        <div
-          className="absolute inset-0 pointer-events-none animate-halo-pulse"
-          aria-hidden
-          style={{
-            background: 'radial-gradient(ellipse 50% 40% at 50% 60%, rgba(140,82,255,0.18) 0%, transparent 70%)',
-          }}
-        />
+        <div className="absolute inset-0 pointer-events-none animate-halo-pulse" aria-hidden style={{ background: 'radial-gradient(ellipse 50% 40% at 50% 60%, rgba(140,82,255,0.18) 0%, transparent 70%)' }} />
         <div className="max-w-2xl mx-auto text-center relative">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <p
-              className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4"
-              style={{ letterSpacing: '0.28em' }}
-            >
-              7 JOURS · ZÉRO RISQUE · VOUS DÉCIDEZ
-            </p>
-            <h2
-              className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]"
-              style={{ letterSpacing: '-0.045em' }}
-            >
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>7 JOURS · ZÉRO RISQUE · VOUS DÉCIDEZ</p>
+            <h2 className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]" style={{ letterSpacing: '-0.045em' }}>
               Dans 7 jours,{' '}
-              <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-                vous saurez.
-              </span>
+              <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">vous saurez.</span>
             </h2>
             <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
               Soit Ajnaya vous a fait gagner <span className="text-[#F8FAFC] font-semibold tabular-nums">+28&nbsp;€/jour</span> de moyenne.<br className="hidden sm:block" />
@@ -696,46 +675,36 @@ function TarifsContent() {
             <p className="text-cyan-300/85 text-sm sm:text-base mb-9">
               La seule question&nbsp;: préférez-vous savoir, ou pas&nbsp;?
             </p>
-
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
               onClick={() => openFlow(PLANS[1])}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-extrabold py-4 px-12 rounded-2xl text-lg transition-all"
               style={{ boxShadow: '0 0 80px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
             >
               Activer votre essai 7 jours (0&nbsp;€) →
             </motion.button>
-
             <div className="flex items-center justify-center gap-x-6 gap-y-2 mt-6 text-white/50 text-[11px] flex-wrap tabular-nums">
               <span>🔒 Stripe · SSL</span>
               <span>✓ 0&nbsp;€ aujourd'hui</span>
               <span>🛡️ Annulation 1 clic</span>
               <span>⭐ 4,9/5 · 247 avis</span>
             </div>
-
-            {/* PS signature humaine — Halbert "lettre d'un ami" */}
             <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
               <p className="text-white/65 text-sm leading-relaxed text-left italic">
                 <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si vous hésitez encore, ce n&apos;est pas grave. Mais revenez dans 6 mois, et comparez. Vous serez au même point. Le seul truc qui aura changé, c&apos;est votre compteur d&apos;années perdues.<br /><br />
                 Si vous cliquez aujourd&apos;hui, vous avez 7 jours pour voir si on est sérieux. Si on ne l&apos;est pas, vous partez. <span className="text-[#F8FAFC] font-semibold not-italic">Vous ne perdez rien. Vous testez juste.</span>
               </p>
-              <p className="text-white/55 text-xs mt-4 text-left">
-                — Chandler, fondateur FOREAS
-              </p>
+              <p className="text-white/55 text-xs mt-4 text-left">— Chandler, fondateur FOREAS</p>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ── Already a member ─────────────────────────────────────────────── */}
+      {/* ── Already a member ── */}
       <div className="py-8 text-center border-t border-white/[0.04]">
         <p className="text-white/30 text-sm">
           Déjà abonné ?{' '}
-          <a
-            href={authUrls.loginGeneric}
-            className="text-[#00D4FF]/70 hover:text-[#00D4FF] transition-colors duration-150 underline-offset-2 hover:underline"
-          >
+          <a href={authUrls.loginGeneric} className="text-[#00D4FF]/70 hover:text-[#00D4FF] transition-colors duration-150 underline-offset-2 hover:underline">
             Accéder à mon espace →
           </a>
         </p>
