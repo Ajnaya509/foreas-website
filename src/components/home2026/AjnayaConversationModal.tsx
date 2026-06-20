@@ -31,6 +31,7 @@ interface ZoneData {
   courses_count: number
   week_iso: string
   has_data: boolean
+  is_estimate?: boolean
   fallback_zone?: { name: string; avg_hourly: number; note?: string } | null
   landmarks?: Array<{
     name: string
@@ -223,12 +224,12 @@ function ZoneCard({ data }: { data: ZoneData }) {
           <span
             className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full"
             style={{
-              backgroundColor: '#1d1d1f',
-              color: '#fff',
+              backgroundColor: data.is_estimate ? 'rgba(245,158,11,0.15)' : '#1d1d1f',
+              color: data.is_estimate ? '#B45309' : '#fff',
               letterSpacing: '0.12em',
             }}
           >
-            RÉEL
+            {data.is_estimate ? 'ESTIMATION' : 'TEMPS RÉEL'}
           </span>
         </div>
         {/* CONTRACTS v1.7 — Brief PIEUVRE_ZONE_LANDMARKS — affiche max 2 lieux séparés par · */}

@@ -45,6 +45,9 @@ export interface ZoneData {
   courses_count: number
   week_iso: string
   has_data: boolean
+  // True tant que les chiffres sont une estimation baseline (pas de trafic réel).
+  // → la carte affiche "ESTIMATION" au lieu de "TEMPS RÉEL" (honnêteté = crédibilité).
+  is_estimate?: boolean
   last_updated?: string
   fallback_zone?: { name: string; avg_hourly: number; note?: string } | null
   landmarks?: ZoneLandmark[] // CONTRACTS v1.7 — Brief PIEUVRE_ZONE_LANDMARKS_BRIEF
@@ -230,12 +233,24 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
     ])
 
     let zoneData: ZoneData | null = null
-    if (!zoneRes.error && zoneRes.data) {
+    const fromIntelligence = !zoneRes.error && !!zoneRes.data
+    if (fromIntelligence) {
       zoneData = zoneRes.data as ZoneData
     } else {
       // Fallback get_zone_stats v2 (pas de landmarks dedans, mais zone OK)
       const { data: v2 } = await sb.rpc('get_zone_stats', { zone_input: zone })
       zoneData = (v2 as ZoneData) ?? null
+    }
+
+    // Marqueur "estimation" : tant que les signaux temps réel (events/vols/trafic)
+    // ne coulent pas, get_zone_intelligence renvoie _source='supabase_rpc_baseline'
+    // + confidence < 1. On l'affiche honnêtement comme estimation, pas "RÉEL".
+    if (zoneData) {
+      const raw = zoneRes.data as { _source?: string; confidence?: number } | null
+      zoneData.is_estimate = fromIntelligence
+        ? raw?._source === 'supabase_rpc_baseline' ||
+          (typeof raw?.confidence === 'number' && raw.confidence < 1)
+        : true // fallback get_zone_stats → estimation par défaut
     }
 
     // Merge landmarks (peut être null si RPC pas encore créée côté Pieuvre)
