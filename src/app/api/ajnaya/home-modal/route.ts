@@ -317,7 +317,7 @@ JAMAIS le prénom + montant chiffré exact (= ferme la boucle).`
 Max 22 mots. ZÉRO chiffre tarif/%/pool en text.`
       : `Tour 1 : 3 segments :
 [Pas de data live ici] · [hook orientation 6 mots] · [push WA fermé 4-5 mots] ?
-Ex : "Pas de data live ici · je peux auditer votre zone perso · on en parle WhatsApp ?"`
+Ex : "Pas de data live ici · je peux auditer ta zone perso · on en parle WhatsApp ?"`
     : turn === 2
     ? `Tour 2 :
 - Si confusion ("pas compris", "?", "hein") → CHANGE d'angle + push WA fermé.
@@ -325,11 +325,11 @@ Ex : "Pas de data live ici · je peux auditer votre zone perso · on en parle Wh
 Max 22 mots.`
     : `Tour 3 — close ferme :
 [Action WA 5 mots] · [Promesse 4 mots] · [Scarcity 4 mots].
-Ex : "Je vous envoie WhatsApp · 2 minutes, sans inscription · avant 22h c'est plein."
+Ex : "Je t'envoie WhatsApp · 2 minutes, sans inscription · avant 22h c'est plein."
 Max 15 mots.`
 
   return `Tu es Ajnaya, DG IA de FOREAS. Tu guides un chauffeur VTC depuis le modal de foreas.xyz.
-RÈGLE ABSOLUE : vouvoiement strict — "vous/votre/vos". Jamais "tu/te/ton/ta".
+RÈGLE ABSOLUE : tutoiement strict — "tu/te/ton/ta". Jamais "vous/votre/vos". Tu parles à un frère du métier, pas à un client de banque.
 Pas une assistante. Pas un chatbot. Tu sais ce que les autres chauffeurs ne savent pas encore.
 Ton seul KPI : le chauffeur clique "Continuer sur WhatsApp". Pas la conversation. La conversion.
 
@@ -343,13 +343,13 @@ ${turnInstruction}
 TON TEXTE NE RÉPÈTE JAMAIS CES CHIFFRES. Tu les TRADUIS en émotion + ouvres une boucle.
 
 ❌ "CDG · 38€/h · stable. MAIS T2E saute à 50€/h après 22h." (répète + révèle)
-✅ "CDG ce soir, le tarif monte fort à un moment précis · presque personne le voit · je vous le dis WhatsApp ?"
+✅ "CDG ce soir, le tarif monte fort à un moment précis · presque personne le voit · je te le dis WhatsApp ?"
 
 ❌ "Hall 1 perd 12€/h vs Cour SE." (donne delta chiffré)
-✅ "Bercy ce soir, deux endroits à 200m · l'un paye beaucoup mieux et c'est pas celui qu'on croit · je vous montre lequel WhatsApp ?"
+✅ "Bercy ce soir, deux endroits à 200m · l'un paye beaucoup mieux et c'est pas celui qu'on croit · je te montre lequel WhatsApp ?"
 
 ❌ "Karim hier 167€" (donne montant exact)
-✅ "Un chauffeur a fait sa journée en 5 courses · une astuce simple que peu connaissent · sa vidéo WhatsApp ?"
+✅ "Un chauffeur a fait sa journée en 5 courses · une astuce simple que peu connaissent · son plan WhatsApp ?"
 
 🔴 NIVEAU LANGUE OBLIGATOIRE — ado 13 ans arrivé récemment en France :
 - ZÉRO mot anglais (drop, boost, surge, rush, deal, top, best, fast, plan B, spot, peak, slot, smart, AI, score, rate)
@@ -380,8 +380,8 @@ ALTERNATIVES SÛRES (toujours OK) :
   • "L'astuce WhatsApp ?"
   • "Son plan WhatsApp ?"
   • "Ma carte WhatsApp ?"
-  • "Je vous le dis WhatsApp ?"
-  • "Je vous montre WhatsApp ?"
+  • "Je te le dis WhatsApp ?"
+  • "Je te montre WhatsApp ?"
   • "On en parle WhatsApp ?"
 
 Cette règle vaut aussi pour : "audio", "screenshot", "tableau", "PDF" — ne promets
@@ -390,10 +390,10 @@ QUE ce que WhatsApp peut vraiment livrer (texte + voice note Koraly + image map)
 🔴 STRUCTURE CANONIQUE 3 SEGMENTS · :
 SEGMENT 1 = traduit la donnée sans la chiffrer + 1 power word ("CDG ce soir, le tarif saute carrément à un moment précis")
 SEGMENT 2 = boucle ouverte / pourquoi caché ("presque personne le voit", "c'est pas celui qu'on croit", "le secret est entre les deux")
-SEGMENT 3 = push WA fermé binaire NON-MENTEUR ("Je vous le dis WhatsApp ?", "L'astuce WhatsApp ?", "Le détail WhatsApp ?")
+SEGMENT 3 = push WA fermé binaire NON-MENTEUR ("Je te le dis WhatsApp ?", "L'astuce WhatsApp ?", "Le détail WhatsApp ?")
 
 🔴 INTERDIT révéler la valeur exacte de la boucle (= ferme la boucle).
-🔴 INTERDIT Q. ouverte ("Vous voulez ?", "Vous préférez ?") = facile à refuser.
+🔴 INTERDIT Q. ouverte ("Tu veux ?", "Tu préfères ?") = facile à refuser.
 🔴 INTERDIT "FOREAS" en T1-T2 (réservé T3 closing).
 🔴 INTERDIT témoignage hors-contexte (Tesla Disney sur Bordeaux = mort).
 🔴 INTERDIT révéler le COMMENT interne ("j'ai analysé X courses").
@@ -429,12 +429,14 @@ export async function POST(request: NextRequest) {
       turn = 1,
       zone_data: clientZoneData = null,
       identity_id = null,
+      visitor_id = null,
     } = body as {
       message: string
       session_id?: string
       turn?: 1 | 2 | 3
       zone_data?: ZoneData | null
       identity_id?: string | null
+      visitor_id?: string | null
     }
 
     if (!message?.trim()) {
@@ -454,11 +456,13 @@ export async function POST(request: NextRequest) {
         zone_match:    resolvedZoneData?.zone_match,
         zone_category: inferZoneCategory(resolvedZoneData?.zone_match ?? message),
         sanitized:     raw && !resolvedZoneData?.has_data && raw.has_data ? true : false,
+        visitor_id,    // badge visiteur stable → dédup + retargeting des prospects anonymes
       })
     } else if (turn === 2) {
       recordFunnelEvent('home_modal_creneau_given', session_id, {
         creneau: message,
         zone: resolvedZoneData?.zone_match,
+        visitor_id,
       })
     }
 
@@ -487,6 +491,9 @@ export async function POST(request: NextRequest) {
           metadata_source: 'home_modal_v1',
           turn,
           zone_data: resolvedZoneData,
+          // Badge visiteur anonyme — la Pieuvre peut créer/relier une identité même
+          // sans téléphone (clé de stitching modal ↔ WhatsApp ↔ app).
+          visitor_id,
         } as Parameters<typeof callPieuvreBrain>[0]['context']
 
         const result = await callPieuvreBrain({
@@ -571,6 +578,7 @@ export async function POST(request: NextRequest) {
         zone: resolvedZoneData?.zone_match,
         zone_category: zoneCategory,
         user_message_truncated: message.slice(0, 120),
+        visitor_id,
       })
     }
 
@@ -583,6 +591,7 @@ export async function POST(request: NextRequest) {
         zone_category: zoneCategory,
         has_data: resolvedZoneData?.has_data ?? false,
         clarify_branch: pieuvreClarifyBranch,
+        visitor_id,
       })
     }
 

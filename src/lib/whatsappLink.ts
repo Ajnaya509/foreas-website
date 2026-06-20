@@ -25,6 +25,14 @@ export interface BuildWAOptions {
   zone?: string
   slot?: string
   amount?: number
+  /**
+   * Code de raccordement modal ↔ WhatsApp (= session_id du modal home).
+   * Ajouté discrètement en fin de message : "(réf hm-xxxx)".
+   * La Pieuvre (wa_inbound_router) le lit en regex /réf ([\w-]+)/ pour
+   * retrouver la zone + l'historique funnel de la session web du prospect.
+   * Sans lui, le prospect arrive sur WhatsApp en parfait inconnu.
+   */
+  ref?: string
 }
 
 /**
@@ -45,33 +53,39 @@ export function buildWAUrl(opts: BuildWAOptions): string {
  * la Pieuvre matche dessus en regex pour router (voir SPEC §6.2).
  */
 export function buildWAMessage(opts: BuildWAOptions): string {
+  const base = buildWAMessageBase(opts)
+  // Code de raccordement discret en fin de message (lu par la Pieuvre en regex).
+  return opts.ref ? `${base} (réf ${opts.ref})` : base
+}
+
+function buildWAMessageBase(opts: BuildWAOptions): string {
   const { section, zone, slot, amount } = opts
 
   switch (section) {
     case 'hero_zone':
       return zone
-        ? `Bonjour Ajnaya, je suis sur la zone ${zone}. Pouvez-vous me donner le tarif horaire exact ${slot ?? 'pour ce soir'} ?`
-        : `Bonjour Ajnaya, je souhaite le tarif horaire exact sur ma zone.`
+        ? `Salut Ajnaya, je suis sur la zone ${zone}. Tu peux me donner le tarif horaire exact ${slot ?? 'pour ce soir'} ?`
+        : `Salut Ajnaya, je veux le tarif horaire exact sur ma zone.`
 
     case 'pain':
-      return `Bonjour Ajnaya. Sur une course de ${amount ?? 25}€, je touche environ ${Math.round((amount ?? 25) * 0.56)}€ net. Combien pourrais-je gagner avec FOREAS sur les mêmes courses ?`
+      return `Salut Ajnaya. Sur une course de ${amount ?? 25}€, je touche environ ${Math.round((amount ?? 25) * 0.56)}€ net. Je gagnerais combien avec FOREAS sur les mêmes courses ?`
 
     case 'mechanism':
-      return `Bonjour Ajnaya, je souhaite la démo de 90 secondes.`
+      return `Salut Ajnaya, je veux la démo de 90 secondes.`
 
     case 'social_proof':
-      return `Bonjour Ajnaya, je souhaite voir d'autres cas de chauffeurs comme Haitham.`
+      return `Salut Ajnaya, je veux voir d'autres cas de chauffeurs comme Haitham.`
 
     case 'plan':
-      return `Bonjour Ajnaya. Je veux le brief de demain matin.`
+      return `Salut Ajnaya. Je veux le brief de demain matin.`
 
     case 'cap':
-      return `Bonjour Ajnaya, je pilote une flotte / un groupe. Je souhaite comprendre le programme CAP.`
+      return `Salut Ajnaya, je pilote une flotte / un groupe. Je veux comprendre le programme CAP.`
 
     case 'final':
-      return `Bonjour Ajnaya. Démarrer avec FOREAS. 0€. Je teste.`
+      return `Salut Ajnaya. Je démarre avec FOREAS. 0€. Je teste.`
 
     default:
-      return `Bonjour Ajnaya.`
+      return `Salut Ajnaya.`
   }
 }

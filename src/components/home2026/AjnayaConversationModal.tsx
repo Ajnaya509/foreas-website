@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { X, Send, MapPin, TrendingUp, TrendingDown, Volume2, MessageCircle, VolumeX } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
 import { recordSearch } from '@/lib/sarcasticVisits'
@@ -111,6 +111,29 @@ function ThinkingDots() {
       ))}
     </div>
   )
+}
+
+// ─── Typewriter — le texte d'Ajnaya s'écrit (effet "vivant", pas un bloc figé) ──
+// Respecte prefers-reduced-motion (Design System §accessibilité). Anime une seule
+// fois au montage (deps stables) → ne redémarre pas quand on toggle l'audio.
+function TypewriterText({ text }: { text: string }) {
+  const reduce = useReducedMotion()
+  const [shown, setShown] = useState(reduce ? text : '')
+  useEffect(() => {
+    if (reduce || !text) {
+      setShown(text)
+      return
+    }
+    setShown('')
+    let i = 0
+    const id = setInterval(() => {
+      i += 2 // 2 caractères / tick = rythme nerveux, lisible
+      setShown(text.slice(0, i))
+      if (i >= text.length) clearInterval(id)
+    }, 18)
+    return () => clearInterval(id)
+  }, [text, reduce])
+  return <span className="whitespace-pre-wrap">{shown}</span>
 }
 
 // ─── Zone card ────────────────────────────────────────────────────────────────
@@ -388,7 +411,9 @@ function MessageBubble({
             : { backgroundColor: '#1d1d1f', color: '#fff' }
         }
       >
-        <span className="whitespace-pre-wrap">{msg.text}</span>
+        {isAjnaya
+          ? <TypewriterText text={msg.text ?? ''} />
+          : <span className="whitespace-pre-wrap">{msg.text}</span>}
 
         {/* Audio toggle — Ajnaya messages seulement */}
         {isAjnaya && (msg.tts_text || msg.text) && (
@@ -426,6 +451,9 @@ export default function AjnayaConversationModal({
   const [turn, setTurn] = useState<1 | 2 | 3>(1)
   const [zoneData, setZoneData] = useState<ZoneData | null>(null)
   const [identityId, setIdentityId] = useState<string | null>(null)
+  // Badge visiteur stable (FingerprintJS). AVANT : calculé puis jeté → 922 prospects
+  // perdus. MAINTENANT : gardé + envoyé au serveur pour tag funnel + retargeting.
+  const [visitorId, setVisitorId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playingMsgId, setPlayingMsgId] = useState<string | null>(null)
@@ -489,11 +517,13 @@ export default function AjnayaConversationModal({
       id: 'm-intro',
       role: 'ajnaya',
       type: 'text',
-      text: 'CDG, La Défense, Bercy... dites-moi votre zone — je vous dis combien ça paie ce soir.',
+      text: 'CDG, La Défense, Bercy... balance ta zone — je te dis combien ça paie ce soir.',
       timestamp: Date.now(),
     }])
 
-    getVisitorId().catch(() => {})
+    getVisitorId()
+      .then((r) => setVisitorId(r.visitorId))
+      .catch(() => {})
 
     // Si zone pré-remplie (depuis la search bar hero)
     if (initialZone && !initialSentRef.current) {
@@ -626,6 +656,7 @@ export default function AjnayaConversationModal({
             turn: currentTurn,
             zone_data: zoneData,
             identity_id: identityId,
+            visitor_id: visitorId,
           }),
         })
 
@@ -721,7 +752,7 @@ export default function AjnayaConversationModal({
               id: `err-${Date.now()}`,
               role: 'ajnaya',
               type: 'text',
-              text: 'Connexion vacillante — passons sur WhatsApp, je vous réponds en 2 minutes.',
+              text: 'Connexion qui flanche — passe sur WhatsApp, je te réponds en 2 minutes.',
               timestamp: Date.now(),
             },
           ]
@@ -730,7 +761,7 @@ export default function AjnayaConversationModal({
         setIsLoading(false)
       }
     },
-    [isLoading, sessionId, zoneData, identityId, playTTS]
+    [isLoading, sessionId, zoneData, identityId, visitorId, playTTS]
   )
 
   const handleSubmit = useCallback(
@@ -754,6 +785,8 @@ export default function AjnayaConversationModal({
   const waUrl = buildWAUrl({
     section: 'hero_zone',
     zone: zoneData?.zone_match ?? inputValue,
+    // Raccordement modal ↔ WhatsApp : la Pieuvre retrouve la session web du prospect.
+    ref: sessionId,
   })
 
   const showWACTA = turn >= 2 && !isLoading
@@ -852,7 +885,7 @@ export default function AjnayaConversationModal({
                         </div>
                       ) : (
                         <p className="text-[11px]" style={{ color: '#86868b' }}>
-                          Active · 247 chauffeurs
+                          En ligne · répond direct
                         </p>
                       )}
                     </div>
@@ -992,7 +1025,7 @@ export default function AjnayaConversationModal({
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       // §17 brièveté radicale : phrases ≤ 5 mots / aucune phrase
-                      placeholder={turn === 1 ? 'Votre zone ?' : 'Votre créneau ?'}
+                      placeholder={turn === 1 ? 'Ta zone ?' : 'Une autre zone ? Vas-y'}
                       inputMode="search"
                       enterKeyHint="send"
                       autoCapitalize="words"
