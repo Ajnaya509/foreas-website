@@ -304,7 +304,7 @@ function TarifsContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
             </span>
-            <span className="tabular-nums">147</span> chauffeurs en essai cette semaine
+            Ajnaya lit 7 plateformes en direct
           </span>
           <span className="text-white/20 hidden sm:inline">·</span>
           <span className="text-white/55 text-xs">
@@ -524,7 +524,7 @@ function TarifsContent() {
       <section className="py-14 sm:py-16 px-4 border-y border-white/[0.06]">
         <div className="max-w-4xl mx-auto">
           <p className="text-center text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-8" style={{ letterSpacing: '0.28em' }}>
-            MOYENNE 60 JOURS · 247 CHAUFFEURS PRO
+            OBJECTIFS VISÉS · PREMIERS 60 JOURS
           </p>
           <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
             {[
@@ -589,7 +589,7 @@ function TarifsContent() {
             </div>
           </div>
           <p className="text-center text-white/45 text-xs mt-6 max-w-2xl mx-auto">
-            Ces chiffres sortent de la moyenne sur 247 chauffeurs Pro après 60 jours. Pas tout le monde fait pareil. Karim fait +18&nbsp;%. Théodore fait +9&nbsp;% (et conduit 3h de moins).
+            Ce sont des objectifs visés, pas une promesse. Chaque chauffeur est différent : tes résultats dépendent de ton activité, de ta zone et de tes horaires.
           </p>
         </div>
       </section>
@@ -687,7 +687,7 @@ function TarifsContent() {
               <span>🔒 Stripe · SSL</span>
               <span>✓ 0&nbsp;€ aujourd'hui</span>
               <span>🛡️ Annulation 1 clic</span>
-              <span>⭐ 4,9/5 · 247 avis</span>
+              <span>✓ Sans engagement</span>
             </div>
             <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
               <p className="text-white/65 text-sm leading-relaxed text-left italic">
