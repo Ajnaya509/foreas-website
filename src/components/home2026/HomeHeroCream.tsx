@@ -257,12 +257,8 @@ export default function HomeHeroCream() {
             <span
               style={{
                 fontStyle: 'italic',
-                backgroundImage:
-                  'linear-gradient(135deg, #6C3CE0 0%, #8C52FF 35%, #00D4FF 100%)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                color: 'transparent',
+                // A — mono violet (décision Chandler) : sobre, premium, ownable. Fini le violet→cyan flashy.
+                color: '#8C52FF',
               }}
             >
               roule moins.

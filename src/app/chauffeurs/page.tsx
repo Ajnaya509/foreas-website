@@ -215,7 +215,7 @@ const microDetailsCards = [
   {
     icon: Smartphone,
     title: '3 apps ouvertes en permanence',
-    desc: 'Uber, Bolt, Heetch — vous switchez toute la journée. Aucune ne vous dit où aller ENTRE les courses.',
+    desc: 'Uber, Bolt, Heetch — tu switches toute la journée. Aucune ne te dit où aller ENTRE les courses.',
     stat: '3 apps',
   },
   {
@@ -244,8 +244,7 @@ const microDetailsCards = [
   {
     icon: Target,
     title: 'Tu subis la course au lieu de la choisir',
-    desc: 'Tu prends ce qui vient. Mais les chauffeurs qui gagnent +35% ne prennent pas ce qui vient — ils se positionnent.',
-    stat: '+35%',
+    desc: 'Tu prends ce qui vient. Les chauffeurs qui gagnent plus ne prennent pas ce qui vient — ils se positionnent avant la demande.',
   },
 ] as const
 
@@ -641,9 +640,9 @@ export default function ChauffeursPage() {
             {/* Scenario 1 */}
             <ScenarioCard time="06:30" timeColor="purple" title="Lundi matin, 6h30" index={0}>
               <p>
-                Vous vous levez. Vous ouvrez Uber. Zéro visibilité. Où aller ? CDG ? Orly ? Gare du Nord ?
-                Ajnaya vous dit : <span className="text-accent-cyan">&quot;3 vols arrivent à Orly T4 à 7h15, surge prévu +1.8x, 22 min de route.&quot;</span>
-                Vous savez exactement où être et pourquoi.
+                Tu te lèves. Tu ouvres Uber. Zéro visibilité. Où aller ? CDG ? Orly ? Gare du Nord ?
+                Ajnaya te dit : <span className="text-accent-cyan">&quot;3 vols arrivent à Orly T4 à 7h15, surge prévu +1.8x, 22 min de route.&quot;</span>
+                Tu sais exactement où être et pourquoi.
               </p>
             </ScenarioCard>
 
