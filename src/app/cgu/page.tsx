@@ -20,7 +20,7 @@ export default function CGUPage() {
             <h1 className="font-title text-3xl md:text-4xl font-bold text-white mb-2">
               Conditions Générales d&apos;Utilisation
             </h1>
-            <p className="font-sans text-sm text-white/45 mb-8 md:mb-12">Dernière mise à jour : Mars 2026</p>
+            <p className="font-sans text-sm text-white/45 mb-8 md:mb-12">Dernière mise à jour : Juin 2026</p>
           </motion.div>
 
           <motion.div
@@ -89,7 +89,23 @@ export default function CGUPage() {
             </div>
 
             <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
-              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">6. Abonnement et facturation</h2>
+              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">6. Contenu communautaire et tolérance zéro</h2>
+              <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
+                Le Service peut proposer des espaces communautaires permettant à l&apos;Utilisateur de publier, partager ou échanger du contenu — messages, commentaires, médias (ci-après le « Contenu Utilisateur »).
+              </p>
+              <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed mt-3">
+                FOREAS applique une politique de <strong className="text-white/80 font-semibold">tolérance zéro</strong> à l&apos;égard de tout contenu répréhensible et de tout comportement abusif. Sont strictement interdits, sans que cette liste soit limitative : les propos ou contenus haineux, discriminatoires, harcelants, menaçants, diffamatoires, violents, sexuellement explicites, illégaux, ainsi que le spam et l&apos;usurpation d&apos;identité.
+              </p>
+              <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed mt-3">
+                L&apos;Utilisateur est seul responsable du Contenu qu&apos;il publie et garantit disposer des droits nécessaires. Chaque Utilisateur dispose d&apos;outils pour <strong className="text-white/80 font-semibold">signaler</strong> un contenu répréhensible et <strong className="text-white/80 font-semibold">bloquer</strong> un autre Utilisateur. FOREAS s&apos;engage à examiner chaque signalement, à retirer tout Contenu répréhensible et à exclure son auteur dans un délai de <strong className="text-white/80 font-semibold">24 heures</strong>.
+              </p>
+              <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed mt-3">
+                En publiant du Contenu, l&apos;Utilisateur accepte ces conditions. Tout manquement entraîne le retrait immédiat du Contenu et la suspension ou la résiliation du compte, sans préavis ni remboursement.
+              </p>
+            </div>
+
+            <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
+              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">7. Abonnement et facturation</h2>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
                 L&apos;accès complet au Service est conditionné à la souscription d&apos;un abonnement payant. Les tarifs, modalités d&apos;abonnement, périodes d&apos;essai et conditions de renouvellement sont présentés sur le site <span className="text-white/80">foreas.xyz/tarifs</span> et peuvent être mis à jour par FOREAS à tout moment, avec un préavis raisonnable.
               </p>
@@ -102,7 +118,7 @@ export default function CGUPage() {
             </div>
 
             <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
-              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">7. Résiliation</h2>
+              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">8. Résiliation</h2>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
                 L&apos;Utilisateur peut résilier son abonnement à tout moment depuis son espace personnel ou en contactant FOREAS à <span className="text-white/80">contact@foreas.xyz</span>. La résiliation prend effet à l&apos;issue de la période d&apos;abonnement en cours ; aucun remboursement au prorata n&apos;est effectué sauf disposition légale contraire.
               </p>
@@ -112,7 +128,7 @@ export default function CGUPage() {
             </div>
 
             <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
-              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">8. Propriété intellectuelle</h2>
+              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">9. Propriété intellectuelle</h2>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
                 L&apos;ensemble des éléments constituant le Service — application, algorithmes, modèles d&apos;intelligence artificielle, interfaces, bases de données, contenus, marque FOREAS et logo — sont la propriété exclusive de FOREAS Labs et sont protégés par le droit de la propriété intellectuelle.
               </p>
@@ -122,7 +138,7 @@ export default function CGUPage() {
             </div>
 
             <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
-              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">9. Limitation de responsabilité</h2>
+              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">10. Limitation de responsabilité</h2>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
                 Le Service est fourni « en l&apos;état ». FOREAS s&apos;efforce d&apos;assurer la disponibilité et la fiabilité du Service, sans toutefois garantir une disponibilité ininterrompue ni l&apos;exactitude absolue des recommandations.
               </p>
@@ -135,7 +151,7 @@ export default function CGUPage() {
             </div>
 
             <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
-              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">10. Droit applicable et juridiction</h2>
+              <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">11. Droit applicable et juridiction</h2>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
                 Les présentes CGU sont soumises au droit français. En cas de litige, les parties s&apos;efforceront de trouver une solution amiable. À défaut d&apos;accord, les tribunaux compétents du ressort de Paris seront seuls compétents, sous réserve des règles de compétence impératives applicables aux consommateurs.
               </p>
