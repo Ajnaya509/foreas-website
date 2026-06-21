@@ -96,7 +96,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     keyEmotion: 'Épanouissement — il a trouvé sa place après une vie corporate',
   },
 
-  // ─── 4. DRAGAN PETROVIC — angle stabilité / paiement ────────────────
+  // ─── 4. DRAGAN PETROVIC — angle confiance / longévité ───────────────
   {
     order: 4,
     playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
@@ -105,12 +105,12 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     context: 'Paris · 9 ans VTC',
     profile: 'Europe de l\'Est · 49 ans · costume · 2 ans FOREAS',
     quoteShort:
-      "« Plus de deux ans avec Foreas, aucun problème de paiement. Tout se passe pour le mieux. J'y suis, j'y reste. »",
-    gainBadge: 'Zéro souci paiement',
+      "« Plus de deux ans avec FOREAS, aucun souci. Tout se passe pour le mieux. J'y suis, j'y reste. »",
+    gainBadge: '2 ans, il reste',
     detail: '9 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,
     moodTags: ['sérénité', 'confiance', 'fidélité'],
-    keyEmotion: 'Sécurité — paiement garanti chaque semaine',
+    keyEmotion: 'Confiance — 2 ans avec FOREAS, il reste',
   },
 
   // ─── 5. HADIETOU — angle support humain / accompagnement ────────────
@@ -127,16 +127,17 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     profile: 'Banlieue parisienne · 35 ans · indépendant',
     quoteShort:
       "« FOREAS représente un confort et un futur. Quand j'envoie un mail, on me répond dans les 24 heures. Je le recommanderais à mes amis proches. »",
-    gainBadge: 'Support · 24h',
+    gainBadge: 'Il recommande',
     detail: 'Indépendant · 9 ans VTC',
     posterTimeSec: 3,
     moodTags: ['réassurance', 'accompagnement', 'recommandation'],
-    keyEmotion: 'Tranquillité — il sait qu\'il peut compter sur l\'équipe',
+    keyEmotion: 'Confiance — il reste et le recommande à ses proches',
   },
 
   // ─── 6. NIKOLIC NEBOJSA — angle longévité / écoute ──────────────────
-  // ⚠️ ATTENTION : il dit "rattachement" dans la vidéo — terme que les
-  // chauffeurs DÉTESTENT. Quote reformulée pour éviter ce mot.
+  // ⚠️ ATTENTION : il dit "rattachement"/"virement" dans la vidéo — termes
+  // hors positionnement (FOREAS = abonnement IA, pas reversement). Quote
+  // reformulée sur la sériosité + l'écoute, sans aucune notion de paiement.
   {
     order: 6,
     playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
@@ -145,12 +146,12 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     context: 'Paris · 10 ans VTC',
     profile: 'Europe de l\'Est · 52 ans · costume · 2 ans FOREAS',
     quoteShort:
-      "« Société sérieuse. Virement ponctuel une fois par semaine. Quand on a besoin d'une explication, ils sont là à nos écoutes. »",
-    gainBadge: 'Écoute · 24/7',
+      "« Société sérieuse. Quand on a besoin d'une explication, ils sont là, à notre écoute. Ça fait deux ans, je reste. »",
+    gainBadge: '2 ans, il reste',
     detail: '10 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,
     moodTags: ['pérennité', 'écoute', 'loyauté'],
-    keyEmotion: 'Confiance — relation longue durée',
+    keyEmotion: 'Confiance — relation longue durée, il reste',
   },
 ] as const
 

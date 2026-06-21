@@ -1,47 +1,48 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Star, Users, MapPin, Video, MessageSquare } from 'lucide-react'
+import { Layers, Database, CreditCard, LogOut, MessageSquare } from 'lucide-react'
 
 /**
  * HomeProofStrip — bande preuve sociale entre Hero crème et Big Domino
  *
  * Spec :
  * - Fond crème edge (#EAE4D5) — transition douce vers le noir
- * - 5 micro-credentials en horizontal : Made in France · 247 chauffeurs ·
- *   51 zones · 4,9/5 · 6 témoignages vidéo
+ * - 6 micro-credentials VRAIS en horizontal : Fait en France · 7 plateformes lues ·
+ *   Données réelles · 0€ pour tester · Tu pars quand tu veux · WhatsApp
  * - Mobile : grid 2x3, scroll horizontal possible
  * - Desktop : ligne unique avec séparateurs subtils
  *
  * Skill foreas-copy-atomic : ancrage crédibilité immédiat avant le scroll
- *                            (anti-objection chauffeur méfiant "vous êtes qui ?")
+ *                            (anti-objection chauffeur méfiant "c'est qui derrière ?")
+ *                            Aucun chiffre faux — la bande chuchote des faits vérifiables.
  */
 export default function HomeProofStrip() {
   const items = [
     {
       icon: '🇫🇷',
-      label: 'Made in France',
-      detail: 'Paris · Lyon · Marseille',
+      label: 'Fait en France',
+      detail: 'code écrit à Paris',
     },
     {
-      icon: Users,
-      label: '247 chauffeurs',
-      detail: 'actifs ce mois',
+      icon: Layers,
+      label: '7 plateformes lues',
+      detail: 'Uber, Bolt, Heetch…',
     },
     {
-      icon: MapPin,
-      label: '51 zones',
-      detail: 'temps réel',
+      icon: Database,
+      label: 'Données réelles',
+      detail: 'pas une promesse',
     },
     {
-      icon: Star,
-      label: '4,9/5',
-      detail: '247 avis',
+      icon: CreditCard,
+      label: '0€ pour tester',
+      detail: 'carte, mais 0€ débité',
     },
     {
-      icon: Video,
-      label: '6 témoignages',
-      detail: 'face caméra',
+      icon: LogOut,
+      label: 'Tu pars quand tu veux',
+      detail: 'résiliation 1 clic',
     },
     {
       icon: MessageSquare,
@@ -67,7 +68,7 @@ export default function HomeProofStrip() {
           transition={{ duration: 0.5 }}
           className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-5 sm:gap-x-6"
         >
-          {items.map((item, i) => {
+          {items.map((item) => {
             const Icon = typeof item.icon === 'string' ? null : item.icon
             return (
               <div
@@ -101,12 +102,6 @@ export default function HomeProofStrip() {
                 >
                   {item.detail}
                 </p>
-                {/* Hide separator on last item */}
-                {i < items.length - 1 && (
-                  <div className="hidden lg:block absolute"
-                    aria-hidden="true"
-                  />
-                )}
               </div>
             )
           })}

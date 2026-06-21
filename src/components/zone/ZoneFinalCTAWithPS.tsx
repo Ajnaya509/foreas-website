@@ -47,24 +47,20 @@ export default function ZoneFinalCTAWithPS() {
             className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4"
             style={{ letterSpacing: '0.28em' }}
           >
-            7 JOURS · ZÉRO RISQUE · VOUS DÉCIDEZ
+            0&nbsp;€ AUJOURD&apos;HUI · SANS CARTE · TU COUPES EN 1 CLIC
           </p>
           <h2
             className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]"
             style={{ letterSpacing: '-0.045em' }}
           >
-            Dans 7 jours,{' '}
+            Teste 7 jours.{' '}
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-              vous saurez.
+              Tu verras vite.
             </span>
           </h2>
-          <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
-            Soit Ajnaya vous a fait gagner{' '}
-            <span className="text-[#F8FAFC] font-semibold tabular-nums">+28&nbsp;€/jour</span> de moyenne.<br className="hidden sm:block" />
-            Soit vous fermez WhatsApp. Et basta.
-          </p>
-          <p className="text-cyan-300/85 text-sm sm:text-base mb-10">
-            La seule question&nbsp;: préférez-vous savoir, ou pas&nbsp;?
+          <p className="text-white/75 text-base sm:text-lg mb-10 leading-relaxed">
+            Soit Ajnaya te sort plus de net. Soit tu coupes, et tu n&apos;as rien lâché.<br className="hidden sm:block" />
+            Toi seul tranches.
           </p>
 
           <a
@@ -72,11 +68,11 @@ export default function ZoneFinalCTAWithPS() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWAClick}
-            className="inline-flex items-center justify-center gap-2 sm:gap-3 px-8 sm:px-12 py-4 rounded-2xl text-base sm:text-lg font-extrabold transition-all bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white"
-            style={{ boxShadow: '0 0 100px rgba(16,185,129,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
+            className="inline-flex items-center justify-center gap-2 sm:gap-3 px-8 sm:px-12 py-4 rounded-2xl text-base sm:text-lg font-extrabold transition-all bg-gradient-to-r from-[#8C52FF] to-[#6C3CE0] hover:from-[#9A66FF] hover:to-[#7B4CF0] text-white"
+            style={{ boxShadow: '0 0 100px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
           >
             <MessageCircle className="w-5 h-5" />
-            Démarrer avec Ajnaya — 0&nbsp;€
+            Lance Ajnaya — 0&nbsp;€ aujourd&apos;hui
             <ArrowRight className="w-5 h-5" />
           </a>
 
@@ -84,17 +80,13 @@ export default function ZoneFinalCTAWithPS() {
             <span>🔒 Sans inscription</span>
             <span>✓ Sans carte</span>
             <span>🛡️ Sans engagement</span>
-            <span>⭐ 4,9/5 · 247 avis</span>
           </div>
 
           {/* PS signature humaine — Halbert "lettre d'un ami" */}
           <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
             <p className="text-white/65 text-sm leading-relaxed text-left italic">
-              <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si vous êtes arrivé jusqu&apos;ici et que vous ne cliquez pas, c&apos;est ok. Mais revenez dans 6 mois, et comparez. Vous serez au même point. Le seul truc qui aura changé, c&apos;est votre compteur d&apos;années perdues.
-              <br />
-              <br />
-              Si vous cliquez aujourd&apos;hui, vous avez 7 jours pour voir si on est sérieux. Si on ne l&apos;est pas, vous partez.{' '}
-              <span className="text-[#F8FAFC] font-semibold not-italic">Vous ne perdez rien. Vous testez juste.</span>
+              <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Tu peux fermer cette page, c&apos;est ton droit. Mais demain matin au volant, la question est la même&nbsp;: tu roules au hasard, ou quelqu&apos;un calcule pour toi&nbsp;?{' '}
+              <span className="text-[#F8FAFC] font-semibold not-italic">Vérifier te coûte 0&nbsp;€ et 7 jours.</span>
             </p>
             <p className="text-white/55 text-xs mt-4 text-left">
               — Chandler, fondateur FOREAS

@@ -247,7 +247,7 @@ export default function ZoneSearchBarHero() {
 
           {/* Trust strip sous la barre */}
           <p className="text-white/45 text-xs mt-3 tabular-nums">
-            Données réelles · 247 chauffeurs FOREAS · maj toutes les heures · sans inscription
+            Données réelles · 7 plateformes lues en direct · sans inscription
           </p>
         </motion.form>
 

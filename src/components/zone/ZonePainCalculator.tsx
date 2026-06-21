@@ -10,17 +10,20 @@ import { buildWAUrl } from '@/lib/whatsappLink'
  *
  * Schwartz problem-aware révélé : "tu donnes combien à Uber, en vrai ?"
  * Calcul live du net après commission/TVA/cotisations/gasoil.
- * Bandeau bénéfice : Ajnaya ratio passe à 22 €/h.
+ * Héros = la commission Uber perdue (rouge danger), pas le net.
  *
  * Design system : variant warm (rose subtle 0.07) — douleur reconnue,
  * pas froide. Heath Concrete : tous les chiffres tabular-nums.
+ *
+ * Source commission : table FOREAS platform_commission_rates — Uber 0,45.
  */
 export default function ZonePainCalculator() {
   const [grossFare, setGrossFare] = useState(25)
 
-  // Calcul net (commission Uber 25% + TVA 20% + cotisations URSSAF 11% + gasoil ~6%)
+  // Calcul net (commission Uber 45% + TVA 20% + cotisations URSSAF 11% + gasoil ~6%)
+  const UBER_COMMISSION_RATE = 0.45
   const breakdown = useMemo(() => {
-    const commission = grossFare * 0.25
+    const commission = grossFare * UBER_COMMISSION_RATE
     const afterCommission = grossFare - commission
     const tva = afterCommission * 0.166
     const afterTva = afterCommission - tva
@@ -76,11 +79,13 @@ export default function ZonePainCalculator() {
             className="text-3xl sm:text-4xl font-black text-[#F8FAFC] leading-tight"
             style={{ letterSpacing: '-0.035em' }}
           >
-            Combien donnez-vous à Uber sur une course de{' '}
-            <span className="bg-gradient-to-r from-rose-300 to-rose-400 bg-clip-text text-transparent">
-              {grossFare}&nbsp;€
+            Sur une course de{' '}
+            <span className="tabular-nums">{grossFare}&nbsp;€</span>, Uber t'en prend
+            jusqu'à{' '}
+            <span className="text-[#EF4444] tabular-nums">
+              {breakdown.commission.toFixed(2).replace('.', ',')}&nbsp;€
             </span>
-            <span className="text-white/65 font-bold">, en vrai&nbsp;?</span>
+            <span className="text-white/65 font-bold">.</span>
           </h2>
         </motion.div>
 
@@ -120,9 +125,31 @@ export default function ZonePainCalculator() {
             />
           </div>
 
+          {/* HÉROS — la commission Uber perdue, rouge danger, dominant */}
+          <div
+            className="rounded-xl p-5 sm:p-6 mb-5 border border-[#EF4444]/30 bg-[#EF4444]/[0.07]"
+          >
+            <p
+              className="text-[#EF4444]/90 text-[11px] uppercase font-extrabold flex items-center gap-2 mb-1.5"
+              style={{ letterSpacing: '0.2em' }}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444]" />
+              Ce qu'Uber te prend
+            </p>
+            <p
+              className="text-5xl sm:text-6xl font-black text-[#EF4444] tabular-nums leading-none"
+              style={{ letterSpacing: '-0.04em' }}
+            >
+              −{breakdown.commission.toFixed(2).replace('.', ',')}&nbsp;€
+            </p>
+            <p className="text-white/45 text-xs mt-2">
+              Commission de 45 % sur ta course brute.
+            </p>
+          </div>
+
           {/* Breakdown — chaque ligne tabular-nums */}
           <div className="space-y-2.5 mb-5">
-            <BreakdownLine label="Commission Uber (25 %)" value={breakdown.commission} negative />
+            <BreakdownLine label="Commission Uber (45 %)" value={breakdown.commission} negative />
             <BreakdownLine label="TVA (≈ 16,6 % sur net)" value={breakdown.tva} negative />
             <BreakdownLine label="Cotisations URSSAF (≈ 11 %)" value={breakdown.cotisations} negative />
             <BreakdownLine label="Gasoil estimé" value={breakdown.fuel} negative />
@@ -130,17 +157,16 @@ export default function ZonePainCalculator() {
 
           <div className="h-px bg-white/[0.08] my-4" />
 
-          {/* Résultat net */}
+          {/* Résultat net — secondaire, plus discret que le héros */}
           <div className="flex items-center justify-between">
             <p
-              className="text-white/65 text-xs uppercase font-extrabold flex items-center gap-2"
+              className="text-white/65 text-xs uppercase font-extrabold"
               style={{ letterSpacing: '0.2em' }}
             >
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-              Dans ta poche
+              Ce qu'il te reste dans la poche
             </p>
             <p
-              className="text-3xl sm:text-4xl font-black text-rose-300 tabular-nums"
+              className="text-2xl sm:text-3xl font-black text-white/80 tabular-nums"
               style={{ letterSpacing: '-0.03em' }}
             >
               {breakdown.net.toFixed(2).replace('.', ',')}&nbsp;€
@@ -158,11 +184,9 @@ export default function ZonePainCalculator() {
           style={{ boxShadow: '0 0 40px rgba(140,82,255,0.15)' }}
         >
           <p className="text-[#F8FAFC] text-base sm:text-lg leading-relaxed mb-5">
-            À <span className="text-rose-300 font-semibold tabular-nums">{breakdown.net.toFixed(2).replace('.', ',')}&nbsp;€</span>, vous travaillez pour{' '}
-            <span className="text-rose-300 font-semibold tabular-nums">{((breakdown.net / 0.5) || 0).toFixed(2).replace('.', ',')} €/h</span> environ.<br />
-            Ajnaya identifie les courses où ce ratio passe à{' '}
-            <span className="text-cyan-300 font-bold tabular-nums">22 €/h+</span>. Vous faites le même nombre de runs.{' '}
-            <span className="text-[#F8FAFC] font-semibold">Vous gagnez 3× plus.</span>
+            Tu bosses bien. Le problème, c'est pas toi — c'est les courses à vide
+            qu'on te refile. Ajnaya repère, en temps réel, celles qui te laissent
+            le plus en net. <span className="text-[#F8FAFC] font-semibold">Même volant, mieux placé.</span>
           </p>
 
           <a
@@ -174,7 +198,7 @@ export default function ZonePainCalculator() {
             style={{ boxShadow: '0 0 28px rgba(16,185,129,0.40)' }}
           >
             <MessageCircle className="w-4 h-4" />
-            Demander à Ajnaya combien vous pourriez gagner
+            Voir mes vraies courses rentables
             <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>

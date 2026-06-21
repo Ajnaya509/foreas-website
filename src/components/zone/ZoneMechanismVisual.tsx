@@ -47,7 +47,7 @@ export default function ZoneMechanismVisual() {
             className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
             style={{ letterSpacing: '0.28em' }}
           >
-            LA MÉCANIQUE · BREVETÉE
+            COMMENT ELLE FAIT
           </p>
           <h2
             className="text-3xl sm:text-4xl font-black text-[#F8FAFC] leading-tight mb-4"
@@ -55,7 +55,7 @@ export default function ZoneMechanismVisual() {
           >
             Pas un dashboard de plus.<br />
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-              L&apos;IA qui vous dit où aller — avant que vous y pensiez.
+              L&apos;IA qui te dit où aller — avant les autres.
             </span>
           </h2>
         </motion.div>
@@ -84,22 +84,22 @@ export default function ZoneMechanismVisual() {
           <MechanismCard
             icon={Satellite}
             label="CAPTE"
-            title="7 plateformes en temps réel"
-            desc="Uber, Bolt, Heetch, FreeNow + 3 sources publiques. Trafic, vols, événements, météo."
+            title="7 plateformes, en même temps"
+            desc="Uber, Bolt, Heetch, FreeNow + le trafic, les vols, les événements, la météo."
             delay={0}
           />
           <MechanismCard
             icon={Brain}
             label="ANALYSE"
-            title="Surge, flux, anticipation"
-            desc="Le surge tombe à 800 m de vous ? Ajnaya le sait avant que votre app de plateforme vous le dise."
+            title="Elle a un coup d'avance"
+            desc="Une zone se réveille à 800 m de toi ? Elle le sait avant que ton appli te le dise."
             delay={0.1}
           />
           <MechanismCard
             icon={MessageSquare}
             label="PARLE"
-            title="Vocal, texte, WhatsApp"
-            desc="Vous lui parlez ou vous lisez. À votre choix. Pendant que vous conduisez, elle travaille pour vous."
+            title="Elle parle, tu conduis"
+            desc="Vocal ou texte, comme tu veux. Pendant que tu roules, elle bosse pour toi."
             delay={0.2}
           />
         </div>
@@ -112,8 +112,8 @@ export default function ZoneMechanismVisual() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-[#F8FAFC]/80 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto mb-8"
         >
-          Pendant que vous conduisez, Ajnaya regarde 7 apps en parallèle. Quand un surge tombe à 800 m de vous, elle vous le dit avant les autres.{' '}
-          <span className="text-[#F8FAFC] font-semibold">C&apos;est tout. C&apos;est ça qui change tout.</span>
+          Pendant que tu conduis, Ajnaya regarde 7 applis en parallèle. Quand une zone se réveille à 800 m de toi, elle te le dit avant les autres.{' '}
+          <span className="text-[#F8FAFC] font-semibold">C&apos;est tout.</span>
         </motion.p>
 
         {/* CTA */}

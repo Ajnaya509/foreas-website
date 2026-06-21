@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, ArrowRight, LocateFixed } from 'lucide-react'
 import { useTypewriter } from '@/hooks/useTypewriter'
@@ -34,15 +34,13 @@ const QUICK_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu']
  *
  * Skills :
  * - foreas-design-system : variant blanc Apple absolu, palette restreinte
- * - foreas-copy-atomic : vouvoiement, social proof immédiat (147 ce soir)
+ * - foreas-copy-atomic : tutoiement, vérité mécanisme (Ajnaya lit 7 plateformes en direct)
  */
 export default function HomeHeroCream() {
   const [zoneInput, setZoneInput] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [geolocError, setGeolocError] = useState<string | null>(null)
-  // Site2026v77 nano-detail #9 : compteur live driver count (RPC + fallback)
-  const [liveDriverCount, setLiveDriverCount] = useState<number>(147)
   // Site2026v79 : feedback géoloc précis (zone détectée + distance + accuracy)
   const [locateFeedback, setLocateFeedback] = useState<{
     zone: string
@@ -51,24 +49,6 @@ export default function HomeHeroCream() {
   } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const geo = useGeolocation()
-
-  // Fetch driver count au mount + refresh toutes les 60s
-  useEffect(() => {
-    let cancelled = false
-    const fetchCount = async () => {
-      try {
-        const res = await fetch('/api/live-driver-count', { cache: 'no-store' })
-        if (!res.ok) return
-        const data = (await res.json()) as { count?: number }
-        if (!cancelled && typeof data.count === 'number') {
-          setLiveDriverCount(data.count)
-        }
-      } catch { /* fallback statique 147 */ }
-    }
-    fetchCount()
-    const id = setInterval(fetchCount, 60_000)
-    return () => { cancelled = true; clearInterval(id) }
-  }, [])
 
   const animatedPlaceholder = useTypewriter({
     texts: PLACEHOLDER_ZONES,
@@ -138,7 +118,7 @@ export default function HomeHeroCream() {
       const OUT_OF_RANGE_KM = 50
       if (!data.in_range || data.distance_km > OUT_OF_RANGE_KM) {
         setGeolocError(
-          `Vous êtes à ${data.distance_km} km de la zone FOREAS la plus proche (${data.zone_match}). Tapez la zone où vous comptez bosser ce soir.`
+          `Tu es à ${data.distance_km} km de la zone FOREAS la plus proche (${data.zone_match}). Tape la zone où tu comptes bosser ce soir.`
         )
         if (typeof window !== 'undefined' && window.fbq) {
           window.fbq('trackCustom', 'GeolocationOutOfRange', {
@@ -169,7 +149,7 @@ export default function HomeHeroCream() {
         })
       }
     } catch {
-      setGeolocError("Position trouvée — mais impossible de joindre Ajnaya à l'instant. Tapez votre zone.")
+      setGeolocError("Position trouvée — mais impossible de joindre Ajnaya à l'instant. Tape ta zone.")
     }
   }
 
@@ -234,7 +214,7 @@ export default function HomeHeroCream() {
         </div>
 
         <div className="relative w-full max-w-3xl mx-auto px-5 sm:px-8 text-center pt-24 pb-20 sm:pt-24 sm:pb-24">
-          {/* Chip live "147 chauffeurs en ligne" — neutre Apple */}
+          {/* Chip live "Ajnaya lit 7 plateformes en direct" — neutre Apple */}
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -253,11 +233,11 @@ export default function HomeHeroCream() {
               className="text-[11px] sm:text-xs font-semibold"
               style={{ color: '#1d1d1f' }}
             >
-              <span className="tabular-nums" id="hero-live-driver-count">{liveDriverCount}</span> chauffeurs FOREAS en ligne ce soir
+              Ajnaya lit <span className="tabular-nums">7</span> plateformes en direct
             </span>
           </motion.div>
 
-          {/* H1 — slogan : "Gagnez plus" noir Apple + "roulez moins." gradient brand sobre */}
+          {/* H1 — slogan : "Gagne plus" noir Apple + "roule moins." gradient brand sobre */}
           <motion.h1
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -272,7 +252,7 @@ export default function HomeHeroCream() {
               fontSize: 'clamp(2.75rem, 9.5vw, 6rem)',
             }}
           >
-            Gagnez plus,
+            Gagne plus,
             <br />
             <span
               style={{
@@ -285,7 +265,7 @@ export default function HomeHeroCream() {
                 color: 'transparent',
               }}
             >
-              roulez moins.
+              roule moins.
             </span>
           </motion.h1>
 
@@ -297,11 +277,11 @@ export default function HomeHeroCream() {
             className="text-base sm:text-lg leading-relaxed mb-10 sm:mb-12 max-w-2xl mx-auto"
             style={{ color: '#6e6e73' }}
           >
-            Tapez votre zone. Ajnaya scanne{' '}
+            Donne ta zone. Ajnaya lit{' '}
             <strong style={{ color: '#1d1d1f', fontWeight: 700 }}>
               Uber, Bolt, Heetch
             </strong>{' '}
-            + 4 autres plateformes — vous dit où foncer ce soir.
+            + 4 autres en direct et te dit combien ça paie ce soir — avant de démarrer.
           </motion.p>
 
           {/* Search bar — blanc pur Apple avec ombre précise */}
@@ -345,7 +325,7 @@ export default function HomeHeroCream() {
                 onChange={(e) => setZoneInput(e.target.value)}
                 onFocus={() => setHasInteracted(true)}
                 placeholder={
-                  hasInteracted ? 'Tapez votre zone…' : animatedPlaceholder
+                  hasInteracted ? 'Ta zone…' : animatedPlaceholder
                 }
                 autoComplete="off"
                 spellCheck={false}
@@ -362,7 +342,7 @@ export default function HomeHeroCream() {
                   boxShadow: 'none',
                   WebkitTapHighlightColor: 'transparent',
                 }}
-                aria-label="Votre zone d'opération"
+                aria-label="Ta zone d'opération"
               />
 
               {/* Bouton géoloc — pin live qui suit la position du chauffeur */}
@@ -421,7 +401,7 @@ export default function HomeHeroCream() {
                   color: '#ffffff',
                 }}
               >
-                Voir
+                Voir combien
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
@@ -507,7 +487,7 @@ export default function HomeHeroCream() {
                   letterSpacing: '0.18em',
                 }}
               >
-                Essayez :
+                Essaie :
               </span>
               {QUICK_ZONES.map((z) => (
                 <button

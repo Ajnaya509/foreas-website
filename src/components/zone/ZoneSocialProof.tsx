@@ -43,19 +43,19 @@ export default function ZoneSocialProof() {
             className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
             style={{ letterSpacing: '0.28em' }}
           >
-            VRAIS CHAUFFEURS · VRAIS VISAGES · VRAIS VIREMENTS
+            6 CHAUFFEURS · LEUR VISAGE · LEUR VOIX
           </p>
           <h2
             className="text-3xl sm:text-4xl font-black text-[#F8FAFC] mb-3"
             style={{ letterSpacing: '-0.035em' }}
           >
-            Pas des promesses.{' '}
+            Pas moi qui le dis.{' '}
             <span className="bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">
-              Des virements.
+              Eux.
             </span>
           </h2>
           <p className="text-white/55 text-sm">
-            6 chauffeurs FOREAS face caméra. Cliquez pour les écouter.
+            Des chauffeurs comme toi. Tu cliques, tu les écoutes. Personne ne lit un script.
           </p>
         </motion.div>
 
@@ -72,7 +72,7 @@ export default function ZoneSocialProof() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-center text-white/45 text-xs mb-6 max-w-xl mx-auto"
         >
-          Ces 6 chauffeurs ont accepté que leur visage et leur voix apparaissent. Vous pouvez leur écrire — l&apos;app FOREAS leur ouvre le DM si vous rejoignez.
+          Ces 6 chauffeurs ont accepté que leur visage et leur voix apparaissent. Tu peux leur écrire — l&apos;app FOREAS leur ouvre le DM si tu rejoins.
         </motion.p>
 
         {/* CTA */}

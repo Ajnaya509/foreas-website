@@ -37,7 +37,7 @@ export default function ZonePlanTimeline() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 26 }}
           className="text-center mb-12"
         >
           <p
@@ -50,34 +50,42 @@ export default function ZonePlanTimeline() {
             className="text-3xl sm:text-4xl font-black text-[#F8FAFC] leading-tight"
             style={{ letterSpacing: '-0.035em' }}
           >
-            Vous cliquez. Ajnaya vous briefe.<br />
+            Tu cliques. Tu conduis pareil.<br />
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-              Vendredi vous avez votre réponse.
+              Tu regardes l&apos;écart.
             </span>
           </h2>
         </motion.div>
 
         {/* Timeline 3 steps */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-10">
+        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-10">
+          {/* Connecteur 1px entre les dots (desktop) */}
+          <div
+            className="hidden md:block absolute top-[52px] left-[16%] right-[16%] h-px pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(to right, rgba(0,212,255,0.30), rgba(140,82,255,0.30))',
+            }}
+          />
           <PlanStep
             n={1}
-            timestamp="AUJOURD'HUI · 90 SEC"
-            title="Vous rejoignez via WhatsApp"
-            desc="Pas de carte. Pas de formulaire. Vous envoyez « go » — c'est tout."
+            timestamp="90 SECONDES"
+            title="Tu envoies « go » sur WhatsApp"
+            desc="Pas de carte. Pas de formulaire. Un message, c'est tout."
             delay={0}
           />
           <PlanStep
             n={2}
-            timestamp="DEMAIN · 1 MESSAGE"
-            title="Ajnaya vous envoie vos 3 zones"
-            desc="Au réveil. Avec l'ordre optimal pour votre journée."
+            timestamp="CHAQUE MATIN"
+            title="Ajnaya t'envoie tes zones"
+            desc="Au réveil, dans WhatsApp. Tu conduis comme d'habitude."
             delay={0.1}
           />
           <PlanStep
             n={3}
-            timestamp="VENDREDI · 1 CHIFFRE"
-            title="Vous comparez votre net"
-            desc="Si c'est mieux, vous restez. Si c'est pareil, vous partez sans rien payer."
+            timestamp="QUAND TU VEUX"
+            title="Tu compares ton net"
+            desc="Mieux, tu restes. Pareil, tu pars — sans avoir payé un centime."
             delay={0.2}
             highlight
           />
@@ -88,7 +96,7 @@ export default function ZonePlanTimeline() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 26, delay: 0.3 }}
           className="text-center"
         >
           <a
@@ -104,7 +112,7 @@ export default function ZonePlanTimeline() {
             <ArrowRight className="w-5 h-5" />
           </a>
           <p className="text-white/45 text-xs mt-4 tabular-nums">
-            🔒 Stripe SSL · ✓ 0 € aujourd&apos;hui · 🛡️ Annulation 1 clic · ⭐ 4,9/5
+            0 € aujourd&apos;hui · Sans carte · Annulation en 1 clic
           </p>
         </motion.div>
       </div>
@@ -132,7 +140,7 @@ function PlanStep({
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay }}
+      transition={{ type: 'spring', stiffness: 260, damping: 26, delay }}
       className={`relative rounded-2xl p-6 sm:p-7 border backdrop-blur-sm transition-all ${
         highlight
           ? 'border-violet-500/30 bg-gradient-to-b from-violet-900/15 to-black'
