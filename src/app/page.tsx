@@ -65,11 +65,9 @@ const JSON_LD = {
         priceCurrency: 'EUR',
         description: 'Essai 7 jours gratuit, sans inscription, sans carte.',
       },
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        reviewCount: '247',
-      },
+      // aggregateRating retiré : pas d'avis vérifiables. Un faux rich-snippet de notation
+      // = risque pénalité Google + pratique commerciale trompeuse. À remettre quand de
+      // vrais avis (source auditable) existeront.
     },
   ],
 }

@@ -454,6 +454,10 @@ export async function POST(request: NextRequest) {
       visitor_id?: string | null
     }
 
+    // Badge appareil durable posé par le middleware (1ère partie, survit au localStorage).
+    // Ancre serveur stable pour le répertoire d'identité, en plus du fingerprint client.
+    const device_cookie_id = request.cookies.get('foreas_vid')?.value ?? null
+
     if (!message?.trim()) {
       return NextResponse.json({ error: 'message requis' }, { status: 400 })
     }
@@ -471,7 +475,8 @@ export async function POST(request: NextRequest) {
         zone_match:    resolvedZoneData?.zone_match,
         zone_category: inferZoneCategory(resolvedZoneData?.zone_match ?? message),
         sanitized:     raw && !resolvedZoneData?.has_data && raw.has_data ? true : false,
-        visitor_id,    // badge visiteur stable → dédup + retargeting des prospects anonymes
+        visitor_id,        // badge fingerprint client
+        device_cookie_id,  // badge appareil durable serveur (1ère partie)
       })
     } else if (turn === 2) {
       recordFunnelEvent('home_modal_creneau_given', session_id, {
@@ -506,9 +511,10 @@ export async function POST(request: NextRequest) {
           metadata_source: 'home_modal_v1',
           turn,
           zone_data: resolvedZoneData,
-          // Badge visiteur anonyme — la Pieuvre peut créer/relier une identité même
-          // sans téléphone (clé de stitching modal ↔ WhatsApp ↔ app).
+          // Badges anonymes — la Pieuvre (resolve_identity) peut créer/relier une
+          // identité même sans téléphone (clés de stitching modal ↔ WhatsApp ↔ app).
           visitor_id,
+          device_cookie_id,
         } as Parameters<typeof callPieuvreBrain>[0]['context']
 
         const result = await callPieuvreBrain({
