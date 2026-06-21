@@ -6,6 +6,7 @@ import Preloader from '@/components/Preloader'
 import GrainOverlay from '@/components/GrainOverlay'
 import AjnayaWidget from '@/components/AjnayaWidget'
 import { ConsentBanner } from '@/components/ConsentBanner'
+import { PostHogProvider } from '@/components/PostHogProvider'
 import { TikTokPixel } from '@/components/TikTokPixel'
 import { MetaPixel } from '@/components/MetaPixel'
 import { Analytics } from '@vercel/analytics/react'
@@ -110,7 +111,7 @@ export default function RootLayout({
         <TikTokPixel />
         <MetaPixel />
         <Preloader />
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
         <GrainOverlay />
         <AjnayaWidget />
         <ConsentBanner />

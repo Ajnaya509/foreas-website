@@ -7,6 +7,7 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { expandPoolCode } from '@/lib/expandPoolCode'
+import posthog from 'posthog-js'
 
 /**
  * AjnayaConversationModal — Pieuvre Brain + ElevenLabs v3 (Site2026v73)
@@ -523,7 +524,11 @@ export default function AjnayaConversationModal({
     }])
 
     getVisitorId()
-      .then((r) => setVisitorId(r.visitorId))
+      .then((r) => {
+        setVisitorId(r.visitorId)
+        // Relie les events PostHog à notre badge (le répertoire d'identité).
+        try { posthog.register({ foreas_visitor_id: r.visitorId }) } catch { /* noop */ }
+      })
       .catch(() => {})
 
     // Si zone pré-remplie (depuis la search bar hero)
@@ -675,8 +680,11 @@ export default function AjnayaConversationModal({
           modal_zone_category?: 'disney' | 'idf' | 'region' | 'unknown'
         }
 
-        // Persist identity_id pour tracking cross-turn
-        if (data.identity_id) setIdentityId(data.identity_id)
+        // Persist identity_id pour tracking cross-turn + lien PostHog (= le répertoire)
+        if (data.identity_id) {
+          setIdentityId(data.identity_id)
+          try { posthog.identify(data.identity_id) } catch { /* noop */ }
+        }
 
         // Zone data
         if (data.zone_data) setZoneData(data.zone_data)
