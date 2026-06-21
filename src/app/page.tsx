@@ -1,21 +1,23 @@
 import type { Metadata } from 'next'
-import Footer from '@/components/Footer'
+import dynamic from 'next/dynamic'
+// ─── Above-the-fold (critique pour le 1er rendu) : statique ───
 import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
 import HomeHeroCream from '@/components/home2026/HomeHeroCream'
 import HomeProofStrip from '@/components/home2026/HomeProofStrip'
 import HomeBigDomino from '@/components/home2026/HomeBigDomino'
-// AjnayaFloatingBubble désactivé temporairement — Site2026v74
-// Conflit avec hero search bar + modal : 2 portes Ajnaya = attention splittée + churn
-// On focus sur UNE seule entrée (hero) qui convertit. Ré-activable plus tard sur scroll bottom.
-// import AjnayaFloatingBubble from '@/components/home2026/AjnayaFloatingBubble'
-import LiveSocialProofToasts from '@/components/home2026/LiveSocialProofToasts'
-import ExitIntentModal from '@/components/home2026/ExitIntentModal'
-import ZoneMechanismVisual from '@/components/zone/ZoneMechanismVisual'
-import ZoneSocialProof from '@/components/zone/ZoneSocialProof'
-import ZonePainCalculator from '@/components/zone/ZonePainCalculator'
-import ZonePlanTimeline from '@/components/zone/ZonePlanTimeline'
-import ZoneCapPartnerCTA from '@/components/zone/ZoneCapPartnerCTA'
-import ZoneFinalCTAWithPS from '@/components/zone/ZoneFinalCTAWithPS'
+
+// ─── Below-the-fold : code-split (SSR conservé pour le SEO, JS client à la demande) ───
+// → allège fortement le bundle initial = 1er rendu mobile ultra-rapide.
+const ZoneMechanismVisual = dynamic(() => import('@/components/zone/ZoneMechanismVisual'))
+const ZoneSocialProof = dynamic(() => import('@/components/zone/ZoneSocialProof')) // Mux vidéo + embla (le + lourd)
+const ZonePainCalculator = dynamic(() => import('@/components/zone/ZonePainCalculator'))
+const ZonePlanTimeline = dynamic(() => import('@/components/zone/ZonePlanTimeline'))
+const ZoneCapPartnerCTA = dynamic(() => import('@/components/zone/ZoneCapPartnerCTA'))
+const ZoneFinalCTAWithPS = dynamic(() => import('@/components/zone/ZoneFinalCTAWithPS'))
+const Footer = dynamic(() => import('@/components/Footer'))
+// Overlays non critiques (timés / sur interaction) → chargés à la demande
+const LiveSocialProofToasts = dynamic(() => import('@/components/home2026/LiveSocialProofToasts'))
+const ExitIntentModal = dynamic(() => import('@/components/home2026/ExitIntentModal'))
 
 export const metadata: Metadata = {
   title: 'FOREAS — Gagne plus, roule moins. L\'IA des chauffeurs VTC.',

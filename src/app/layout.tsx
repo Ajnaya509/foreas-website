@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
+import dynamic from 'next/dynamic'
 import './globals.css'
 import Preloader from '@/components/Preloader'
 import GrainOverlay from '@/components/GrainOverlay'
-import AjnayaWidget from '@/components/AjnayaWidget'
+
+// Widget chat flottant (présent sur TOUTES les pages) → code-split : sort du bundle
+// initial pour ne pas peser sur le 1er rendu. Se charge en chunk séparé après le paint.
+const AjnayaWidget = dynamic(() => import('@/components/AjnayaWidget'))
 import { ConsentBanner } from '@/components/ConsentBanner'
 import { PostHogProvider } from '@/components/PostHogProvider'
 import { TikTokPixel } from '@/components/TikTokPixel'
@@ -57,14 +61,14 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'FOREAS | Pilote ton activité VTC avec Ajnaya',
-  description: 'Ajnaya aide les chauffeurs VTC à gagner plus sur Uber, Bolt et Heetch. +35% de revenus visés à Paris.',
+  title: 'FOREAS — Gagne plus, roule moins. L\'IA des chauffeurs VTC.',
+  description: 'L\'IA Ajnaya te dit où aller en temps réel — Uber, Bolt, Heetch + 4 autres lues en direct. Tape ta zone, vois combien ça paie ce soir.',
   keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'Heetch', 'revenus', 'Ajnaya', 'IA chauffeur', 'Paris'],
   authors: [{ name: 'FOREAS Labs' }],
   metadataBase: new URL('https://foreas.xyz'),
   openGraph: {
-    title: 'FOREAS | Même travail. Plus de revenus.',
-    description: 'Tes revenus VTC pilotés par Ajnaya. Zéro friction. +35% visés à Paris.',
+    title: 'FOREAS — Gagne plus, roule moins',
+    description: 'L\'IA Ajnaya te dit où aller. Tape ta zone, vois combien ça paie ce soir — avant de démarrer.',
     url: 'https://foreas.xyz',
     siteName: 'FOREAS',
     locale: 'fr_FR',
@@ -72,8 +76,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FOREAS | Même travail. Plus de revenus.',
-    description: 'Tes revenus VTC pilotés par Ajnaya. Zéro friction. +35% visés à Paris.',
+    title: 'FOREAS — Gagne plus, roule moins',
+    description: 'L\'IA Ajnaya te dit où aller. Tape ta zone, vois combien ça paie ce soir — avant de démarrer.',
   },
   robots: {
     index: true,

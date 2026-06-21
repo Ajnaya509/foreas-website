@@ -1,12 +1,16 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { MapPin, ArrowRight, LocateFixed } from 'lucide-react'
 import { useTypewriter } from '@/hooks/useTypewriter'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import AjnayaConversationModal from './AjnayaConversationModal'
 import ZoneAutocomplete from './ZoneAutocomplete'
+
+// Modale lourde (posthog + fingerprint + carte zone) → lazy : ne charge QU'à l'ouverture.
+// Le hero peint sans elle = LCP plus rapide, surtout sur mobile.
+const AjnayaConversationModal = dynamic(() => import('./AjnayaConversationModal'), { ssr: false })
 
 const PLACEHOLDER_ZONES = [
   'Aéroport CDG…',
