@@ -651,6 +651,8 @@ export default function AjnayaConversationModal({
           zone: message,
         })
       } catch { /* silencieux */ }
+      // Tunnel natif PostHog (funnels + replay rattachés à la personne)
+      try { posthog.capture('home_modal_zone_searched', { turn: currentTurn, zone: message }) } catch { /* noop */ }
 
       try {
         const res = await fetch('/api/ajnaya/home-modal', {
@@ -977,6 +979,14 @@ export default function AjnayaConversationModal({
                             zone_category: modalZoneCategory,
                             clarify_branch: clarifyBranchDetected,
                           })
+                          // KPI ultime côté PostHog (funnel + replay de qui a cliqué)
+                          try {
+                            posthog.capture('home_modal_wa_clicked', {
+                              turn,
+                              zone: zoneData?.zone_match,
+                              zone_category: modalZoneCategory,
+                            })
+                          } catch { /* noop */ }
                         }}
                         className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-white font-semibold text-[14px] transition-all hover:opacity-92 active:scale-[0.98]"
                         style={{

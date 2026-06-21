@@ -14,8 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${BASE}/`,                                 lastModified: now, changeFrequency: 'weekly',  priority: 1.0 },
     { url: `${BASE}/chauffeurs`,                       lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
-    { url: `${BASE}/partenaires`,                      lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${BASE}/tarifs`,                           lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+    { url: `${BASE}/professionnels`,                   lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/tarifs2`,                          lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
     // /ou-ca-paie — Hero Search Bar Ajnaya v1 (Site2026v65)
     { url: `${BASE}/ou-ca-paie`,                       lastModified: now, changeFrequency: 'daily',   priority: 0.95 },

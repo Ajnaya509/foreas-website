@@ -30,6 +30,20 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         defaults: '2026-05-30',
         person_profiles: 'identified_only',
         opt_out_capturing_by_default: true, // RGPD : rien tant que pas de consentement
+
+        // ── CAPTURE MAXIMALE (profiter dans les moindres détails) ──────────────
+        autocapture: true,            // tous les clics / soumissions, sans code
+        capture_pageview: true,       // vues de page (SPA history)
+        capture_pageleave: true,      // temps passé + sorties (bounce réel)
+        capture_performance: true,    // Web Vitals : vitesse perçue par le chauffeur
+        enable_heatmaps: true,        // cartes de chaleur (où ils cliquent / rage clicks)
+        capture_exceptions: true,     // erreurs JS = bugs qui font fuir, remontés tout seuls
+        rageclick: true,              // clics de frustration = signaux de friction
+        // Rejeu de session : on REGARDE le parcours. Masque les champs sensibles (RGPD).
+        session_recording: {
+          maskAllInputs: true,                 // téléphone / champs = masqués
+          maskTextSelector: '[data-private]',  // opt-out manuel par élément
+        },
       })
     }
 
