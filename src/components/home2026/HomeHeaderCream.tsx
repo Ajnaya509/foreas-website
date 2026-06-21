@@ -93,10 +93,11 @@ export default function HomeHeaderCream() {
                 href={subscribeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:bg-black active:scale-95"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:opacity-90 active:scale-95"
                 style={{
-                  backgroundColor: '#1d1d1f',
+                  background: 'linear-gradient(135deg, #8C52FF, #6C3CE0)',
                   color: '#ffffff',
+                  boxShadow: '0 6px 20px -6px rgba(140,82,255,0.5)',
                 }}
               >
                 <MessageCircle className="w-3.5 h-3.5" />
@@ -165,7 +166,7 @@ export default function HomeHeaderCream() {
                   rel="noopener noreferrer"
                   onClick={() => setMobileOpen(false)}
                   className="mt-3 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-full text-white text-sm font-semibold active:scale-95"
-                  style={{ backgroundColor: '#1d1d1f' }}
+                  style={{ background: 'linear-gradient(135deg, #8C52FF, #6C3CE0)', boxShadow: '0 8px 24px -8px rgba(140,82,255,0.5)' }}
                 >
                   <MessageCircle className="w-4 h-4" />
                   Souscrire — discuter avec Ajnaya

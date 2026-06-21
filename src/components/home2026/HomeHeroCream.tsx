@@ -395,10 +395,11 @@ export default function HomeHeroCream() {
                 type="submit"
                 disabled={!zoneInput.trim()}
                 aria-label="Voir le tarif horaire"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:bg-black active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: '#1d1d1f',
+                  background: 'linear-gradient(135deg, #8C52FF, #6C3CE0)',
                   color: '#ffffff',
+                  boxShadow: '0 6px 20px -6px rgba(140,82,255,0.5)',
                 }}
               >
                 Voir combien
@@ -411,7 +412,7 @@ export default function HomeHeroCream() {
                 disabled={!zoneInput.trim()}
                 aria-label="Voir le tarif horaire"
                 className="sm:hidden w-9 h-9 rounded-full text-white flex items-center justify-center transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#1d1d1f' }}
+                style={{ background: 'linear-gradient(135deg, #8C52FF, #6C3CE0)', boxShadow: '0 6px 18px -6px rgba(140,82,255,0.5)' }}
               >
                 <ArrowRight className="w-4 h-4" />
               </button>
