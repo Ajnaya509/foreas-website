@@ -135,7 +135,21 @@ function TypewriterText({ text }: { text: string }) {
     }, 18)
     return () => clearInterval(id)
   }, [text, reduce])
-  return <span className="whitespace-pre-wrap">{shown}</span>
+  const done = shown.length >= text.length
+  return (
+    <span className="whitespace-pre-wrap">
+      {shown}
+      {!reduce && !done && text && (
+        <motion.span
+          aria-hidden
+          className="inline-block w-[2px] h-[0.95em] ml-px rounded-full align-[-0.1em]"
+          style={{ backgroundColor: '#6C3CE0' }}
+          animate={{ opacity: [1, 0.15, 1] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+    </span>
+  )
 }
 
 // ─── Zone card ────────────────────────────────────────────────────────────────
@@ -405,12 +419,21 @@ function MessageBubble({
     >
       <div
         className={`max-w-[84%] px-3.5 py-2.5 text-sm leading-relaxed ${
-          isAjnaya ? 'rounded-2xl rounded-bl-sm' : 'rounded-2xl rounded-br-sm'
+          isAjnaya ? 'rounded-2xl rounded-bl-md' : 'rounded-2xl rounded-br-md'
         }`}
         style={
           isAjnaya
-            ? { backgroundColor: '#f5f5f7', color: '#1d1d1f' }
-            : { backgroundColor: '#1d1d1f', color: '#fff' }
+            ? {
+                backgroundColor: '#f4f4f6',
+                color: '#1d1d1f',
+                border: '1px solid rgba(0,0,0,0.04)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 10px 26px -16px rgba(0,0,0,0.18)',
+              }
+            : {
+                backgroundColor: '#1d1d1f',
+                color: '#fff',
+                boxShadow: '0 6px 20px -10px rgba(29,29,31,0.55)',
+              }
         }
       >
         {isAjnaya
@@ -916,7 +939,13 @@ export default function AjnayaConversationModal({
               </div>
 
               {/* ── Messages ── */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 min-h-0">
+              <div
+                className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 min-h-0"
+                style={{
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0, black 14px, black 100%)',
+                  maskImage: 'linear-gradient(to bottom, transparent 0, black 14px, black 100%)',
+                }}
+              >
                 {messages.map((msg) => (
                   <MessageBubble
                     key={msg.id}
@@ -1037,52 +1066,49 @@ export default function AjnayaConversationModal({
                   className="px-4 pb-4 pt-2.5 flex-shrink-0 border-t"
                   style={{ borderColor: 'rgba(0,0,0,0.06)' }}
                 >
-                  <form onSubmit={handleSubmit} className="flex gap-2 items-center">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      // §17 brièveté radicale : phrases ≤ 5 mots / aucune phrase
-                      placeholder={turn === 1 ? 'Ta zone ?' : 'Une autre zone ? Vas-y'}
-                      inputMode="search"
-                      enterKeyHint="send"
-                      autoCapitalize="words"
-                      // Design System §11 : input field focus border cyanElectric + glowCyan
-                      className="flex-1 text-[14px] px-3.5 py-2.5 rounded-xl outline-none transition-all"
-                      style={{
-                        backgroundColor: '#f5f5f7',
-                        border: '1px solid transparent',
-                        color: '#1d1d1f',
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = 'rgba(0, 212, 255, 0.45)'
-                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 212, 255, 0.18)'
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = 'transparent'
-                        e.target.style.boxShadow = 'none'
-                      }}
-                      disabled={isLoading}
-                      autoComplete="off"
-                    />
-                    <motion.button
-                      type="submit"
-                      disabled={isLoading || !inputValue.trim()}
-                      whileTap={{ scale: 0.93 }}
-                      className="p-2.5 rounded-xl transition-all disabled:opacity-35"
-                      style={{ backgroundColor: '#1d1d1f', color: '#fff' }}
+                  <form onSubmit={handleSubmit}>
+                    {/* Composer pilule — input + envoi dans une seule forme (réf assistant-ui / Gemini) */}
+                    <div
+                      className="flex items-center gap-2 rounded-2xl pl-4 pr-1.5 py-1.5 border border-transparent transition-all focus-within:border-[#00D4FF]/40 focus-within:ring-4 focus-within:ring-[#00D4FF]/12"
+                      style={{ backgroundColor: '#f5f5f7' }}
                     >
-                      {isLoading ? (
-                        <motion.div
-                          className="w-4 h-4 rounded-full border-2 border-white/25 border-t-white"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 0.75, repeat: Infinity, ease: 'linear' }}
-                        />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
-                    </motion.button>
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder={turn === 1 ? 'Ta zone ?' : 'Une autre zone ?'}
+                        inputMode="search"
+                        enterKeyHint="send"
+                        autoCapitalize="words"
+                        className="flex-1 bg-transparent text-[15px] outline-none border-none"
+                        style={{ color: '#1d1d1f' }}
+                        disabled={isLoading}
+                        autoComplete="off"
+                      />
+                      <motion.button
+                        type="submit"
+                        disabled={isLoading || !inputValue.trim()}
+                        whileTap={{ scale: 0.9 }}
+                        className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0 transition-colors"
+                        style={{
+                          backgroundColor: inputValue.trim() ? '#6C3CE0' : '#d1d1d6',
+                          color: '#fff',
+                          boxShadow: inputValue.trim() ? '0 4px 14px -4px rgba(108,60,224,0.5)' : 'none',
+                        }}
+                        aria-label="Envoyer"
+                      >
+                        {isLoading ? (
+                          <motion.div
+                            className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 0.75, repeat: Infinity, ease: 'linear' }}
+                          />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </motion.button>
+                    </div>
                   </form>
                 </div>
               )}
