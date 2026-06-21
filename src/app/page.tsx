@@ -18,13 +18,13 @@ import ZoneCapPartnerCTA from '@/components/zone/ZoneCapPartnerCTA'
 import ZoneFinalCTAWithPS from '@/components/zone/ZoneFinalCTAWithPS'
 
 export const metadata: Metadata = {
-  title: 'FOREAS — Gagnez plus, roulez moins. L\'IA des chauffeurs VTC.',
+  title: 'FOREAS — Gagne plus, roule moins. L\'IA des chauffeurs VTC.',
   description:
-    'L\'IA Ajnaya vous dit où aller en temps réel. Tarif horaire moyen, demande relative, pool optimal — sur 51 zones VTC. 247 chauffeurs FOREAS savent. Et vous ?',
+    'L\'IA Ajnaya te dit où aller en temps réel. Tarif horaire moyen, demande, pool optimal — sur 51 zones VTC. Tape ta zone, vois combien ça paie ce soir.',
   openGraph: {
-    title: 'FOREAS — Gagnez plus, roulez moins',
+    title: 'FOREAS — Gagne plus, roule moins',
     description:
-      'L\'IA Ajnaya vous dit où aller. Tapez votre zone. 247 chauffeurs vous attendent dans la communauté.',
+      'L\'IA Ajnaya te dit où aller. Tape ta zone, vois combien ça paie ce soir — avant de démarrer.',
     type: 'website',
     locale: 'fr_FR',
     url: 'https://foreas.xyz/',
@@ -42,7 +42,7 @@ const JSON_LD = {
       '@type': 'WebPage',
       '@id': 'https://foreas.xyz/',
       url: 'https://foreas.xyz/',
-      name: 'FOREAS — Gagnez plus, roulez moins',
+      name: 'FOREAS — Gagne plus, roule moins',
       description:
         'L\'IA Ajnaya pour chauffeurs VTC : où aller, quand, et combien gagner.',
       inLanguage: 'fr-FR',
