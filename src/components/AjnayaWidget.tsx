@@ -683,24 +683,23 @@ export default function AjnayaWidget() {
             {/* Orbe Ajnaya — quiet premium (Site2026v100) : 56px, mono-violet,
                 une seule respiration douce 1,8s (§17 design system, 33 BPM).
                 Fini les anneaux qui tournent en boucle = confidence silencieuse. */}
+            {/* Orbe glass Vision Pro — STATIQUE (aucune animation en boucle, MASTER R2).
+                Verre dépoli + glow violet fixe. Apparaît au scroll, ouvre le chat. */}
             <button
               onClick={() => setIsOpen(true)}
-              className="relative w-14 h-14 flex items-center justify-center cursor-pointer group"
+              className="relative w-14 h-14 rounded-full flex items-center justify-center cursor-pointer backdrop-blur-xl border border-white/20 transition-transform duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                boxShadow: '0 10px 34px rgba(0,0,0,0.45), 0 0 22px rgba(140,82,255,0.28), inset 0 1px 0 rgba(255,255,255,0.18)',
+              }}
               aria-label="Ouvrir le chat Ajnaya"
             >
-              {/* Glow violet qui respire (1,8s) — pas de spinner, pas de satellites */}
-              <div
-                className="absolute -inset-1 rounded-full bg-accent-purple/30 blur-lg"
-                style={{ animation: 'glowPulse 1.8s ease-in-out infinite' }}
-              />
-
-              {/* Core sphere mono-violet */}
-              <div
-                className="relative w-14 h-14 rounded-full border border-white/15 flex items-center justify-center shadow-lg shadow-accent-purple/30 group-hover:scale-105 group-active:scale-95 transition-transform duration-200"
-                style={{ background: 'radial-gradient(circle at 30% 28%, #A78BFF 0%, #8C52FF 52%, #6C3CE0 100%)' }}
+              <span
+                className="font-title text-xl font-bold select-none"
+                style={{ color: '#F8FAFC', textShadow: '0 0 12px rgba(140,82,255,0.55)' }}
               >
-                <span className="font-title text-xl font-bold text-white select-none" style={{ textShadow: '0 0 10px rgba(140,82,255,0.55)' }}>A</span>
-              </div>
+                A
+              </span>
             </button>
           </motion.div>
         )}
