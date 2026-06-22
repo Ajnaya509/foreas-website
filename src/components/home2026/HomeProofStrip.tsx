@@ -87,14 +87,14 @@ export default function HomeProofStrip() {
                     </span>
                   )}
                   <p
-                    className="text-sm sm:text-base font-bold tabular-nums"
+                    className="t-body-bold t-stat"
                     style={{ color: 'var(--text-cream-fg)' }}
                   >
                     {item.label}
                   </p>
                 </div>
                 <p
-                  className="text-[10px] sm:text-[11px] uppercase font-semibold tabular-nums"
+                  className="t-micro t-stat uppercase"
                   style={{
                     letterSpacing: '0.16em',
                     color: 'var(--text-cream-fg-muted)',

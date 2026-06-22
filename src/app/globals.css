@@ -562,6 +562,29 @@ h1, h2, h3, h4, h5, h6 {
   font-optical-sizing: auto;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ÉCHELLE TYPOGRAPHIQUE CANONIQUE — source de vérité : DESIGN_SYSTEM_MASTER §5
+   (taille / interligne / graisse / interlettrage). Famille appliquée à part :
+   .font-title (Genos) sur les displays/titres, .font-sans (Inter) sur le reste.
+   Règle d'or : TABULAR-NUMS sur tout chiffre aligné → ajouter .t-stat.
+   Fini les text-[9px]/[13px]/[15px]/[26px] posés à l'œil.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.t-display-l { font-size: 2rem;      line-height: 2.375rem;  font-weight: 900; letter-spacing: -0.0625em; } /* 32 — hero */
+.t-display-m { font-size: 1.75rem;   line-height: 2rem;      font-weight: 800; letter-spacing: -0.035em; }  /* 28 */
+.t-h1        { font-size: 1.5rem;    line-height: 1.875rem;  font-weight: 800; letter-spacing: -0.025em; }  /* 24 */
+.t-h2        { font-size: 1.25rem;   line-height: 1.625rem;  font-weight: 700; letter-spacing: -0.02em; }   /* 20 */
+.t-h3        { font-size: 1.0625rem; line-height: 1.375rem;  font-weight: 700; letter-spacing: -0.012em; }  /* 17 */
+.t-bodylg    { font-size: 1rem;      line-height: 1.375rem;  font-weight: 500; letter-spacing: -0.006em; }  /* 16 */
+.t-body      { font-size: 0.875rem;  line-height: 1.25rem;   font-weight: 400; letter-spacing: 0; }         /* 14 */
+.t-body-bold { font-size: 0.875rem;  line-height: 1.25rem;   font-weight: 700; letter-spacing: 0; }         /* 14 bold */
+.t-label     { font-size: 0.75rem;   line-height: 1rem;      font-weight: 600; letter-spacing: 0.016em; }   /* 12 */
+.t-caption   { font-size: 0.6875rem; line-height: 0.875rem;  font-weight: 500; letter-spacing: 0.014em; }   /* 11 */
+.t-micro     { font-size: 0.625rem;  line-height: 0.8125rem; font-weight: 600; letter-spacing: 0.05em; }    /* 10 */
+.t-eyebrow   { font-size: 0.625rem;  line-height: 0.875rem;  font-weight: 800; letter-spacing: 0.25em; text-transform: uppercase; } /* 10 */
+.t-mono      { font-size: 0.8125rem; line-height: 1.125rem;  font-weight: 500; font-variant-numeric: tabular-nums; } /* 13 */
+/* Chiffres alignés (compteurs, prix, stats) — à combiner avec une taille ci-dessus */
+.t-stat { font-variant-numeric: tabular-nums; }
+
 /* Custom scrollbar - Subtle dark theme */
 ::-webkit-scrollbar {
   width: 8px;
