@@ -98,7 +98,7 @@ export default function HomePage() {
   return (
     <main
       className="min-h-screen overflow-x-hidden"
-      style={{ backgroundColor: '#000000' }}
+      style={{ backgroundColor: 'var(--bg-cream-warm)' }}
     >
       <script
         type="application/ld+json"

@@ -27,13 +27,13 @@ const QUICK_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu']
  * HomeHeroCream — Hero blanc Apple absolu (Site2026v72)
  *
  * Refonte +100/100 design :
- * - Slogan en NOIR APPLE pur (#F8FAFC) — italique Genos fait le travail, pas le gradient
+ * - Slogan en NOIR APPLE pur (#1d1d1f) — italique Genos fait le travail, pas le gradient
  * - Chip live live neutre gris Apple (plus de teinte violette criarde)
  * - Search bar blanc pur avec ombre Apple précise (1px ring + soft drop)
  * - BOUTON GÉOLOC en direct : pin live qui chope la position GPS du chauffeur
  *   et passe la zone canonique la plus proche à la Pieuvre (RPC zone-by-coords)
  * - CTA "Voir" → noir Apple solide (plus de gradient violet)
- * - Quick zones chips → neutre Apple rgba(255,255,255,0.06) (plus de teinte violette)
+ * - Quick zones chips → neutre Apple #f5f5f7 (plus de teinte violette)
  * - Trust strip → flottant sans fond, séparateurs · ultra-subtils
  *
  * Skills :
@@ -163,7 +163,7 @@ export default function HomeHeroCream() {
   return (
     <>
       <section
-        className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-[#000000]"
+        className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-cream-warm-textured"
         aria-label="Tarif horaire VTC en direct"
       >
         {/* ─── Apple Vision Pro spatial halos ───────────────────────────────
@@ -189,7 +189,7 @@ export default function HomeHeroCream() {
             className="absolute -top-[5%] -right-[12%] w-[48%] h-[48%] rounded-full animate-vision-b"
             style={{
               background:
-                'radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.16) 0%, rgba(0, 212, 255, 0.04) 55%, transparent 80%)',
+                'radial-gradient(circle at 50% 50%, rgba(108, 60, 224, 0.18) 0%, rgba(108, 60, 224, 0.04) 55%, transparent 80%)',
               filter: 'blur(48px)',
               willChange: 'transform',
             }}
@@ -199,7 +199,7 @@ export default function HomeHeroCream() {
             className="absolute -bottom-[20%] left-[25%] w-[60%] h-[55%] rounded-full animate-vision-c"
             style={{
               background:
-                'radial-gradient(circle at 50% 50%, rgba(140, 82, 255, 0.14) 0%, rgba(140, 82, 255, 0.04) 55%, transparent 80%)',
+                'radial-gradient(circle at 50% 50%, rgba(255, 102, 153, 0.15) 0%, rgba(255, 102, 153, 0.04) 55%, transparent 80%)',
               filter: 'blur(56px)',
               willChange: 'transform',
             }}
@@ -209,7 +209,7 @@ export default function HomeHeroCream() {
             className="absolute top-[40%] -left-[15%] w-[35%] h-[35%] rounded-full animate-vision-a"
             style={{
               background:
-                'radial-gradient(circle at 50% 50%, rgba(140, 82, 255, 0.07) 0%, rgba(140, 82, 255, 0.02) 55%, transparent 80%)',
+                'radial-gradient(circle at 50% 50%, rgba(245, 200, 66, 0.12) 0%, rgba(245, 200, 66, 0.03) 55%, transparent 80%)',
               filter: 'blur(50px)',
               animationDelay: '4s',
               willChange: 'transform',
@@ -225,8 +225,8 @@ export default function HomeHeroCream() {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-7 sm:mb-8"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.10)',
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              border: '1px solid rgba(0, 0, 0, 0.06)',
             }}
           >
             <span className="relative flex w-2 h-2" aria-hidden="true">
@@ -235,7 +235,7 @@ export default function HomeHeroCream() {
             </span>
             <span
               className="text-[11px] sm:text-xs font-semibold"
-              style={{ color: '#F8FAFC' }}
+              style={{ color: '#1d1d1f' }}
             >
               Ajnaya lit <span className="tabular-nums">7</span> plateformes en direct
             </span>
@@ -252,7 +252,7 @@ export default function HomeHeroCream() {
               // Design System §5 + §17 : letter-spacing -0.04em sur display ≥ 56px
               // Effet Apple-grade lettres serrées (Genos display weight 600+)
               letterSpacing: '-0.04em',
-              color: '#F8FAFC',
+              color: '#1d1d1f',
               fontSize: 'clamp(2.75rem, 9.5vw, 6rem)',
             }}
           >
@@ -261,8 +261,8 @@ export default function HomeHeroCream() {
             <span
               style={{
                 fontStyle: 'italic',
-                // Mono violet clair — pop premium sur fond noir AppleNoir.
-                color: '#A78BFF',
+                // A — mono violet (décision Chandler) : sobre, premium, ownable. Fini le violet→cyan flashy.
+                color: '#8C52FF',
               }}
             >
               roule moins.
@@ -275,10 +275,10 @@ export default function HomeHeroCream() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
             className="t-bodylg leading-relaxed mb-10 sm:mb-12 max-w-2xl mx-auto"
-            style={{ color: 'rgba(248,250,252,0.72)' }}
+            style={{ color: '#6e6e73' }}
           >
             Donne ta zone. Ajnaya lit{' '}
-            <strong style={{ color: '#F8FAFC', fontWeight: 700 }}>
+            <strong style={{ color: '#1d1d1f', fontWeight: 700 }}>
               Uber, Bolt, Heetch
             </strong>{' '}
             + 4 autres en direct et te dit combien ça paie ce soir — avant de démarrer.
@@ -293,11 +293,11 @@ export default function HomeHeroCream() {
             className="max-w-xl mx-auto relative"
           >
             <div
-              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-white/20 overflow-hidden"
+              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10 overflow-hidden"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.06)',
+                backgroundColor: '#ffffff',
                 boxShadow:
-                  '0 0 0 1px rgba(255,255,255,0.12), 0 1px 3px rgba(0,0,0,0.4), 0 16px 44px -18px rgba(140,82,255,0.40)',
+                  '0 0 0 1px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06), 0 12px 32px -16px rgba(0,0,0,0.18)',
               }}
               onClick={() => inputRef.current?.focus()}
             >
@@ -316,7 +316,7 @@ export default function HomeHeroCream() {
               )}
               <MapPin
                 className="w-5 h-5 flex-shrink-0"
-                style={{ color: isLocated ? '#F8FAFC' : 'rgba(248,250,252,0.5)' }}
+                style={{ color: isLocated ? '#1d1d1f' : '#86868b' }}
               />
               <input
                 ref={inputRef}
@@ -332,9 +332,9 @@ export default function HomeHeroCream() {
                 inputMode="search"
                 enterKeyHint="search"
                 autoCapitalize="words"
-                className="flex-1 bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none text-base sm:text-lg font-medium placeholder-white/40 tabular-nums min-w-0 py-1"
+                className="flex-1 bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none text-base sm:text-lg font-medium placeholder-[#86868b] tabular-nums min-w-0 py-1"
                 style={{
-                  color: '#F8FAFC',
+                  color: '#1d1d1f',
                   // Override la règle globale `*:focus-visible { outline: 2px solid cyan }`
                   // de globals.css — le focus-within ring noir/10% du wrapper suffit pour
                   // l'accessibilité WCAG AA (indicateur visuel sur la pill entière).
@@ -356,9 +356,9 @@ export default function HomeHeroCream() {
                     : 'Utiliser ma position en direct'
                 }
                 title="Utiliser ma position"
-                className="relative flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 disabled:cursor-wait"
+                className="relative flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/[0.05] active:scale-95 disabled:cursor-wait"
                 style={{
-                  color: isLocated ? '#8C52FF' : 'rgba(248,250,252,0.5)',
+                  color: isLocated ? '#8C52FF' : '#86868b',
                 }}
               >
                 {/* Pas de Loader2 spin — le shimmer cyan sur la search bar fait le boulot.
@@ -451,7 +451,7 @@ export default function HomeHeroCream() {
                   <span className="text-[11px] font-semibold tabular-nums" style={{ color: '#6C3CE0' }}>
                     {locateFeedback.zone}
                   </span>
-                  <span className="text-[10px] tabular-nums" style={{ color: 'rgba(248,250,252,0.5)' }}>
+                  <span className="text-[10px] tabular-nums" style={{ color: '#86868b' }}>
                     · {locateFeedback.distance_km < 1
                       ? `${Math.round(locateFeedback.distance_km * 1000)} m`
                       : `${locateFeedback.distance_km.toFixed(1)} km`}
@@ -467,14 +467,14 @@ export default function HomeHeroCream() {
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-xs mt-3"
-                style={{ color: 'rgba(248,250,252,0.5)' }}
+                style={{ color: '#86868b' }}
                 role="status"
               >
                 {geolocError}
               </motion.p>
             )}
 
-            {/* Quick zones — neutre Apple rgba(255,255,255,0.06) (plus de teinte violet) */}
+            {/* Quick zones — neutre Apple #f5f5f7 (plus de teinte violet) */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -484,7 +484,7 @@ export default function HomeHeroCream() {
               <span
                 className="text-[10px] sm:text-[11px] uppercase font-semibold w-full sm:w-auto sm:mr-1"
                 style={{
-                  color: 'rgba(248,250,252,0.5)',
+                  color: '#86868b',
                   letterSpacing: '0.18em',
                 }}
               >
@@ -499,10 +499,10 @@ export default function HomeHeroCream() {
                     setHasInteracted(true)
                     openModal(z)
                   }}
-                  className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-white/10 active:scale-95"
+                  className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-[#ebebed] active:scale-95"
                   style={{
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                    color: '#F8FAFC',
+                    backgroundColor: '#f5f5f7',
+                    color: '#1d1d1f',
                   }}
                 >
                   {z}
@@ -519,21 +519,21 @@ export default function HomeHeroCream() {
             >
               <span
                 className="text-[11px] font-medium tabular-nums"
-                style={{ color: 'rgba(248,250,252,0.5)' }}
+                style={{ color: '#86868b' }}
               >
                 51 zones
               </span>
-              <span style={{ color: 'rgba(248,250,252,0.18)' }} aria-hidden="true">·</span>
+              <span style={{ color: '#d2d2d7' }} aria-hidden="true">·</span>
               <span
                 className="text-[11px] font-medium"
-                style={{ color: 'rgba(248,250,252,0.5)' }}
+                style={{ color: '#86868b' }}
               >
                 données réelles
               </span>
-              <span style={{ color: 'rgba(248,250,252,0.18)' }} aria-hidden="true">·</span>
+              <span style={{ color: '#d2d2d7' }} aria-hidden="true">·</span>
               <span
                 className="text-[11px] font-medium"
-                style={{ color: 'rgba(248,250,252,0.5)' }}
+                style={{ color: '#86868b' }}
               >
                 sans inscription
               </span>
@@ -551,7 +551,7 @@ export default function HomeHeroCream() {
         >
           <span
             className="t-eyebrow tracking-[0.32em]"
-            style={{ color: 'rgba(248,250,252,0.5)' }}
+            style={{ color: '#86868b' }}
           >
             Scroll
           </span>

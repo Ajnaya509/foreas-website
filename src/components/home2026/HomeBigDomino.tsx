@@ -28,7 +28,7 @@ import { motion } from 'framer-motion'
 export default function HomeBigDomino() {
   return (
     <section
-      className="relative bg-[#000000] py-32 sm:py-44 px-5 overflow-hidden"
+      className="relative bg-cream-to-black py-32 sm:py-44 px-5 overflow-hidden"
       aria-label="L'argument central — l'appli sait déjà où sont les courses"
     >
       {/* Halos transition (cream halos qui se transforment en violet/cyan) */}
@@ -37,7 +37,7 @@ export default function HomeBigDomino() {
         aria-hidden="true"
         style={{
           background:
-            'radial-gradient(ellipse 60% 50% at 50% 30%, rgba(0, 212, 255, 0.12) 0%, transparent 70%),' +
+            'radial-gradient(ellipse 60% 50% at 50% 30%, rgba(255, 191, 122, 0.18) 0%, transparent 70%),' +
             'radial-gradient(ellipse 50% 45% at 50% 80%, rgba(140, 82, 255, 0.18) 0%, transparent 70%)',
         }}
       />

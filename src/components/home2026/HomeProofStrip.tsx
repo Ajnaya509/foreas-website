@@ -55,8 +55,8 @@ export default function HomeProofStrip() {
     <section
       className="relative py-8 sm:py-10 px-5 border-y"
       style={{
-        backgroundColor: 'transparent',
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'var(--bg-cream-warm-edge)',
+        borderColor: 'rgba(0, 0, 0, 0.08)',
       }}
       aria-label="Preuves de crédibilité FOREAS"
     >
@@ -88,7 +88,7 @@ export default function HomeProofStrip() {
                   )}
                   <p
                     className="t-body-bold t-stat"
-                    style={{ color: '#F8FAFC' }}
+                    style={{ color: 'var(--text-cream-fg)' }}
                   >
                     {item.label}
                   </p>
@@ -97,7 +97,7 @@ export default function HomeProofStrip() {
                   className="t-micro t-stat uppercase"
                   style={{
                     letterSpacing: '0.16em',
-                    color: 'rgba(248,250,252,0.5)',
+                    color: 'var(--text-cream-fg-muted)',
                   }}
                 >
                   {item.detail}
