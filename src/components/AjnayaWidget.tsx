@@ -108,10 +108,10 @@ const PHONE_REGEX = /^(\+33|0)[0-9\s.\-]{8,}$/
 function MiniHologram() {
   return (
     <div className="relative w-6 h-6 flex-shrink-0">
-      <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle at 30% 30%, #8C52FF 0%, #00D4FF 50%, #8C52FF 100%)' }}>
-        <span className="absolute inset-0 flex items-center justify-center font-title text-[9px] font-bold text-white" style={{ textShadow: '0 0 8px rgba(0,212,255,0.6)' }}>A</span>
+      <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle at 30% 28%, #A78BFF 0%, #8C52FF 52%, #6C3CE0 100%)' }}>
+        <span className="absolute inset-0 flex items-center justify-center font-title text-[9px] font-bold text-white" style={{ textShadow: '0 0 8px rgba(140,82,255,0.55)' }}>A</span>
       </div>
-      <div className="absolute inset-[-4px] rounded-full border border-accent-cyan/20" style={{ animation: 'orbitalSpin 6s linear infinite' }} />
+      <div className="absolute inset-[-3px] rounded-full border border-accent-purple/25" />
     </div>
   )
 }
@@ -123,7 +123,7 @@ function AudioEqualizer() {
       {[0, 0.15, 0.3].map((delay, i) => (
         <div
           key={i}
-          className="w-[3px] rounded-full bg-accent-cyan/60"
+          className="w-[3px] rounded-full bg-accent-purple/60"
           style={{ animation: `equalizer 0.8s ease-in-out ${delay}s infinite` }}
         />
       ))}
@@ -731,12 +731,12 @@ export default function AjnayaWidget() {
               <div className="flex items-center gap-2.5">
                 <MiniHologram />
                 <span className="font-title text-base font-semibold text-white ml-0.5">Ajnaya</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-cyan/[0.08] text-accent-cyan/60 border border-accent-cyan/15 font-mono">IA</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-purple/[0.10] text-accent-purple/70 border border-accent-purple/20 font-mono">IA</span>
               </div>
               <div className="flex items-center">
                 <button onClick={toggleVoice} className="p-1.5" title={voiceEnabled ? 'Désactiver la voix' : 'Activer la voix'}>
                   {voiceEnabled
-                    ? <Volume2 className="w-[18px] h-[18px] text-accent-cyan/70 hover:text-accent-cyan transition-colors" />
+                    ? <Volume2 className="w-[18px] h-[18px] text-accent-purple/70 hover:text-accent-purple transition-colors" />
                     : <VolumeX className="w-[18px] h-[18px] text-white/20 hover:text-white/40 transition-colors" />
                   }
                 </button>
@@ -765,8 +765,8 @@ export default function AjnayaWidget() {
                           : 'text-white/80 ml-auto'
                       }`}
                       style={msg.role === 'ajnaya' ? {
-                        background: 'rgba(0,212,255,0.04)',
-                        border: '1px solid rgba(0,212,255,0.08)',
+                        background: 'rgba(140,82,255,0.07)',
+                        border: '1px solid rgba(140,82,255,0.14)',
                         borderRadius: '16px 16px 16px 4px',
                       } : {
                         background: 'rgba(140,82,255,0.12)',
@@ -786,7 +786,7 @@ export default function AjnayaWidget() {
               {/* Typing indicator */}
               {typing && (
                 <div className="flex justify-start">
-                  <div className="px-4 py-3 flex items-center gap-[6px]" style={{ background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.08)', borderRadius: '16px 16px 16px 4px' }}>
+                  <div className="px-4 py-3 flex items-center gap-[6px]" style={{ background: 'rgba(140,82,255,0.07)', border: '1px solid rgba(140,82,255,0.14)', borderRadius: '16px 16px 16px 4px' }}>
                     {[0, 1, 2].map(i => (
                       <span key={i} className="w-[5px] h-[5px] rounded-full bg-white/25" style={{ animation: `typingDot 1.2s ease-in-out ${i * 0.15}s infinite` }} />
                     ))}
@@ -845,7 +845,7 @@ export default function AjnayaWidget() {
                 disabled={!input.trim()}
                 className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
                   input.trim()
-                    ? 'bg-gradient-to-r from-accent-purple to-accent-cyan hover:opacity-90 active:scale-95'
+                    ? 'bg-gradient-to-r from-[#8C52FF] to-[#6C3CE0] hover:opacity-90 active:scale-95'
                     : 'bg-white/5 cursor-not-allowed'
                 }`}
               >
