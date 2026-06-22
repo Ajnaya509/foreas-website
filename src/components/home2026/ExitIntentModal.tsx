@@ -30,6 +30,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X, Sparkles, ArrowRight } from 'lucide-react'
 import { haptic } from '@/lib/haptic'
+import { useOverlayLock } from '@/lib/overlayStore'
 
 const SESSION_KEY = 'foreas_exit_intent_shown'
 const ENGAGEMENT_KEY = 'foreas_widget_opened'
@@ -50,6 +51,7 @@ interface ExitIntentModalProps {
 export default function ExitIntentModal({ disabled = false }: ExitIntentModalProps) {
   const [open, setOpen] = useState(false)
   const [armed, setArmed] = useState(false)
+  useOverlayLock(open)
   const triggeredRef = useRef(false)
   const hasMovedRef = useRef(false)
 

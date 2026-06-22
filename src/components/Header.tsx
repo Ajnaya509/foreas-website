@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useMotionValueEvent, useScroll } from 'framer-
 import { Menu, X } from 'lucide-react'
 import { InkGradientButton } from '@/components/ui'
 import { authUrls } from '@/lib/auth-urls'
+import { useOverlayLock } from '@/lib/overlayStore'
 
 /**
  * Header — Site2026v54
@@ -36,6 +37,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [hidden, setHidden] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  useOverlayLock(mobileMenuOpen)
   const { scrollY } = useScroll()
 
   // Track scroll direction (smart hide pattern)

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { X, Send, Mic, Volume2, VolumeX } from 'lucide-react'
 import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from '@/lib/ajnaya-analytics'
 import { speakText, stopSpeaking, unlockAudio, prefetchTTS, playBlob } from '@/lib/tts'
+import { useAnyOverlayOpen } from '@/lib/overlayStore'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
 const WELCOME_MESSAGES: Record<string, string> = {
@@ -141,6 +142,10 @@ export default function AjnayaWidget() {
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
   const [hasStickyBelow, setHasStickyBelow] = useState(false)
+  // Visibilité scroll-aware (compagnon de descente) + masquage quand un overlay
+  // plein écran est ouvert (modale Ajnaya, exit-intent, menu mobile…).
+  const [isScrolledPastHero, setIsScrolledPastHero] = useState(false)
+  const anyOverlayOpen = useAnyOverlayOpen()
   const [labelIndex, setLabelIndex] = useState(0)
   const [labelVisible, setLabelVisible] = useState(true)
   const [labelDismissed, setLabelDismissed] = useState(false)
@@ -186,6 +191,8 @@ export default function AjnayaWidget() {
   useEffect(() => {
     const sections = ['hero', 'duality', 'features', 'scenarios', 'testimonials', 'pricing', 'offer', 'problem', 'solution', 'partners']
     const handleScroll = () => {
+      // Compagnon de descente : le widget n'apparaît qu'après ~½ écran de scroll.
+      setIsScrolledPastHero(window.scrollY > window.innerHeight * 0.5)
       for (const section of [...sections].reverse()) {
         const el = document.querySelector(`[data-section="${section}"]`)
         if (el) {
@@ -198,6 +205,7 @@ export default function AjnayaWidget() {
       }
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // état initial (cas page rechargée déjà scrollée)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -629,7 +637,7 @@ export default function AjnayaWidget() {
           HOLOGRAM ORBITAL BUBBLE
           ═══════════════════════════════════════════════════════════════ */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && isScrolledPastHero && !anyOverlayOpen && (
           <motion.div
             key="hologram"
             initial={{ scale: 0, opacity: 0 }}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, MessageCircle } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import { useOverlayLock } from '@/lib/overlayStore'
 import { authUrls } from '@/lib/auth-urls'
 
 /**
@@ -20,6 +21,7 @@ import { authUrls } from '@/lib/auth-urls'
 export default function HomeHeaderCream() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  useOverlayLock(mobileOpen)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)

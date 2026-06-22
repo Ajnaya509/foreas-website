@@ -7,6 +7,7 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { expandPoolCode } from '@/lib/expandPoolCode'
+import { useOverlayLock } from '@/lib/overlayStore'
 import posthog from 'posthog-js'
 
 /**
@@ -471,6 +472,9 @@ export default function AjnayaConversationModal({
   onClose,
   initialZone = '',
 }: AjnayaConversationModalProps) {
+  // Masque le widget flottant "A" tant que cette modale plein écran est ouverte.
+  useOverlayLock(isOpen)
+
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState(initialZone)
   const [turn, setTurn] = useState<1 | 2 | 3>(1)
