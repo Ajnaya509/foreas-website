@@ -680,31 +680,26 @@ export default function AjnayaWidget() {
               )}
             </AnimatePresence>
 
-            {/* Orbital system */}
+            {/* Orbe Ajnaya — quiet premium (Site2026v100) : 56px, mono-violet,
+                une seule respiration douce 1,8s (§17 design system, 33 BPM).
+                Fini les anneaux qui tournent en boucle = confidence silencieuse. */}
             <button
               onClick={() => setIsOpen(true)}
-              className="relative w-[90px] h-[90px] flex items-center justify-center cursor-pointer group"
+              className="relative w-14 h-14 flex items-center justify-center cursor-pointer group"
               aria-label="Ouvrir le chat Ajnaya"
             >
-              {/* Glow — blur-md on mobile, blur-xl on desktop */}
-              <div className="absolute inset-3 rounded-full bg-accent-purple/20 blur-md md:blur-xl" style={{ animation: 'glowPulse 3s ease-in-out infinite' }} />
-
-              {/* Orbit ring 2 (outer, slower, reverse) */}
-              <div className="absolute w-[80px] h-[80px] rounded-full border border-accent-purple/15" style={{ animation: 'orbitalSpin 18s linear infinite reverse' }}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-accent-purple" style={{ boxShadow: '0 0 8px #8C52FF' }} />
-              </div>
-
-              {/* Orbit ring 1 (inner, faster) */}
-              <div className="absolute w-[64px] h-[64px] rounded-full border border-accent-cyan/20" style={{ animation: 'orbitalSpin 12s linear infinite' }}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-accent-cyan" style={{ boxShadow: '0 0 8px #00D4FF' }} />
-              </div>
-
-              {/* Core sphere */}
+              {/* Glow violet qui respire (1,8s) — pas de spinner, pas de satellites */}
               <div
-                className="relative w-[44px] h-[44px] rounded-full border border-white/15 flex items-center justify-center group-hover:scale-110 group-active:scale-95 transition-transform duration-200"
-                style={{ background: 'radial-gradient(circle at 30% 30%, #8C52FF 0%, #00D4FF 50%, #8C52FF 100%)' }}
+                className="absolute -inset-1 rounded-full bg-accent-purple/30 blur-lg"
+                style={{ animation: 'glowPulse 1.8s ease-in-out infinite' }}
+              />
+
+              {/* Core sphere mono-violet */}
+              <div
+                className="relative w-14 h-14 rounded-full border border-white/15 flex items-center justify-center shadow-lg shadow-accent-purple/30 group-hover:scale-105 group-active:scale-95 transition-transform duration-200"
+                style={{ background: 'radial-gradient(circle at 30% 28%, #A78BFF 0%, #8C52FF 52%, #6C3CE0 100%)' }}
               >
-                <span className="font-title text-lg font-bold text-white select-none" style={{ textShadow: '0 0 12px rgba(0,212,255,0.6)' }}>A</span>
+                <span className="font-title text-xl font-bold text-white select-none" style={{ textShadow: '0 0 10px rgba(140,82,255,0.55)' }}>A</span>
               </div>
             </button>
           </motion.div>
