@@ -101,6 +101,12 @@ export async function POST(request: Request) {
           })
         : 'Non défini'
 
+      // Parrainage V3 — traçabilité prix payé + remise (colonnes existantes amount_eur / discount_eur).
+      const fullPriceEur = (subscription?.items.data[0]?.price?.unit_amount ?? 0) / 100
+      const refPct = Number(subscription?.metadata?.referral_discount_pct ?? 0)
+      const discountEur = Math.round(fullPriceEur * refPct) / 100
+      const amountEur = Math.round((fullPriceEur - discountEur) * 100) / 100
+
       // 1. Sauvegarder dans Supabase
       await upsertSubscriber({
         stripe_customer_id: session.customer,
@@ -113,6 +119,8 @@ export async function POST(request: Request) {
         billing_cycle: planInfo.cycle,
         status: 'trialing',
         trial_end: trialEnd,
+        amount_eur: amountEur,
+        discount_eur: discountEur,
         current_period_end: subscription?.current_period_end
           ? new Date(subscription.current_period_end * 1000).toISOString()
           : null,

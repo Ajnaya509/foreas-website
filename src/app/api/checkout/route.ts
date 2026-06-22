@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { supabase } from '@/lib/supabase'
 
 // ─── Price IDs LIVE Pricing V2 09/06/2026 (Chandler verrouillé) ─────────────
 // Source : FOREAS-SHARED/PRICING_FEATURES_MASTER.md §1.1 (Pricing V2)
@@ -37,6 +38,23 @@ function getStripe() {
   })
 }
 
+// Parrainage V3 — coupon Stripe réutilisable par palier de remise (10/15/18 %).
+// Récupère le coupon s'il existe, sinon le crée (id déterministe → pas de doublons Stripe).
+async function ensureReferralCoupon(stripe: Stripe, pct: number): Promise<string> {
+  const id = `foreas_ref_${pct}`
+  try {
+    await stripe.coupons.retrieve(id)
+  } catch {
+    await stripe.coupons.create({
+      id,
+      percent_off: pct,
+      duration: 'forever',
+      name: `Parrainage FOREAS −${pct}%`,
+    })
+  }
+  return id
+}
+
 function getNextMonday18hParis(): number {
   const now = new Date()
   const dayOfWeek = now.getUTCDay()
@@ -70,6 +88,21 @@ export async function POST(request: NextRequest) {
     const cookieRefMatch = cookieHeader.match(/foreas_partner_ref=([^;]+)/)
     const effectiveReferralCode = (referral_code || cookieRefMatch?.[1] || '').trim().toUpperCase() || null
 
+    // Parrainage V3 — remise dynamique selon le palier du parrain (fonction SQL, GRANT anon).
+    let referralDiscountPct = 0
+    if (effectiveReferralCode) {
+      try {
+        const { data } = await supabase.rpc('get_referral_discount_for_code', {
+          p_code: effectiveReferralCode,
+        })
+        referralDiscountPct = typeof data === 'number' ? data : 0
+      } catch {
+        /* code inconnu / DB indispo → pas de remise, checkout normal */
+      }
+    }
+    const referralCouponId =
+      referralDiscountPct > 0 ? await ensureReferralCoupon(stripe, referralDiscountPct) : null
+
     if (!plan) {
       return NextResponse.json({ error: 'Plan requis' }, { status: 400 })
     }
@@ -90,7 +123,6 @@ export async function POST(request: NextRequest) {
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      allow_promotion_codes: true,
       billing_address_collection: 'required',
       locale: 'fr',
       // client_reference_id carries the referral code for MLM attribution
@@ -101,6 +133,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           plan,
           ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
+          ...(referralDiscountPct > 0 ? { referral_discount_pct: String(referralDiscountPct) } : {}),
         },
       },
       payment_method_collection: 'always',
@@ -122,6 +155,14 @@ export async function POST(request: NextRequest) {
         ? { ui_mode: 'embedded', return_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` }
         : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs2?canceled=true` }),
     }
+
+    // Remise parrainage (coupon %) OU codes promo manuels — mutuellement exclusifs chez Stripe.
+    if (referralCouponId) {
+      sessionParams.discounts = [{ coupon: referralCouponId }]
+    } else {
+      sessionParams.allow_promotion_codes = true
+    }
+
     const session = await stripe.checkout.sessions.create(sessionParams)
     if (isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })
     return NextResponse.json({ url: session.url })
