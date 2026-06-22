@@ -302,7 +302,7 @@ export default function HomeHeroCream() {
                 style={{
                   background:
                     'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(0,212,255,0.95) 318deg, rgba(167,139,255,1) 338deg, rgba(0,212,255,0.95) 358deg, transparent 360deg)',
-                  animation: 'foreas-border-comet 3s linear infinite',
+                  animation: 'foreas-border-comet 2.8s ease-in-out infinite alternate',
                   willChange: 'transform',
                 }}
               />

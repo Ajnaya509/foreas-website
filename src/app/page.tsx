@@ -3,7 +3,6 @@ import dynamic from 'next/dynamic'
 // ─── Above-the-fold (critique pour le 1er rendu) : statique ───
 import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
 import HomeHeroCream from '@/components/home2026/HomeHeroCream'
-import LiveEngineBar from '@/components/home2026/LiveEngineBar'
 import HomeProofStrip from '@/components/home2026/HomeProofStrip'
 import HomeBigDomino from '@/components/home2026/HomeBigDomino'
 
@@ -110,9 +109,6 @@ export default function HomePage() {
 
       {/* SECTION 1 — Hero crème + barre de recherche → modal Ajnaya */}
       <HomeHeroCream />
-
-      {/* SECTION 1.2 — Bandeau "moteur en direct" : preuve dynamique (mécanisme vrai, 0 chiffre inventé) */}
-      <LiveEngineBar />
 
       {/* SECTION 1.5 — Mini-band preuve sociale (anti-objection chauffeur méfiant) */}
       <HomeProofStrip />

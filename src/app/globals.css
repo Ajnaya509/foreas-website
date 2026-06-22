@@ -65,9 +65,10 @@ html { scroll-behavior: smooth; }
 /* Filet lumineux cyan→violet qui contourne le champ de recherche :
    lap RAPIDE (~0.66s) puis pause, cycle de 3s → "supériorité visuelle" du lieu de tape. */
 @keyframes foreas-border-comet {
-  0%   { transform: translate(-50%, -50%) rotate(0deg); }
-  22%  { transform: translate(-50%, -50%) rotate(360deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
+  0%   { transform: translate(-50%, -50%) rotate(0deg);   opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(360deg); opacity: 0; }
 }
 
 /* ── Apple Vision Pro spatial drift (blobs background) ─────────────── */
