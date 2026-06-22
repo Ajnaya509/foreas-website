@@ -62,6 +62,14 @@ html { scroll-behavior: smooth; }
   animation: halo-pulse-fast 0.9s ease-in-out infinite alternate;
 }
 
+/* Filet lumineux cyan→violet qui contourne le champ de recherche :
+   lap RAPIDE (~0.66s) puis pause, cycle de 3s → "supériorité visuelle" du lieu de tape. */
+@keyframes foreas-border-comet {
+  0%   { transform: translate(-50%, -50%) rotate(0deg); }
+  22%  { transform: translate(-50%, -50%) rotate(360deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 /* ── Apple Vision Pro spatial drift (blobs background) ─────────────── */
 @keyframes vision-drift-a {
   0%   { transform: translate3d(0, 0, 0) scale(1); }

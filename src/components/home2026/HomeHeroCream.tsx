@@ -292,8 +292,23 @@ export default function HomeHeroCream() {
             onSubmit={handleSubmit}
             className="max-w-xl mx-auto relative"
           >
+            {/* Conteneur scopé à la barre (porte le filet, sinon il déborde sur tout le form) */}
+            <div className="relative">
+            {/* Filet lumineux cyan→violet — contourne la barre à grande vitesse toutes les 3s.
+                Carré conique qui tourne, clippé en anneau 1.5px par le wrapper → trait fin fluo. */}
+            <div className="absolute -inset-[1.5px] rounded-full overflow-hidden pointer-events-none z-0" aria-hidden="true">
+              <div
+                className="absolute top-1/2 left-1/2 w-[150%] aspect-square"
+                style={{
+                  background:
+                    'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(0,212,255,0.95) 318deg, rgba(167,139,255,1) 338deg, rgba(0,212,255,0.95) 358deg, transparent 360deg)',
+                  animation: 'foreas-border-comet 3s linear infinite',
+                  willChange: 'transform',
+                }}
+              />
+            </div>
             <div
-              className="group relative flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10 overflow-hidden"
+              className="group relative z-10 flex items-center gap-2 rounded-full transition-all px-4 sm:px-5 py-2.5 sm:py-3 cursor-text focus-within:ring-2 focus-within:ring-black/10 overflow-hidden"
               style={{
                 backgroundColor: '#ffffff',
                 boxShadow:
@@ -416,6 +431,7 @@ export default function HomeHeroCream() {
               >
                 <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
             </div>
 
             {/* Site2026v79 nano-detail #saisie : autocomplete des 51 zones canoniques */}
