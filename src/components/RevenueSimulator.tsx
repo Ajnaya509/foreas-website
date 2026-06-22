@@ -60,10 +60,10 @@ export default function RevenueSimulator() {
           className="text-center mb-12"
         >
           <h2 className="font-title text-3xl md:text-5xl text-white mb-4">
-            Simulez vos <span className="text-accent-cyan">gains</span>
+            Simule ton <span className="text-accent-cyan">potentiel</span>
           </h2>
           <p className="text-white/50 text-lg max-w-xl mx-auto">
-            Entrez vos données actuelles et découvrez ce que FOREAS peut vous rapporter.
+            Entre tes données : une estimation de ce que FOREAS peut t&apos;aider à viser. Une estimation, pas une promesse.
           </p>
         </motion.div>
 
@@ -75,7 +75,7 @@ export default function RevenueSimulator() {
             viewport={{ once: true }}
             className="bg-gradient-to-b from-[#12121a] to-[#0a0a10] rounded-2xl border border-white/10 p-6 md:p-8"
           >
-            <h3 className="text-white font-semibold mb-6">Votre situation actuelle</h3>
+            <h3 className="text-white font-semibold mb-6">Ta situation actuelle</h3>
 
             {/* Hours per week */}
             <div className="mb-6">
@@ -167,8 +167,8 @@ export default function RevenueSimulator() {
               <div className="absolute -inset-1 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-2xl blur-lg opacity-30" />
               <div className="relative bg-gradient-to-br from-accent-purple/20 to-accent-cyan/20 rounded-2xl border border-white/10 p-6 md:p-8">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-white/60 text-sm">Avec FOREAS, vous gagneriez</span>
-                  <span className="text-green-400 text-sm font-medium">+35%</span>
+                  <span className="text-white/60 text-sm">Avec FOREAS, estimation</span>
+                  <span className="text-green-400 text-sm font-medium">scénario moyen</span>
                 </div>
 
                 <div className="flex items-end gap-2 mb-2">
@@ -180,10 +180,17 @@ export default function RevenueSimulator() {
                 </div>
 
                 <p className="text-accent-cyan font-medium">
-                  +{results.weeklyGain}€ de plus chaque semaine
+                  ≈ +{results.weeklyGain}€ estimés par semaine
                 </p>
               </div>
             </div>
+
+            {/* Honnêteté (foreas-copy-atomic) : estimation, jamais une promesse — 0 chiffre garanti */}
+            <p className="text-white/40 text-xs leading-relaxed">
+              Estimation indicative, basée sur un scénario moyen. Pas une promesse : tes résultats
+              dépendent de ta zone, de tes horaires et de ta façon de bosser. FOREAS te donne l&apos;info —
+              c&apos;est toi qui roules.
+            </p>
 
             {/* Stats grid */}
             <div className="grid grid-cols-2 gap-4">
@@ -226,7 +233,7 @@ export default function RevenueSimulator() {
               href="/tarifs2"
               className="block w-full py-4 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold text-center hover:opacity-90 transition-opacity"
             >
-              Obtenir ces résultats →
+              Tester FOREAS 7 jours, 0€ →
             </a>
           </motion.div>
         </div>

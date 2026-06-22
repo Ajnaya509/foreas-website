@@ -126,7 +126,7 @@ function AccueilScreen() {
         </div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <div className="w-16 h-16 rounded-full bg-red-500/30 flex items-center justify-center">
-            <span className="text-white font-bold">+35%</span>
+            <span className="text-white font-bold">FORTE</span>
           </div>
         </div>
       </div>

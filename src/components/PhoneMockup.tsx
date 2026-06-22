@@ -117,8 +117,8 @@ export default function PhoneMockup() {
                   <div
                     className="relative w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-lg shadow-red-500/50 border border-orange-300/30 flex items-center justify-center"
                   >
-                    {/* +35% inside hot zone for clarity */}
-                    <span className="text-white font-bold text-[7px] sm:text-[10px]">+35%</span>
+                    {/* marqueur zone chaude (qualitatif, pas de chiffre inventé) */}
+                    <span className="text-white font-bold text-[7px] sm:text-[10px]">↑</span>
                   </div>
                 </div>
 
@@ -242,7 +242,7 @@ export default function PhoneMockup() {
                       <p className="text-white/40 text-[9px] sm:text-[11px]">Zone chaude détectée</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-accent-cyan font-bold text-[13px] sm:text-[16px]">+35%</p>
+                      <p className="text-accent-cyan font-bold text-[13px] sm:text-[16px]">+ demande</p>
                       <p className="text-white/30 text-[8px] sm:text-[10px]">vs ici</p>
                     </div>
                   </div>

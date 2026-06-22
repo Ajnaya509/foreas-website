@@ -6,8 +6,8 @@ import { TrendingUp, Clock, MapPin, Brain, Layers, Zap } from 'lucide-react'
 const features = [
   {
     icon: TrendingUp,
-    title: '+35% de CA',
-    description: 'Moyenne terrain. Paris.',
+    title: '7 apps en 1 écran',
+    description: 'Uber, Bolt, Heetch + 4, en direct.',
     color: 'from-green-500 to-emerald-500',
     iconBg: 'bg-green-500/10',
     iconColor: 'text-green-400',

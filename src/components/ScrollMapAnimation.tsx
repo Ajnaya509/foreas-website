@@ -199,7 +199,7 @@ export default function ScrollMapAnimation() {
                   />
                 )}
                 <text x="750" y="148" textAnchor="middle" fill="#f87171" fontSize="14" fontWeight="700" fontFamily="system-ui">ZONE CHAUDE</text>
-                <text x="750" y="180" textAnchor="middle" fill="#fff" fontSize="24" fontWeight="800" fontFamily="system-ui">+35%</text>
+                <text x="750" y="180" textAnchor="middle" fill="#fff" fontSize="22" fontWeight="800" fontFamily="system-ui">FORTE</text>
 
                 {/* People dots */}
                 {[0, 1, 2, 3, 4, 5].map(i => {
@@ -328,7 +328,7 @@ export default function ScrollMapAnimation() {
                 </div>
                 <div className="min-w-0">
                   <p className={`text-white font-semibold ${isMobile ? 'text-[11px]' : 'text-sm'}`}>Analyse IA</p>
-                  <p className={`text-white/50 ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>Zone chaude détectée à 12 min — <span className="text-green-400 font-semibold">+35%</span> de demande.</p>
+                  <p className={`text-white/50 ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>Zone chaude détectée à 12 min — <span className="text-green-400 font-semibold">forte demande</span>.</p>
                 </div>
               </div>
             </div>

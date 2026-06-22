@@ -59,7 +59,7 @@ const PLANS = [
 
 const BENEFITS = [
   { icon: Zap, label: 'IA positionnement temps réel', sub: 'Sais où être 15 min avant la demande' },
-  { icon: TrendingUp, label: '+35% CA moyen documenté', sub: 'Sur les 3 premiers mois d\'utilisation' },
+  { icon: TrendingUp, label: 'Tu vois où ça paie, en direct', sub: 'Ajnaya lit 7 plateformes — tu choisis tes courses' },
   { icon: Users, label: 'Parrainage à vie', sub: '10€/mois par chauffeur filleul actif' },
   { icon: Star, label: 'Essai sans risque', sub: '0€ prélevé avant le prochain lundi 18h' },
 ]
