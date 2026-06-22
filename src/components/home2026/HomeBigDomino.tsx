@@ -49,7 +49,7 @@ export default function HomeBigDomino() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-[10px] sm:text-[11px] font-extrabold uppercase mb-6 sm:mb-8"
+          className="t-eyebrow mb-6 sm:mb-8"
           style={{
             letterSpacing: '0.32em',
             color: 'rgba(140, 82, 255, 0.85)',
@@ -84,7 +84,7 @@ export default function HomeBigDomino() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mx-auto max-w-2xl text-sm sm:text-base font-medium leading-relaxed"
+          className="mx-auto max-w-2xl t-bodylg"
           style={{ color: 'rgba(248, 250, 252, 0.7)' }}
         >
           Ajnaya lit la demande en temps réel sur{' '}

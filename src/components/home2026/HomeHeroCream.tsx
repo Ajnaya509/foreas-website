@@ -274,7 +274,7 @@ export default function HomeHeroCream() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="text-base sm:text-lg leading-relaxed mb-10 sm:mb-12 max-w-2xl mx-auto"
+            className="t-bodylg leading-relaxed mb-10 sm:mb-12 max-w-2xl mx-auto"
             style={{ color: '#6e6e73' }}
           >
             Donne ta zone. Ajnaya lit{' '}
@@ -550,7 +550,7 @@ export default function HomeHeroCream() {
           aria-hidden="true"
         >
           <span
-            className="text-[9px] font-semibold tracking-[0.32em] uppercase"
+            className="t-eyebrow tracking-[0.32em]"
             style={{ color: '#86868b' }}
           >
             Scroll

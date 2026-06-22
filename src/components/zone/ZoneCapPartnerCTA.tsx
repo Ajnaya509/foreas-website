@@ -41,13 +41,13 @@ export default function ZoneCapPartnerCTA() {
             </div>
             <div className="flex-1 min-w-0">
               <p
-                className="text-rose-300/85 text-[10px] font-extrabold uppercase mb-2"
+                className="text-rose-300/85 t-eyebrow mb-2"
                 style={{ letterSpacing: '0.28em' }}
               >
                 VOUS PILOTEZ UNE FLOTTE / UN GROUPE&nbsp;?
               </p>
               <h2
-                className="text-xl sm:text-2xl font-black text-[#F8FAFC] mb-2 leading-tight"
+                className="t-h1 text-[#F8FAFC] mb-2 leading-tight"
                 style={{ letterSpacing: '-0.025em' }}
               >
                 La même intelligence,{' '}
@@ -55,13 +55,13 @@ export default function ZoneCapPartnerCTA() {
                   mais en cascade.
                 </span>
               </h2>
-              <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-5">
+              <p className="text-white/70 t-body leading-relaxed mb-5">
                 Vous en haut, vos recrues en dessous. Cascade <span className="font-semibold tabular-nums text-[#F8FAFC]">10&nbsp;€ / 4&nbsp;€ / 2&nbsp;€</span>{' '}
                 à vie sur 3 niveaux.
               </p>
               <Link
                 href="/devenir-partenaire"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all bg-white/[0.06] border border-white/[0.10] hover:bg-white/[0.10] hover:border-rose-500/40 text-[#F8FAFC]"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl t-body-bold transition-all bg-white/[0.06] border border-white/[0.10] hover:bg-white/[0.10] hover:border-rose-500/40 text-[#F8FAFC]"
               >
                 Voir le programme CAP
                 <ArrowRight className="w-4 h-4" />

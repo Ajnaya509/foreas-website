@@ -40,13 +40,13 @@ export default function ZoneSocialProof() {
           className="text-center mb-12"
         >
           <p
-            className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
+            className="text-[#00D4FF]/85 t-eyebrow mb-3"
             style={{ letterSpacing: '0.28em' }}
           >
             6 CHAUFFEURS · LEUR VISAGE · LEUR VOIX
           </p>
           <h2
-            className="text-3xl sm:text-4xl font-black text-[#F8FAFC] mb-3"
+            className="t-display-l text-[#F8FAFC] mb-3"
             style={{ letterSpacing: '-0.035em' }}
           >
             Pas moi qui le dis.{' '}
@@ -54,7 +54,7 @@ export default function ZoneSocialProof() {
               Eux.
             </span>
           </h2>
-          <p className="text-white/55 text-sm">
+          <p className="text-white/55 t-body">
             Des chauffeurs comme toi. Tu cliques, tu les écoutes. Personne ne lit un script.
           </p>
         </motion.div>
@@ -70,7 +70,7 @@ export default function ZoneSocialProof() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-center text-white/45 text-xs mb-6 max-w-xl mx-auto"
+          className="text-center text-white/45 t-caption mb-6 max-w-xl mx-auto"
         >
           Ces 6 chauffeurs ont accepté que leur visage et leur voix apparaissent. Tu peux leur écrire — l&apos;app FOREAS leur ouvre le DM si tu rejoins.
         </motion.p>
@@ -88,7 +88,7 @@ export default function ZoneSocialProof() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWAClick}
-            className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-2xl text-sm font-bold transition-all bg-white/[0.06] border border-white/[0.10] hover:bg-white/[0.10] hover:border-white/[0.18] text-[#F8FAFC]"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-2xl t-body-bold transition-all bg-white/[0.06] border border-white/[0.10] hover:bg-white/[0.10] hover:border-white/[0.18] text-[#F8FAFC]"
           >
             <MessageCircle className="w-4 h-4" />
             Demander à Ajnaya 12 autres cas

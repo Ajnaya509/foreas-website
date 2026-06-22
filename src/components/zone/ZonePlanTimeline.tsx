@@ -41,13 +41,13 @@ export default function ZonePlanTimeline() {
           className="text-center mb-12"
         >
           <p
-            className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
+            className="text-[#00D4FF]/85 t-eyebrow mb-3"
             style={{ letterSpacing: '0.28em' }}
           >
             LE PLAN — 3 ÉTAPES
           </p>
           <h2
-            className="text-3xl sm:text-4xl font-black text-[#F8FAFC] leading-tight"
+            className="t-display-l text-[#F8FAFC] leading-tight"
             style={{ letterSpacing: '-0.035em' }}
           >
             Tu cliques. Tu conduis pareil.<br />
@@ -104,14 +104,14 @@ export default function ZonePlanTimeline() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWAClick}
-            className="inline-flex items-center justify-center gap-2 sm:gap-3 px-8 sm:px-12 py-4 rounded-2xl text-base sm:text-lg font-extrabold transition-all bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white"
+            className="inline-flex items-center justify-center gap-2 sm:gap-3 px-8 sm:px-12 py-4 rounded-2xl t-h3 transition-all bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white"
             style={{ boxShadow: '0 0 80px rgba(16,185,129,0.45), 0 4px 20px rgba(0,0,0,0.4)' }}
           >
             <MessageCircle className="w-5 h-5" />
             Démarrer maintenant — 0 € — 0 inscription
             <ArrowRight className="w-5 h-5" />
           </a>
-          <p className="text-white/45 text-xs mt-4 tabular-nums">
+          <p className="text-white/45 t-caption mt-4 tabular-nums">
             0 € aujourd&apos;hui · Sans carte · Annulation en 1 clic
           </p>
         </motion.div>
@@ -151,7 +151,7 @@ function PlanStep({
       }
     >
       <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 font-black text-lg tabular-nums ${
+        className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 t-h2 t-stat ${
           highlight
             ? 'bg-violet-500/25 text-violet-100 ring-1 ring-violet-400/30'
             : 'bg-white/[0.06] text-white/70'
@@ -160,7 +160,7 @@ function PlanStep({
         {n}
       </div>
       <p
-        className={`text-[10px] font-extrabold uppercase mb-2 ${
+        className={`t-eyebrow mb-2 ${
           highlight ? 'text-cyan-300' : 'text-white/55'
         }`}
         style={{ letterSpacing: '0.22em' }}
@@ -168,12 +168,12 @@ function PlanStep({
         {timestamp}
       </p>
       <h3
-        className="text-lg sm:text-xl font-bold text-[#F8FAFC] mb-2 leading-tight"
+        className="t-h2 text-[#F8FAFC] mb-2 leading-tight"
         style={{ letterSpacing: '-0.02em' }}
       >
         {title}
       </h3>
-      <p className="text-white/65 text-sm leading-relaxed">{desc}</p>
+      <p className="text-white/65 t-body leading-relaxed">{desc}</p>
     </motion.div>
   )
 }

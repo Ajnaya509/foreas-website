@@ -44,13 +44,13 @@ export default function ZoneMechanismVisual() {
           className="text-center mb-12"
         >
           <p
-            className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3"
+            className="text-[#00D4FF]/85 t-eyebrow mb-3"
             style={{ letterSpacing: '0.28em' }}
           >
             COMMENT ELLE FAIT
           </p>
           <h2
-            className="text-3xl sm:text-4xl font-black text-[#F8FAFC] leading-tight mb-4"
+            className="t-display-l text-[#F8FAFC] leading-tight mb-4"
             style={{ letterSpacing: '-0.035em' }}
           >
             Pas un dashboard de plus.<br />
@@ -110,7 +110,7 @@ export default function ZoneMechanismVisual() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-[#F8FAFC]/80 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto mb-8"
+          className="text-[#F8FAFC]/80 t-bodylg leading-relaxed text-center max-w-2xl mx-auto mb-8"
         >
           Pendant que tu conduis, Ajnaya regarde 7 applis en parallèle. Quand une zone se réveille à 800 m de toi, elle te le dit avant les autres.{' '}
           <span className="text-[#F8FAFC] font-semibold">C&apos;est tout.</span>
@@ -129,7 +129,7 @@ export default function ZoneMechanismVisual() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWAClick}
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm sm:text-base font-bold transition-all bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl t-body-bold transition-all bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white"
             style={{ boxShadow: '0 0 32px rgba(16,185,129,0.40)' }}
           >
             <MessageCircle className="w-4 h-4" />
@@ -170,18 +170,18 @@ function MechanismCard({
         <Icon className="w-5 h-5 text-violet-200" />
       </div>
       <p
-        className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-2"
+        className="text-[#00D4FF] t-eyebrow mb-2"
         style={{ letterSpacing: '0.28em' }}
       >
         {label}
       </p>
       <h3
-        className="text-base sm:text-lg font-bold text-[#F8FAFC] mb-2 leading-tight"
+        className="t-h3 text-[#F8FAFC] mb-2 leading-tight"
         style={{ letterSpacing: '-0.02em' }}
       >
         {title}
       </h3>
-      <p className="text-white/65 text-sm leading-relaxed">{desc}</p>
+      <p className="text-white/65 t-body leading-relaxed">{desc}</p>
     </motion.div>
   )
 }

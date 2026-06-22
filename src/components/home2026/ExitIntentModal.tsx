@@ -218,7 +218,7 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
                 <Sparkles className="w-3.5 h-3.5 text-violet-600" />
                 <span
                   // Design System §5 + §17 : eyebrow 10px weight 800 ls 0.25em uppercase
-                  className="text-[10px] font-extrabold uppercase tracking-[0.25em]"
+                  className="t-eyebrow tracking-[0.25em]"
                   style={{ color: '#6C3CE0' }}
                 >
                   Avant de partir
@@ -228,7 +228,7 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
               {/* Headline */}
               <h2
                 id="exit-intent-title"
-                className="text-2xl md:text-3xl font-bold leading-[1.1] mb-3"
+                className="t-display-m leading-[1.1] mb-3"
                 style={{
                   fontFamily: 'var(--font-genos), system-ui, sans-serif',
                   color: '#1d1d1f',
@@ -252,7 +252,7 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
                 sur WhatsApp.
               </h2>
 
-              <p className="text-[14px] leading-relaxed mb-6" style={{ color: '#6e6e73' }}>
+              <p className="t-body leading-relaxed mb-6" style={{ color: '#6e6e73' }}>
                 Tarif moyen, créneaux qui paient, zones à éviter ce soir.
                 <br />
                 <strong style={{ color: '#1d1d1f' }}>2 minutes</strong> · sans inscription · vous
