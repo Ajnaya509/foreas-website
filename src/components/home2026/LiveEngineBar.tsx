@@ -30,13 +30,13 @@ export default function LiveEngineBar() {
     <section
       aria-label="Moteur Ajnaya en direct"
       className="flex justify-center px-5 pt-2 pb-8"
-      style={{ backgroundColor: 'var(--bg-cream-warm)' }}
+      style={{ backgroundColor: 'transparent' }}
     >
       <div
         className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-full px-4 py-2.5"
         style={{
-          backgroundColor: 'rgba(140,82,255,0.05)',
-          border: '1px solid rgba(140,82,255,0.14)',
+          backgroundColor: 'rgba(140,82,255,0.10)',
+          border: '1px solid rgba(140,82,255,0.24)',
         }}
       >
         {/* Point qui respire + eyebrow "EN DIRECT" */}
@@ -47,14 +47,14 @@ export default function LiveEngineBar() {
           </span>
           <span
             className="text-[10px] font-bold uppercase"
-            style={{ color: '#6C3CE0', letterSpacing: '0.18em' }}
+            style={{ color: '#A78BFF', letterSpacing: '0.18em' }}
           >
             En direct
           </span>
         </span>
 
         {/* Ajnaya lit [signal qui défile] — la partie vivante */}
-        <span className="text-sm font-medium" style={{ color: '#1d1d1f' }}>
+        <span className="text-sm font-medium" style={{ color: '#F8FAFC' }}>
           Ajnaya lit{' '}
           <span className="relative inline-grid align-baseline text-left" style={{ minWidth: '5.5em' }}>
             <AnimatePresence mode="wait">
@@ -65,7 +65,7 @@ export default function LiveEngineBar() {
                 exit={{ opacity: 0, y: -7 }}
                 transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                 className="font-semibold"
-                style={{ color: '#6C3CE0', gridArea: '1 / 1' }}
+                style={{ color: '#A78BFF', gridArea: '1 / 1' }}
               >
                 {SIGNAUX[i]}
               </motion.span>
@@ -76,9 +76,9 @@ export default function LiveEngineBar() {
         <span className="hidden sm:inline" style={{ color: '#d2d2d7' }} aria-hidden="true">·</span>
 
         {/* Faits vrais, échelle typo identique au reste */}
-        <span className="text-sm font-medium" style={{ color: '#6e6e73' }}>
-          <span className="tabular-nums" style={{ color: '#1d1d1f', fontWeight: 600 }}>7</span> plateformes ·{' '}
-          <span className="tabular-nums" style={{ color: '#1d1d1f', fontWeight: 600 }}>51</span> zones, sans interruption
+        <span className="text-sm font-medium" style={{ color: 'rgba(248,250,252,0.6)' }}>
+          <span className="tabular-nums" style={{ color: '#F8FAFC', fontWeight: 600 }}>7</span> plateformes ·{' '}
+          <span className="tabular-nums" style={{ color: '#F8FAFC', fontWeight: 600 }}>51</span> zones, sans interruption
         </span>
       </div>
     </section>

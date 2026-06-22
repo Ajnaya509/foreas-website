@@ -13,8 +13,8 @@ import { authUrls } from '@/lib/auth-urls'
  *
  * Refonte +100/100 :
  * - Logo "/" en violet pur #6C3CE0 (un seul ton — plus de gradient candy)
- * - Liens Pro / Connexion en noir Apple #1d1d1f
- * - Souscrire = noir Apple solide #1d1d1f (cohérence Apple, signal premium)
+ * - Liens Pro / Connexion en noir Apple #F8FAFC
+ * - Souscrire = noir Apple solide #F8FAFC (cohérence Apple, signal premium)
  *   sub-line "Sans CB · 7 j offerts" parfaitement alignée
  * - Au scroll : background blanc Apple `rgba(255,255,255,0.92)` + blur
  */
@@ -41,8 +41,8 @@ export default function HomeHeaderCream() {
       }`}
       style={{
         backgroundColor:
-          scrolled || mobileOpen ? 'rgba(255, 255, 255, 0.92)' : 'transparent',
-        borderColor: scrolled ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
+          scrolled || mobileOpen ? 'rgba(6, 6, 16, 0.72)' : 'transparent',
+        borderColor: scrolled ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
       }}
     >
       <nav
@@ -60,7 +60,7 @@ export default function HomeHeaderCream() {
               className="text-2xl lg:text-[26px] font-semibold tracking-wider"
               style={{
                 fontFamily: 'var(--font-genos, "Genos"), system-ui, sans-serif',
-                color: '#1d1d1f',
+                color: '#F8FAFC',
               }}
             >
               FOREAS
@@ -78,14 +78,14 @@ export default function HomeHeaderCream() {
             <Link
               href="/professionnels"
               className="px-3 py-2 text-[13px] font-medium transition-colors hover:underline underline-offset-4"
-              style={{ color: '#1d1d1f' }}
+              style={{ color: '#F8FAFC' }}
             >
               Pro
             </Link>
             <a
               href={authUrls.loginDriver}
               className="px-3 py-2 text-[13px] font-medium transition-colors hover:underline underline-offset-4"
-              style={{ color: '#1d1d1f' }}
+              style={{ color: '#F8FAFC' }}
             >
               Connexion
             </a>
@@ -109,7 +109,7 @@ export default function HomeHeaderCream() {
                 className="text-[9px] font-semibold uppercase mt-1 tabular-nums"
                 style={{
                   letterSpacing: '0.18em',
-                  color: '#86868b',
+                  color: 'rgba(248,250,252,0.5)',
                 }}
               >
                 Sans CB · 7 j offerts
@@ -124,7 +124,7 @@ export default function HomeHeaderCream() {
             className="md:hidden p-2 rounded-full transition-colors hover:bg-black/[0.05] active:scale-95"
             aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={mobileOpen}
-            style={{ color: '#1d1d1f' }}
+            style={{ color: '#F8FAFC' }}
           >
             {mobileOpen ? (
               <X className="h-5 w-5" />
@@ -143,14 +143,14 @@ export default function HomeHeaderCream() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25 }}
               className="md:hidden overflow-hidden border-t"
-              style={{ borderColor: 'rgba(0, 0, 0, 0.08)' }}
+              style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
             >
               <div className="py-5 flex flex-col gap-1">
                 <Link
                   href="/professionnels"
                   onClick={() => setMobileOpen(false)}
                   className="px-2 py-3 text-base font-medium hover:underline underline-offset-4"
-                  style={{ color: '#1d1d1f' }}
+                  style={{ color: '#F8FAFC' }}
                 >
                   Pro
                 </Link>
@@ -158,7 +158,7 @@ export default function HomeHeaderCream() {
                   href={authUrls.loginDriver}
                   onClick={() => setMobileOpen(false)}
                   className="px-2 py-3 text-base font-medium hover:underline underline-offset-4"
-                  style={{ color: '#1d1d1f' }}
+                  style={{ color: '#F8FAFC' }}
                 >
                   Connexion
                 </a>
@@ -177,7 +177,7 @@ export default function HomeHeaderCream() {
                   className="text-[10px] font-semibold uppercase mt-2 tabular-nums text-center"
                   style={{
                     letterSpacing: '0.18em',
-                    color: '#86868b',
+                    color: 'rgba(248,250,252,0.5)',
                   }}
                 >
                   Sans CB · 7 jours offerts
