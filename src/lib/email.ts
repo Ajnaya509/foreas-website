@@ -154,3 +154,75 @@ export async function sendWelcomeEmail({ email, name, plan, trialEnd }: {
     console.error('[Email] Échec envoi welcome email:', e)
   }
 }
+
+// ─── Échappement HTML (saisies utilisateur dans les emails — anti-injection) ───
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
+  )
+}
+
+// Coquille email sobre charte FOREAS (header image + tagline "Toujours plus loin").
+function foreasEmailShell(inner: string): string {
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Genos:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background-color:#050508;">
+<div style="max-width:600px;margin:0 auto;">
+  <div style="background-color:#000000;text-align:center;"><img src="https://7iphe7xxtq6glx0w.public.blob.vercel-storage.com/Capture%20d%E2%80%99e%CC%81cran%202026-03-26%20a%CC%80%2022.01.03.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" /></div>
+  <div style="background-color:#050508;padding:40px 28px;">${inner}</div>
+  <div style="padding:24px 28px;text-align:center;border-top:1px solid #12121e;">
+    <p style="font-family:'Genos',sans-serif;font-style:italic;font-size:12px;color:#2a2a3a;margin:0;">Toujours plus loin.</p>
+    <p style="font-family:'Montserrat',sans-serif;font-size:9px;color:#1e1e2a;margin:8px 0 0;">FOREAS Labs · Paris · <a href="mailto:contact@foreas.xyz" style="color:#3a3a4a;text-decoration:none;">contact@foreas.xyz</a></p>
+  </div>
+</div></body></html>`
+}
+
+/** Email à l'APPLICANT : "Ta demande de partenariat FOREAS est bien reçue". */
+export async function sendPartnerApplicantEmail({ email, contactName, companyName }: {
+  email: string; contactName: string; companyName: string
+}) {
+  if (!resend) { console.log('[Email] Resend non configuré — applicant', email); return }
+  const firstName = contactName ? escapeHtml(contactName.split(' ')[0]) : ''
+  const inner = `
+    <h1 style="font-family:'Genos',sans-serif;font-size:28px;font-weight:600;color:#ffffff;text-align:center;margin:0 0 12px;line-height:1.2;">Demande bien reçue${firstName ? ', ' + firstName : ''}.</h1>
+    <p style="font-family:'Montserrat',sans-serif;font-size:14px;color:#8888a0;text-align:center;margin:0 0 24px;line-height:1.7;">Ta demande de partenariat FOREAS pour <strong style="color:#ffffff;">${escapeHtml(companyName)}</strong> est entre nos mains. On l'étudie et on revient vers toi sous <strong style="color:#ffffff;">24 à 48 h</strong>.</p>
+    <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:#6b6b80;text-align:center;margin:0;line-height:1.7;">Rien à faire de ton côté pour l'instant. Si c'est validé, tu recevras un email pour activer ton accès partenaire et choisir ton mot de passe.</p>`
+  try {
+    await resend.emails.send({
+      from: 'FOREAS <noreply@foreas.xyz>',
+      to: email,
+      subject: 'Ta demande de partenariat FOREAS est bien reçue',
+      html: foreasEmailShell(inner),
+    })
+    console.log('[Email] Partner applicant envoyé à', email)
+  } catch (e) { console.error('[Email] Échec applicant:', e) }
+}
+
+/** Email INTERNE à contact@foreas.xyz : nouvelle demande + lien admin pour approuver. */
+export async function sendPartnerInternalEmail(app: {
+  companyName: string; contactName: string; email: string; phone?: string; siret?: string; message?: string
+}) {
+  if (!resend) { console.log('[Email] Resend non configuré — internal'); return }
+  const adminUrl =
+    (process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://dashboard.foreas.xyz').replace(/\/$/, '') +
+    '/admin/partner-pending'
+  const row = (k: string, v?: string) =>
+    v
+      ? `<tr><td style="font-family:'Montserrat',sans-serif;font-size:12px;color:#6b6b80;padding:6px 12px 6px 0;width:110px;vertical-align:top;">${k}</td><td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#ffffff;padding:6px 0;">${escapeHtml(v)}</td></tr>`
+      : ''
+  const inner = `
+    <h1 style="font-family:'Genos',sans-serif;font-size:24px;font-weight:600;color:#ffffff;margin:0 0 6px;">Nouvelle demande partenaire</h1>
+    <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;margin:0 0 24px;">${escapeHtml(app.companyName)} — ${escapeHtml(app.email)}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;background-color:#0a0a12;border:1px solid #18182a;border-radius:12px;padding:8px 16px;">
+      ${row('Société', app.companyName)}${row('Contact', app.contactName)}${row('Email', app.email)}${row('Téléphone', app.phone)}${row('SIRET', app.siret)}${row('Message', app.message)}
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="background-color:#8C52FF;border-radius:12px;"><a href="${adminUrl}" style="display:block;padding:14px 28px;color:#ffffff;font-family:'Genos',sans-serif;font-size:16px;font-weight:600;text-decoration:none;">Approuver dans l'espace admin &rarr;</a></td></tr></table>`
+  try {
+    await resend.emails.send({
+      from: 'FOREAS <noreply@foreas.xyz>',
+      to: 'contact@foreas.xyz',
+      subject: `Nouvelle demande partenaire : ${app.companyName}`,
+      html: foreasEmailShell(inner),
+    })
+    console.log('[Email] Partner internal envoyé')
+  } catch (e) { console.error('[Email] Échec internal:', e) }
+}

@@ -2,12 +2,12 @@ import { Metadata } from 'next'
 import PartnerSignupForm from './PartnerSignupForm'
 
 export const metadata: Metadata = {
-  title: 'Devenir partenaire FOREAS — Programme CAP',
+  title: 'Devenir partenaire FOREAS',
   description:
-    'Rejoignez le programme Customer Acquisition Program de FOREAS. Recrutez des chauffeurs VTC et gagnez 10€/mois par filleul actif.',
+    'Auto-école, flotte, fédération, créateur, agent : amène des chauffeurs sur FOREAS et touche une commission mensuelle récurrente. Candidature en 1 minute, validée sous 24-48h.',
   openGraph: {
-    title: 'Devenir partenaire FOREAS — Programme CAP',
-    description: 'Gagnez 10€/mois par chauffeur recruté. Auto-école, flotte, influenceur, agent commercial.',
+    title: 'Devenir partenaire FOREAS — Toujours plus loin',
+    description: 'Amène des chauffeurs sur FOREAS, touche une commission mensuelle récurrente. Candidate en 1 minute.',
     url: 'https://foreas.xyz/devenir-partenaire',
   },
 }
