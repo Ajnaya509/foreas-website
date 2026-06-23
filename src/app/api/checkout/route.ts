@@ -88,7 +88,12 @@ export async function POST(request: NextRequest) {
     const cookieRefMatch = cookieHeader.match(/foreas_partner_ref=([^;]+)/)
     const effectiveReferralCode = (referral_code || cookieRefMatch?.[1] || '').trim().toUpperCase() || null
 
-    // Parrainage V3 — remise dynamique selon le palier du parrain (fonction SQL, GRANT anon).
+    // Parrainage V3 — remise dynamique (fonction SQL, GRANT anon).
+    // get_referral_discount_for_code gère DÉJÀ les codes CHAUFFEUR (palier 10/15/18 %)
+    // ET les codes PARTENAIRE (sa remise si is_promo_active). Le repli explicite sur
+    // get_partner_discount_for_code est une ceinture+bretelles : si la branche
+    // partenaire de la 1re fonction évoluait côté fil APP, les partenaires restent
+    // couverts (fonction stricte : status='active' + is_promo_active).
     let referralDiscountPct = 0
     if (effectiveReferralCode) {
       try {
@@ -96,6 +101,12 @@ export async function POST(request: NextRequest) {
           p_code: effectiveReferralCode,
         })
         referralDiscountPct = typeof data === 'number' ? data : 0
+        if (referralDiscountPct === 0) {
+          const { data: partnerData } = await supabase.rpc('get_partner_discount_for_code', {
+            p_code: effectiveReferralCode,
+          })
+          referralDiscountPct = typeof partnerData === 'number' ? partnerData : 0
+        }
       } catch {
         /* code inconnu / DB indispo → pas de remise, checkout normal */
       }
