@@ -1047,7 +1047,7 @@ export default function AjnayaConversationModal({
                         className="text-center text-[10px] font-medium mt-1.5 tabular-nums"
                         style={{ color: '#86868b' }}
                       >
-                        Sur WhatsApp · Gratuit · 2 min
+                        Sur WhatsApp · gratuit · sans inscription
                       </p>
                     </motion.div>
                   )}
