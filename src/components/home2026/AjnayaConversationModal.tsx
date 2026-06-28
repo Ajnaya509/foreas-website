@@ -991,6 +991,9 @@ export default function AjnayaConversationModal({
                               zone_category: modalZoneCategory,
                               clarify_branch: clarifyBranchDetected,
                               has_data: zoneData?.has_data ?? false,
+                              // Chantier B — rattache le clic WhatsApp à la personne (suivi + relance DG)
+                              identity_id: identityId,
+                              visitor_id: visitorId,
                             })
                             if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
                               const blob = new Blob([payload], { type: 'application/json' })

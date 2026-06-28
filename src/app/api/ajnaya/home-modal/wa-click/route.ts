@@ -26,6 +26,9 @@ interface WaClickPayload {
   zone_category?: 'disney' | 'idf' | 'region' | 'unknown' | null
   clarify_branch?: boolean
   has_data?: boolean
+  identity_id?: string | null
+  visitor_id?: string | null
+  ab_variant?: string | null
 }
 
 async function getSupabase() {
@@ -48,23 +51,43 @@ export async function POST(request: NextRequest) {
     return new NextResponse(null, { status: 204 })
   }
 
+  // Badge appareil durable (1ère partie) posé par le middleware — ancre identité serveur.
+  const device_cookie_id = request.cookies.get('foreas_vid')?.value ?? null
+
   // Fire-and-forget — pas d'await sur la réponse client
   ;(async () => {
     try {
       const sb = await getSupabase()
       if (!sb) return
+
+      // Identité : le client renvoie l'identity_id reçu aux tours précédents ; repli
+      // sur resolve_identity(visitor_id|cookie) pour ne JAMAIS perdre la personne au
+      // moment le plus précieux du tunnel (le clic WhatsApp). Brief Chantier B.
+      let identityId: string | null = body.identity_id ?? null
+      if (!identityId) {
+        const key = body.visitor_id || device_cookie_id
+        if (key) {
+          const { data } = await sb.rpc('resolve_identity', { p_visitor_id: key, p_canal: 'home_modal' })
+          identityId = (data as { identity_id?: string } | null)?.identity_id ?? null
+        }
+      }
+
       await sb.rpc('record_funnel_event', {
         p_step_code:    'home_modal_wa_clicked',
         p_step_label:   'home_modal_wa_clicked',
+        p_identity_id:  identityId,
         p_session_id:   body.session_id,
         p_canal_source: 'home_modal',
         p_zone_match:   body.zone ?? null,
+        p_ab_variant:   body.ab_variant ?? null,
         p_context: {
           turn:           body.turn ?? null,
           zone:           body.zone ?? null,
           zone_category:  body.zone_category ?? null,
           clarify_branch: Boolean(body.clarify_branch),
           has_data:       Boolean(body.has_data),
+          visitor_id:     body.visitor_id ?? null,
+          device_cookie_id,
           ts:             new Date().toISOString(),
         },
       })

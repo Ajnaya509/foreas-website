@@ -271,22 +271,50 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
   }
 }
 
+// ─── Résolution d'identité (anonyme dès le fingerprint) ───────────────────────
+// Brief AJNAYA_FIX_TUNNEL_SITE_HOME_MODAL §Chantier B : rattacher CHAQUE funnel_event
+// à une PERSONNE pour que le DG puisse relancer un lâcheur. resolve_identity(p_visitor_id)
+// crée/résout une identité (user_type='anonymous') depuis le fingerprint + renvoie son id.
+async function resolveIdentityId(opts: {
+  identity_id: string | null
+  visitor_id: string | null
+  device_cookie_id: string | null
+}): Promise<string | null> {
+  // Déjà résolu côté client / tour précédent → on garde la même identité.
+  if (opts.identity_id) return opts.identity_id
+  // Sans aucune clé anonyme, ne PAS créer d'identité orpheline (non re-matchable).
+  const key = opts.visitor_id || opts.device_cookie_id
+  if (!key) return null
+  try {
+    const sb = await getSupabase()
+    if (!sb) return null
+    const { data } = await sb.rpc('resolve_identity', { p_visitor_id: key, p_canal: 'home_modal' })
+    return (data as { identity_id?: string } | null)?.identity_id ?? null
+  } catch {
+    return null
+  }
+}
+
 // ─── Record funnel event (fire and forget) ────────────────────────────────────
+// identityId rattache l'événement à une PERSONNE (colonne identity_id, plus jamais NULL).
 async function recordFunnelEvent(
   event: string,
   sessionId: string,
+  identityId: string | null,
   meta: Record<string, unknown> = {}
 ) {
   try {
     const sb = await getSupabase()
     if (!sb) return
-    // RPC params : p_step_code / p_session_id / p_canal_source / p_zone_match / p_context
     await sb.rpc('record_funnel_event', {
       p_step_code:    event,
       p_step_label:   event,
+      p_identity_id:  identityId,
       p_session_id:   sessionId,
       p_canal_source: 'home_modal',
+      p_zone_input:   (meta.zone_query as string | undefined) ?? (meta.zone as string | undefined) ?? null,
       p_zone_match:   (meta.zone_match as string | undefined) ?? (meta.zone as string | undefined) ?? null,
+      p_ab_variant:   (meta.ab_variant as string | undefined) ?? null,
       p_context:      meta,
     })
   } catch { /* silencieux — fire-and-forget */ }
@@ -462,6 +490,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'message requis' }, { status: 400 })
     }
 
+    // Résout (ou crée) l'identité dès maintenant, AVANT le 1er funnel event, pour
+    // que TOUTES les étapes portent le même identity_id (suivi + relance par le DG).
+    const ab_variant = (body as { ab_variant?: string }).ab_variant ?? null
+    const resolvedIdentityId = await resolveIdentityId({ identity_id, visitor_id, device_cookie_id })
+
     // 1. Fetch zone data on turn 1
     let resolvedZoneData: ZoneData | null = clientZoneData
     if (turn === 1) {
@@ -469,7 +502,7 @@ export async function POST(request: NextRequest) {
       // Guard contre stats absurdes (-100% demand, 0€/h, échantillon < 5 courses)
       resolvedZoneData = sanitizeZoneData(raw)
       // Fire funnel event (fire-and-forget)
-      recordFunnelEvent('home_modal_zone_queried', session_id, {
+      recordFunnelEvent('home_modal_zone_queried', session_id, resolvedIdentityId, {
         zone_query:    message,
         has_data:      resolvedZoneData?.has_data ?? false,
         zone_match:    resolvedZoneData?.zone_match,
@@ -477,12 +510,14 @@ export async function POST(request: NextRequest) {
         sanitized:     raw && !resolvedZoneData?.has_data && raw.has_data ? true : false,
         visitor_id,        // badge fingerprint client
         device_cookie_id,  // badge appareil durable serveur (1ère partie)
+        ...(ab_variant ? { ab_variant } : {}),
       })
     } else if (turn === 2) {
-      recordFunnelEvent('home_modal_creneau_given', session_id, {
+      recordFunnelEvent('home_modal_creneau_given', session_id, resolvedIdentityId, {
         creneau: message,
         zone: resolvedZoneData?.zone_match,
         visitor_id,
+        ...(ab_variant ? { ab_variant } : {}),
       })
     }
 
@@ -520,7 +555,7 @@ export async function POST(request: NextRequest) {
         const result = await callPieuvreBrain({
           tentacle: 'widget_site',
           canal: 'web',
-          identity_id: identity_id,
+          identity_id: resolvedIdentityId ?? identity_id,
           session_id,
           message: { role: 'user', text: message, type: 'text' },
           context: extendedContext,
@@ -594,25 +629,27 @@ export async function POST(request: NextRequest) {
     // home_modal_clarify_branch : utilisateur en confusion ("j'ai pas compris")
     // → branche clarify activée, mesure la qualité du save côté Pieuvre.
     if (pieuvreClarifyBranch) {
-      recordFunnelEvent('home_modal_clarify_branch', session_id, {
+      recordFunnelEvent('home_modal_clarify_branch', session_id, resolvedIdentityId, {
         turn,
         zone: resolvedZoneData?.zone_match,
         zone_category: zoneCategory,
         user_message_truncated: message.slice(0, 120),
         visitor_id,
+        ...(ab_variant ? { ab_variant } : {}),
       })
     }
 
     // home_modal_wa_push : CTA WhatsApp affiché (turn ≥ 2). Compté à chaque
     // affichage côté serveur — la dédup éventuelle se fait côté table funnel.
     if (show_wa_cta) {
-      recordFunnelEvent('home_modal_wa_push', session_id, {
+      recordFunnelEvent('home_modal_wa_push', session_id, resolvedIdentityId, {
         turn,
         zone: resolvedZoneData?.zone_match,
         zone_category: zoneCategory,
         has_data: resolvedZoneData?.has_data ?? false,
         clarify_branch: pieuvreClarifyBranch,
         visitor_id,
+        ...(ab_variant ? { ab_variant } : {}),
       })
     }
 
@@ -632,7 +669,7 @@ export async function POST(request: NextRequest) {
       show_wa_cta,
       turn_next,
       testimonials,
-      identity_id: pieuvreIdentityId ?? identity_id,
+      identity_id: pieuvreIdentityId ?? resolvedIdentityId ?? identity_id,
       // Pieuvre v1.1 — exposés pour tracking client (Meta CAPI fbq dimensions)
       clarify_branch_detected: pieuvreClarifyBranch,
       modal_zone_category: zoneCategory,
