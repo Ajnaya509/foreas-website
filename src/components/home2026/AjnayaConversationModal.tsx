@@ -467,6 +467,10 @@ function MessageBubble({
 // MODAL PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Chantier A (brief tunnel) — variante CTA mesurable : chaque funnel_event porte ce tag
+// (colonne ab_variant) → comparaison conversion avant/après via v_acq_funnel_site.
+const AB_VARIANT = 'cta_creneau_v1'
+
 export default function AjnayaConversationModal({
   isOpen,
   onClose,
@@ -692,6 +696,7 @@ export default function AjnayaConversationModal({
             zone_data: zoneData,
             identity_id: identityId,
             visitor_id: visitorId,
+            ab_variant: AB_VARIANT,
           }),
         })
 
@@ -994,6 +999,7 @@ export default function AjnayaConversationModal({
                               // Chantier B — rattache le clic WhatsApp à la personne (suivi + relance DG)
                               identity_id: identityId,
                               visitor_id: visitorId,
+                              ab_variant: AB_VARIANT,
                             })
                             if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
                               const blob = new Blob([payload], { type: 'application/json' })
@@ -1024,21 +1030,21 @@ export default function AjnayaConversationModal({
                             })
                           } catch { /* noop */ }
                         }}
-                        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-white font-semibold text-[14px] transition-all hover:opacity-92 active:scale-[0.98]"
+                        className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-white font-bold text-[15px] transition-all hover:opacity-92 active:scale-[0.98]"
                         style={{
                           backgroundColor: '#25D366',
-                          boxShadow: '0 6px 22px -6px rgba(37,211,102,0.42)',
+                          boxShadow: '0 8px 26px -6px rgba(37,211,102,0.5)',
                         }}
                       >
-                        <MessageCircle className="w-4 h-4" />
-                        Continuer sur WhatsApp
+                        <MessageCircle className="w-[18px] h-[18px]" />
+                        Reçois ton créneau qui rapporte
                       </a>
-                      {/* §17 brièveté radicale : 3 mots-totem séparés par · */}
+                      {/* §17 brièveté radicale : bénéfice → canal rassurant */}
                       <p
                         className="text-center text-[10px] font-medium mt-1.5 tabular-nums"
                         style={{ color: '#86868b' }}
                       >
-                        Gratuit · 2 min · Sans inscription
+                        Sur WhatsApp · Gratuit · 2 min
                       </p>
                     </motion.div>
                   )}
