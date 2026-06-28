@@ -974,7 +974,10 @@ export default function AjnayaConversationModal({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ type: 'spring', damping: 22, stiffness: 260, delay: 0.15 }}
-                      className="pt-1"
+                      // Chantier A (H5) — CTA collé en bas de la zone de chat : toujours
+                      // visible sur mobile même quand la conversation défile (jamais sous la ligne).
+                      className="sticky bottom-0 z-10 pt-3 pb-1 -mx-4 px-4"
+                      style={{ background: 'linear-gradient(to top, #ffffff 62%, rgba(255,255,255,0))' }}
                     >
                       <a
                         href={waUrl}
