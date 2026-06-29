@@ -18,9 +18,19 @@ export default async function OpengraphImage() {
   const bg = await readFile(join(process.cwd(), 'src/app/og-bg.jpg'))
   const bgSrc = `data:image/jpeg;base64,${bg.toString('base64')}`
 
+  // Polices de marque FOREAS (TTF locales) — Genos = display/signature, Montserrat = body.
+  const fontsDir = join(process.cwd(), 'public/fonts')
+  // ⚠️ Satori ne lit PAS les polices variables → on charge des instances STATIQUES
+  // (Genos@700, Montserrat@500/700) générées via fonttools varLib.instancer.
+  const [genos, montMedium, montBold] = await Promise.all([
+    readFile(join(fontsDir, 'Genos-og.ttf')),
+    readFile(join(fontsDir, 'Montserrat-Medium.ttf')),
+    readFile(join(fontsDir, 'Montserrat-Bold-og.ttf')),
+  ])
+
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', position: 'relative', fontFamily: 'sans-serif' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', position: 'relative', fontFamily: 'Montserrat' }}>
         {/* Fond : la ville qui paie */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -63,7 +73,7 @@ export default async function OpengraphImage() {
         >
           {/* Haut : wordmark + pastille plateformes */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: 6, color: '#F8FAFC', display: 'flex' }}>
+            <div style={{ fontFamily: 'Genos', fontSize: 44, fontWeight: 700, letterSpacing: 8, color: '#F8FAFC', display: 'flex' }}>
               FOREAS
             </div>
             <div
@@ -89,12 +99,13 @@ export default async function OpengraphImage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 800 }}>
             <div
               style={{
+                fontFamily: 'Genos',
                 display: 'flex',
                 flexDirection: 'column',
-                fontSize: 86,
-                fontWeight: 800,
-                letterSpacing: -3,
-                lineHeight: 1.02,
+                fontSize: 104,
+                fontWeight: 700,
+                letterSpacing: 0,
+                lineHeight: 0.98,
                 color: '#FFFFFF',
               }}
             >
@@ -145,6 +156,14 @@ export default async function OpengraphImage() {
         </div>
       </div>
     ),
-    { ...size },
+    {
+      ...size,
+      fonts: [
+        { name: 'Genos', data: genos, weight: 700, style: 'normal' },
+        { name: 'Genos', data: genos, weight: 900, style: 'normal' },
+        { name: 'Montserrat', data: montMedium, weight: 500, style: 'normal' },
+        { name: 'Montserrat', data: montBold, weight: 700, style: 'normal' },
+      ],
+    },
   )
 }
