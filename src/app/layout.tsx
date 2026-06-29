@@ -61,14 +61,14 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'FOREAS — Gagne plus, roule moins. L\'IA des chauffeurs VTC.',
-  description: 'L\'IA Ajnaya te dit où aller en temps réel — Uber, Bolt, Heetch + 4 autres lues en direct. Tape ta zone, vois combien ça paie ce soir.',
-  keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'Heetch', 'revenus', 'Ajnaya', 'IA chauffeur', 'Paris'],
+  title: 'FOREAS — Gagne plus, roule moins. Pour les chauffeurs VTC.',
+  description: 'Ton net réel, commission déduite, avant d\'accepter la course. FOREAS lit Uber, Bolt, Heetch + 4 autres plateformes en direct. Tape ta zone, vois ce qui paie ce soir.',
+  keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'Heetch', 'revenus', 'Ajnaya', 'net réel VTC', 'Paris'],
   authors: [{ name: 'FOREAS Labs' }],
   metadataBase: new URL('https://foreas.xyz'),
   openGraph: {
     title: 'FOREAS — Gagne plus, roule moins',
-    description: 'L\'IA Ajnaya te dit où aller. Tape ta zone, vois combien ça paie ce soir — avant de démarrer.',
+    description: 'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. FOREAS lit les 7 plateformes en direct.',
     url: 'https://foreas.xyz',
     siteName: 'FOREAS',
     locale: 'fr_FR',
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'FOREAS — Gagne plus, roule moins',
-    description: 'L\'IA Ajnaya te dit où aller. Tape ta zone, vois combien ça paie ce soir — avant de démarrer.',
+    description: 'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. FOREAS lit les 7 plateformes en direct.',
   },
   robots: {
     index: true,
