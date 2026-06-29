@@ -20,13 +20,13 @@ const LiveSocialProofToasts = dynamic(() => import('@/components/home2026/LiveSo
 const ExitIntentModal = dynamic(() => import('@/components/home2026/ExitIntentModal'))
 
 export const metadata: Metadata = {
-  title: 'FOREAS — Gagne plus, roule moins. L\'IA des chauffeurs VTC.',
+  title: 'FOREAS — Gagne plus, roule moins. Pour les chauffeurs VTC.',
   description:
-    'L\'IA Ajnaya te dit où aller en temps réel. Tarif horaire moyen, demande, pool optimal — sur 51 zones VTC. Tape ta zone, vois combien ça paie ce soir.',
+    'Ton net réel, commission déduite, avant d\'accepter la course. Tarif horaire, demande et pool optimal sur 51 zones VTC. Tape ta zone, vois ce qui paie ce soir.',
   openGraph: {
     title: 'FOREAS — Gagne plus, roule moins',
     description:
-      'L\'IA Ajnaya te dit où aller. Tape ta zone, vois combien ça paie ce soir — avant de démarrer.',
+      'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. FOREAS lit les 7 plateformes en direct.',
     type: 'website',
     locale: 'fr_FR',
     url: 'https://foreas.xyz/',
@@ -46,7 +46,7 @@ const JSON_LD = {
       url: 'https://foreas.xyz/',
       name: 'FOREAS — Gagne plus, roule moins',
       description:
-        'L\'IA Ajnaya pour chauffeurs VTC : où aller, quand, et combien gagner.',
+        'FOREAS pour chauffeurs VTC : ton net réel avant d\'accepter, où aller, quand, et combien tu gardes vraiment.',
       inLanguage: 'fr-FR',
       isPartOf: {
         '@type': 'WebSite',
@@ -60,7 +60,7 @@ const JSON_LD = {
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web, iOS, Android, WhatsApp',
       description:
-        'L\'IA FOREAS pour chauffeurs VTC indépendants — analyse 7 plateformes en temps réel, dit où aller avant les autres.',
+        'FOREAS pour chauffeurs VTC indépendants — lit 7 plateformes en temps réel et sort ton net réel, commission déduite, avant que t\'acceptes.',
       offers: {
         '@type': 'Offer',
         price: '0',
