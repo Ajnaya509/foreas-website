@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
     const stripe = getStripe()
     const body = await request.json()
-    const { plan, mode, referral_code } = body
+    const { plan, mode, referral_code, immediate } = body
 
     // Referral code: from body OR from cookie foreas_partner_ref
     const cookieHeader = request.headers.get('cookie') || ''
@@ -140,9 +140,12 @@ export async function POST(request: NextRequest) {
       // Railway webhook reads this to create partner_referrals row
       ...(effectiveReferralCode ? { client_reference_id: effectiveReferralCode } : {}),
       subscription_data: {
-        trial_end: trialEnd,
+        // Cash-now (brief réactivation) : `immediate` → on encaisse TOUT DE SUITE (pas de
+        // trial_end), garantie 30j gérée hors-Stripe. Sinon : essai jusqu'au lundi 18h.
+        ...(immediate ? {} : { trial_end: trialEnd }),
         metadata: {
           plan,
+          flow: immediate ? 'immediate' : 'trial',
           ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
           ...(referralDiscountPct > 0 ? { referral_discount_pct: String(referralDiscountPct) } : {}),
         },
