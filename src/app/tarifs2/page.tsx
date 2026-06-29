@@ -69,6 +69,12 @@ function FaqItem({ q, a, id }: { q: string; a: string; id?: string }) {
   )
 }
 
+// ── INTERRUPTEUR PAIEMENT (brief réactivation, Chandler 2026-06-29) ───────────
+// true  = paiement IMMÉDIAT + garantie 30j (stratégie cash-now ACTUELLE).
+// false = essai gratuit 7j (toute l'archi essai est CONSERVÉE → rebrancher = repasser false).
+// Tous les textes "essai/0€" + la TrialBridge sont gated par ce flag.
+const IMMEDIATE_PAYMENT = true
+
 // ─── Trial Bridge ────────────────────────────────────────────────────────────
 function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onConfirm: () => void; onClose: () => void }) {
   const nextMonday = getNextMonday18hParis()
@@ -130,7 +136,7 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
 function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 'monthly' | 'annual'; onClose: () => void }) {
   const nextMonday = getNextMonday18hParis()
   const fetchClientSecret = useCallback(async () => {
-    const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: `${planId}_${billing}`, mode: 'embedded' }) })
+    const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: `${planId}_${billing}`, mode: 'embedded', immediate: IMMEDIATE_PAYMENT }) })
     const data = await res.json()
     return data.clientSecret
   }, [planId, billing])
@@ -141,7 +147,7 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-violet-900/30 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center"><span className="text-[10px] font-bold text-white">F</span></div>
-            <div><p className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">0€ débité · Premier débit le {formatDateFR(nextMonday)}</p></div>
+            <div><p className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">{IMMEDIATE_PAYMENT ? 'Paiement aujourd\'hui · garanti 30 jours remboursé' : `0€ débité · Premier débit le ${formatDateFR(nextMonday)}`}</p></div>
           </div>
           <button onClick={onClose} className="text-white/55 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
         </div>
@@ -207,7 +213,7 @@ const PLANS: Plan[] = [
       { text: 'Parrainage 25€/filleul à vie (8€ N2 · 2€ N3)', ok: true },
       { text: 'Chat communauté + support standard', ok: true },
     ],
-    cta: 'Essayer 7 jours — 0€ aujourd\'hui',
+    cta: IMMEDIATE_PAYMENT ? 'Démarrer maintenant' : 'Essayer 7 jours — 0€ aujourd\'hui',
     ctaVariant: 'primary',
   },
   {
@@ -250,7 +256,8 @@ function TarifsContent() {
       return
     }
     setSelectedPlan(plan)
-    setFlowState('bridge')
+    // Immédiat → on va DIRECT au paiement (pas de TrialBridge qui promet "0€ aujourd'hui").
+    setFlowState(IMMEDIATE_PAYMENT ? 'checkout' : 'bridge')
     const price = billing === 'monthly' ? plan.monthlyPrice : plan.annualMonthlyPrice
     trackInitiateCheckout(plan.name, price)
   }
@@ -259,11 +266,13 @@ function TarifsContent() {
 
   const faqs = [
     { id: 'faq-diff', q: "Quelle est la vraie différence entre les 3 plans ?", a: "Free = rien (c'est fait pour ça — pour te montrer ce que tu rates). Pro = tout ce qui fait gagner du temps et de l'argent : Ajnaya illimitée + voix Koraly + Coach courses verdict 0.3s + Concierge B2B + site perso + Compta IA OCR (le plan choisi par 8 chauffeurs sur 10). Elite = en plus, courses FOREAS prioritaires (dispatch direct des clients FOREAS aux Elite avant les autres, +200€/sem en moyenne) + early access nouvelles features + coaching Ajnaya privé + support <1h." },
-    { id: 'faq-carte', q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro : Stripe garde ta carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0€ jusqu'à lundi 18h. Tu annules en 1 clic depuis l'app. Si tu annules avant, il n'y a rien à payer. Point." },
+    IMMEDIATE_PAYMENT
+      ? { id: 'faq-carte', q: "Je paie tout de suite ? Et si ça me va pas ?", a: "Oui, tu paies aujourd'hui — et tu es couvert par la garantie 30 jours : pas convaincu, tu te fais rembourser sans discuter, sans question. Tu testes en vrai sur tes courses, tu risques zéro. (Le plan Free reste 100% gratuit, juste un email.)" }
+      : { id: 'faq-carte', q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro : Stripe garde ta carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0€ jusqu'à lundi 18h. Tu annules en 1 clic depuis l'app. Si tu annules avant, il n'y a rien à payer. Point." },
     { id: 'faq-mensuel', q: "Pourquoi mensuel et non hebdomadaire ?", a: "Simple : plus lisible. 97€/mois = 3,23€/jour. Tu sais exactement ce que tu paies. Pas de calcul. L'annuel à 970€ te donne 2 mois offerts — c'est 194€ économisés si tu restes toute l'année." },
     { id: 'faq-parrainage', q: "25€/filleul à vie, est-ce un piège ?", a: "Non. Tant que ton filleul reste abonné Pro ou Elite ET que toi aussi, tu touches 25€/mois sur lui (N1). Plus 8€ s'il parraine quelqu'un (N2). Plus 2€ au niveau 3. Activé dès le 1er paiement de ton filleul. Virement automatique. Pas de plafond, pas d'expiration. Un lien parrain donne -20% à vie sur le mensuel à ton filleul." },
     { id: 'faq-elite', q: "Elite, ça veut dire quoi exactement \"courses FOREAS prioritaires\" ?", a: "FOREAS dispatch ses propres clients privés (hôtels, Airbnb, corporate) qui réservent directement via foreas.xyz — sans Uber/Bolt. Quand un client réserve, on dispatch d'abord aux Elite dans le rayon (5 min), puis aux Pro (10 min). C'est ce qui justifie le delta Elite/Pro — tu captures les clients premium FOREAS direct avant tout le monde. En moyenne +200€/sem sur les chauffeurs Elite actifs (Paris)." },
-    { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — tu dois faire le tri. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec toi en temps réel. Le tier Pro te laisse tester 7 jours sans payer pour te faire ta propre idée." },
+    { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — tu dois faire le tri. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec toi en temps réel. " + (IMMEDIATE_PAYMENT ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : "Le tier Pro te laisse tester 7 jours sans payer pour te faire ta propre idée.") },
     { id: 'faq-desactivation', q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme te coupe, tu redistribues ton temps sur les autres en 1 minute. La communauté FOREAS te briefe sur les bons réflexes pour récupérer ton compte." },
     { id: 'faq-annulation', q: "Et si je veux arrêter dans 3 mois ?", a: "Tu cliques 'Annuler', tu confirmes, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Et si tu veux juste downgrade vers Free, tu gardes l'accès heatmap basique sans payer." },
   ]
@@ -323,7 +332,7 @@ function TarifsContent() {
             <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-1.5 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               <span className="text-green-300 text-xs font-semibold uppercase" style={{ letterSpacing: '0.1em' }}>
-                0€ aujourd'hui · Annulation 1 clic
+                {IMMEDIATE_PAYMENT ? 'Garanti 30 jours · remboursé' : '0€ aujourd\'hui · Annulation 1 clic'}
               </span>
             </div>
             <h1
@@ -507,7 +516,7 @@ function TarifsContent() {
                 )}
 
                 {isPro && (
-                  <p className="text-center text-white/45 text-[10px] mt-3 tabular-nums">0€ aujourd'hui · Annulation 1 clic</p>
+                  <p className="text-center text-white/45 text-[10px] mt-3 tabular-nums">{IMMEDIATE_PAYMENT ? 'Garanti 30 jours · remboursé sans question' : '0€ aujourd\'hui · Annulation 1 clic'}</p>
                 )}
               </motion.div>
             )
@@ -637,10 +646,14 @@ function TarifsContent() {
             <div className="text-4xl mb-4">🛡️</div>
             <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>GARANTIE FERME</p>
             <h3 className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-3 leading-tight" style={{ letterSpacing: '-0.025em' }}>
-              Si tu n&apos;es pas convaincu en 7 jours,<br />tu ne paies rien.
+              {IMMEDIATE_PAYMENT
+                ? <>Pas convaincu sous 30 jours&nbsp;?<br />Remboursé, sans discuter.</>
+                : <>Si tu n&apos;es pas convaincu en 7 jours,<br />tu ne paies rien.</>}
             </h3>
             <p className="text-white/65 text-sm leading-relaxed">
-              0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ jusqu&apos;à lundi 18h. Si tu as un doute, tu fermes l&apos;app — il n&apos;y a rien à annuler. Si tu restes, c&apos;est que ça vaut le coup. <span className="text-white/80">Point.</span>
+              {IMMEDIATE_PAYMENT
+                ? <>Tu paies aujourd&apos;hui. Tu testes en vrai, sur tes vraies courses. Pas convaincu sous 30 jours&nbsp;? On te rembourse, sans question. Tu risques zéro. <span className="text-white/80">Point.</span></>
+                : <>0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ jusqu&apos;à lundi 18h. Si tu as un doute, tu fermes l&apos;app — il n&apos;y a rien à annuler. Si tu restes, c&apos;est que ça vaut le coup. <span className="text-white/80">Point.</span></>}
             </p>
           </div>
         </div>
@@ -663,14 +676,16 @@ function TarifsContent() {
         <div className="absolute inset-0 pointer-events-none animate-halo-pulse" aria-hidden style={{ background: 'radial-gradient(ellipse 50% 40% at 50% 60%, rgba(140,82,255,0.18) 0%, transparent 70%)' }} />
         <div className="max-w-2xl mx-auto text-center relative">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>7 JOURS · ZÉRO RISQUE · TU DÉCIDES</p>
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>{IMMEDIATE_PAYMENT ? 'GARANTI 30 JOURS · ZÉRO RISQUE · TU DÉCIDES' : '7 JOURS · ZÉRO RISQUE · TU DÉCIDES'}</p>
             <h2 className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]" style={{ letterSpacing: '-0.045em' }}>
-              Dans 7 jours,{' '}
-              <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu sauras.</span>
+              {IMMEDIATE_PAYMENT
+                ? <>Ce soir,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu reprends la main.</span></>
+                : <>Dans 7 jours,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu sauras.</span></>}
             </h2>
             <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
-              Soit Ajnaya t&apos;a fait gagner plus.<br className="hidden sm:block" />
-              Soit tu fermes, tu ne paies rien, tu continues comme avant.
+              {IMMEDIATE_PAYMENT
+                ? <>Soit Ajnaya te fait gagner plus.<br className="hidden sm:block" />Soit tu te fais rembourser sous 30 jours. Dans les deux cas, tu ne perds rien.</>
+                : <>Soit Ajnaya t&apos;a fait gagner plus.<br className="hidden sm:block" />Soit tu fermes, tu ne paies rien, tu continues comme avant.</>}
             </p>
             <p className="text-cyan-300/85 text-sm sm:text-base mb-9">
               La seule question&nbsp;: tu préfères savoir, ou pas&nbsp;?
@@ -681,18 +696,20 @@ function TarifsContent() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-extrabold py-4 px-12 rounded-2xl text-lg transition-all"
               style={{ boxShadow: '0 0 80px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
             >
-              Activer ton essai 7 jours (0&nbsp;€) →
+              {IMMEDIATE_PAYMENT ? <>Démarrer maintenant →</> : <>Activer ton essai 7 jours (0&nbsp;€) →</>}
             </motion.button>
             <div className="flex items-center justify-center gap-x-6 gap-y-2 mt-6 text-white/50 text-[11px] flex-wrap tabular-nums">
               <span>🔒 Stripe · SSL</span>
-              <span>✓ 0&nbsp;€ aujourd'hui</span>
+              <span>{IMMEDIATE_PAYMENT ? <>🛡️ Garanti 30 jours</> : <>✓ 0&nbsp;€ aujourd&apos;hui</>}</span>
               <span>🛡️ Annulation 1 clic</span>
               <span>✓ Sans engagement</span>
             </div>
             <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
               <p className="text-white/65 text-sm leading-relaxed text-left italic">
                 <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si tu hésites encore, ce n&apos;est pas grave. Mais reviens dans 6 mois, et compare. Tu seras au même point. Le seul truc qui aura changé, c&apos;est ton compteur d&apos;années perdues.<br /><br />
-                Si tu cliques aujourd&apos;hui, tu as 7 jours pour voir si on est sérieux. Si on ne l&apos;est pas, tu pars. <span className="text-[#F8FAFC] font-semibold not-italic">Tu ne perds rien. Tu testes juste.</span>
+                {IMMEDIATE_PAYMENT
+                  ? <>Si tu cliques aujourd&apos;hui, tu as 30 jours pour voir si on est sérieux. Si on ne l&apos;est pas, on te rembourse. <span className="text-[#F8FAFC] font-semibold not-italic">Tu ne perds rien. Tu testes en vrai.</span></>
+                  : <>Si tu cliques aujourd&apos;hui, tu as 7 jours pour voir si on est sérieux. Si on ne l&apos;est pas, tu pars. <span className="text-[#F8FAFC] font-semibold not-italic">Tu ne perds rien. Tu testes juste.</span></>}
               </p>
               <p className="text-white/55 text-xs mt-4 text-left">— Chandler, fondateur FOREAS</p>
             </div>
