@@ -36,7 +36,8 @@ interface Identifier { id_type: string; id_value: string; confidence?: number }
 
 export async function POST(request: NextRequest) {
   try {
-    const key = process.env.PIEUVRE_API_KEY || process.env.PIEUVRE_RESPOND_SECRET || ''
+    // Accepte indifféremment : clé scoped observe (recommandée par le fil Pieuvre) OU clé maître.
+    const key = process.env.PIEUVRE_OBSERVE_KEY || process.env.PIEUVRE_API_KEY || process.env.PIEUVRE_RESPOND_SECRET || ''
     if (!key) return NextResponse.json({ ok: false, reason: 'no_key' }, { status: 200 }) // silencieux
 
     const body = await request.json()
