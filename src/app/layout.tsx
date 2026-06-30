@@ -65,11 +65,14 @@ export const metadata: Metadata = {
   description: 'Ton net réel, commission déduite, avant d\'accepter la course. FOREAS lit Uber, Bolt, Heetch + 4 autres plateformes en direct. Tape ta zone, vois ce qui paie ce soir.',
   keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'Heetch', 'revenus', 'Ajnaya', 'net réel VTC', 'Paris'],
   authors: [{ name: 'FOREAS Labs' }],
-  metadataBase: new URL('https://foreas.xyz'),
+  // www = domaine réellement servi (foreas.xyz 307-redirige vers www). og:image doit
+  // pointer sur www sinon les scrapers (WhatsApp/Facebook) tombent sur la redirection
+  // et n'affichent pas l'aperçu.
+  metadataBase: new URL('https://www.foreas.xyz'),
   openGraph: {
     title: 'FOREAS — Gagne plus, roule moins',
     description: 'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. FOREAS lit les 7 plateformes en direct.',
-    url: 'https://foreas.xyz',
+    url: 'https://www.foreas.xyz',
     siteName: 'FOREAS',
     locale: 'fr_FR',
     type: 'website',

@@ -29,10 +29,10 @@ export const metadata: Metadata = {
       'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. FOREAS lit les 7 plateformes en direct.',
     type: 'website',
     locale: 'fr_FR',
-    url: 'https://foreas.xyz/',
+    url: 'https://www.foreas.xyz/',
   },
   alternates: {
-    canonical: 'https://foreas.xyz/',
+    canonical: 'https://www.foreas.xyz/',
   },
 }
 
