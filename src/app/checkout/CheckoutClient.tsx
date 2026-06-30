@@ -54,18 +54,32 @@ const APPEARANCE: Appearance = {
 }
 
 // ─── Formulaire (accès stripe + elements) ─────────────────────────────────────
-function PaymentForm({ planKey, isTest }: { planKey: string; isTest?: boolean }) {
+function PaymentForm({ planKey, isTest, subscriptionId }: { planKey: string; isTest?: boolean; subscriptionId?: string | null }) {
   const stripe = useStripe()
   const elements = useElements()
   const [submitting, setSubmitting] = useState(false)
   const [err, setErr] = useState('')
+  const [phone, setPhone] = useState('')
   const plan = PLANS[planKey] ?? PLANS.pro_monthly
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!stripe || !elements || submitting) return
+    const tel = phone.replace(/[\s.\-()]/g, '')
+    if (!/^(\+33|0)\d{9}$/.test(tel) && !/^\+\d{8,15}$/.test(tel)) {
+      setErr('Ton numéro de mobile, pour activer ton compte FOREAS.'); return
+    }
     setErr(''); setSubmitting(true)
     try { window.fbq?.('trackCustom', 'CustomCheckoutPay', { plan: planKey }) } catch { /* noop */ }
+    // Téléphone = point d'ancrage du compte chauffeur (le webhook Railway crée le compte dessus). Non-bloquant.
+    if (subscriptionId) {
+      try {
+        await fetch('/api/subscription/contact', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription_id: subscriptionId, phone }),
+        })
+      } catch { /* non-bloquant : le paiement passe quand même */ }
+    }
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: { return_url: `${window.location.origin}/checkout/merci` },
@@ -77,6 +91,18 @@ function PaymentForm({ planKey, isTest }: { planKey: string; isTest?: boolean })
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <LinkAuthenticationElement />
+      {/* Téléphone — ancre le compte chauffeur (l'app se connecte dessus au 1er lancement) */}
+      <div>
+        <label htmlFor="foreas-phone" className="block text-[12px] font-medium text-white/55 mb-1.5">Ton mobile</label>
+        <input
+          id="foreas-phone" type="tel" inputMode="tel" autoComplete="tel" required
+          value={phone} onChange={(e) => setPhone(e.target.value)}
+          placeholder="06 12 34 56 78"
+          className="w-full rounded-[14px] px-3.5 py-3 text-[15px] text-[#F8FAFC] outline-none transition-colors focus:border-[#00D4FF]/55"
+          style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.10)' }}
+        />
+        <p className="mt-1.5 text-[11px] text-white/40">Pour activer ton accès dans l’app. Jamais de spam.</p>
+      </div>
       <PaymentElement options={{ layout: 'tabs' }} />
 
       <InkGradientButton as="button" type="submit" variant="violet" size="lg" disabled={!stripe || submitting} className="w-full">
@@ -108,6 +134,7 @@ function CheckoutInner() {
   const plan = PLANS[planKey] ?? PLANS.pro_monthly
 
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [subId, setSubId] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState('')
   const [exitOffer, setExitOffer] = useState(false)
 
@@ -123,7 +150,7 @@ function CheckoutInner() {
         })
         const data = await res.json()
         if (cancelled) return
-        if (data.clientSecret) setClientSecret(data.clientSecret)
+        if (data.clientSecret) { setClientSecret(data.clientSecret); setSubId(data.subscriptionId ?? null) }
         else setLoadErr(data.error || 'Initialisation du paiement impossible.')
       } catch {
         if (!cancelled) setLoadErr('Erreur réseau. Recharge la page.')
@@ -189,7 +216,7 @@ function CheckoutInner() {
           >
             {options ? (
               <Elements key={clientSecret} stripe={stripePromise} options={options}>
-                <PaymentForm planKey={planKey} isTest={!!testToken} />
+                <PaymentForm planKey={planKey} isTest={!!testToken} subscriptionId={subId} />
               </Elements>
             ) : loadErr ? (
               <div className="py-12 text-center">

@@ -14,6 +14,9 @@ import { Check, ShieldCheck, Smartphone, Mail } from 'lucide-react'
 
 type OS = 'ios' | 'android' | 'other'
 
+// ⚠️ Passer à true quand l'app iPhone est PUBLIÉE sur l'App Store (+ remplir le vrai App ID dans /go).
+const IOS_LIVE = false
+
 export default function MerciClient() {
   const [os, setOs] = useState<OS>('other')
 
@@ -71,18 +74,26 @@ export default function MerciClient() {
 
         {/* téléchargement intelligent */}
         <div className="mt-7">
-          <InkGradientButton as="link" href="/go" variant="violet" size="lg" className="w-full">
-            <span className="inline-flex items-center justify-center gap-2">
-              <Smartphone size={18} /> {label}
-            </span>
-          </InkGradientButton>
-
-          {/* l'autre chemin reste visible (transparence) */}
-          <p className="mt-3 text-[12.5px] text-white/45">
-            {os === 'other'
-              ? 'Ouvre cette page sur ton téléphone, ou scanne le QR sur l’écran suivant.'
-              : 'iPhone → App Store · Android → Google Play (détecté automatiquement).'}
-          </p>
+          {os === 'ios' && !IOS_LIVE ? (
+            // iPhone pas encore publié → pas de lien mort, on rassure
+            <div className="rounded-2xl px-5 py-4 text-left" style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.25)' }}>
+              <p className="text-[14.5px] font-semibold text-[#F8FAFC]">L’app iPhone arrive très bientôt 🍏</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-white/65">Elle est en validation App Store. On t’envoie le lien par email dès qu’elle est dispo — ton accès Pro t’attend.</p>
+            </div>
+          ) : (
+            <>
+              <InkGradientButton as="link" href="/go" variant="violet" size="lg" className="w-full">
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Smartphone size={18} /> {label}
+                </span>
+              </InkGradientButton>
+              <p className="mt-3 text-[12.5px] text-white/45">
+                {os === 'other'
+                  ? 'Ouvre cette page sur ton téléphone, ou scanne le QR sur l’écran suivant.'
+                  : 'Le bon store s’ouvre tout seul selon ton téléphone.'}
+              </p>
+            </>
+          )}
         </div>
 
         {/* rassurance : email + garantie */}
