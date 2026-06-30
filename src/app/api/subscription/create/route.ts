@@ -33,6 +33,14 @@ async function ensureReferralCoupon(stripe: Stripe, pct: number): Promise<string
   return id
 }
 
+// Offre de sortie : −20% sur le 1er mois UNIQUEMENT (duration:'once') — honnête, non récurrent.
+async function ensureExitCoupon(stripe: Stripe): Promise<string> {
+  const id = 'foreas_exit20_once'
+  try { await stripe.coupons.retrieve(id) }
+  catch { await stripe.coupons.create({ id, percent_off: 20, duration: 'once', name: 'FOREAS −20% 1er mois (offre de sortie)' }) }
+  return id
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.STRIPE_SECRET_KEY) {
@@ -40,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
     const stripe = getStripe()
     const body = await request.json()
-    const { plan, email, referral_code } = body as { plan?: string; email?: string; referral_code?: string }
+    const { plan, email, referral_code, exit_offer } = body as { plan?: string; email?: string; referral_code?: string; exit_offer?: boolean }
 
     const priceId = plan ? PRICE_IDS[plan] : undefined
     if (!priceId) {
@@ -62,7 +70,10 @@ export async function POST(request: NextRequest) {
         }
       } catch { /* code inconnu → pas de remise */ }
     }
-    const coupon = pct > 0 ? await ensureReferralCoupon(stripe, pct) : undefined
+    // exit_offer (−20% 1er mois) prime sur le parrainage pour ce checkout.
+    const coupon = exit_offer
+      ? await ensureExitCoupon(stripe)
+      : (pct > 0 ? await ensureReferralCoupon(stripe, pct) : undefined)
 
     const customer = await stripe.customers.create(email ? { email } : {})
 
@@ -75,6 +86,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         plan: plan as string,
         flow: 'immediate_custom',
+        ...(exit_offer ? { exit_offer: '1' } : {}),
         ...(code ? { referral_code: code } : {}),
         ...(pct > 0 ? { referral_discount_pct: String(pct) } : {}),
       },

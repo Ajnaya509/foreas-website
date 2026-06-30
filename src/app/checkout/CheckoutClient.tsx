@@ -16,6 +16,7 @@ import { Elements, PaymentElement, LinkAuthenticationElement, useStripe, useElem
 import { ShieldCheck, Check, Lock, Loader2 } from 'lucide-react'
 import { InkGradientButton } from '@/components/ui'
 import CheckoutProofToasts from '@/components/checkout/CheckoutProofToasts'
+import ExitIntentOffer from '@/components/checkout/ExitIntentOffer'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -107,15 +108,17 @@ function CheckoutInner() {
 
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState('')
+  const [exitOffer, setExitOffer] = useState(false)
 
   useEffect(() => {
     let cancelled = false
+    setClientSecret(null) // re-affiche le skeleton si on re-crée l'abo (offre de sortie acceptée)
     ;(async () => {
       try {
         const res = await fetch('/api/subscription/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: planKey, ...(ref ? { referral_code: ref } : {}) }),
+          body: JSON.stringify({ plan: planKey, ...(ref ? { referral_code: ref } : {}), ...(exitOffer ? { exit_offer: true } : {}) }),
         })
         const data = await res.json()
         if (cancelled) return
@@ -126,7 +129,7 @@ function CheckoutInner() {
       }
     })()
     return () => { cancelled = true }
-  }, [planKey, ref])
+  }, [planKey, ref, exitOffer])
 
   const options = useMemo(() => (clientSecret ? { clientSecret, appearance: APPEARANCE } : undefined), [clientSecret])
 
@@ -178,7 +181,7 @@ function CheckoutInner() {
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 24px 60px -28px rgba(0,0,0,0.7)' }}
           >
             {options ? (
-              <Elements stripe={stripePromise} options={options}>
+              <Elements key={clientSecret} stripe={stripePromise} options={options}>
                 <PaymentForm planKey={planKey} />
               </Elements>
             ) : loadErr ? (
@@ -208,10 +211,15 @@ function CheckoutInner() {
 
             <p className="text-[10px] font-extrabold uppercase text-white/40" style={{ letterSpacing: '0.2em' }}>Ton abonnement</p>
             <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="text-[40px] font-extrabold tabular-nums leading-none text-[#F8FAFC]" style={{ letterSpacing: '-0.04em' }}>{plan.price}&nbsp;€</span>
-              <span className="text-[13px] text-white/45">/mois · FOREAS {plan.name}</span>
+              {exitOffer && <span className="text-[20px] font-bold tabular-nums text-white/35 line-through">{plan.price}&nbsp;€</span>}
+              <span className="text-[40px] font-extrabold tabular-nums leading-none text-[#F8FAFC]" style={{ letterSpacing: '-0.04em' }}>
+                {exitOffer ? (plan.price * 0.8).toFixed(2).replace('.', ',') : plan.price}&nbsp;€
+              </span>
+              <span className="text-[13px] text-white/45">{exitOffer ? '1er mois' : '/mois'} · FOREAS {plan.name}</span>
             </div>
-            <p className="mt-1.5 text-[12px] text-[#00D4FF]/90 tabular-nums">soit {plan.perDay}</p>
+            <p className="mt-1.5 text-[12px] text-[#00D4FF]/90 tabular-nums">
+              {exitOffer ? `−20% ce mois-ci · puis ${plan.price}€/mois` : `soit ${plan.perDay}`}
+            </p>
 
             <div className="my-5 h-px bg-white/[0.07]" />
 
@@ -246,6 +254,7 @@ function CheckoutInner() {
 
       {/* Bulles "vient de s'abonner" — preuve sociale, comme la home */}
       <CheckoutProofToasts />
+      <ExitIntentOffer onAccept={() => setExitOffer(true)} />
     </div>
   )
 }
