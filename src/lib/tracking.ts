@@ -1,6 +1,7 @@
 'use client'
 
 import { hasTrackingConsent } from './consent'
+import { getStoredVisitorId } from './observe'
 
 /**
  * Tracking dual : pixel client + CAPI server-side via /api/pixel/capi.
@@ -69,7 +70,8 @@ export function trackEvent(
       eventName,
       eventId,
       eventSourceUrl: typeof window !== 'undefined' ? window.location.href : undefined,
-      userData: userData || {},
+      // external_id (notre visitor_id) par défaut → Meta CAPI relie l'event à l'identité (brief observe).
+      userData: { externalId: getStoredVisitorId() ?? undefined, ...(userData || {}) },
       customData: params
         ? {
             value: typeof params.value === 'number' ? params.value : undefined,

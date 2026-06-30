@@ -13,6 +13,7 @@ import { ConsentBanner } from '@/components/ConsentBanner'
 import { PostHogProvider } from '@/components/PostHogProvider'
 import { TikTokPixel } from '@/components/TikTokPixel'
 import { MetaPixel } from '@/components/MetaPixel'
+import IdentityObserver from '@/components/IdentityObserver'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -117,6 +118,7 @@ export default function RootLayout({
         {/* Tracking pixels — chargement conditionnel au consentement RGPD */}
         <TikTokPixel />
         <MetaPixel />
+        <IdentityObserver />
         <Preloader />
         <PostHogProvider>{children}</PostHogProvider>
         <GrainOverlay />
