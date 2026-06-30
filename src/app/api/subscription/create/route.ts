@@ -41,6 +41,21 @@ async function ensureExitCoupon(stripe: Stripe): Promise<string> {
   return id
 }
 
+// Jeton du LIEN SECRET de test (?t=...). Ramène la 1re facture à 0,50€ (minimum Stripe EUR).
+// À RETIRER une fois le checkout validé par Chandler (commit dédié).
+const TEST_PAY_TOKEN = 'frs-paytest-2026-9b3f7a1c'
+
+// Mode test : coupon amount_off qui laisse 50 centimes à payer, quel que soit le plan.
+async function ensureTestCoupon(stripe: Stripe, priceId: string): Promise<string> {
+  const price = await stripe.prices.retrieve(priceId)
+  const unit = price.unit_amount ?? 0
+  const off = Math.max(0, unit - 50) // laisse 0,50€ (Stripe refuse < 0,50€)
+  const id = `foreas_paytest_${off}`
+  try { await stripe.coupons.retrieve(id) }
+  catch { await stripe.coupons.create({ id, amount_off: off, currency: 'eur', duration: 'once', name: 'FOREAS test paiement (0,50€)' }) }
+  return id
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.STRIPE_SECRET_KEY) {
@@ -48,7 +63,8 @@ export async function POST(request: NextRequest) {
     }
     const stripe = getStripe()
     const body = await request.json()
-    const { plan, email, referral_code, exit_offer } = body as { plan?: string; email?: string; referral_code?: string; exit_offer?: boolean }
+    const { plan, email, referral_code, exit_offer, test_token } = body as { plan?: string; email?: string; referral_code?: string; exit_offer?: boolean; test_token?: string }
+    const isTestPay = test_token === TEST_PAY_TOKEN
 
     const priceId = plan ? PRICE_IDS[plan] : undefined
     if (!priceId) {
@@ -70,10 +86,11 @@ export async function POST(request: NextRequest) {
         }
       } catch { /* code inconnu → pas de remise */ }
     }
-    // exit_offer (−20% 1er mois) prime sur le parrainage pour ce checkout.
-    const coupon = exit_offer
-      ? await ensureExitCoupon(stripe)
-      : (pct > 0 ? await ensureReferralCoupon(stripe, pct) : undefined)
+    // Priorité : lien de test secret (0,50€) > offre de sortie (−20% 1er mois) > parrainage.
+    let coupon: string | undefined
+    if (isTestPay) coupon = await ensureTestCoupon(stripe, priceId)
+    else if (exit_offer) coupon = await ensureExitCoupon(stripe)
+    else if (pct > 0) coupon = await ensureReferralCoupon(stripe, pct)
 
     const customer = await stripe.customers.create(email ? { email } : {})
 
@@ -86,6 +103,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         plan: plan as string,
         flow: 'immediate_custom',
+        ...(isTestPay ? { test_pay: '1' } : {}),
         ...(exit_offer ? { exit_offer: '1' } : {}),
         ...(code ? { referral_code: code } : {}),
         ...(pct > 0 ? { referral_discount_pct: String(pct) } : {}),

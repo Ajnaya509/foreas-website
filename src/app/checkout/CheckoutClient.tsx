@@ -54,7 +54,7 @@ const APPEARANCE: Appearance = {
 }
 
 // ─── Formulaire (accès stripe + elements) ─────────────────────────────────────
-function PaymentForm({ planKey }: { planKey: string }) {
+function PaymentForm({ planKey, isTest }: { planKey: string; isTest?: boolean }) {
   const stripe = useStripe()
   const elements = useElements()
   const [submitting, setSubmitting] = useState(false)
@@ -82,7 +82,7 @@ function PaymentForm({ planKey }: { planKey: string }) {
       <InkGradientButton as="button" type="submit" variant="violet" size="lg" disabled={!stripe || submitting} className="w-full">
         <span className="inline-flex items-center justify-center gap-2">
           {submitting ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
-          {submitting ? 'Paiement en cours…' : `Payer ${plan.price} € · démarrer maintenant`}
+          {submitting ? 'Paiement en cours…' : isTest ? 'Payer 0,50 € · test' : `Payer ${plan.price} € · démarrer maintenant`}
         </span>
       </InkGradientButton>
 
@@ -104,6 +104,7 @@ function CheckoutInner() {
   const params = useSearchParams()
   const planKey = params.get('plan') || 'pro_monthly'
   const ref = params.get('ref')
+  const testToken = params.get('t') // lien secret de test → 1re facture à 0,50€
   const plan = PLANS[planKey] ?? PLANS.pro_monthly
 
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -118,7 +119,7 @@ function CheckoutInner() {
         const res = await fetch('/api/subscription/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: planKey, ...(ref ? { referral_code: ref } : {}), ...(exitOffer ? { exit_offer: true } : {}) }),
+          body: JSON.stringify({ plan: planKey, ...(ref ? { referral_code: ref } : {}), ...(exitOffer ? { exit_offer: true } : {}), ...(testToken ? { test_token: testToken } : {}) }),
         })
         const data = await res.json()
         if (cancelled) return
@@ -129,7 +130,7 @@ function CheckoutInner() {
       }
     })()
     return () => { cancelled = true }
-  }, [planKey, ref, exitOffer])
+  }, [planKey, ref, exitOffer, testToken])
 
   const options = useMemo(() => (clientSecret ? { clientSecret, appearance: APPEARANCE } : undefined), [clientSecret])
 
@@ -171,6 +172,12 @@ function CheckoutInner() {
           <p className="mt-3 text-white/70 text-[15px] sm:text-base leading-relaxed">
             Paiement aujourd&apos;hui — et tu es couvert&nbsp;: <span className="text-[#10B981] font-semibold">30 jours satisfait ou remboursé</span>, sans discuter.
           </p>
+          {testToken && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5" style={{ background: 'rgba(245,200,66,0.10)', border: '1px solid rgba(245,200,66,0.35)' }}>
+              <span className="text-[11px] font-extrabold uppercase text-[#F5C842]" style={{ letterSpacing: '0.12em' }}>Mode test</span>
+              <span className="text-[12px] text-white/70">tu seras débité <strong className="text-[#F8FAFC]">0,50 €</strong> (remboursable)</span>
+            </div>
+          )}
         </div>
 
         {/* Grille mobile-first (1 col) → desktop (2 cols) */}
@@ -182,7 +189,7 @@ function CheckoutInner() {
           >
             {options ? (
               <Elements key={clientSecret} stripe={stripePromise} options={options}>
-                <PaymentForm planKey={planKey} />
+                <PaymentForm planKey={planKey} isTest={!!testToken} />
               </Elements>
             ) : loadErr ? (
               <div className="py-12 text-center">
