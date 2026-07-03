@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { Star, BadgeCheck, MessageSquare } from 'lucide-react'
 import { getPublishedReviews } from '@/lib/reviews'
 
+// build marker v127 — force Vercel à (re)enregistrer la route /c/[slug] (le build précédent ne l'avait pas prise)
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Avis vérifiés · FOREAS',
   robots: { index: false, follow: false }, // page par chauffeur (QR) — pas de SEO tant que la carte complète n'existe pas
