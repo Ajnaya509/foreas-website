@@ -23,21 +23,26 @@ interface ZoneSearchResultCardProps {
   onWhatsAppClick?: () => void
 }
 
+// Réassurance sous chaque CTA WhatsApp (validée Chandler : ni "humain" ni "IA", juste ça).
+function WaReassurance() {
+  return <p className="mt-2 text-center text-[11px] text-white/45">Réponse en moins d&apos;1 min · gratuit</p>
+}
+
 /**
  * ZoneSearchResultCard — affiche le résultat d'une search zone.
  *
- * Design system §11 : glass card mid (rgba 0.07) + border violet 0.30 + glow.
- * Copy-atomic §6.2 : L1 displayL chiffre roi + caption source honnête.
- * Sarcastic guard intégré : 3 niveaux selon le compteur de visites.
+ * Design system §11 : glass card mid + border violet + glow.
+ * Copy-atomic : tutoiement partout, chiffre roi UNIQUEMENT quand has_data (vraies courses).
+ * ⚠️ Honnêteté (CNIL) : quand has_data=false on n'affiche AUCUN €/h (les fallbacks RPC sont
+ *    des moyennes-type codées en dur — on ne les présente jamais comme un chiffre réel).
  */
 export default function ZoneSearchResultCard({
   stats,
   sarcasmLevel,
   onWhatsAppClick,
 }: ZoneSearchResultCardProps) {
-  // ─── Cas FALLBACK : zone non trouvée → suggestion zone proche ────
+  // ─── Cas SANS DONNÉES : on ne montre PAS de chiffre inventé → on bascule WhatsApp ────
   if (!stats.has_data) {
-    const fallback = stats.fallback_zone
     const waUrl = buildWAUrl({ section: 'hero_zone', zone: stats.zone_match })
 
     return (
@@ -48,28 +53,20 @@ export default function ZoneSearchResultCard({
         className="rounded-2xl p-6 sm:p-7 border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm relative overflow-hidden"
       >
         <div className="flex items-center gap-2 mb-3">
-          <MapPin className="w-4 h-4 text-orange-300" />
+          <MapPin className="w-4 h-4 text-cyan-300" />
           <p
-            className="text-orange-300/85 text-[10px] font-extrabold uppercase"
+            className="text-cyan-300/85 text-[10px] font-extrabold uppercase"
             style={{ letterSpacing: '0.28em' }}
           >
-            DONNÉES PARTIELLES SUR CETTE ZONE
+            {stats.zone_match} · EN DIRECT SUR WHATSAPP
           </p>
         </div>
-        <p className="text-[#F8FAFC] text-base sm:text-lg leading-relaxed mb-4">
-          Nous n&apos;avons pas encore assez de données fiables sur{' '}
-          <span className="font-semibold">{stats.zone_match}</span>. Ajnaya y travaille (la flotte grandit chaque jour).
+        <p className="text-[#F8FAFC] text-base sm:text-lg leading-relaxed mb-2">
+          <span className="font-semibold">{stats.zone_match}</span>, je ne la donne pas en public — elle bouge trop vite.
         </p>
-        {fallback && (
-          <p className="text-white/65 text-sm leading-relaxed mb-5">
-            En attendant, regardez{' '}
-            <span className="text-[#F8FAFC] font-semibold">{fallback.name}</span> :{' '}
-            <span className="tabular-nums text-cyan-300 font-semibold">
-              {fallback.avg_hourly.toFixed(2).replace('.', ',')} €/h
-            </span>{' '}
-            cette semaine.
-          </p>
-        )}
+        <p className="text-white/65 text-sm leading-relaxed mb-5">
+          Mais Ajnaya la lit en direct. Demande-lui le chiffre de ta zone : elle te répond avec ce qu&apos;elle voit là, maintenant.
+        </p>
         <a
           href={waUrl}
           target="_blank"
@@ -79,14 +76,15 @@ export default function ZoneSearchResultCard({
           style={{ boxShadow: '0 0 28px rgba(16,185,129,0.40)' }}
         >
           <MessageCircle className="w-4 h-4" />
-          Demander à Ajnaya pour votre zone précise
+          Demander le chiffre de {stats.zone_match} à Ajnaya
           <ArrowRight className="w-4 h-4" />
         </a>
+        <WaReassurance />
       </motion.div>
     )
   }
 
-  // ─── Cas STANDARD : zone matchée avec data ──────────────────────
+  // ─── Cas AVEC DONNÉES RÉELLES (≥5 courses) : chiffre roi honnête ──────────────────
   const waUrl = buildWAUrl({
     section: 'hero_zone',
     zone: stats.zone_match,
@@ -169,17 +167,18 @@ export default function ZoneSearchResultCard({
       >
         <MessageCircle className="w-4 h-4" />
         {sarcasmLevel === 1
-          ? 'Pour le tarif EXACT à votre créneau → Ajnaya WhatsApp'
+          ? 'Le chiffre exact pour ton créneau → WhatsApp'
           : sarcasmLevel === 2
-          ? "Aller à Ajnaya — c'est gratuit"
+          ? 'Aller à Ajnaya — c’est gratuit'
           : 'Demander à Ajnaya (1 message, 0 inscription)'}
         <ArrowRight className="w-4 h-4" />
       </a>
+      <WaReassurance />
     </motion.div>
   )
 }
 
-// ─── Bloc sarcasme intégré ──────────────────────────────────────────
+// ─── Bloc sarcasme intégré (tutoiement) ─────────────────────────────────────
 function SarcasticBlock({ level, zoneName }: { level: SarcasmLevel; zoneName: string }) {
   if (level === 1) return null
 
@@ -193,8 +192,8 @@ function SarcasticBlock({ level, zoneName }: { level: SarcasmLevel; zoneName: st
       >
         <p className="text-[#F8FAFC]/90 text-sm leading-relaxed">
           <span className="text-base mr-1">👀</span>
-          <span className="font-semibold">Encore vous sur {zoneName} ?</span>{' '}
-          Vous sentez bien que vous avez besoin du tarif exact. Ajnaya vous attend.
+          <span className="font-semibold">Encore toi sur {zoneName} ?</span>{' '}
+          Là, tu veux le vrai chiffre. Il est sur WhatsApp — 1 message.
         </p>
       </motion.div>
     )
@@ -211,10 +210,10 @@ function SarcasticBlock({ level, zoneName }: { level: SarcasmLevel; zoneName: st
     >
       <p className="text-[#F8FAFC]/90 text-sm leading-relaxed mb-1.5">
         <span className="text-base mr-1">🎯</span>
-        <span className="font-semibold">Bon. Maintenant on rigole moins.</span>
+        <span className="font-semibold">T&apos;as tout testé ici. La suite se passe en privé.</span>
       </p>
       <p className="text-white/70 text-sm leading-relaxed">
-        Vous testez la techno depuis quelques jours. Si vous voulez le vrai chiffre — sur votre zone, votre créneau, votre statut — venez sur WhatsApp. C&apos;est là que la conversation commence.
+        Ta zone, ton créneau, ton statut : Ajnaya te fait le calcul complet. 1 message, 0 inscription.
       </p>
     </motion.div>
   )

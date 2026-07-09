@@ -112,7 +112,7 @@ export default function HomeHeaderCream() {
                   color: '#86868b',
                 }}
               >
-                Sans CB · 7 j offerts
+                Réponse en moins d&apos;1 min · gratuit
               </span>
             </div>
           </div>
@@ -180,7 +180,7 @@ export default function HomeHeaderCream() {
                     color: '#86868b',
                   }}
                 >
-                  Sans CB · 7 jours offerts
+                  Réponse en moins d&apos;1 min · gratuit
                 </span>
               </div>
             </motion.div>

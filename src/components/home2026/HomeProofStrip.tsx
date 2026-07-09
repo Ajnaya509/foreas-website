@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Layers, Database, CreditCard, LogOut, MessageSquare } from 'lucide-react'
+import { Layers, Database, Clock, LogOut, MessageSquare } from 'lucide-react'
 
 /**
  * HomeProofStrip — bande preuve sociale entre Hero crème et Big Domino
@@ -35,9 +35,9 @@ export default function HomeProofStrip() {
       detail: 'pas une promesse',
     },
     {
-      icon: CreditCard,
-      label: '0€ pour tester',
-      detail: 'carte, mais 0€ débité',
+      icon: Clock,
+      label: 'Ta zone en 10 sec',
+      detail: 'réponse immédiate',
     },
     {
       icon: LogOut,
