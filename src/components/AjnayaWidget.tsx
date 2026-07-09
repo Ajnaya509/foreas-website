@@ -7,6 +7,7 @@ import { X, Send, Mic, Volume2, VolumeX } from 'lucide-react'
 import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from '@/lib/ajnaya-analytics'
 import { speakText, stopSpeaking, unlockAudio, prefetchTTS, playBlob } from '@/lib/tts'
 import { useAnyOverlayOpen } from '@/lib/overlayStore'
+import { streamAjnayaChat } from '@/lib/ajnayaStream'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
 const WELCOME_MESSAGES: Record<string, string> = {
@@ -384,6 +385,7 @@ export default function AjnayaWidget() {
   }, [messageCount, messages, sendAnalytics, startCtaTracking])
 
   // ─── Main send handler ────────────────────────────────────────────────────
+  const streamAbortRef = useRef<AbortController | null>(null)
   const handleSend = useCallback(async (overrideText?: string) => {
     unlockAudio()
     const startTime = Date.now()
@@ -502,38 +504,107 @@ export default function AjnayaWidget() {
     }
 
     try {
-      const res = await fetch('/api/ajnaya/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          sessionId,
-          prospectId,
-          identityId,             // v58 — propagé au chat route pour canal_memory writes
-          pageSource: pathname,
-          scrollSection,
-          heatScore,
-          messageCount: newMessageCount,
-          conversationHistory: messages.slice(-10).map(m => ({ role: m.role, text: m.text })),
-          device: window.innerWidth < 768 ? 'mobile' : 'desktop',
-        }),
-      })
+      // ═══ RÉPONSE : STREAMING d'abord (même contrat que l'app), repli BLOC /chat, puis scripté (catch) ═══
+      const commonBody = {
+        message: text, sessionId, prospectId, identityId,
+        pageSource: pathname, scrollSection, heatScore, messageCount: newMessageCount,
+        conversationHistory: messages.slice(-10).map(m => ({ role: m.role, text: m.text })),
+        device: window.innerWidth < 768 ? 'mobile' : 'desktop',
+      }
+      const replyTs = new Date().toISOString()
+      let replyText = ''
+      let ttsSource = ''
+      let streamedOk = false
+      let needBlockFallback = false
 
-      if (!res.ok) throw new Error('API error')
+      // Rendu au fil de l'eau : bulle au 1er delta, flush throttlé ~40ms (pas 1 setState/token)
+      let bubbleCreated = false
+      let pending = ''
+      let flushTimer: ReturnType<typeof setTimeout> | null = null
+      const ensureBubble = () => {
+        if (bubbleCreated) return
+        bubbleCreated = true
+        setTyping(false)
+        setMessages(prev => [...prev, { role: 'ajnaya' as const, text: '', timestamp: replyTs }])
+      }
+      const setBubbleText = (t: string) => {
+        ensureBubble()
+        setMessages(prev => {
+          const u = [...prev]
+          const last = u[u.length - 1]
+          if (last && last.role === 'ajnaya') u[u.length - 1] = { ...last, text: t }
+          return u
+        })
+      }
+      const flush = () => {
+        flushTimer = null
+        if (!pending) return
+        const chunk = pending; pending = ''
+        ensureBubble()
+        setMessages(prev => {
+          const u = [...prev]
+          const last = u[u.length - 1]
+          if (last && last.role === 'ajnaya') u[u.length - 1] = { ...last, text: (last.text || '') + chunk }
+          return u
+        })
+      }
+      const scheduleFlush = () => { if (!flushTimer) flushTimer = setTimeout(flush, 40) }
 
-      const data = await res.json()
+      try {
+        streamAbortRef.current?.abort()
+        const ac = new AbortController()
+        streamAbortRef.current = ac
+        await streamAjnayaChat(commonBody, {
+          onMeta: (m) => { if (m.identity_id && !identityId) setIdentityId(m.identity_id) },
+          onDelta: (t) => { pending += t; scheduleFlush() },
+          onDone: (d) => {
+            if (flushTimer) { clearTimeout(flushTimer); flushTimer = null }
+            flush()
+            setBubbleText(d.full_text) // texte autoritaire (parité full_text = Σdelta)
+            replyText = d.full_text
+            ttsSource = d.pieuvre_reply?.tts_text || d.full_text
+            streamedOk = true
+            if (d.prospect_id && !prospectId) setProspectId(d.prospect_id)
+            analyticsMessages.current.push({ role: 'ajnaya', text: d.full_text, timestamp: replyTs })
+          },
+          onError: (_msg, streamed) => {
+            if (flushTimer) { clearTimeout(flushTimer); flushTimer = null }
+            flush()
+            if (streamed.trim()) {
+              // du texte est déjà affiché → on le garde tel quel (jamais inventer)
+              setBubbleText(streamed)
+              replyText = streamed; ttsSource = streamed; streamedOk = true
+              analyticsMessages.current.push({ role: 'ajnaya', text: streamed, timestamp: replyTs })
+            } else {
+              needBlockFallback = true // rien affiché → on tente le bloc /chat
+            }
+          },
+        }, ac.signal)
+      } catch {
+        needBlockFallback = true // stream indispo (404 / mauvais type / réseau) → repli
+      }
 
-      if (data.error) throw new Error(data.error)
+      // Repli BLOC /api/ajnaya/chat (comportement historique) si le stream n'a rien donné
+      if (needBlockFallback && !streamedOk) {
+        const res = await fetch('/api/ajnaya/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(commonBody),
+        })
+        if (!res.ok) throw new Error('API error') // → catch → matchResponse scripté
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        if (data.prospectId && !prospectId) setProspectId(data.prospectId)
+        const rawReply = data.reply as string
+        replyText = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
+        ttsSource = rawReply
+        setTyping(false)
+        await typewriterRender(replyText) // pousse déjà l'analytics
+      }
 
-      if (data.prospectId && !prospectId) setProspectId(data.prospectId)
-
-      // Strip audio tags for display, keep for TTS
-      const rawReply = data.reply
-      const displayReply = rawReply.replace(/\[[\w\s]+\]\s*/g, '')
-
-      // Fire TTS in background — NEVER block text display
-      if (voiceEnabled && rawReply) {
-        prefetchTTS(rawReply).then(blob => {
+      // TTS en fond — ne bloque JAMAIS le texte (stream ou bloc)
+      if (voiceEnabled && ttsSource) {
+        prefetchTTS(ttsSource).then(blob => {
           if (blob) {
             setIsAudioPlaying(true)
             playBlob(blob).finally(() => setIsAudioPlaying(false))
@@ -542,9 +613,6 @@ export default function AjnayaWidget() {
       }
 
       setTyping(false)
-
-      // Typewriter starts IMMEDIATELY — no waiting for TTS
-      await typewriterRender(displayReply)
 
       // Identity Bridge — after 2nd message, ask for phone number
       if (newMessageCount === 2 && !phoneCaptureDone) {
