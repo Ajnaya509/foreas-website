@@ -386,11 +386,14 @@ export default function AjnayaWidget() {
 
   // ─── Main send handler ────────────────────────────────────────────────────
   const streamAbortRef = useRef<AbortController | null>(null)
+  const sendingRef = useRef(false)
   const handleSend = useCallback(async (overrideText?: string) => {
     unlockAudio()
     const startTime = Date.now()
     const text = (overrideText || input).trim()
     if (!text) return
+    if (sendingRef.current) return // un envoi est déjà en cours → on ignore (anti-corruption d'affichage : bug Fable 5 #3)
+    sendingRef.current = true
 
     setInput('')
     const newMessageCount = messageCount + 1
@@ -479,6 +482,7 @@ export default function AjnayaWidget() {
         setIsAudioPlaying(true)
         speakText("Parfait ! Je t'attends sur WhatsApp.").finally(() => setIsAudioPlaying(false))
       }
+      sendingRef.current = false
       return
     }
 
@@ -560,7 +564,7 @@ export default function AjnayaWidget() {
           onDone: (d) => {
             if (flushTimer) { clearTimeout(flushTimer); flushTimer = null }
             flush()
-            setBubbleText(d.full_text) // texte autoritaire (parité full_text = Σdelta)
+            setBubbleText(d.full_text.replace(/\[[\w\s]+\]\s*/g, '')) // texte autoritaire (parité full_text = Σdelta), tags strippés comme /chat
             replyText = d.full_text
             ttsSource = d.pieuvre_reply?.tts_text || d.full_text
             streamedOk = true
@@ -652,6 +656,8 @@ export default function AjnayaWidget() {
         setMessages(prev => [...prev, { role: 'ajnaya' as const, text: phoneAskMsg, timestamp: phoneAskTs }])
         analyticsMessages.current.push({ role: 'ajnaya', text: phoneAskMsg, timestamp: phoneAskTs })
       }
+    } finally {
+      sendingRef.current = false // libère le verrou (bug Fable 5 #3) — tous chemins
     }
   }, [input, messageCount, hasAskedPhone, phoneCaptureDone, pathname, sessionId, prospectId, scrollSection, heatScore, messages, voiceEnabled])
 

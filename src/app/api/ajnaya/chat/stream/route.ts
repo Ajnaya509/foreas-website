@@ -11,18 +11,34 @@ export const dynamic = 'force-dynamic'
 /**
  * POST /api/ajnaya/chat/stream — version STREAMING (SSE) du chat widget site.
  * Contrat : FOREAS-SHARED/AJNAYA_CONTRACTS.md §7 + BRIEF_STREAMING_AJNAYA_2026-07-09.md.
- * Events : meta → delta* → tts → done  (ou error). Terminaison = EXACTEMENT un event terminal.
- * `done.full_text` == concat des `delta.text` (parité). Même cerveau que /api/ajnaya/chat
- * (persona Supabase via loadClosingScript). Le non-stream /chat reste le filet de repli du client.
+ *
+ * ⚠️ MÊME ROUTAGE QUE /api/ajnaya/chat (pas de cerveau parallèle — NORTH_STAR §4) :
+ *   - PIEUVRE_BRAIN_ENABLED=true  → PROXY du stream Railway (vraie persona Pieuvre, streamée).
+ *                                   Si indispo → event error → le widget replie sur /chat (Pieuvre).
+ *   - sinon                       → stream Haiku local (le MÊME cerveau que le repli /chat Haiku).
+ * Events : meta → delta* → tts → done  (ou error). `done.full_text` == Σ`delta`. /chat non-stream = filet.
  */
 
 const LLM_MODEL = 'claude-haiku-4-5-20251001'
+const RAILWAY = 'https://foreas-stripe-backend-production.up.railway.app'
 const enc = new TextEncoder()
 const sse = (event: string, data: unknown) => enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+const PAD = `:${' '.repeat(2048)}\n\n` // anti-buffer edge
+
+const SSE_HEADERS = {
+  'Content-Type': 'text/event-stream; charset=utf-8',
+  'Cache-Control': 'no-cache, no-transform',
+  'Connection': 'keep-alive',
+  'X-Accel-Buffering': 'no',
+  'Content-Encoding': 'identity',
+}
+
+// Réponse SSE à un seul event terminal `error` → le client bascule sur /chat (filet).
+function sseError(code: string, message = 'stream indisponible') {
+  return new Response(enc.encode(PAD + `event: error\ndata: ${JSON.stringify({ message, code })}\n\n`), { headers: SSE_HEADERS })
+}
 
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
-
   let body: Record<string, unknown> = {}
   try { body = await request.json() } catch { /* handled below */ }
 
@@ -38,25 +54,48 @@ export async function POST(request: NextRequest) {
   const identityId = (body.identityId as string) || null
   const device = (body.device as string) || 'mobile'
 
+  if (!userMessage) return sseError('bad_request', 'Message requis')
+
+  // ─── Cerveau Pieuvre (prod) : proxy du stream Railway ────────────────────────
+  if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
+    const key = process.env.FOREAS_SERVICE_KEY || process.env.PIEUVRE_API_KEY || ''
+    if (key) {
+      try {
+        const rw = await fetch(`${RAILWAY}/api/ajnaya/chat/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-FOREAS-SERVICE-KEY': key, 'Accept-Encoding': 'identity' },
+          body: JSON.stringify({
+            message: userMessage, text: userMessage,
+            context: {
+              channel: 'widget_site', platform: 'web', session_id: sessionId, identity_id: identityId,
+              page_source: pageSource, scroll_section: scrollSection, heat_score: heatScore,
+            },
+            history: conversationHistory.map(h => ({ role: h.role === 'ajnaya' ? 'assistant' : h.role, content: h.text })),
+          }),
+          signal: request.signal,
+        })
+        if (rw.ok && (rw.headers.get('content-type') || '').includes('text/event-stream') && rw.body) {
+          return new Response(rw.body, { headers: SSE_HEADERS }) // pass-through Pieuvre streamé
+        }
+      } catch { /* → error ci-dessous → repli /chat */ }
+    }
+    // Pas de stream Pieuvre dispo (clé absente / Railway KO) → repli /chat (cerveau Pieuvre N8N)
+    return sseError('pieuvre_stream_unavailable')
+  }
+
+  // ─── Mode Haiku (PIEUVRE_BRAIN off) : stream local, cohérent avec /chat Haiku ────
+  const apiKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
+  if (!apiKey || apiKey === 'à_remplir_par_le_user') return sseError('no_api_key', 'LLM indisponible')
+
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let closed = false
       const send = (event: string, data: unknown) => { if (!closed) controller.enqueue(sse(event, data)) }
       const end = () => { if (!closed) { closed = true; controller.close() } }
-      // Padding anti-buffer edge (~2 Ko de commentaire ignoré par le client) → force le 1er flush.
-      if (!closed) controller.enqueue(enc.encode(`:${' '.repeat(2048)}\n\n`))
-
-      // Garde-fous d'entrée → error (le client bascule sur /chat)
-      if (!apiKey || apiKey === 'à_remplir_par_le_user') {
-        send('error', { message: 'LLM indisponible', code: 'no_api_key' }); return end()
-      }
-      if (!userMessage) {
-        send('error', { message: 'Message requis', code: 'bad_request' }); return end()
-      }
+      if (!closed) controller.enqueue(enc.encode(PAD))
 
       send('meta', { session_id: sessionId, llm_model: LLM_MODEL, identity_id: identityId })
 
-      // Prompt (même logique que /chat → même persona)
       const scriptPrompt = await loadClosingScript()
       const systemBase = scriptPrompt || DEFAULT_SYSTEM_PROMPT
       const prospect = prospectId ? await loadProspect(prospectId) : null
@@ -75,27 +114,23 @@ export async function POST(request: NextRequest) {
         })
 
         for await (const ev of llmStream) {
-          if (request.signal.aborted) { llmStream.abort(); break } // honorer l'abandon client
+          if (request.signal.aborted) { llmStream.abort(); break }
           if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta' && ev.delta.text) {
             fullText += ev.delta.text
             send('delta', { text: ev.delta.text })
           }
         }
-
-        if (request.signal.aborted) { return end() } // pas d'event terminal si le client est parti
+        if (request.signal.aborted) { return end() } // client parti → pas d'event terminal
 
         const finalMsg = await llmStream.finalMessage().catch(() => null)
         if (finalMsg?.usage) usage = { input_tokens: finalMsg.usage.input_tokens, output_tokens: finalMsg.usage.output_tokens }
-
-        // Parité : si aucun texte n'a été streamé → traiter comme erreur honnête (pas de bulle vide)
         if (!fullText.trim()) { send('error', { message: 'Réponse vide', code: 'empty' }); return end() }
 
-        // Side-effects IDENTIQUES à /chat (log + mémoire + prospect), fire-and-forget
+        // Side-effects IDENTIQUES à /chat (log + mémoire + prospect complet)
         const sentiment = detectSentiment(userMessage)
         const objection = detectObjection(userMessage)
         const hasConversionLink = fullText.includes('/tarifs2')
-        const isInterested = /essai|tester|prix|combien|commencer|inscri/i.test(userMessage)
-        const conversionEvent = hasConversionLink && isInterested
+        const conversionEvent = hasConversionLink && /essai|tester|prix|combien|commencer|inscri/i.test(userMessage)
         const currentProspectId = prospectId || (prospect as { id?: string } | null)?.id || null
 
         saveMessage({ prospect_id: currentProspectId, tentacle: 'widget_site', channel: 'web_widget', direction: 'inbound', content: userMessage, sentiment, objection_detected: objection, metadata: { sessionId, pageSource, scrollSection, device, heatScore, stream: true } })
@@ -110,39 +145,31 @@ export async function POST(request: NextRequest) {
           })
         }
         if (currentProspectId) {
-          const p = prospect as { conversations_count?: number; status?: string } | null
-          updateProspect(currentProspectId, { conversations_count: (p?.conversations_count || 0) + 1, last_conversation_at: new Date().toISOString() })
+          const p = prospect as { conversations_count?: number; status?: string; objections?: unknown } | null
+          const updates: Record<string, unknown> = { conversations_count: (p?.conversations_count || 0) + 1, last_conversation_at: new Date().toISOString() }
+          if (objection && p) {
+            const existing = Array.isArray(p.objections) ? (p.objections as string[]) : []
+            if (!existing.includes(objection)) updates.objections = [...existing, objection]
+          }
+          if (heatScore > 20 && p?.status === 'new') updates.status = 'warm'
+          updateProspect(currentProspectId, updates)
         }
 
-        // Texte propre pour le TTS (retire les tags [xxx] éventuels)
         const ttsText = fullText.replace(/\[[\w\s]+\]\s*/g, '')
         send('tts', { tts_text: ttsText, audio_url: null })
         send('done', {
           full_text: fullText,
           pieuvre_reply: { text: fullText, tts_text: ttsText, llm_model: LLM_MODEL, audio_url: null },
-          expects_voice_response: false,
-          intent_detected: objection || null,
-          next_actions: [],
-          prospect_id: currentProspectId,
-          should_capture_phone: messageCount >= 3 && !prospectId,
-          conversion_event: conversionEvent,
+          expects_voice_response: false, intent_detected: objection || null, next_actions: [],
+          prospect_id: currentProspectId, should_capture_phone: messageCount >= 3 && !prospectId, conversion_event: conversionEvent,
         })
         return end()
       } catch (err) {
-        // Erreur LLM en cours de flux → honnêteté : jamais de texte inventé
         send('error', { message: (err as Error).message || 'Erreur LLM', code: 'llm_error' })
         return end()
       }
     },
   })
 
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no',
-      'Content-Encoding': 'identity',
-    },
-  })
+  return new Response(stream, { headers: SSE_HEADERS })
 }
