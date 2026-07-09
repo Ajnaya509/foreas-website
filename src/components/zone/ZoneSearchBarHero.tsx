@@ -7,6 +7,8 @@ import { useTypewriter } from '@/hooks/useTypewriter'
 import { recordSearch, readVisitState, type SarcasmLevel } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import ZoneSearchResultCard from './ZoneSearchResultCard'
+import TestimonialVideoCard from './TestimonialVideoCard'
+import { TESTIMONIALS } from './testimonials.data'
 
 const PLACEHOLDER_ZONES = [
   'Aéroport CDG…',
@@ -259,6 +261,17 @@ export default function ZoneSearchBarHero() {
               sarcasmLevel={sarcasmLevel}
               onWhatsAppClick={handleWAClick}
             />
+
+            {/* Preuve incarnée AU MOMENT DU DOUTE (juste après le résultat) — Binaté, cas réel */}
+            <div className="mt-5">
+              <p className="text-white/50 text-[11px] font-semibold uppercase mb-2.5" style={{ letterSpacing: '0.2em' }}>
+                Pas moi qui le dis. Lui.
+              </p>
+              <TestimonialVideoCard
+                testimonial={TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[0]}
+                showQuote
+              />
+            </div>
           </div>
         )}
       </div>
