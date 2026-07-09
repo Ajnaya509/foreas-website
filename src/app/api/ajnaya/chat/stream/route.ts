@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
             },
             history: conversationHistory.map(h => ({ role: h.role === 'ajnaya' ? 'assistant' : h.role, content: h.text })),
           }),
-          signal: request.signal,
+          // abandon client + timeout 1er octet 8s (Railway muet → sseError → repli /chat, jamais d'écran figé)
+          signal: (AbortSignal as { any?: (s: AbortSignal[]) => AbortSignal }).any?.([request.signal, AbortSignal.timeout(8000)]) ?? AbortSignal.timeout(8000),
         })
         if (rw.ok && (rw.headers.get('content-type') || '').includes('text/event-stream') && rw.body) {
           return new Response(rw.body, { headers: SSE_HEADERS }) // pass-through Pieuvre streamé
