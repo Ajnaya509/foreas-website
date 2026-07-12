@@ -9,7 +9,10 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.ELEVENLABS_API_KEY
     // KORALY — voix unique Ajnaya (cf. FOREAS-SHARED/AJNAYA_NORTH_STAR.md §2.1)
     // Aucun fallback vers une autre voice_id : rupture d'identité interdite.
-    const voiceId = process.env.ELEVENLABS_VOICE_ID || 'albaa6OioIhKtKdCEkQw'
+    // 🚨 CORRIGÉ 12/07/2026 : albaa6OioIhKtKdCEkQw = "Laloosh" (voix arabe, erreur depuis 21/04) —
+    // vraie Koraly = MNKK2Wl2wbbsEPQTHZGt. Si l'env Vercel ELEVENLABS_VOICE_ID pointe encore
+    // vers l'ancien ID, ce fallback ne suffit pas — vérifier/mettre à jour l'env var aussi.
+    const voiceId = process.env.ELEVENLABS_VOICE_ID || 'MNKK2Wl2wbbsEPQTHZGt'
 
     if (!apiKey || !text) {
       return NextResponse.json({ error: 'TTS non disponible' }, { status: 503 })
