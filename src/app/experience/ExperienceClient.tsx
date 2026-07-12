@@ -23,6 +23,7 @@ import posthog from 'posthog-js'
 import { MessageCircle } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
 import LivePhone from '@/components/experience/LivePhone'
+import ExperiencePhoneToasts from '@/components/experience/ExperiencePhoneToasts'
 import TestimonialVideoCard from '@/components/zone/TestimonialVideoCard'
 import { TESTIMONIALS } from '@/components/zone/testimonials.data'
 import { InkGradientButton } from '@/components/ui'
@@ -164,10 +165,9 @@ export default function ExperienceClient() {
         </a>
       </header>
 
-      {/* ═══ HERO — logo réel + téléphone vivant ═══ */}
+      {/* ═══ HERO — téléphone vivant (logo retiré : quiet-tech R4, signal redondant avec le header — Fable 5) ═══ */}
       <section id="hero" className="relative z-10 px-5 pb-10 pt-8 sm:pt-14">
         <div className="mx-auto max-w-xl text-center">
-          <ForeasLogo variant="full" className="mx-auto mb-7 h-auto w-[190px] text-[#F8FAFC] sm:w-[230px]" />
           <p className="mb-3 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.26em' }}>
             Pour les chauffeurs VTC
           </p>
@@ -258,6 +258,9 @@ export default function ExperienceClient() {
       <footer className="relative z-10 px-5 pb-32 pt-6 text-center text-[11px] text-white/30">
         FOREAS · Fait en France 🇫🇷
       </footer>
+
+      {/* ═══ Preuve sociale bas-gauche — oriente vers WhatsApp (capture du numéro) ═══ */}
+      <ExperiencePhoneToasts />
 
       {/* ═══ CTA persistant ═══ */}
       <div

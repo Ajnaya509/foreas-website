@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
   const prospectId = (body.prospectId as string) || null
   const identityId = (body.identityId as string) || null
   const device = (body.device as string) || 'mobile'
+  // Donnée réelle optionnelle (ex. zone-stats) → transmise en live_context au cerveau Pieuvre,
+  // pour que la réponse streamée soit ancrée sur de vrais chiffres, jamais une supposition du LLM.
+  const liveContext = (body.liveContext && typeof body.liveContext === 'object') ? body.liveContext as Record<string, unknown> : undefined
 
   if (!userMessage) return sseError('bad_request', 'Message requis')
 
@@ -69,6 +72,7 @@ export async function POST(request: NextRequest) {
             context: {
               channel: 'widget_site', platform: 'web', session_id: sessionId, identity_id: identityId,
               page_source: pageSource, scroll_section: scrollSection, heat_score: heatScore,
+              ...(liveContext ? { live_context: liveContext } : {}),
             },
             history: conversationHistory.map(h => ({ role: h.role === 'ajnaya' ? 'assistant' : h.role, content: h.text })),
           }),
@@ -100,10 +104,13 @@ export async function POST(request: NextRequest) {
       const scriptPrompt = await loadClosingScript()
       const systemBase = scriptPrompt || DEFAULT_SYSTEM_PROMPT
       const prospect = prospectId ? await loadProspect(prospectId) : null
-      const systemPrompt = buildSystemPrompt(
+      let systemPrompt = buildSystemPrompt(
         systemBase, pageSource, scrollSection, prospect as Record<string, unknown> | null,
         heatScore, messageCount, conversationHistory,
       )
+      if (liveContext) {
+        systemPrompt += `\n\nDONNÉES RÉELLES DISPONIBLES (utilise-les si pertinent, jamais d'autre chiffre inventé) :\n${JSON.stringify(liveContext)}`
+      }
 
       let fullText = ''
       let usage = { input_tokens: 0, output_tokens: 0 }

@@ -4,15 +4,26 @@
  * LivePhone — le "téléphone vivant" de la page /experience.
  * PAS un mockup vidéo : un vrai cadre iPhone avec le VRAI chat Ajnaya streamé dedans
  * (même contrat SSE que le widget flottant et l'app — AJNAYA_CONTRACTS.md §7).
- * Après quelques échanges, invite honnêtement à continuer sur WhatsApp (contexte transmis en réf).
  *
- * Réutilise l'infra déjà livrée + vérifiée Fable 5 (2 passes, v130-134) :
+ * Comportement (revu suite retour Chandler) :
+ *  1. Ajnaya OUVRE avec une vraie question (sa zone ce soir) + chips rapides — elle ne
+ *     laisse jamais un silence passif. Cliquer un chip = répondre (aussi valide que taper).
+ *  2. Le 1er échange va chercher la VRAIE donnée zone (/api/home/zone-stats, même source que
+ *     le hero) et la transmet au cerveau streamé en `liveContext` → réponse ancrée sur de
+ *     vrais chiffres, jamais une supposition du LLM (règle anti-invention de l'ADN Ajnaya).
+ *  3. Après le 1er échange, bascule WhatsApp HONNÊTE : billet à usage unique
+ *     (/api/app/issue-handoff, même mécanisme que le widget flottant et le brief
+ *     AJNAYA_OMNICANAL_CONTINUITE.md) → Ajnaya REPREND la conversation sur WhatsApp, pas un
+ *     "salut" générique. Repli sur un lien wa.me simple si l'identité n'est pas encore résolue.
+ *
+ * Réutilise l'infra déjà livrée + vérifiée Fable 5 :
  *  - streamAjnayaChat (src/lib/ajnayaStream.ts) → /api/ajnaya/chat/stream
  *  - getSessionId (src/lib/ajnaya-analytics.ts) → MÊME session que le widget flottant
- *  - buildWAUrl (src/lib/whatsappLink.ts) section 'experience_phone'
+ *  - /api/app/issue-handoff (déjà utilisé par AjnayaWidget) → billet identity_id + contexte
+ *  - buildWAUrl en repli seulement (pas d'identity_id résolue)
  *
- * Design : tokens réels (tailwind.config.ts) — foreas-obsidian, accent-cyan/purple, glass.
- * Anti-pattern évité dès le départ (leçon Fable 5 sur AjnayaWidget) : verrou anti-envoi-concurrent.
+ * Design : tokens réels (tailwind.config.ts). Verrou anti-envoi-concurrent dès le départ
+ * (leçon Fable 5 sur AjnayaWidget).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -24,8 +35,17 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 
 interface Msg { role: 'user' | 'ajnaya'; text: string }
 
-const WELCOME = "Salut, moi c'est Ajnaya. Écris ta zone, ou pose-moi n'importe quelle question — c'est moi qui réponds, pas un script."
+const WELCOME = "Salut, moi c'est Ajnaya. Ta zone ce soir — je te dis combien ça paie, en vrai."
+const ZONE_CHIPS = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu']
 const FLUSH_MS = 40
+
+async function lookupZone(zone: string) {
+  try {
+    const res = await fetch(`/api/home/zone-stats?zone=${encodeURIComponent(zone)}`)
+    if (!res.ok) return null
+    return await res.json()
+  } catch { return null }
+}
 
 export default function LivePhone() {
   const [messages, setMessages] = useState<Msg[]>([{ role: 'ajnaya', text: WELCOME }])
@@ -34,6 +54,7 @@ export default function LivePhone() {
   const [exchanges, setExchanges] = useState(0)
   const [identityId, setIdentityId] = useState<string | null>(null)
   const [waOpened, setWaOpened] = useState(false)
+  const [waHref, setWaHref] = useState<string | null>(null) // billet réel une fois résolu
 
   const chatRef = useRef<HTMLDivElement>(null)
   const sendingRef = useRef(false)
@@ -52,10 +73,14 @@ export default function LivePhone() {
     if (sendingRef.current) return // verrou anti-envoi-concurrent (leçon Fable 5)
     sendingRef.current = true
 
+    const isFirstTurn = exchanges === 0
     setInput('')
     setMessages((prev) => [...prev, { role: 'user', text }])
-    try { posthog.capture('experience_phone_message_sent', { turn: exchanges + 1, device: getDevice() }) } catch { /* noop */ }
+    try { posthog.capture('experience_phone_message_sent', { turn: exchanges + 1, device: getDevice(), first_turn: isFirstTurn }) } catch { /* noop */ }
     setTyping(true)
+
+    // 1er échange = la question forcée sur la zone → on va chercher la VRAIE donnée avant de répondre.
+    const zoneData = isFirstTurn ? await lookupZone(text) : null
 
     const history = messages.slice(-8).map((m) => ({ role: m.role, text: m.text }))
     const body = {
@@ -68,6 +93,7 @@ export default function LivePhone() {
       messageCount: exchanges + 1,
       conversationHistory: history,
       device: getDevice(),
+      ...(zoneData ? { liveContext: { zone: zoneData } } : {}),
     }
 
     let bubbleCreated = false
@@ -130,8 +156,41 @@ export default function LivePhone() {
     }
   }, [input, messages, exchanges, identityId, sessionId])
 
-  const waUrl = buildWAUrl({ section: 'experience_phone', ref: sessionId })
-  const showWa = exchanges >= 1 // dès le 1er échange réel — l'invitation est honnête, pas un piège à clics
+  // ─── Bascule WhatsApp — billet réel (identity + contexte), pas un lien générique ────────
+  const showWa = exchanges >= 1
+  useEffect(() => {
+    if (!showWa || waHref) return // déjà résolu ou pas encore le moment
+    if (!identityId) return // billet exige un identity_id valide (issue-handoff) → attend sa résolution
+    let cancelled = false
+    ;(async () => {
+      try {
+        const lastAjnaya = [...messages].reverse().find((m) => m.role === 'ajnaya')?.text || ''
+        const res = await fetch('/api/app/issue-handoff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            identity_id: identityId,
+            source_canal: 'widget',
+            target_canal: 'whatsapp',
+            state: {
+              last_messages: messages.slice(-6).map((m) => ({ role: m.role, text: m.text })),
+              intent: 'experience_phone_continue',
+              heat_score: 20,
+              url_pre_landing: '/experience',
+              prompt_for_next_canal: `Salut ! Tu testais Ajnaya en direct sur foreas.xyz/experience. Je reprends pile où on en était.${lastAjnaya ? ` On parlait de : "${lastAjnaya.slice(0, 80)}"` : ''}`,
+            },
+          }),
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && data.ok && data.deeplink) setWaHref(data.deeplink)
+      } catch { /* silencieux — repli déjà affiché */ }
+    })()
+    return () => { cancelled = true }
+  }, [showWa, identityId, waHref, messages])
+
+  // Repli honnête tant que le billet n'est pas résolu (identity pas encore connue) — jamais d'écran figé.
+  const waUrl = waHref || buildWAUrl({ section: 'experience_phone', ref: sessionId })
 
   return (
     <div className="mx-auto w-[262px]">
@@ -173,6 +232,21 @@ export default function LivePhone() {
                 ))}</span>
               </div>
             )}
+            {/* chips rapides — répondre à la question forcée en 1 tap, tant qu'on n'a pas encore répondu */}
+            {exchanges === 0 && !typing && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {ZONE_CHIPS.map((z) => (
+                  <button
+                    key={z}
+                    type="button"
+                    onClick={() => handleSend(z)}
+                    className="rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1.5 text-[11.5px] text-white/80 active:scale-[0.97]"
+                  >
+                    {z}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* input */}
@@ -183,7 +257,7 @@ export default function LivePhone() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Écris ici…"
+              placeholder={exchanges === 0 ? 'Ta zone…' : 'Écris ici…'}
               aria-label="Écrire à Ajnaya"
               className="min-w-0 flex-1 bg-transparent px-2 text-[13px] text-[#F8FAFC] placeholder:text-text-tertiary focus:outline-none"
             />
@@ -197,13 +271,13 @@ export default function LivePhone() {
             </button>
           </form>
 
-          {/* bascule WhatsApp — honnête, apparaît après un vrai échange */}
+          {/* bascule WhatsApp — honnête, apparaît après un vrai échange, billet réel dès que possible */}
           {showWa && (
             <a
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => { if (!waOpened) { setWaOpened(true); try { posthog.capture('experience_phone_wa_clicked', { exchanges }) } catch { /* noop */ } } }}
+              onClick={() => { if (!waOpened) { setWaOpened(true); try { posthog.capture('experience_phone_wa_clicked', { exchanges, has_handoff_token: !!waHref }) } catch { /* noop */ } } }}
               className="mt-2 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-success to-[#34D399] py-3 text-[13.5px] font-extrabold text-white"
               style={{ boxShadow: '0 10px 30px -10px rgba(16,185,129,.5)' }}
             >
