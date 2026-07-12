@@ -19,6 +19,7 @@ export type WhatsAppSection =
   | 'plan' // Section 5 · plan en 3 étapes
   | 'cap' // Section 6 · CAP partenaires
   | 'final' // Section 7 · CTA final
+  | 'experience_phone' // Page /experience · bascule depuis le téléphone vivant
 
 export interface BuildWAOptions {
   section: WhatsAppSection
@@ -84,6 +85,9 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
 
     case 'final':
       return `Salut Ajnaya. Je démarre avec FOREAS. 0€. Je teste.`
+
+    case 'experience_phone':
+      return `Salut Ajnaya, je continue notre discussion du site — on en était où ?`
 
     default:
       return `Salut Ajnaya.`
