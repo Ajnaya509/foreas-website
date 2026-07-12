@@ -117,18 +117,21 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json({ error: 'Plan requis' }, { status: 400 })
     }
-    // Reactivation (base dormante, paiement immédiat) : prix canonique 29,99€/mois,
+    // Reactivation / tarifs2 (paiement immédiat) : prix canonique 29,99€/mois,
     // construit dynamiquement — ne dépend PAS d'un Price ID Stripe pré-créé sur Vercel,
     // pour ne jamais désynchroniser affichage vs montant réellement prélevé.
+    // Annuel = même règle que /pay/[id] (×10 = 2 mois offerts, recurring interval year) —
+    // sans ce cas, un plan `*_annual` était silencieusement facturé au mois (bug corrigé 13/07).
     const REACTIVATION_PRICE_CENTS = 2999
     let lineItem: Stripe.Checkout.SessionCreateParams.LineItem
     if (immediate) {
+      const isAnnual = typeof plan === 'string' && plan.endsWith('_annual')
       lineItem = {
         price_data: {
           currency: 'eur',
-          product_data: { name: 'FOREAS Pro' },
-          unit_amount: REACTIVATION_PRICE_CENTS,
-          recurring: { interval: 'month' },
+          product_data: { name: isAnnual ? 'FOREAS Pro — Annuel' : 'FOREAS Pro' },
+          unit_amount: isAnnual ? REACTIVATION_PRICE_CENTS * 10 : REACTIVATION_PRICE_CENTS,
+          recurring: { interval: isAnnual ? 'year' : 'month' },
         },
         quantity: 1,
       }

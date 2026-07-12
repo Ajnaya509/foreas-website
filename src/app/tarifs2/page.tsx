@@ -167,7 +167,7 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
 }
 
 // ─── Plan Data — Pricing V2 09/06/2026 (Chandler verrouillé) ─────────────────
-// Pro 97€/mois · Elite 247€/mois · Annuel 2 mois offerts
+// Pro 29,99€/mois · Elite 247€/mois · Annuel 2 mois offerts
 // Free = tout ✗ (FOMO design — Apple decoy 3 colonnes)
 // Cascade MLM V2 : 25€/8€/2€
 interface Plan {
@@ -201,7 +201,7 @@ const PLANS: Plan[] = [
     id: 'pro',
     name: 'Pro',
     tagline: 'Le plan que 8 chauffeurs sur 10 choisissent.',
-    monthlyPrice: 97, annualMonthlyPrice: 80.83, annualTotal: 970,
+    monthlyPrice: 29.99, annualMonthlyPrice: 24.99, annualTotal: 299.90,
     popular: true,
     features: [
       { text: 'Heatmap full multi-source (PredictHQ + SNCF + météo)', ok: true, star: true },
@@ -269,7 +269,7 @@ function TarifsContent() {
     IMMEDIATE_PAYMENT
       ? { id: 'faq-carte', q: "Je paie tout de suite ? Et si ça me va pas ?", a: "Oui, tu paies aujourd'hui — et tu es couvert par la garantie 30 jours : pas convaincu, tu te fais rembourser sans discuter, sans question. Tu testes en vrai sur tes courses, tu risques zéro. (Le plan Free reste 100% gratuit, juste un email.)" }
       : { id: 'faq-carte', q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro : Stripe garde ta carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0€ jusqu'à lundi 18h. Tu annules en 1 clic depuis l'app. Si tu annules avant, il n'y a rien à payer. Point." },
-    { id: 'faq-mensuel', q: "Pourquoi mensuel et non hebdomadaire ?", a: "Simple : plus lisible. 97€/mois = 3,23€/jour. Tu sais exactement ce que tu paies. Pas de calcul. L'annuel à 970€ te donne 2 mois offerts — c'est 194€ économisés si tu restes toute l'année." },
+    { id: 'faq-mensuel', q: "Pourquoi mensuel et non hebdomadaire ?", a: "Simple : plus lisible. 29,99€/mois = moins d'1€/jour, un café. Tu sais exactement ce que tu paies. Pas de calcul. L'annuel à 299,90€ te donne 2 mois offerts — c'est 59,98€ économisés si tu restes toute l'année." },
     { id: 'faq-parrainage', q: "25€/filleul à vie, est-ce un piège ?", a: "Non. Tant que ton filleul reste abonné Pro ou Elite ET que toi aussi, tu touches 25€/mois sur lui (N1). Plus 8€ s'il parraine quelqu'un (N2). Plus 2€ au niveau 3. Activé dès le 1er paiement de ton filleul. Virement automatique. Pas de plafond, pas d'expiration. Un lien parrain donne -20% à vie sur le mensuel à ton filleul." },
     { id: 'faq-elite', q: "Elite, ça veut dire quoi exactement \"courses FOREAS prioritaires\" ?", a: "FOREAS dispatch ses propres clients privés (hôtels, Airbnb, corporate) qui réservent directement via foreas.xyz — sans Uber/Bolt. Quand un client réserve, on dispatch d'abord aux Elite dans le rayon (5 min), puis aux Pro (10 min). C'est ce qui justifie le delta Elite/Pro — tu captures les clients premium FOREAS direct avant tout le monde. En moyenne +200€/sem sur les chauffeurs Elite actifs (Paris)." },
     { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — tu dois faire le tri. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec toi en temps réel. " + (IMMEDIATE_PAYMENT ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : "Le tier Pro te laisse tester 7 jours sans payer pour te faire ta propre idée.") },
@@ -525,7 +525,7 @@ function TarifsContent() {
 
         {/* Note parrain sous les cards */}
         <p className="text-center text-white/40 text-xs mt-6 max-w-lg mx-auto">
-          Tu as un lien parrain ? Ton mensuel est à <span className="text-white/70 font-semibold tabular-nums">−20% à vie</span> (Pro à 77,60€/mois · Elite à 197,60€/mois). L'annuel est au tarif fixe.
+          Tu as un lien parrain ? Ton mensuel est à <span className="text-white/70 font-semibold tabular-nums">−20% à vie</span> (Pro à 23,99€/mois · Elite à 197,60€/mois). L'annuel est au tarif fixe.
         </p>
       </section>
 
@@ -579,7 +579,7 @@ function TarifsContent() {
             </div>
             <div className="rounded-2xl p-6 sm:p-7 border border-violet-500/30 bg-gradient-to-b from-violet-900/15 to-black relative" style={{ boxShadow: '0 0 60px rgba(140,82,255,0.15)' }}>
               <p className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>
-                AVEC FOREAS PRO · 97&nbsp;€/MOIS
+                AVEC FOREAS PRO · 29,99&nbsp;€/MOIS
               </p>
               <ul className="space-y-3 text-[15px] text-[#F8FAFC]/90 leading-relaxed">
                 <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span><strong className="text-[#F8FAFC]">Ajnaya te briefe le matin</strong> : 3 zones chaudes du jour, ordre optimal.</span></li>
