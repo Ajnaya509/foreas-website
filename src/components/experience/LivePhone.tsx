@@ -193,12 +193,15 @@ export default function LivePhone() {
   const waUrl = waHref || buildWAUrl({ section: 'experience_phone', ref: sessionId })
 
   return (
-    <div className="mx-auto w-[262px]">
+    // Vraie proportion iPhone (≈0.465 largeur/hauteur, pas un cadre trapu) — 280×~602px cadre externe.
+    <div className="relative mx-auto w-[270px]">
       <div
-        className="rounded-[34px] bg-black p-[7px]"
+        className="relative rounded-[42px] bg-black p-[8px]"
         style={{ boxShadow: '0 0 0 1px rgba(255,255,255,.14), 0 24px 60px -20px rgba(0,0,0,.85), 0 0 60px -22px rgba(140,82,255,.4)' }}
       >
-        <div className="flex h-[352px] flex-col rounded-[28px] bg-[#07080F] px-3 pb-3 pt-3.5">
+        {/* île dynamique — détail réaliste */}
+        <div className="pointer-events-none absolute left-1/2 top-[18px] z-20 h-[22px] w-[92px] -translate-x-1/2 rounded-full bg-black" aria-hidden />
+        <div className="flex h-[460px] flex-col rounded-[34px] bg-[#07080F] px-3 pb-3 pt-9">
           {/* header */}
           <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2.5">
             <span className="h-[26px] w-[26px] flex-none rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan" aria-hidden />
