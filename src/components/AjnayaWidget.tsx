@@ -705,6 +705,10 @@ export default function AjnayaWidget() {
   const bubbleBottom = hasStickyBelow ? 96 : 24
   const currentLabelText = customLabel || LABEL_PHRASES[labelIndex]
 
+  // /experience : le téléphone vivant EST le chat — la bulle flottante ferait doublon
+  // et recouvre le CTA sticky de la page (bug Fable 5). Après tous les hooks (Rules of Hooks).
+  if (pathname === '/experience') return null
+
   return (
     <>
       {/* ═══════════════════════════════════════════════════════════════

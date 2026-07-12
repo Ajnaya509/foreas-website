@@ -139,7 +139,7 @@ export default function LivePhone() {
         className="rounded-[34px] bg-black p-[7px]"
         style={{ boxShadow: '0 0 0 1px rgba(255,255,255,.14), 0 24px 60px -20px rgba(0,0,0,.85), 0 0 60px -22px rgba(140,82,255,.4)' }}
       >
-        <div className="flex min-h-[352px] flex-col rounded-[28px] bg-[#07080F] px-3 pb-3 pt-3.5">
+        <div className="flex h-[352px] flex-col rounded-[28px] bg-[#07080F] px-3 pb-3 pt-3.5">
           {/* header */}
           <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2.5">
             <span className="h-[26px] w-[26px] flex-none rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan" aria-hidden />
@@ -151,7 +151,7 @@ export default function LivePhone() {
           </div>
 
           {/* messages */}
-          <div ref={chatRef} className="flex-1 space-y-2 overflow-y-auto py-3 pr-0.5 text-[13px] leading-relaxed">
+          <div ref={chatRef} role="log" aria-live="polite" className="flex-1 space-y-2 overflow-y-auto py-3 pr-0.5 text-[13px] leading-relaxed">
             {messages.map((m, i) => (
               <div
                 key={i}

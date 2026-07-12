@@ -165,13 +165,13 @@ export default function ExperienceClient() {
       </header>
 
       {/* ═══ HERO — logo réel + téléphone vivant ═══ */}
-      <section className="relative z-10 px-5 pb-10 pt-8 sm:pt-14">
+      <section id="hero" className="relative z-10 px-5 pb-10 pt-8 sm:pt-14">
         <div className="mx-auto max-w-xl text-center">
           <ForeasLogo variant="full" className="mx-auto mb-7 h-auto w-[190px] text-[#F8FAFC] sm:w-[230px]" />
           <p className="mb-3 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.26em' }}>
             Pour les chauffeurs VTC
           </p>
-          <h1 className="text-[38px] font-extrabold leading-[1.05] sm:text-[52px]" style={{ letterSpacing: '-.035em' }}>
+          <h1 className="font-sans text-[38px] font-extrabold leading-[1.05] sm:text-[52px]" style={{ letterSpacing: '-.035em' }}>
             Gagne plus, roule moins.
           </h1>
           <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-white/70">
@@ -193,7 +193,7 @@ export default function ExperienceClient() {
               <FeatureIllus kind={f.illus} />
             </div>
             <p className="mb-2 mt-6 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>{f.eyebrow}</p>
-            <h2 className="text-[25px] font-bold leading-tight" style={{ letterSpacing: '-.03em' }}>{f.title}</h2>
+            <h2 className="font-sans text-[25px] font-bold leading-tight" style={{ letterSpacing: '-.03em' }}>{f.title}</h2>
             <p className="mt-2.5 max-w-[34ch] text-[14.5px] leading-relaxed text-white/70">{f.sub}</p>
           </div>
         </motion.section>
