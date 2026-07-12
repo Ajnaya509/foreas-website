@@ -6,7 +6,7 @@
  * → paiement IMMÉDIAT (pas d'essai) + garantie 30j satisfait-remboursé (risk reversal Hormozi).
  *
  * Copy : copy-atomic (base FROIDE + product-aware → on vend la PREUVE + l'OFFRE + la GARANTIE,
- * tutoiement pro Koraly, "gagne plus roule moins", 97€ = source pricing, zéro chiffre inventé).
+ * tutoiement pro Koraly, "gagne plus roule moins", 29,99€/mois = source pricing (pieuvre_pricing_plans, 12/07/2026), zéro chiffre inventé).
  * Design : design-system site "Dark Sovereign" (#050508), un seul héros, garantie proéminente,
  * tabular-nums, quiet-tech. Distraction zéro (pas de nav riche — règle landing §6.8).
  */
@@ -84,7 +84,7 @@ export default function ReactivationClient() {
         {!loading && <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />}
       </button>
       <p className="text-[12px]" style={{ color: C.muted }}>
-        Paiement aujourd&apos;hui · 97€/mois · annulation 1 clic
+        Paiement aujourd&apos;hui · 29,99€/mois · annulation 1 clic
       </p>
       {err && <p className="text-[12px]" style={{ color: '#F87171' }}>{err}</p>}
     </div>
@@ -134,8 +134,8 @@ export default function ReactivationClient() {
             Gagne plus, roule moins.
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed" style={{ color: C.text }}>
-            <strong style={{ color: C.hero }}>97€/mois</strong>, c&apos;est{' '}
-            <strong style={{ color: C.cyan }}>3,23€/jour</strong> — le prix d&apos;un péage. Une seule course
+            <strong style={{ color: C.hero }}>29,99€/mois</strong>, c&apos;est{' '}
+            <strong style={{ color: C.cyan }}>1€/jour</strong> — le prix d&apos;un café. Une seule course
             récupérée dans la semaine, et c&apos;est remboursé.
           </p>
         </section>
@@ -146,7 +146,7 @@ export default function ReactivationClient() {
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: C.violet }}>Pro · le plus choisi</p>
               <p className="mt-1 text-[34px] font-extrabold tabular-nums leading-none" style={{ color: C.hero }}>
-                97€<span className="text-[15px] font-semibold" style={{ color: C.muted }}>/mois</span>
+                29,99€<span className="text-[15px] font-semibold" style={{ color: C.muted }}>/mois</span>
               </p>
             </div>
             <Guarantee className="hidden sm:inline-flex" />
@@ -181,7 +181,7 @@ export default function ReactivationClient() {
         {/* ── OBJECTIONS (les 3 craintes du grincheux, courtes + factuelles) ── */}
         <section className="mt-10 space-y-3">
           {[
-            { q: '« C\'est trop cher. »', a: '3,23€/jour. Une course que tu rates te coûte plus. Le retour se voit dès la première semaine.' },
+            { q: '« C\'est trop cher. »', a: '1€/jour. Une course que tu rates te coûte plus. Le retour se voit dès la première semaine.' },
             { q: '« Ça marche pas pour moi. »', a: 'Garantie 30 jours, remboursé sans discuter. Tu testes en vrai, tu risques zéro.' },
             { q: '« J\'ai pas le temps. »', a: '2 minutes pour activer. Après, Ajnaya bosse pendant que tu conduis.' },
           ].map((o) => (
@@ -197,7 +197,7 @@ export default function ReactivationClient() {
           <p className="mb-4 text-[15px]" style={{ color: C.text }}>
             Tu as déjà perdu un an. Ce soir, tu peux reprendre la main.
           </p>
-          <CTA label="Reprendre la main — 97€" />
+          <CTA label="Reprendre la main — 29,99€" />
         </section>
 
         <p className="mt-10 text-center text-[11px]" style={{ color: C.muted }}>

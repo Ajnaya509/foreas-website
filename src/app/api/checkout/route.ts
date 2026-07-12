@@ -117,23 +117,41 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json({ error: 'Plan requis' }, { status: 400 })
     }
-    const priceId = PRICE_IDS[plan]
-    if (!priceId) {
-      // Soit le plan n'existe pas (ex: free_*, essentiel_* archivé), soit l'env
-      // var Vercel n'est pas configurée. Message explicite côté client.
-      return NextResponse.json(
-        {
-          error: `Plan invalide ou env var manquante : ${plan}. Vérifier STRIPE_PRICE_ID_<TIER>_<BILLING> sur Vercel.`,
+    // Reactivation (base dormante, paiement immédiat) : prix canonique 29,99€/mois,
+    // construit dynamiquement — ne dépend PAS d'un Price ID Stripe pré-créé sur Vercel,
+    // pour ne jamais désynchroniser affichage vs montant réellement prélevé.
+    const REACTIVATION_PRICE_CENTS = 2999
+    let lineItem: Stripe.Checkout.SessionCreateParams.LineItem
+    if (immediate) {
+      lineItem = {
+        price_data: {
+          currency: 'eur',
+          product_data: { name: 'FOREAS Pro' },
+          unit_amount: REACTIVATION_PRICE_CENTS,
+          recurring: { interval: 'month' },
         },
-        { status: 400 },
-      )
+        quantity: 1,
+      }
+    } else {
+      const priceId = PRICE_IDS[plan]
+      if (!priceId) {
+        // Soit le plan n'existe pas (ex: free_*, essentiel_* archivé), soit l'env
+        // var Vercel n'est pas configurée. Message explicite côté client.
+        return NextResponse.json(
+          {
+            error: `Plan invalide ou env var manquante : ${plan}. Vérifier STRIPE_PRICE_ID_<TIER>_<BILLING> sur Vercel.`,
+          },
+          { status: 400 },
+        )
+      }
+      lineItem = { price: priceId, quantity: 1 }
     }
     const origin = request.nextUrl.origin
     const trialEnd = getNextMonday18hParis()
     const isEmbedded = mode === 'embedded'
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [lineItem],
       billing_address_collection: 'required',
       locale: 'fr',
       // client_reference_id carries the referral code for MLM attribution
