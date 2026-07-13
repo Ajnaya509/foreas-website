@@ -320,21 +320,28 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
             )}
           </div>
 
-          {/* input — anneau dégradé (@keyframes foreas-border-comet, globals.css) recoloré violet
-              royal→cyan→violet royal, même mécanique que la search bar de la home (HomeHeroCream.tsx) :
-              conic-gradient qui tourne et disparaît/réapparaît une fois par tour. + respiration douce
-              en fond (variant "Ajnaya réfléchit", visible à travers le fill translucide du form). */}
+          {/* input — trait 1px qui CONTOURNE le périmètre réel du champ (SVG stroke-dashoffset,
+              @keyframes input-comet-trace globals.css) : vitesse constante sur tout le tour, pas un
+              cône qui tourne depuis le centre (ça "radarise" sur un rectangle large — retour Chandler).
+              pathLength=100 → un seul segment lumineux qui parcourt le tracé puis disparaît dans le
+              grand vide avant de réapparaître, exactement le rythme demandé. + respiration douce en
+              fond (variant "Ajnaya réfléchit", visible à travers le fill translucide du form). */}
           <div className="relative">
-            <div className="pointer-events-none absolute -inset-[1.5px] overflow-hidden rounded-2xl" aria-hidden="true">
-              <div
-                className="absolute left-1/2 top-1/2 aspect-square w-[150%]"
-                style={{
-                  background: 'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(140,82,255,0.95) 318deg, rgba(0,212,255,1) 338deg, rgba(140,82,255,0.95) 358deg, transparent 360deg)',
-                  animation: 'foreas-border-comet 3.6s ease-in-out infinite alternate',
-                  willChange: 'transform',
-                }}
+            <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
+              <defs>
+                <linearGradient id="livephone-input-comet" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#8C52FF" />
+                  <stop offset="50%" stopColor="#00D4FF" />
+                  <stop offset="100%" stopColor="#8C52FF" />
+                </linearGradient>
+              </defs>
+              <rect
+                x="0.75" y="0.75" width="calc(100% - 1.5px)" height="calc(100% - 1.5px)" rx="15" ry="15"
+                fill="none" stroke="url(#livephone-input-comet)" strokeWidth="1.5"
+                pathLength={100} strokeDasharray="14 86" strokeLinecap="round"
+                style={{ animation: 'input-comet-trace 3.6s linear infinite' }}
               />
-            </div>
+            </svg>
             <div
               className="pointer-events-none absolute inset-0 animate-halo-pulse rounded-2xl"
               aria-hidden="true"

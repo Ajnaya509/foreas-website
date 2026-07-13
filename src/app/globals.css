@@ -71,6 +71,14 @@ html { scroll-behavior: smooth; }
   100% { transform: translate(-50%, -50%) rotate(360deg); opacity: 0; }
 }
 
+/* Trait lumineux qui CONTOURNE le périmètre d'un rectangle (SVG stroke-dashoffset,
+   vitesse constante sur tout le tour — contrairement au cône tournant ci-dessus qui
+   "radarise" sur une forme large/plate). pathLength=100 → indépendant des proportions. */
+@keyframes input-comet-trace {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -100; }
+}
+
 /* ── Apple Vision Pro spatial drift (blobs background) ─────────────── */
 @keyframes vision-drift-a {
   0%   { transform: translate3d(0, 0, 0) scale(1); }
