@@ -261,15 +261,15 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
 
   return (
     // Vraie proportion iPhone (≈0.465 largeur/hauteur, pas un cadre trapu) — 270×460 mobile,
-    // scale ×1.22 uniforme à lg: (330×561) pour garder les proportions, pas un simple étirement.
-    <div className="relative mx-auto w-[270px] lg:w-[330px]">
+    // scale ×1.22 uniforme à md: (330×561) pour garder les proportions, pas un simple étirement.
+    <div className="relative mx-auto w-[270px] md:w-[330px]">
       <div
-        className="relative rounded-[42px] bg-black p-[8px] lg:rounded-[51px] lg:p-[10px]"
+        className="relative rounded-[42px] bg-black p-[8px] md:rounded-[51px] md:p-[10px]"
         style={{ boxShadow: '0 0 0 1px rgba(255,255,255,.14), 0 24px 60px -20px rgba(0,0,0,.85), 0 0 60px -22px rgba(140,82,255,.4)' }}
       >
         {/* île dynamique — détail réaliste */}
-        <div className="pointer-events-none absolute left-1/2 top-[18px] z-20 h-[22px] w-[92px] -translate-x-1/2 rounded-full bg-black lg:top-[22px] lg:h-[27px] lg:w-[112px]" aria-hidden />
-        <div className="flex h-[460px] flex-col rounded-[34px] bg-[#07080F] px-3 pb-3 pt-9 lg:h-[561px] lg:rounded-[41px]">
+        <div className="pointer-events-none absolute left-1/2 top-[18px] z-20 h-[22px] w-[92px] -translate-x-1/2 rounded-full bg-black md:top-[22px] md:h-[27px] md:w-[112px]" aria-hidden />
+        <div className="flex h-[460px] flex-col rounded-[34px] bg-[#07080F] px-3 pb-3 pt-9 md:h-[561px] md:rounded-[41px]">
           {/* header */}
           <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2.5">
             <span className="h-[26px] w-[26px] flex-none rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan" aria-hidden />

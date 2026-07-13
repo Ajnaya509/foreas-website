@@ -164,9 +164,9 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         <div className="absolute inset-0" style={{ backgroundColor: 'rgba(255,255,255,.012)' }} />
       </div>
 
-      {/* header — le fond (blur/gradient) reste plein-largeur, le contenu se recentre à lg: */}
+      {/* header — le fond (blur/gradient) reste plein-largeur, le contenu se recentre à md: */}
       <header className="sticky top-0 z-40 backdrop-blur-md" style={{ background: 'linear-gradient(180deg, rgba(6,6,16,.92), rgba(6,6,16,.5) 80%, transparent)' }}>
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 lg:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 md:px-8">
           <Link href="/" aria-label="FOREAS — Accueil">
             <ForeasLogo variant="mini" className="h-6 w-auto text-[#F8FAFC]" />
           </Link>
@@ -178,7 +178,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
 
       {/* ═══ HERO — téléphone vivant. Logo retiré (quiet-tech R4, redondant avec le header) ET eyebrow
           "Pour les chauffeurs VTC" retiré (même règle — le H1 seul porte le message) — Fable 5. ═══ */}
-      <section id="hero" className="relative z-10 px-5 pb-10 pt-10 sm:pt-16 lg:pt-24 lg:pb-16">
+      <section id="hero" className="relative z-10 px-5 pb-10 pt-10 sm:pt-16 md:pt-24 md:pb-16">
         {/* halo scopé au H1 — une seule source additionnelle, pas empilée sur le halo de fond global */}
         <div
           aria-hidden
@@ -192,7 +192,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           style={{ background: 'radial-gradient(120% 75% at 50% 20%, transparent 55%, rgba(0,0,0,.28) 100%)' }}
         />
 
-        <motion.div {...heroReveal} className="relative mx-auto max-w-xl text-center lg:max-w-2xl">
+        <motion.div {...heroReveal} className="relative mx-auto max-w-xl text-center md:max-w-2xl">
           {/* Badge live — même claim/mécanique que le chip de la home (HomeHeroCream.tsx), recoloré
               glass sombre. Pas un doublon de l'eyebrow retiré : ceci est un statut système (point qui
               pulse), pas un label d'audience. */}
@@ -208,12 +208,12 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
 
           {/* H1 — même traitement que la home (HomeHeroCream.tsx) : "Gagne plus," ivoire +
               "roule moins." italique violet royal sobre uni (décision Chandler : pas de dégradé flashy). */}
-          <h1 className="font-sans text-[38px] font-extrabold leading-[1.05] sm:text-[52px] lg:text-[64px] xl:text-[72px]" style={{ letterSpacing: '-.035em' }}>
+          <h1 className="font-sans text-[38px] font-extrabold leading-[1.05] sm:text-[52px] md:text-[64px] lg:text-[72px]" style={{ letterSpacing: '-.035em' }}>
             Gagne plus,
             <br />
             <span style={{ fontStyle: 'italic', color: '#8C52FF' }}>roule moins.</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-white/70 lg:max-w-lg lg:text-[17px]">
+          <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-white/70 md:max-w-lg md:text-[17px]">
             Écris à Ajnaya, là, tout de suite. Ce n&apos;est pas une démo — c&apos;est le vrai cerveau qui répond.
           </p>
         </motion.div>
@@ -225,33 +225,33 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
 
       {/* ═══ FEATURES — illustrations honnêtes, prêtes pour vidéo réelle ═══ */}
       {FEATURES.map((f, i) => (
-        <motion.section key={i} {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 lg:py-16">
-          <div className="mx-auto max-w-md lg:max-w-xl">
-            <div className="relative h-[220px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0B0E1A] lg:h-[280px]">
+        <motion.section key={i} {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-16">
+          <div className="mx-auto max-w-md md:max-w-xl">
+            <div className="relative h-[220px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0B0E1A] md:h-[280px]">
               <span className="absolute left-3 top-2.5 z-10 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">{f.tag}</span>
               <FeatureIllus kind={f.illus} />
             </div>
             <p className="mb-2 mt-6 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>{f.eyebrow}</p>
-            <h2 className="font-sans text-[25px] font-bold leading-tight lg:text-[32px]" style={{ letterSpacing: '-.03em' }}>{f.title}</h2>
+            <h2 className="font-sans text-[25px] font-bold leading-tight md:text-[32px]" style={{ letterSpacing: '-.03em' }}>{f.title}</h2>
             <p className="mt-2.5 max-w-[34ch] text-[14.5px] leading-relaxed text-white/70">{f.sub}</p>
           </div>
         </motion.section>
       ))}
 
       {/* ═══ PREUVE — vraie vidéo Binaté (source unique testimonials.data.ts) ═══ */}
-      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 lg:py-14">
-        <div className="mx-auto max-w-md lg:max-w-xl">
+      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
+        <div className="mx-auto max-w-md md:max-w-xl">
           <p className="mb-4 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Pas moi qui le dis. Eux.</p>
           <TestimonialVideoCard testimonial={BINATE} showQuote />
         </div>
       </motion.section>
 
       {/* ═══ OFFRE — 29,99€/mois ═══ */}
-      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 lg:py-14">
-        <div className="mx-auto max-w-md lg:max-w-xl">
+      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
+        <div className="mx-auto max-w-md md:max-w-xl">
           <p className="mb-4 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>L&apos;offre</p>
           <div className="rounded-3xl border border-accent-cyan/25 p-6 text-center" style={{ background: 'linear-gradient(180deg, rgba(0,212,255,.08), rgba(140,82,255,.02))' }}>
-            <div className="text-[44px] font-extrabold tabular-nums lg:text-[56px]" style={{ letterSpacing: '-.04em' }}>
+            <div className="text-[44px] font-extrabold tabular-nums md:text-[56px]" style={{ letterSpacing: '-.04em' }}>
               29,99&nbsp;€<small className="text-[15px] font-semibold text-white/45">/mois</small>
             </div>
             <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-accent-cyan/25 bg-accent-cyan/10 px-3 py-1.5 text-[12.5px] tabular-nums text-accent-cyan">
@@ -275,8 +275,8 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       </motion.section>
 
       {/* ═══ FAQ ═══ */}
-      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 lg:py-14">
-        <div className="mx-auto max-w-md lg:max-w-xl">
+      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
+        <div className="mx-auto max-w-md md:max-w-xl">
           <p className="mb-3 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Questions directes</p>
           {[
             ['Comment tu sais où ça paie ?', 'Ajnaya lit 7 plateformes en même temps, en direct. Comment exactement ? C’est notre secret — toi, tu vois le résultat.'],
@@ -301,10 +301,10 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       {/* ═══ Preuve sociale bas-gauche — oriente vers WhatsApp (capture du numéro) ═══ */}
       <ExperiencePhoneToasts />
 
-      {/* ═══ CTA persistant — bord-à-bord mobile, pilule centrée à lg: (les translate-x/y Tailwind
+      {/* ═══ CTA persistant — bord-à-bord mobile, pilule centrée à md: (les translate-x/y Tailwind
           se composent via les mêmes variables --tw-translate-*, aucune collision) ═══ */}
       <div
-        className={`fixed inset-x-4 bottom-4 z-50 flex gap-2.5 transition-all duration-300 lg:inset-x-auto lg:left-1/2 lg:w-full lg:max-w-md lg:-translate-x-1/2 ${showCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
+        className={`fixed inset-x-4 bottom-4 z-50 flex gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${showCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
       >
         <InkGradientButton as="link" href="#hero" variant="primary" size="lg" fullWidth
           onClick={() => { try { posthog.capture('experience_sticky_cta_clicked') } catch { /* noop */ } }}
