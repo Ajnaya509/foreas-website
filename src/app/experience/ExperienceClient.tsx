@@ -193,8 +193,25 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         />
 
         <motion.div {...heroReveal} className="relative mx-auto max-w-xl text-center lg:max-w-2xl">
+          {/* Badge live — même claim/mécanique que le chip de la home (HomeHeroCream.tsx), recoloré
+              glass sombre. Pas un doublon de l'eyebrow retiré : ceci est un statut système (point qui
+              pulse), pas un label d'audience. */}
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.05] px-3.5 py-1.5">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+            </span>
+            <span className="text-[11px] font-semibold text-white/80 sm:text-xs">
+              Ajnaya lit <span className="tabular-nums">7</span> plateformes en direct
+            </span>
+          </div>
+
+          {/* H1 — même traitement que la home (HomeHeroCream.tsx) : "Gagne plus," ivoire +
+              "roule moins." italique violet royal sobre uni (décision Chandler : pas de dégradé flashy). */}
           <h1 className="font-sans text-[38px] font-extrabold leading-[1.05] sm:text-[52px] lg:text-[64px] xl:text-[72px]" style={{ letterSpacing: '-.035em' }}>
-            Gagne plus, roule moins.
+            Gagne plus,
+            <br />
+            <span style={{ fontStyle: 'italic', color: '#8C52FF' }}>roule moins.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-white/70 lg:max-w-lg lg:text-[17px]">
             Écris à Ajnaya, là, tout de suite. Ce n&apos;est pas une démo — c&apos;est le vrai cerveau qui répond.
