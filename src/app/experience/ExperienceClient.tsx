@@ -21,7 +21,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import posthog from 'posthog-js'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, MapPin, ArrowRight } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
 import LivePhone, { orderZonesByCity } from '@/components/experience/LivePhone'
 import ExperiencePhoneToasts from '@/components/experience/ExperiencePhoneToasts'
@@ -33,6 +33,8 @@ import { useIsMobile } from '@/hooks/useDevicePerf'
 
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
+// Même pop-up anti-départ que la home — réutilisé tel quel, déjà générique (WhatsApp + garde-fous propres).
+const ExitIntentModal = dynamic(() => import('@/components/home2026/ExitIntentModal'))
 
 const reveal = {
   initial: { opacity: 0, y: 22 },
@@ -151,6 +153,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   const [showCta, setShowCta] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalZone, setModalZone] = useState('')
+  const [desktopInput, setDesktopInput] = useState('')
   const waFinal = buildWAUrl({ section: 'final' })
   // Desktop (≥768px, seuil aligné sur les breakpoints md: de la page) : la modale de la home
   // (AjnayaConversationModal) remplace le mockup téléphone — le format phone-frame ne doit
@@ -223,12 +226,14 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             </span>
           </div>
 
-          {/* H1 — même traitement que la home (HomeHeroCream.tsx) : "Gagne plus," ivoire +
-              "roule moins." italique violet royal sobre uni (décision Chandler : pas de dégradé flashy). */}
-          <h1 className="font-sans text-[38px] font-extrabold leading-[1.05] sm:text-[52px] md:text-[64px] lg:text-[72px]" style={{ letterSpacing: '-.035em' }}>
+          {/* H1 — même traitement que la home (HomeHeroCream.tsx) : Genos (font-title, 137 usages
+              historiques du token, letter-spacing -0.04em display ≥56px déjà établi) + "roule moins."
+              italique. Couleur cyan (pas violet) : décision Chandler propre à /experience, cohérente
+              avec le cyan déjà dominant sur cette page (badges, eyebrows). */}
+          <h1 className="font-title text-[38px] font-semibold leading-[1.05] sm:text-[52px] md:text-[64px] lg:text-[72px]" style={{ letterSpacing: '-.04em' }}>
             Gagne plus,
             <br />
-            <span style={{ fontStyle: 'italic', color: '#8C52FF' }}>roule moins.</span>
+            <span style={{ fontStyle: 'italic', color: '#00D4FF' }}>roule moins.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-white/70 md:max-w-lg md:text-[17px]">
             Écris à Ajnaya, là, tout de suite. Ce n&apos;est pas une démo — c&apos;est le vrai cerveau qui répond.
@@ -239,46 +244,44 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           {isMobile ? (
             <LivePhone geoCity={geoCity} />
           ) : (
-            <div className="mx-auto max-w-lg">
-              <div
-                className="rounded-3xl border border-white/[0.08] bg-white/[0.04] p-6"
-                style={{ boxShadow: '0 24px 60px -20px rgba(0,0,0,.6), 0 0 60px -22px rgba(140,82,255,.35)' }}
+            /* Desktop : LE MÊME mécanisme que la home (search bar → AjnayaConversationModal),
+               pas une invention à côté — juste rethémé sombre. Chandler : "reprends la même chose". */
+            <div className="mx-auto max-w-xl">
+              <form
+                onSubmit={(e) => { e.preventDefault(); if (desktopInput.trim()) openModal(desktopInput.trim()) }}
+                className="group relative flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 backdrop-blur-md transition-all focus-within:border-accent-cyan/50 sm:px-5 sm:py-4"
+                style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(0,212,255,0.20)' }}
               >
-                <div className="flex items-center gap-2.5 border-b border-white/[0.08] pb-4">
-                  <span className="h-9 w-9 flex-none rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan" aria-hidden />
-                  <div>
-                    <b className="text-[14px] text-[#F8FAFC]">Ajnaya</b>
-                    <p className="flex items-center gap-1 text-[11px] font-medium text-success">
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden />
-                      en ligne
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-4 rounded-2xl rounded-bl-md border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[14px] leading-relaxed text-[#F8FAFC]">
-                  Salut, moi c&apos;est Ajnaya. Ta zone ce soir — je te dis combien ça paie, en vrai.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {desktopZoneChips.map((z) => (
-                    <button
-                      key={z}
-                      type="button"
-                      onClick={() => openModal(z)}
-                      className="rounded-full border border-white/[0.12] bg-white/[0.04] px-3.5 py-2 text-[13px] text-white/80 transition hover:border-white/[0.24] hover:bg-white/[0.08]"
-                    >
-                      {z}
-                    </button>
-                  ))}
-                </div>
+                <MapPin className="h-5 w-5 flex-none text-accent-cyan" />
+                <input
+                  value={desktopInput}
+                  onChange={(e) => setDesktopInput(e.target.value)}
+                  placeholder="Ta zone…"
+                  aria-label="Ta zone"
+                  className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none"
+                />
                 <button
-                  type="button"
-                  onClick={() => openModal()}
-                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-accent-purple to-accent-purple-deep py-3.5 text-[14px] font-extrabold text-white"
-                  style={{ boxShadow: '0 10px 30px -10px rgba(140,82,255,.5)' }}
+                  type="submit"
+                  disabled={!desktopInput.trim()}
+                  className="flex flex-none items-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-purple-deep px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
                 >
-                  Discuter avec Ajnaya
+                  Discuter <ArrowRight className="h-4 w-4" />
                 </button>
+              </form>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Essaie :</span>
+                {desktopZoneChips.map((z) => (
+                  <button
+                    key={z}
+                    type="button"
+                    onClick={() => openModal(z)}
+                    className="rounded-full border border-white/[0.10] bg-white/[0.03] px-3 py-1.5 text-[12.5px] text-white/70 transition hover:border-white/[0.20] hover:bg-white/[0.06]"
+                  >
+                    {z}
+                  </button>
+                ))}
               </div>
-              <p className="mt-2.5 text-center text-[10.5px] text-text-tertiary">Réponse en moins d&apos;1 min · gratuit</p>
+              <p className="mt-3 text-center text-[10.5px] text-text-tertiary">Réponse en moins d&apos;1 min · gratuit</p>
             </div>
           )}
         </motion.div>
@@ -366,6 +369,9 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
 
       {/* ═══ Preuve sociale bas-gauche — oriente vers WhatsApp (capture du numéro) ═══ */}
       <ExperiencePhoneToasts />
+
+      {/* ═══ Pop-up anti-départ — même composant que la home ═══ */}
+      <ExitIntentModal />
 
       {/* ═══ CTA persistant — bord-à-bord mobile, pilule centrée à md: (les translate-x/y Tailwind
           se composent via les mêmes variables --tw-translate-*, aucune collision) ═══ */}
