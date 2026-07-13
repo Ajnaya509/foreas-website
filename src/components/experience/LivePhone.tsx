@@ -44,13 +44,13 @@ const FLUSH_MS = 40
 
 // Zones réelles (RPC get_zone_stats couvre ~51 zones) — ordre par défaut Paris-centré,
 // reordonné en tête si on détecte la ville du visiteur (voir orderZonesByCity).
-const NATIONAL_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu', 'Lille', 'Marseille', 'Toulouse', 'Nantes', 'Strasbourg', 'Bordeaux Saint-Jean']
+export const NATIONAL_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu', 'Lille', 'Marseille', 'Toulouse', 'Nantes', 'Strasbourg', 'Bordeaux Saint-Jean']
 const CITY_TO_ZONE: Record<string, string> = {
   paris: 'Aéroport CDG', lyon: 'Lyon Part-Dieu', marseille: 'Marseille', lille: 'Lille',
   bordeaux: 'Bordeaux Saint-Jean', toulouse: 'Toulouse', nantes: 'Nantes', strasbourg: 'Strasbourg',
 }
 
-function orderZonesByCity(city: string | null | undefined): string[] {
+export function orderZonesByCity(city: string | null | undefined): string[] {
   if (!city) return NATIONAL_ZONES
   const normalized = city.trim().toLowerCase()
   const matchKey = Object.keys(CITY_TO_ZONE).find((k) => normalized.includes(k))

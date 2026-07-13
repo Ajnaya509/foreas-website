@@ -17,17 +17,22 @@
  */
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import posthog from 'posthog-js'
 import { MessageCircle } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
-import LivePhone from '@/components/experience/LivePhone'
+import LivePhone, { orderZonesByCity } from '@/components/experience/LivePhone'
 import ExperiencePhoneToasts from '@/components/experience/ExperiencePhoneToasts'
 import TestimonialVideoCard from '@/components/zone/TestimonialVideoCard'
 import { TESTIMONIALS } from '@/components/zone/testimonials.data'
 import { InkGradientButton } from '@/components/ui'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import { useIsMobile } from '@/hooks/useDevicePerf'
+
+// Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
+const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
 
 const reveal = {
   initial: { opacity: 0, y: 22 },
@@ -144,7 +149,19 @@ interface ExperienceClientProps { geoCity?: string | null }
 
 export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   const [showCta, setShowCta] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalZone, setModalZone] = useState('')
   const waFinal = buildWAUrl({ section: 'final' })
+  // Desktop (≥768px, seuil aligné sur les breakpoints md: de la page) : la modale de la home
+  // (AjnayaConversationModal) remplace le mockup téléphone — le format phone-frame ne doit
+  // exister QUE sur mobile (retour Chandler explicite).
+  const isMobile = useIsMobile()
+  const desktopZoneChips = orderZonesByCity(geoCity).slice(0, 4)
+  const openModal = (zone?: string) => {
+    setModalZone(zone || '')
+    setModalOpen(true)
+    try { posthog.capture('experience_desktop_modal_opened', { zone: zone || null }) } catch { /* noop */ }
+  }
 
   useEffect(() => {
     try { posthog.capture('experience_page_view') } catch { /* noop */ }
@@ -219,9 +236,58 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         </motion.div>
 
         <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.15 }} className="relative mt-10">
-          <LivePhone geoCity={geoCity} />
+          {isMobile ? (
+            <LivePhone geoCity={geoCity} />
+          ) : (
+            <div className="mx-auto max-w-lg">
+              <div
+                className="rounded-3xl border border-white/[0.08] bg-white/[0.04] p-6"
+                style={{ boxShadow: '0 24px 60px -20px rgba(0,0,0,.6), 0 0 60px -22px rgba(140,82,255,.35)' }}
+              >
+                <div className="flex items-center gap-2.5 border-b border-white/[0.08] pb-4">
+                  <span className="h-9 w-9 flex-none rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan" aria-hidden />
+                  <div>
+                    <b className="text-[14px] text-[#F8FAFC]">Ajnaya</b>
+                    <p className="flex items-center gap-1 text-[11px] font-medium text-success">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden />
+                      en ligne
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-4 rounded-2xl rounded-bl-md border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[14px] leading-relaxed text-[#F8FAFC]">
+                  Salut, moi c&apos;est Ajnaya. Ta zone ce soir — je te dis combien ça paie, en vrai.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {desktopZoneChips.map((z) => (
+                    <button
+                      key={z}
+                      type="button"
+                      onClick={() => openModal(z)}
+                      className="rounded-full border border-white/[0.12] bg-white/[0.04] px-3.5 py-2 text-[13px] text-white/80 transition hover:border-white/[0.24] hover:bg-white/[0.08]"
+                    >
+                      {z}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openModal()}
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-accent-purple to-accent-purple-deep py-3.5 text-[14px] font-extrabold text-white"
+                  style={{ boxShadow: '0 10px 30px -10px rgba(140,82,255,.5)' }}
+                >
+                  Discuter avec Ajnaya
+                </button>
+              </div>
+              <p className="mt-2.5 text-center text-[10.5px] text-text-tertiary">Réponse en moins d&apos;1 min · gratuit</p>
+            </div>
+          )}
         </motion.div>
       </section>
+
+      {/* Modale desktop — même composant que la home (AjnayaConversationModal), pas une réinvention. */}
+      {!isMobile && (
+        <AjnayaConversationModal isOpen={modalOpen} onClose={() => setModalOpen(false)} initialZone={modalZone} />
+      )}
 
       {/* ═══ FEATURES — illustrations honnêtes, prêtes pour vidéo réelle ═══ */}
       {FEATURES.map((f, i) => (
