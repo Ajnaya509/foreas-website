@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
   const sessionId = (body.sessionId as string) || null
   const prospectId = (body.prospectId as string) || null
   const identityId = (body.identityId as string) || null
+  const visitorId = (body.visitor_id as string) || null
   const device = (body.device as string) || 'mobile'
   // Donnée réelle optionnelle (ex. zone-stats) → transmise en live_context au cerveau Pieuvre,
   // pour que la réponse streamée soit ancrée sur de vrais chiffres, jamais une supposition du LLM.
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
             context: {
               channel: 'widget_site', platform: 'web', session_id: sessionId, identity_id: identityId,
               page_source: pageSource, scroll_section: scrollSection, heat_score: heatScore,
+              ...(visitorId ? { visitor_id: visitorId } : {}),
               ...(liveContext ? { live_context: liveContext } : {}),
             },
             history: conversationHistory.map(h => ({ role: h.role === 'ajnaya' ? 'assistant' : h.role, content: h.text })),
@@ -109,7 +111,22 @@ export async function POST(request: NextRequest) {
         heatScore, messageCount, conversationHistory,
       )
       if (liveContext) {
-        systemPrompt += `\n\nDONNÉES RÉELLES DISPONIBLES (utilise-les si pertinent, jamais d'autre chiffre inventé) :\n${JSON.stringify(liveContext)}`
+        const lc = liveContext as {
+          zone?: Record<string, unknown>
+          now?: { day?: string; time?: string; bucket?: string }
+          visitor?: { returning?: boolean; visit_count?: number; zones_seen_before?: string[] }
+        }
+        // Instructions explicites plutôt qu'un dump JSON brut — un modèle n'infère pas fiablement
+        // "on est lundi, pas vendredi" depuis un ISO enfoui dans un objet (bug remonté 13/07).
+        if (lc.now) {
+          systemPrompt += `\n\n⏰ MOMENT RÉEL : on est ${lc.now.day} ${lc.now.time} (${lc.now.bucket}). Reste STRICTEMENT cohérent avec ce moment — ne mentionne jamais un autre jour/moment (ex : si on est lundi, ne parle jamais de "vendredi soir").`
+        }
+        if (lc.visitor?.returning) {
+          systemPrompt += `\n\n👋 CHAUFFEUR DÉJÀ VU : ${lc.visitor.visit_count} visite(s), zones déjà explorées : ${(lc.visitor.zones_seen_before || []).join(', ')}. Fais-lui savoir avec humour et légèreté que tu le reconnais — une pirouette, jamais un aveu robotique du type "j'ai vos données".`
+        }
+        if (lc.zone) {
+          systemPrompt += `\n\n📍 DONNÉE ZONE RÉELLE (utilise ces chiffres, jamais d'autre chiffre inventé) : ${JSON.stringify(lc.zone)}. Dès cette première réponse sur la zone, sois percutant et donne explicitement envie de continuer sur WhatsApp.`
+        }
       }
 
       let fullText = ''

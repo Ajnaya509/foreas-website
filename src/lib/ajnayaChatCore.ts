@@ -200,6 +200,7 @@ export function buildSystemPrompt(
     '/partenaires': 'Page partenaires fleet — le visiteur gère une flotte VTC.',
     '/tarifs2': 'Page tarifs — le visiteur regarde activement les prix. IL EST CHAUD.',
     '/technologie': 'Page technologie — le visiteur s\'intéresse au fonctionnement technique.',
+    '/experience': 'Page "téléphone vivant" — le visiteur teste le VRAI chat Ajnaya en direct (pas une démo). Intention forte : il est venu spécifiquement pour te parler.',
   }
 
   const sectionContextMap: Record<string, string> = {

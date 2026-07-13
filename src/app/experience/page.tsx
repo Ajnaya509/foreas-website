@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { headers } from 'next/headers'
 import ExperienceClient from './ExperienceClient'
 
 export const metadata: Metadata = {
@@ -14,6 +15,11 @@ export const metadata: Metadata = {
  * Voir ExperienceClient.tsx pour le détail. Brief : conversation FOREAS-SHARED (pas de doc dédié
  * encore — session Chandler du jour, "téléphone vivant" + pricing 29,99€).
  */
-export default function ExperiencePage() {
-  return <ExperienceClient />
+export default async function ExperiencePage() {
+  // Ville détectée silencieusement par Vercel (en-tête edge, aucune permission demandée au
+  // visiteur) — biaise l'ordre des zones proposées dans le téléphone vivant. Fail-open : si
+  // l'en-tête est absent (dev local, host non-Vercel), on retombe sur l'ordre national par défaut.
+  const h = await headers()
+  const geoCity = h.get('x-vercel-ip-city') || null
+  return <ExperienceClient geoCity={geoCity} />
 }
