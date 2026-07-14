@@ -281,7 +281,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
                     onChange={(e) => setDesktopInput(e.target.value)}
                     placeholder="Ta zone…"
                     aria-label="Ta zone"
-                    className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none"
+                    className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none focus-visible:outline-none"
                   />
                   <button
                     type="submit"
