@@ -268,24 +268,13 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             /* Desktop : LE MÊME mécanisme que la home (search bar → AjnayaConversationModal),
                pas une invention à côté — juste rethémé sombre. Chandler : "reprends la même chose". */
             <div className="mx-auto max-w-xl">
-              {/* Anneau dégradé — même mécanique EXACTE que la search bar de la home
-                  (HomeHeroCream.tsx, @keyframes foreas-border-comet). */}
-              <div className="relative">
-                <div className="pointer-events-none absolute -inset-[1.5px] overflow-hidden rounded-2xl" aria-hidden="true">
-                  <div
-                    className="absolute left-1/2 top-1/2 aspect-square w-[150%]"
-                    style={{
-                      background: 'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(140,82,255,0.95) 318deg, rgba(0,212,255,1) 338deg, rgba(140,82,255,0.95) 358deg, transparent 360deg)',
-                      animation: 'foreas-border-comet 2.8s ease-in-out infinite alternate',
-                      willChange: 'transform',
-                    }}
-                  />
-                </div>
-                <form
-                  onSubmit={(e) => { e.preventDefault(); if (desktopInput.trim()) openModal(desktopInput.trim()) }}
-                  className="group relative z-10 flex items-center gap-2 rounded-2xl border border-white/[0.08] px-4 py-3 backdrop-blur-md transition-all focus-within:border-accent-cyan/50 sm:px-5 sm:py-4"
-                  style={{ backgroundColor: 'rgba(10,11,20,.94)', boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(0,212,255,0.20)' }}
-                >
+              {/* Search bar — DESIGN_SYSTEM_MASTER.md §11.8 : glass par défaut, cyan + glowCyan
+                  QU'AU FOCUS (§8.6 R2/R8 — pas de chrome qui boucle en permanence, le premium vient
+                  du verre pas de l'effet ajouté). Retiré l'anneau conic-gradient permanent. */}
+              <form
+                onSubmit={(e) => { e.preventDefault(); if (desktopInput.trim()) openModal(desktopInput.trim()) }}
+                className="group flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 backdrop-blur-md transition-all duration-300 focus-within:border-accent-cyan focus-within:shadow-[0_0_24px_-4px_rgba(0,212,255,.5)] sm:px-5 sm:py-4"
+              >
                   <MapPin className="h-5 w-5 flex-none text-accent-cyan" />
                   <input
                     value={desktopInput}
@@ -302,7 +291,6 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
                     Discuter <ArrowRight className="h-4 w-4" />
                   </button>
                 </form>
-              </div>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Essaie :</span>
                 {desktopZoneChips.map((z) => (

@@ -320,28 +320,14 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
             )}
           </div>
 
-          {/* input — anneau dégradé (@keyframes foreas-border-comet, globals.css) recoloré violet
-              royal→cyan→violet royal, même mécanique que la search bar de la home (HomeHeroCream.tsx) :
-              conic-gradient qui tourne et disparaît/réapparaît une fois par tour. Le fond du form est
-              volontairement quasi-opaque (rgba(10,11,20,.94), pas translucide) — c'est ce qui masque
-              le cône tournant pour ne laisser voir qu'un fin anneau, exactement comme le fond blanc
-              de la home masque le sien (sans ça, le dégradé traverse et fait une tache, pas un trait). */}
-          <div className="relative">
-            <div className="pointer-events-none absolute -inset-[1.5px] overflow-hidden rounded-2xl" aria-hidden="true">
-              <div
-                className="absolute left-1/2 top-1/2 aspect-square w-[150%]"
-                style={{
-                  background: 'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(140,82,255,0.95) 318deg, rgba(0,212,255,1) 338deg, rgba(140,82,255,0.95) 358deg, transparent 360deg)',
-                  animation: 'foreas-border-comet 3.6s ease-in-out infinite alternate',
-                  willChange: 'transform',
-                }}
-              />
-            </div>
-            <form
-              onSubmit={(e) => { e.preventDefault(); handleSend() }}
-              className="relative z-10 flex items-center gap-1.5 rounded-2xl border border-white/[0.10] p-1.5"
-              style={{ backgroundColor: 'rgba(10,11,20,.94)' }}
-            >
+          {/* input — DESIGN_SYSTEM_MASTER.md §11.8 (spec officielle input field) : glass par défaut
+              (4% blanc, border 8% blanc), le cyan n'apparaît QU'AU FOCUS (glowCyan) — pas de chrome
+              qui boucle en permanence (§8.6 R2/R8 : le mouvement répond à une action, le premium vient
+              du verre, pas de l'effet lumineux ajouté). Retiré l'anneau conic-gradient permanent. */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSend() }}
+            className="flex items-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-1.5 transition-all duration-300 focus-within:border-accent-cyan focus-within:shadow-[0_0_20px_-2px_rgba(0,212,255,.45)]"
+          >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -357,8 +343,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
             >
               <Send size={14} strokeWidth={2.5} />
             </button>
-            </form>
-          </div>
+          </form>
 
           {/* bascule WhatsApp — honnête, apparaît après un vrai échange, billet réel dès que possible */}
           {showWa && (
