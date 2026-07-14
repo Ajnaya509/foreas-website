@@ -25,6 +25,7 @@ import { MessageCircle, MapPin, ArrowRight } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
 import LivePhone, { orderZonesByCity } from '@/components/experience/LivePhone'
 import ExperiencePhoneToasts from '@/components/experience/ExperiencePhoneToasts'
+import { useTypewriter } from '@/hooks/useTypewriter'
 import TestimonialVideoCard from '@/components/zone/TestimonialVideoCard'
 import { TESTIMONIALS } from '@/components/zone/testimonials.data'
 import { InkGradientButton } from '@/components/ui'
@@ -160,6 +161,10 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   // exister QUE sur mobile (retour Chandler explicite).
   const isMobile = useIsMobile()
   const desktopZoneChips = orderZonesByCity(geoCity).slice(0, 4)
+  // Même écriture dynamique que le téléphone mobile (useTypewriter, LivePhone.tsx) — cohérence
+  // demandée par Chandler entre les deux versions.
+  const desktopPlaceholderTexts = ['Écris ta zone…', ...orderZonesByCity(geoCity).map((z) => `${z}…`)]
+  const desktopAnimatedPlaceholder = useTypewriter({ texts: desktopPlaceholderTexts, typeSpeedMs: 75, pauseMs: 1300, eraseSpeedMs: 32, startDelayMs: 900 })
   const openModal = (zone?: string) => {
     setModalZone(zone || '')
     setModalOpen(true)
@@ -268,18 +273,30 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             /* Desktop : LE MÊME mécanisme que la home (search bar → AjnayaConversationModal),
                pas une invention à côté — juste rethémé sombre. Chandler : "reprends la même chose". */
             <div className="mx-auto max-w-xl">
-              {/* Search bar — DESIGN_SYSTEM_MASTER.md §11.8 : glass par défaut, cyan + glowCyan
-                  QU'AU FOCUS (§8.6 R2/R8 — pas de chrome qui boucle en permanence, le premium vient
-                  du verre pas de l'effet ajouté). Retiré l'anneau conic-gradient permanent. */}
-              <form
-                onSubmit={(e) => { e.preventDefault(); if (desktopInput.trim()) openModal(desktopInput.trim()) }}
-                className="group flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 backdrop-blur-md transition-all duration-300 focus-within:border-accent-cyan focus-within:shadow-[0_0_24px_-4px_rgba(0,212,255,.5)] sm:px-5 sm:py-4"
-              >
+              {/* Search bar — anneau dégradé permanent, même mécanique que le téléphone mobile
+                  (@keyframes foreas-border-comet). Fond quasi-opaque pour masquer le cône et ne
+                  laisser voir qu'un fin trait (sinon la lumière traverse et fait une tache). */}
+              <div className="relative">
+                <div className="pointer-events-none absolute -inset-[1.5px] overflow-hidden rounded-2xl" aria-hidden="true">
+                  <div
+                    className="absolute left-1/2 top-1/2 aspect-square w-[150%]"
+                    style={{
+                      background: 'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(140,82,255,0.95) 318deg, rgba(0,212,255,1) 338deg, rgba(140,82,255,0.95) 358deg, transparent 360deg)',
+                      animation: 'foreas-border-comet 3.6s ease-in-out infinite alternate',
+                      willChange: 'transform',
+                    }}
+                  />
+                </div>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); if (desktopInput.trim()) openModal(desktopInput.trim()) }}
+                  className="group relative z-10 flex items-center gap-2 rounded-2xl border border-white/[0.10] px-4 py-3 sm:px-5 sm:py-4"
+                  style={{ backgroundColor: 'rgba(10,11,20,.94)' }}
+                >
                   <MapPin className="h-5 w-5 flex-none text-accent-cyan" />
                   <input
                     value={desktopInput}
                     onChange={(e) => setDesktopInput(e.target.value)}
-                    placeholder="Ta zone…"
+                    placeholder={desktopInput ? 'Ta zone…' : desktopAnimatedPlaceholder}
                     aria-label="Ta zone"
                     className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none focus-visible:outline-none"
                   />
@@ -291,6 +308,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
                     Discuter <ArrowRight className="h-4 w-4" />
                   </button>
                 </form>
+              </div>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Essaie :</span>
                 {desktopZoneChips.map((z) => (
