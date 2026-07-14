@@ -268,27 +268,41 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             /* Desktop : LE MÊME mécanisme que la home (search bar → AjnayaConversationModal),
                pas une invention à côté — juste rethémé sombre. Chandler : "reprends la même chose". */
             <div className="mx-auto max-w-xl">
-              <form
-                onSubmit={(e) => { e.preventDefault(); if (desktopInput.trim()) openModal(desktopInput.trim()) }}
-                className="group relative flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 backdrop-blur-md transition-all focus-within:border-accent-cyan/50 sm:px-5 sm:py-4"
-                style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(0,212,255,0.20)' }}
-              >
-                <MapPin className="h-5 w-5 flex-none text-accent-cyan" />
-                <input
-                  value={desktopInput}
-                  onChange={(e) => setDesktopInput(e.target.value)}
-                  placeholder="Ta zone…"
-                  aria-label="Ta zone"
-                  className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={!desktopInput.trim()}
-                  className="flex flex-none items-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-purple-deep px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+              {/* Anneau dégradé — même mécanique EXACTE que la search bar de la home
+                  (HomeHeroCream.tsx, @keyframes foreas-border-comet). */}
+              <div className="relative">
+                <div className="pointer-events-none absolute -inset-[1.5px] overflow-hidden rounded-2xl" aria-hidden="true">
+                  <div
+                    className="absolute left-1/2 top-1/2 aspect-square w-[150%]"
+                    style={{
+                      background: 'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(140,82,255,0.95) 318deg, rgba(0,212,255,1) 338deg, rgba(140,82,255,0.95) 358deg, transparent 360deg)',
+                      animation: 'foreas-border-comet 2.8s ease-in-out infinite alternate',
+                      willChange: 'transform',
+                    }}
+                  />
+                </div>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); if (desktopInput.trim()) openModal(desktopInput.trim()) }}
+                  className="group relative z-10 flex items-center gap-2 rounded-2xl border border-white/[0.08] px-4 py-3 backdrop-blur-md transition-all focus-within:border-accent-cyan/50 sm:px-5 sm:py-4"
+                  style={{ backgroundColor: 'rgba(10,11,20,.94)', boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(0,212,255,0.20)' }}
                 >
-                  Discuter <ArrowRight className="h-4 w-4" />
-                </button>
-              </form>
+                  <MapPin className="h-5 w-5 flex-none text-accent-cyan" />
+                  <input
+                    value={desktopInput}
+                    onChange={(e) => setDesktopInput(e.target.value)}
+                    placeholder="Ta zone…"
+                    aria-label="Ta zone"
+                    className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!desktopInput.trim()}
+                    className="flex flex-none items-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-purple-deep px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                  >
+                    Discuter <ArrowRight className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Essaie :</span>
                 {desktopZoneChips.map((z) => (
