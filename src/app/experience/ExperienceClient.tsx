@@ -199,12 +199,33 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       {/* ═══ HERO — téléphone vivant. Logo retiré (quiet-tech R4, redondant avec le header) ET eyebrow
           "Pour les chauffeurs VTC" retiré (même règle — le H1 seul porte le message) — Fable 5. ═══ */}
       <section id="hero" className="relative z-10 px-5 pb-10 pt-10 sm:pt-16 md:pt-24 md:pb-16">
-        {/* halo scopé au H1 — une seule source additionnelle, pas empilée sur le halo de fond global */}
+        {/* Halo mobile (léger, scopé au H1) — les 4 blobs Vision Pro ci-dessous prennent le relais
+            à md: (desktop), même animation que la home (HomeHeroCream.tsx @keyframes vision-drift-*,
+            globals.css) : demande explicite Chandler "la même animation qu'autour de la home". */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-0 h-[280px] w-[520px] -translate-x-1/2"
+          className="pointer-events-none absolute left-1/2 top-0 h-[280px] w-[520px] -translate-x-1/2 md:hidden"
           style={{ background: 'radial-gradient(60% 55% at 50% 0%, rgba(140,82,255,.16) 0%, transparent 72%)', filter: 'blur(2px)' }}
         />
+        {/* Desktop uniquement — 4 blobs colorés qui dérivent lentement, identiques à la home */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block">
+          <div
+            className="animate-vision-a absolute -left-[10%] -top-[15%] h-[55%] w-[55%] rounded-full"
+            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(140,82,255,.28) 0%, rgba(140,82,255,.06) 50%, transparent 80%)', filter: 'blur(40px)', willChange: 'transform' }}
+          />
+          <div
+            className="animate-vision-b absolute -right-[12%] -top-[5%] h-[48%] w-[48%] rounded-full"
+            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(108,60,224,.18) 0%, rgba(108,60,224,.04) 55%, transparent 80%)', filter: 'blur(48px)', willChange: 'transform' }}
+          />
+          <div
+            className="animate-vision-c absolute -bottom-[20%] left-[25%] h-[55%] w-[60%] rounded-full"
+            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,102,153,.15) 0%, rgba(255,102,153,.04) 55%, transparent 80%)', filter: 'blur(56px)', willChange: 'transform' }}
+          />
+          <div
+            className="animate-vision-a absolute -left-[15%] top-[40%] h-[35%] w-[35%] rounded-full"
+            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(245,200,66,.12) 0%, rgba(245,200,66,.03) 55%, transparent 80%)', filter: 'blur(50px)', animationDelay: '4s', willChange: 'transform' }}
+          />
+        </div>
         {/* vignette — concentre l'œil sur titre + téléphone */}
         <div
           aria-hidden
