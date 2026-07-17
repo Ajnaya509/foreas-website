@@ -5,8 +5,13 @@ import ExperienceClient from './ExperienceClient'
 export const metadata: Metadata = {
   title: 'FOREAS — Discute avec Ajnaya',
   description: "Écris à Ajnaya, en direct. Pas une démo : le vrai chat qui aide les chauffeurs VTC à savoir où ça paie ce soir.",
-  // noindex tant que les sections features sont des illustrations CSS (pas encore les vraies
-  // vidéos Screen Studio) — à retirer une fois la page validée par Chandler + vidéos posées.
+  // ⚠️ noindex tant que les sections features sont des placeholders (pas encore les vraies vidéos
+  // Screen Studio). CHECKLIST DE BASCULE EN PAGE PRINCIPALE (acte conscient, go explicite Chandler
+  // + vraies vidéos posées) — sinon le site disparaît de Google en silence :
+  //   1. robots.index → true (retirer cette ligne, laisser le défaut indexable)
+  //   2. ajouter alternates.canonical = 'https://foreas.xyz/' (ou l'URL finale)
+  //   3. ajouter openGraph + og:image (partage réseaux)
+  //   4. vérifier que les events PostHog experience_* sont bien branchés
   robots: { index: false, follow: true },
 }
 

@@ -31,6 +31,8 @@ import { TESTIMONIALS } from '@/components/zone/testimonials.data'
 import { InkGradientButton } from '@/components/ui'
 import { buildWAUrl } from '@/lib/whatsappLink'
 import { useIsMobile } from '@/hooks/useDevicePerf'
+import SmoothScroll from '@/components/experience/SmoothScroll'
+import StickyFeatures from '@/components/experience/StickyFeatures'
 
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
@@ -53,100 +55,6 @@ const heroReveal = {
 
 const BINATE = TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[0]
 
-const FEATURES = [
-  {
-    tag: 'L’app · en action',
-    eyebrow: 'Où ça paie',
-    title: 'La carte voit avant toi.',
-    sub: 'Une zone se réveille à 800 m de toi ? Elle s’allume — avant que ton appli sonne.',
-    illus: 'map' as const,
-  },
-  {
-    tag: 'Coach de course',
-    eyebrow: 'Coach de course',
-    title: 'Accepter ou refuser. 0,3 seconde.',
-    sub: 'Chaque course est pesée pendant qu’elle sonne. Toi, tu gardes les yeux sur la route.',
-    illus: 'coach' as const,
-  },
-  {
-    tag: 'Ajnaya vocale',
-    eyebrow: 'Mains sur le volant',
-    title: 'Elle parle. Tu conduis.',
-    sub: 'Vocal ou texte, comme tu veux. Pendant que tu roules, elle bosse.',
-    illus: 'voice' as const,
-  },
-  {
-    tag: 'Copilote compta',
-    eyebrow: 'Zéro saisie',
-    title: 'Ta tirelire URSSAF se calcule toute seule.',
-    sub: 'Ton copilote de gestion calcule ce que tu dois mettre de côté, course après course. Fini la mauvaise surprise du trimestre.',
-    illus: 'compta' as const,
-  },
-  {
-    tag: 'Tes clients à toi',
-    eyebrow: 'Client direct',
-    title: 'Ton QR. Ton client. Zéro commission plateforme.',
-    sub: 'Un sticker dans ta voiture, un mini-site à ton nom, les réservations arrivent en direct.',
-    illus: 'qr' as const,
-  },
-]
-
-function FeatureIllus({ kind }: { kind: (typeof FEATURES)[number]['illus'] }) {
-  if (kind === 'map') {
-    return (
-      <div className="relative h-full w-full overflow-hidden" style={{ background: 'linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px) 0 0/28px 28px, linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px) 0 0/28px 28px, #0A0D18' }}>
-        <span className="absolute h-16 w-16 animate-ping rounded-full" style={{ left: '18%', top: '24%', background: 'radial-gradient(circle, rgba(140,82,255,.5), transparent 70%)', animationDuration: '2.4s' }} />
-        <span className="absolute h-24 w-24 animate-ping rounded-full" style={{ left: '54%', top: '44%', background: 'radial-gradient(circle, rgba(0,212,255,.45), transparent 70%)', animationDuration: '2.4s', animationDelay: '.6s' }} />
-        <span className="absolute rounded-lg border border-accent-cyan/35 bg-foreas-obsidian/80 px-2.5 py-1.5 text-[10px] font-bold text-[#F8FAFC]" style={{ left: '52%', top: '30%' }}>
-          Gare de Lyon <b className="text-accent-cyan tabular-nums">▲ ce soir</b>
-        </span>
-      </div>
-    )
-  }
-  if (kind === 'coach') {
-    return (
-      <div className="relative flex h-full w-full flex-col justify-between p-4">
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.045] p-3.5 text-[12px] text-white/70">
-          <div className="flex justify-between py-0.5"><span>Course entrante</span><b className="text-[#F8FAFC] tabular-nums">Uber · 14,2 km</b></div>
-          <div className="flex justify-between py-0.5"><span>Estimation</span><b className="text-[#F8FAFC] tabular-nums">≈ 31 €/h</b></div>
-          <div className="flex justify-between py-0.5"><span>Retour à vide</span><b className="text-[#F8FAFC]">faible</b></div>
-        </div>
-        <div className="rounded-2xl border border-success/40 bg-success/10 py-2.5 text-center text-[14px] font-extrabold text-[#34D399]">✓ ELLE VAUT LE COUP</div>
-      </div>
-    )
-  }
-  if (kind === 'voice') {
-    return (
-      <div className="relative flex h-full w-full flex-col items-center justify-center gap-4">
-        <div className="flex items-center gap-1">
-          {[22, 44, 60, 34, 52, 26, 46, 30].map((h, i) => (
-            <span key={i} className="w-1.5 animate-pulse rounded-sm bg-gradient-to-b from-accent-cyan to-accent-purple" style={{ height: h, animationDelay: `${i * 0.08}s` }} />
-          ))}
-        </div>
-        <p className="px-6 text-center text-[12.5px] italic text-white/70">« Reste pas à Châtelet. Gare de Lyon dans 20 minutes. »</p>
-      </div>
-    )
-  }
-  if (kind === 'compta') {
-    return (
-      <div className="relative flex h-full w-full flex-col items-center justify-center gap-2.5">
-        <div className="relative h-[104px] w-[104px] rounded-full" style={{ background: 'conic-gradient(#F5C842 72%, rgba(255,255,255,.06) 0)' }}>
-          <div className="absolute inset-2 flex items-center justify-center rounded-full bg-[#0B0E1A] text-[18px] font-extrabold tabular-nums">72 %</div>
-        </div>
-        <p className="text-[11px] text-white/50">Tirelire URSSAF — calculée à chaque course</p>
-      </div>
-    )
-  }
-  return (
-    <div className="relative flex h-full w-full items-center justify-center gap-4 px-6">
-      <div className="h-[76px] w-[76px] flex-none rounded-xl border-4 border-white bg-white/90" style={{ backgroundImage: 'conic-gradient(from 90deg at 3px 3px, transparent 25%, #0B0E1A 0)', backgroundSize: '13px 13px' }} />
-      <div className="rounded-xl border border-white/[0.08] bg-white/[0.045] p-3 text-[11px] text-white/70">
-        <b className="mb-1 block text-[12px] text-[#34D399]">✓ Réservation reçue</b>
-        Sarah · CDG → Paris 11ᵉ<br />Demain <span className="tabular-nums">09:40</span> · prix fixe
-      </div>
-    </div>
-  )
-}
 
 interface ExperienceClientProps { geoCity?: string | null }
 
@@ -179,7 +87,11 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   }, [])
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-foreas-obsidian text-[#F8FAFC]">
+    <SmoothScroll>
+    {/* overflow-x-CLIP (pas hidden) : `hidden` crée un conteneur de scroll qui empêche
+        position:sticky des sections features de coller. `clip` masque le débord sans conteneur
+        de scroll → le sticky desktop fonctionnera (audit Fable 5). */}
+    <main className="relative min-h-screen overflow-x-clip bg-foreas-obsidian text-[#F8FAFC]">
       {/* halo + micro-grain — mêmes tokens que checkout/tarifs2 */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
         <div
@@ -333,20 +245,12 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         <AjnayaConversationModal isOpen={modalOpen} onClose={() => setModalOpen(false)} initialZone={modalZone} />
       )}
 
-      {/* ═══ FEATURES — illustrations honnêtes, prêtes pour vidéo réelle ═══ */}
-      {FEATURES.map((f, i) => (
-        <motion.section key={i} {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-16">
-          <div className="mx-auto max-w-md md:max-w-xl">
-            <div className="relative h-[220px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0B0E1A] md:h-[280px]">
-              <span className="absolute left-3 top-2.5 z-10 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">{f.tag}</span>
-              <FeatureIllus kind={f.illus} />
-            </div>
-            <p className="mb-2 mt-6 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>{f.eyebrow}</p>
-            <h2 className="font-sans text-[25px] font-bold leading-tight md:text-[32px]" style={{ letterSpacing: '-.03em' }}>{f.title}</h2>
-            <p className="mt-2.5 max-w-[34ch] text-[14.5px] leading-relaxed text-white/70">{f.sub}</p>
-          </div>
-        </motion.section>
-      ))}
+      {/* ═══ FEATURES — « visite produit » : téléphone collant + texte qui défile (desktop),
+          empilé (mobile). Titres +100/100 (copy-atomic Fable 5). Illustrations = placeholders,
+          prêtes pour les vidéos verticales ScreenStudio. ═══ */}
+      <section className="border-t border-white/[0.05] py-10 md:py-24">
+        <StickyFeatures isMobile={isMobile} />
+      </section>
 
       {/* ═══ PREUVE — vraie vidéo Binaté (source unique testimonials.data.ts) ═══ */}
       <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
@@ -436,5 +340,6 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         </a>
       </div>
     </main>
+    </SmoothScroll>
   )
 }
