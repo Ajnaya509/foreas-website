@@ -91,6 +91,36 @@ html { scroll-behavior: smooth; }
 .animate-vision-b { animation: vision-drift-b 28s ease-in-out infinite alternate; }
 .animate-vision-c { animation: vision-drift-c 34s ease-in-out infinite alternate; }
 
+/* ─── Hero /experience — lueur blanche qui balaie « pose ta question » + yeux 👀 qui clignotent ─── */
+@keyframes foreas-text-glint {
+  0%   { background-position: 210% center; }
+  100% { background-position: -110% center; }
+}
+.foreas-glint {
+  background-image: linear-gradient(100deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.55) 42%, #ffffff 50%, rgba(255,255,255,.55) 58%, rgba(255,255,255,.55) 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: foreas-text-glint 3.4s ease-in-out infinite alternate;
+}
+/* yeux qui clignotent (scaleY = paupières) + posés légèrement bas (regardent en bas) */
+@keyframes foreas-eyes-blink {
+  0%, 88%, 100% { transform: translateY(1px) scaleY(1); }
+  93%           { transform: translateY(1px) scaleY(.12); }
+  96%           { transform: translateY(1px) scaleY(1); }
+}
+.foreas-eyes {
+  display: inline-block;
+  transform-origin: center 60%;
+  animation: foreas-eyes-blink 3.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .foreas-glint { animation: none; color: rgba(255,255,255,.82); -webkit-text-fill-color: rgba(255,255,255,.82); }
+  .foreas-eyes { animation: none; }
+}
+
 /* ─── FOREAS Home Crème (Site2026v68 home chauffeur) ────────────────────
    Variant unique réservé à la home `/` : rupture délibérée signalant
    "FOREAS chaleur humaine" sur l'acquisition, transition cinématique

@@ -33,6 +33,7 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 import { useIsMobile } from '@/hooks/useDevicePerf'
 import SmoothScroll from '@/components/experience/SmoothScroll'
 import StickyFeatures from '@/components/experience/StickyFeatures'
+import CinematicFilm from '@/components/experience/CinematicFilm'
 
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
@@ -174,7 +175,8 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             <span style={{ fontStyle: 'italic', color: '#00D4FF' }}>roule moins.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-white/70 md:max-w-lg md:text-[17px]">
-            Écris à Ajnaya, là, tout de suite. Ce n&apos;est pas une démo — c&apos;est le vrai cerveau qui répond.
+            Pas un slogan&nbsp;: <span className="foreas-glint font-medium">pose ta question juste en dessous</span> — et vois toi-même{' '}
+            <span className="foreas-eyes" aria-hidden="true">👀</span>
           </p>
         </motion.div>
 
@@ -244,6 +246,10 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       {!isMobile && (
         <AjnayaConversationModal isOpen={modalOpen} onClose={() => setModalOpen(false)} initialZone={modalZone} />
       )}
+
+      {/* ═══ FILM CINÉMA — clip 4-5 s (filtre cinéma) qui exprime la situation, puis laisse place
+          aux features (téléphone en action). Titre Fable 5. videoSrc à brancher (Veo3). ═══ */}
+      <CinematicFilm title="Le chauffeur qui savait." tagline="Il était déjà en route." />
 
       {/* ═══ FEATURES — « visite produit » : téléphone collant + texte qui défile (desktop),
           empilé (mobile). Titres +100/100 (copy-atomic Fable 5). Illustrations = placeholders,
