@@ -140,8 +140,12 @@ function FeatureTextDesktop({ feature, index, onActive }: { feature: Feature; in
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    // Feature « active » quand le bloc croise le centre vertical de l'écran.
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) onActive(index) }, { rootMargin: '-45% 0px -45% 0px' })
+    // Feature « active » quand le bloc croise le centre vertical de l'écran. Dernière entrée du
+    // batch = état réel après un fling rapide (audit juge:code).
+    const io = new IntersectionObserver(
+      (entries) => { const e = entries[entries.length - 1]; if (e.isIntersecting) onActive(index) },
+      { rootMargin: '-45% 0px -45% 0px' },
+    )
     io.observe(el)
     return () => io.disconnect()
   }, [index, onActive, ref])

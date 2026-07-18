@@ -16,7 +16,7 @@
  * home_modal_*).
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -33,7 +33,7 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 import { useIsMobile } from '@/hooks/useDevicePerf'
 import SmoothScroll from '@/components/experience/SmoothScroll'
 import StickyFeatures from '@/components/experience/StickyFeatures'
-import CinematicFilm from '@/components/experience/CinematicFilm'
+import CinematicSequence from '@/components/experience/CinematicSequence'
 
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
@@ -71,8 +71,13 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   const isMobile = useIsMobile()
   const desktopZoneChips = orderZonesByCity(geoCity).slice(0, 4)
   // Même écriture dynamique que le téléphone mobile (useTypewriter, LivePhone.tsx) — cohérence
-  // demandée par Chandler entre les deux versions.
-  const desktopPlaceholderTexts = ['Écris ta zone…', ...orderZonesByCity(geoCity).map((z) => `${z}…`)]
+  // demandée par Chandler entre les deux versions. ⚠️ useMemo OBLIGATOIRE (audit juge:code) :
+  // sans lui, le tableau change de référence à chaque render → l'effet du typewriter redémarre
+  // en boucle et le placeholder oscillait « É »/« Éc » pour toujours (bug réel observé).
+  const desktopPlaceholderTexts = useMemo(
+    () => ['Écris ta zone…', ...orderZonesByCity(geoCity).map((z) => `${z}…`)],
+    [geoCity],
+  )
   const desktopAnimatedPlaceholder = useTypewriter({ texts: desktopPlaceholderTexts, typeSpeedMs: 75, pauseMs: 1300, eraseSpeedMs: 32, startDelayMs: 900 })
   const openModal = (zone?: string) => {
     setModalZone(zone || '')
@@ -82,9 +87,20 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
 
   useEffect(() => {
     try { posthog.capture('experience_page_view') } catch { /* noop */ }
-    const onScroll = () => setShowCta(window.scrollY > 480)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // CTA persistant : apparaît quand la 1ʳᵉ feature (séquence cinéma) a été VUE — avant, il n'a
+  // pas encore de raison d'exister (audit Fable 5). Une fois vu, il reste (pas de clignotement).
+  const firstFeatureRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = firstFeatureRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setShowCta(true); io.disconnect() } },
+      { threshold: 0.25 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
   }, [])
 
   return (
@@ -174,8 +190,12 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             <br />
             <span style={{ fontStyle: 'italic', color: '#00D4FF' }}>roule moins.</span>
           </h1>
+          {/* « Écris ta zone » (pas « pose ta question ») : le champ juste en dessous demande une
+              ZONE — instruction et champ doivent être miroir, sinon micro-hésitation au point de
+              friction max (audit juge:copy 84→100). Phrase lumineuse qui respire + 👀 qui cligne =
+              demande explicite Chandler (prime sur la doctrine R2). */}
           <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-white/70 md:max-w-lg md:text-[17px]">
-            Pas un slogan&nbsp;: <span className="foreas-glint font-medium">pose ta question juste en dessous</span> — et vois toi-même{' '}
+            <span className="foreas-breathe font-semibold">Écris ta zone juste en dessous</span> — et vois par toi-même{' '}
             <span className="foreas-eyes" aria-hidden="true">👀</span>
           </p>
         </motion.div>
@@ -247,9 +267,12 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         <AjnayaConversationModal isOpen={modalOpen} onClose={() => setModalOpen(false)} initialZone={modalZone} />
       )}
 
-      {/* ═══ FILM CINÉMA — clip 4-5 s (filtre cinéma) qui exprime la situation, puis laisse place
-          aux features (téléphone en action). Titre Fable 5. videoSrc à brancher (Veo3). ═══ */}
-      <CinematicFilm title="Le chauffeur qui savait." tagline="Il était déjà en route." />
+      {/* ═══ SÉQUENCE CINÉMA — vidéo scrubbing au scroll + titres-chocs + mockup notification
+          (vision Chandler, 1er jet). ⚠️ ORDRE FINAL : le Verdict Instant passera en 1ʳᵉ séquence
+          quand son clip existera — celle-ci (Alerte contrôle) glissera en 2ᵉ. ═══ */}
+      <div ref={firstFeatureRef}>
+        <CinematicSequence isMobile={isMobile} />
+      </div>
 
       {/* ═══ FEATURES — « visite produit » : téléphone collant + texte qui défile (desktop),
           empilé (mobile). Titres +100/100 (copy-atomic Fable 5). Illustrations = placeholders,
@@ -329,11 +352,20 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       <div
         className={`fixed inset-x-4 bottom-4 z-50 flex gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${showCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
       >
-        <InkGradientButton as="link" href="#hero" variant="primary" size="lg" fullWidth
-          onClick={() => { try { posthog.capture('experience_sticky_cta_clicked') } catch { /* noop */ } }}
-        >
-          Discuter avec Ajnaya
-        </InkGradientButton>
+        {/* Le CTA « pulse » (demande Chandler) : un seul glow violet qui respire à 1.8s DERRIÈRE
+            le bouton (R1 : jamais empilé ; famille « Ajnaya vit », exception documentée). */}
+        <div className="relative min-w-0 flex-1">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-2 animate-halo-pulse rounded-2xl"
+            style={{ background: 'radial-gradient(60% 100% at 50% 50%, rgba(140,82,255,.38) 0%, transparent 72%)', filter: 'blur(10px)' }}
+          />
+          <InkGradientButton as="link" href="#hero" variant="primary" size="lg" fullWidth
+            onClick={() => { try { posthog.capture('experience_sticky_cta_clicked') } catch { /* noop */ } }}
+          >
+            Discuter avec Ajnaya
+          </InkGradientButton>
+        </div>
         <a
           href={waFinal}
           target="_blank"
