@@ -1,84 +1,98 @@
 'use client'
 
 /**
- * CinematicSequence — LA séquence cinéma de /experience (vision Chandler, premier jet à valider).
+ * CinematicSequence — LA séquence cinéma de /experience (vision Chandler).
  *
- * DESKTOP (≥768px) — un « film scrollable » épinglé plein écran :
- *   1. La vidéo (clip Mux 5 s, filtre cinéma + grain + letterbox) joue AU RYTHME DU SCROLL,
- *      calée à droite. À gauche, un dégradé noir (#060610 → transparent) porte les titres-chocs
- *      qui apparaissent au fur et à mesure du déroulé.
- *   2. Au moment où il regarde la caméra : zoom léger sur le visage (fenêtre + origine réglables
- *      dans SCENE.zoom — à caler après visionnage).
- *   3. La vidéo se fige et s'assombrit → le mockup iPhone entre à GAUCHE (avec une micro-secousse
- *      « vibration » — le titre dit « ton téléphone a vibré », le téléphone vibre vraiment),
- *      la description continue à DROITE.
+ * ═══ PSYCHOLOGIE DU RYTHME (pourquoi cette typo, pas une autre) ═══
+ * Un titre-choc doit être lu en UNE saccade oculaire, pas déchiffré. D'où la découpe en
+ * DEUX temps par beat, avec un retour à la ligne qui force une micro-pause mentale :
  *
- * MOBILE — pas de scrub (recette 4G) : clip en lecture auto quand visible (pause sinon),
- *   titres en arrivée horizontale, mockup + description en dessous. Le clip VERTICAL de Chandler
- *   remplacera le 16:9 via SCENE.clip.verticalMp4Url quand il existera.
+ *    Terminal 2D.          ← LE DÉCOR (ivoire, neutre — le cerveau situe la scène)
+ *    Ce matin.             ← LE COUP (cyan, accentué — l'info qui pique)
  *
- * Perf (audit Fable 5) : sticky CSS natif (pas de pinning JS), scrub via ref + useAnimationFrame
- * (JAMAIS de setState par frame), MP4 progressif Mux capped-1080p (~2-4 Mo, préchargé desktop
- * uniquement à l'approche), saveData/reduced-motion → variante empilée sans scrub.
+ *    Lui,                  ← LE SUJET (plus grand, la virgule suspend — « lui, pas toi »)
+ *    personne ne l'a       ← LA CHUTE (cyan — l'injustice nommée)
+ *    prévenu.
  *
+ * Le cyan ne décore pas : il marque TOUJOURS le mot qui porte l'enjeu. Un seul accent par
+ * beat (§15 : jamais deux candidats au niveau 1). L'émoji arrive APRÈS la chute, jamais
+ * avant — il commente, il n'annonce pas (sinon il spoile l'émotion et tue le beat).
+ *
+ * ═══ MÉCANIQUE ═══
+ * DESKTOP : stage épinglé. La vidéo (droite) joue au rythme du scroll. Un dégradé noir
+ *   BALAIE depuis la gauche jusqu'au centre pendant que le beat est lu, puis se retire vers
+ *   le bas — la vidéo continue de s'animer, le beat suivant prend sa place.
+ *   Zoom sur le visage PILE au regard-caméra, calé sur le beat « Lui, personne… », enchaîné
+ *   jusqu'au mockup qui entre à gauche (avec vraie vibration) + description à droite.
+ * MOBILE : clip VERTICAL 9:16 (asset dédié), stage épinglé aussi — même dramaturgie, beats
+ *   qui montent depuis le bas sur un voile qui balaie du bas vers le haut. Pas de scrub vidéo
+ *   (coûteux en 4G) : lecture continue en boucle + beats pilotés au scroll.
+ *
+ * Perf : sticky CSS natif, scrub par ref + useAnimationFrame (JAMAIS de setState par frame),
+ * MP4 progressif Mux, frame-loop gatée hors viewport, saveData/reduced-motion → repli simple.
  * Le texte n'est JAMAIS incrusté dans la vidéo (SEO, lisibilité, modifiable).
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useScroll, useTransform, useSpring, useMotionValueEvent, useAnimationFrame } from 'framer-motion'
+import { motion, useScroll, useTransform, useSpring, useMotionValueEvent, useAnimationFrame, type MotionValue } from 'framer-motion'
 import posthog from 'posthog-js'
 import PhoneFrame from './PhoneFrame'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
 import { useSectionSeen } from '@/hooks/useSectionSeen'
 
-/* ═══ SCÈNE — Alerte contrôle Terminal 2D (1er clip réel de Chandler) ══════════════════════════
-   NOTE ORDRE FINAL (décision Chandler) : le Verdict Instant sera la 1ʳᵉ séquence quand son clip
-   existera ; cette séquence Alerte passera en 2ᵉ. On valide ici le MÉCANISME avec le clip dispo.
-   Pour dupliquer : copier SCENE, changer clip/beats/payoff — voir docs/claude-code/05_*.md. */
-const MUX_PLAYBACK_ID = 'WpmrheUgL7J8GLgCyr3sMJXsbqgoLm01mGII7JnbdiT00'
+/* ═══ SCÈNE — Alerte contrôle Terminal 2D ═════════════════════════════════════════════════════
+   ⚠️ ORDRE FINAL (décision Chandler) : le Verdict Instant sera la 1ʳᵉ séquence quand son clip
+   existera ; cette séquence Alerte passera en 2ᵉ. Duplication : voir docs/claude-code/05_*.md */
+const MUX_LANDSCAPE = 'WpmrheUgL7J8GLgCyr3sMJXsbqgoLm01mGII7JnbdiT00'
+const MUX_VERTICAL = '7YomMmttdmQ402t1tmYdhZT5mhkK00z3sEqMaCRR02ddpg'
+
 const SCENE = {
   eyebrow: 'Entre chauffeurs',
   clip: {
-    mp4Url: `https://stream.mux.com/${MUX_PLAYBACK_ID}/capped-1080p.mp4`,
-    posterUrl: `https://image.mux.com/${MUX_PLAYBACK_ID}/thumbnail.webp?time=1.2&width=1600`,
-    /** Poster allégé mobile (rendu ≤430px — 1600px serait du gâchis 4G). */
-    posterUrlMobile: `https://image.mux.com/${MUX_PLAYBACK_ID}/thumbnail.webp?time=1.2&width=800`,
-    /** Fallback seulement — la frame-loop lit v.duration en priorité (clip re-trimmable). */
+    mp4Url: `https://stream.mux.com/${MUX_LANDSCAPE}/capped-1080p.mp4`,
+    posterUrl: `https://image.mux.com/${MUX_LANDSCAPE}/thumbnail.webp?time=1.2&width=1600`,
+    verticalMp4Url: `https://stream.mux.com/${MUX_VERTICAL}/capped-1080p.mp4`,
+    verticalPosterUrl: `https://image.mux.com/${MUX_VERTICAL}/thumbnail.webp?time=1.2&width=800`,
+    /** Fallback — la frame-loop lit v.duration en priorité (clip re-trimmable sans toucher au code). */
     durationSec: 5.13,
-    /** Clip vertical 9:16 (à fournir par Chandler) — remplacera le 16:9 sur mobile. */
-    verticalMp4Url: null as string | null,
   },
-  /** Titres-chocs (gauche) — fenêtres de progression [in, out] sur la section. */
+  /**
+   * Beats : `lead` = décor (ivoire) · `punch` = l'enjeu (cyan) · `emoji` = commentaire après la chute.
+   * `leadScale` agrandit légèrement le sujet sans majuscule (« Lui, » — demande Chandler).
+   */
   beats: [
-    { in: 0.05, out: 0.2, text: 'Terminal 2D. Ce matin.' },
-    { in: 0.24, out: 0.4, text: 'Lui, personne ne l’a prévenu.' },
+    { in: 0.04, out: 0.30, lead: 'Terminal 2D.', punch: 'Ce matin.', emoji: '🙄', leadScale: 1 },
+    { in: 0.34, out: 0.60, lead: 'Lui,', punch: 'personne ne l’a prévenu.', emoji: '😏', leadScale: 1.18 },
   ],
-  /** ⚠️ RÉGLAGES À CALER APRÈS VISIONNAGE : fenêtre du regard-caméra + point du visage. */
-  zoom: { start: 0.34, end: 0.5, scale: 1.14, origin: '58% 32%' },
-  /** La vidéo a fini de se dérouler ici (le scrub mappe [0 → videoEnd] sur [0 → durée]). */
-  videoEnd: 0.5,
-  /** Entrée du mockup (gauche) + bascule description (droite). */
-  mockupAt: 0.52,
+  /** Zoom PILE au regard-caméra — calé sur le beat 2 (« Lui, personne… »), enchaîné au mockup. */
+  zoom: { start: 0.34, end: 0.62, scale: 1.16, origin: '52% 30%' },
+  /** Progression à laquelle le clip a fini de se dérouler (le scrub mappe [0 → videoEnd]). */
+  videoEnd: 0.62,
+  /** Entrée du mockup (gauche) + bascule de la description (droite). */
+  mockupAt: 0.66,
   payoff: {
-    title: 'Toi, ton téléphone a vibré.',
+    lead: 'Toi,',
+    punch: 'ton téléphone a vibré.',
+    emoji: '😌',
     body: 'Un chauffeur signale un contrôle — tous ceux dans le coin reçoivent l’alerte. En direct, entre chauffeurs.',
   },
-  /** Vidéo ScreenStudio de la notification (à fournir) — remplace le mockup CSS ci-dessous. */
+  /** Vidéo ScreenStudio de la notification (fournie par Chandler) — remplace le mockup CSS. */
   mockupVideoSrc: null as string | null,
 }
 
 const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"
 
-/* ─── Écran de notification (placeholder CSS fidèle, remplacé par la vidéo ScreenStudio) ────── */
+/** Étalonnage vintage : sépia léger + contraste + désaturation + chaleur. Le sépia (12%) porte
+ *  le « vieux film » sans virer jaune ; le reste garde le noir profond du design system. */
+const VINTAGE = 'sepia(.12) contrast(1.12) saturate(.72) brightness(.88) hue-rotate(-4deg)'
+
+/* ─── Écran de notification (placeholder fidèle, remplacé par la capture ScreenStudio) ──────── */
 function NotificationScreen() {
   return (
     <div className="flex h-full w-full flex-col bg-gradient-to-b from-[#0B0F1E] to-foreas-obsidian px-4 pt-14">
-      <p className="text-center font-sans text-[44px] font-semibold leading-none text-[#F8FAFC] tabular-nums">09:41</p>
-      {/* samedi = le vrai jour du 18 juillet 2026 (nano-détail : un couple jour/date impossible
-          crie « faux mockup » à l'œil méfiant du chauffeur) */}
+      <p className="text-center font-sans text-[44px] font-semibold leading-none tabular-nums text-[#F8FAFC]">09:41</p>
       <p className="mt-1 text-center text-[11.5px] text-white/45">samedi 18 juillet</p>
-      {/* fond = glass réel §0.2 (rgba(17,21,40,.88)) — pas de token Tailwind dédié, valeur exacte */}
       <div className="mt-6 rounded-[18px] border border-white/[0.08] p-3" style={{ backgroundColor: 'rgba(17,21,40,0.88)' }}>
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-gradient-to-br from-accent-purple to-accent-purple-deep font-title text-[13px] font-bold text-white">F/</span>
@@ -86,8 +100,6 @@ function NotificationScreen() {
           <span className="text-[11px] text-white/40">il y a 2 min</span>
         </div>
         <p className="mt-2 text-[13.5px] font-bold leading-snug text-[#F8FAFC]">🚨 Contrôle signalé — Terminal 2D</p>
-        {/* « par un chauffeur du coin » : dé-doublonne « signalé », garde l'ancre de confiance,
-            écho lexical au « dans le coin » du payoff (audit juge:copy) */}
         <p className="mt-0.5 text-[12px] leading-snug text-white/65">À 400 m de toi · par un chauffeur du coin</p>
       </div>
     </div>
@@ -102,19 +114,59 @@ function MockupScreen() {
   )
 }
 
-/* ─── Filtre cinéma commun (grain + vignette + letterbox) ───────────────────────────────────── */
+/* ─── Filtre cinéma : grain + vignette + letterbox ──────────────────────────────────────────── */
 function CinemaFilter() {
   return (
     <>
-      <div className="pointer-events-none absolute inset-0 z-20 mix-blend-overlay opacity-[.07]" style={{ backgroundImage: GRAIN, backgroundSize: '140px 140px' }} aria-hidden />
-      <div className="pointer-events-none absolute inset-0 z-20" style={{ background: 'radial-gradient(115% 90% at 50% 50%, transparent 45%, rgba(0,0,0,.55) 100%)' }} aria-hidden />
+      <div className="pointer-events-none absolute inset-0 z-20 opacity-[.08] mix-blend-overlay" style={{ backgroundImage: GRAIN, backgroundSize: '140px 140px' }} aria-hidden />
+      <div className="pointer-events-none absolute inset-0 z-20" style={{ background: 'radial-gradient(115% 90% at 50% 50%, transparent 42%, rgba(0,0,0,.6) 100%)' }} aria-hidden />
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-[6.5%] bg-black" aria-hidden />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-[6.5%] bg-black" aria-hidden />
     </>
   )
 }
 
-/* ═══ DESKTOP — le film scrollable épinglé ═══════════════════════════════════════════════════ */
+/** Émoji qui « respire » discrètement — commente le beat sans voler la vedette au texte. */
+function BeatEmoji({ char, className = '' }: { char: string; className?: string }) {
+  return (
+    <motion.span
+      className={`inline-block ${className}`}
+      aria-hidden="true"
+      animate={{ rotate: [0, -6, 5, 0], scale: [1, 1.08, 1] }}
+      transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
+    >
+      {char}
+    </motion.span>
+  )
+}
+
+/* ═══ DESKTOP ════════════════════════════════════════════════════════════════════════════════ */
+function DesktopBeat({
+  beat,
+  progress,
+}: {
+  beat: (typeof SCENE.beats)[number]
+  progress: MotionValue<number>
+}) {
+  // Le texte entre, tient, puis se retire VERS LE BAS (le beat suivant prend sa place).
+  const opacity = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [0, 1, 1, 0])
+  const y = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [26, 0, 0, -34])
+
+  return (
+    <motion.div className="absolute" style={{ opacity, y }}>
+      <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.045em' }}>
+        <span className="block" style={{ fontSize: `calc(clamp(38px,3.9vw,64px) * ${beat.leadScale})` }}>
+          {beat.lead}
+        </span>
+        <span className="block text-accent-cyan" style={{ fontSize: 'clamp(38px,3.9vw,64px)' }}>
+          {beat.punch}{' '}
+          <BeatEmoji char={beat.emoji} className="align-baseline text-[0.72em]" />
+        </span>
+      </h2>
+    </motion.div>
+  )
+}
+
 function DesktopSequence() {
   const sectionRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -127,22 +179,21 @@ function DesktopSequence() {
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
 
-  // Zoom visage (lissé) — origine réglée sur le point du regard (SCENE.zoom.origin).
-  const zoomRaw = useTransform(scrollYProgress, [SCENE.zoom.start, SCENE.zoom.end], [1, SCENE.zoom.scale])
-  const zoom = useSpring(zoomRaw, { stiffness: 120, damping: 28 })
-  // Assombrissement de la vidéo quand le mockup prend la scène.
-  const dimOpacity = useTransform(scrollYProgress, [SCENE.mockupAt - 0.04, SCENE.mockupAt + 0.06], [0, 0.55])
-  // Titres-chocs : opacité/translation par fenêtre de beat.
-  const beat0Opacity = useTransform(scrollYProgress, [SCENE.beats[0].in - 0.03, SCENE.beats[0].in, SCENE.beats[0].out, SCENE.beats[0].out + 0.04], [0, 1, 1, 0])
-  const beat0Y = useTransform(scrollYProgress, [SCENE.beats[0].in - 0.03, SCENE.beats[0].in], [24, 0])
-  const beat1Opacity = useTransform(scrollYProgress, [SCENE.beats[1].in - 0.03, SCENE.beats[1].in, SCENE.beats[1].out, SCENE.beats[1].out + 0.04], [0, 1, 1, 0])
-  const beat1Y = useTransform(scrollYProgress, [SCENE.beats[1].in - 0.03, SCENE.beats[1].in], [24, 0])
-  const payoffOpacity = useTransform(scrollYProgress, [SCENE.mockupAt + 0.05, SCENE.mockupAt + 0.14], [0, 1])
-  const payoffY = useTransform(scrollYProgress, [SCENE.mockupAt + 0.05, SCENE.mockupAt + 0.14], [26, 0])
+  // Zoom visage — démarre pile au regard-caméra (beat 2) et file jusqu'au mockup.
+  const zoom = useSpring(useTransform(scrollYProgress, [SCENE.zoom.start, SCENE.zoom.end], [1, SCENE.zoom.scale]), { stiffness: 110, damping: 30 })
+  // Assombrissement quand le mockup prend la scène.
+  const dimOpacity = useTransform(scrollYProgress, [SCENE.mockupAt - 0.05, SCENE.mockupAt + 0.06], [0, 0.62])
 
-  // Scrub : le scroll écrit un RATIO cible dans une ref, la frame-loop applique (jamais de
-  // setState par frame). La durée est lue sur v.duration (fallback constante) et clampée à
-  // −0.05s : un seek pile à la durée exacte peut afficher une frame noire sur Safari.
+  // ── LE DÉGRADÉ QUI BALAIE ──
+  // Il avance depuis la gauche jusqu'au centre pendant les beats (couvre le texte d'un noir
+  // dense), puis se RETIRE VERS LE BAS quand le mockup arrive : la vidéo respire à nouveau.
+  const veilWidth = useTransform(scrollYProgress, [0, 0.08, SCENE.beats[1].out, SCENE.mockupAt], ['18%', '52%', '52%', '46%'])
+  const veilY = useTransform(scrollYProgress, [SCENE.mockupAt - 0.02, SCENE.mockupAt + 0.1], ['0%', '4%'])
+  const veilOpacity = useTransform(scrollYProgress, [0, 0.06, SCENE.mockupAt, SCENE.mockupAt + 0.12], [0.75, 1, 1, 0.9])
+
+  const payoffOpacity = useTransform(scrollYProgress, [SCENE.mockupAt + 0.04, SCENE.mockupAt + 0.13], [0, 1])
+  const payoffY = useTransform(scrollYProgress, [SCENE.mockupAt + 0.04, SCENE.mockupAt + 0.13], [28, 0])
+
   useMotionValueEvent(scrollYProgress, 'change', (p) => {
     targetRatio.current = Math.min(1, Math.max(0, p / SCENE.videoEnd))
     const on = p >= SCENE.mockupAt
@@ -152,8 +203,9 @@ function DesktopSequence() {
       try { posthog.capture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle_2d' }) } catch { /* noop */ }
     }
   })
+
   useAnimationFrame(() => {
-    if (!activeRef.current) return // section hors écran → zéro travail par frame
+    if (!activeRef.current) return // hors écran → zéro travail par frame
     const v = videoRef.current
     if (!v || v.readyState < 2) return
     const dur = Math.max(0.1, (v.duration || SCENE.clip.durationSec) - 0.05)
@@ -161,15 +213,13 @@ function DesktopSequence() {
     if (Math.abs(v.currentTime - t) > 1 / 30) v.currentTime = t
   })
 
-  // Approche de la section : précharge le MP4 UNE fois (~2-4 Mo, desktop only) et gate la
-  // frame-loop (activeRef) — l'observer reste branché pour couper le travail hors écran.
   useEffect(() => {
     const el = sectionRef.current
     const v = videoRef.current
     if (!el || !v) return
     const io = new IntersectionObserver(
       (entries) => {
-        const e = entries[entries.length - 1] // dernière entrée = état réel (fling rapide)
+        const e = entries[entries.length - 1] // dernière entrée = état réel après un fling
         activeRef.current = e.isIntersecting
         if (e.isIntersecting && !loadedRef.current) {
           loadedRef.current = true
@@ -184,44 +234,49 @@ function DesktopSequence() {
   }, [])
 
   return (
-    // Piste de 320vh : le stage reste épinglé pendant ~2 écrans de défilement (rythme cinéma).
-    <section ref={sectionRef} className="relative h-[320vh]">
+    <section ref={sectionRef} className="relative h-[360vh]">
       <div ref={seenRef} className="sticky top-0 h-dvh overflow-clip bg-foreas-obsidian">
-        {/* ── LA VIDÉO — calée à droite, scrubbing au scroll, zoom visage ── */}
+        {/* ── LA VIDÉO (droite), scrub au scroll, zoom visage, étalonnage vintage ── */}
         <motion.video
           ref={videoRef}
-          className="absolute inset-y-0 right-0 z-0 h-full w-[70%] object-cover"
-          style={{ scale: zoom, transformOrigin: SCENE.zoom.origin, filter: 'contrast(1.08) saturate(.78) brightness(.9)', willChange: 'transform' }}
+          className="absolute inset-y-0 right-0 z-0 h-full w-[72%] object-cover"
+          style={{ scale: zoom, transformOrigin: SCENE.zoom.origin, filter: VINTAGE, willChange: 'transform' }}
           src={SCENE.clip.mp4Url}
           poster={SCENE.clip.posterUrl}
           muted
           playsInline
-          preload="none" // le vrai chargement = l'IO à 900px (évite le fetch parasite du HTML SSR sur mobile + le double-fetch desktop)
+          preload="none"
           aria-hidden="true"
         />
-        {/* assombrissement en phase mockup */}
-        <motion.div className="absolute inset-y-0 right-0 z-10 w-[70%] bg-black" style={{ opacity: dimOpacity }} aria-hidden />
-        {/* ── LE DÉGRADÉ — le noir qui va vers la vidéo (sépare l'écriture du film) ── */}
-        <div className="absolute inset-0 z-10" style={{ background: 'linear-gradient(90deg, #060610 0%, #060610 27%, rgba(6,6,16,.55) 46%, transparent 64%)' }} aria-hidden />
+        <motion.div className="absolute inset-y-0 right-0 z-10 w-[72%] bg-black" style={{ opacity: dimOpacity }} aria-hidden />
+
+        {/* ── LE DÉGRADÉ QUI BALAIE (gauche → centre, puis se retire vers le bas) ── */}
+        <motion.div
+          className="absolute inset-y-0 left-0 z-20"
+          style={{
+            width: veilWidth,
+            y: veilY,
+            opacity: veilOpacity,
+            background: 'linear-gradient(90deg, #060610 0%, #060610 46%, rgba(6,6,16,.72) 74%, transparent 100%)',
+          }}
+          aria-hidden
+        />
 
         <CinemaFilter />
 
-        {/* ── TITRES-CHOCS (gauche, sur le dégradé) ── */}
-        <div className="absolute inset-y-0 left-[7%] z-40 flex w-[36%] flex-col justify-center">
-          <p className="t-eyebrow mb-4 font-sans text-accent-cyan">{SCENE.eyebrow}</p>
-          <div className="relative min-h-[180px]">
-            <motion.h2 className="absolute font-title font-semibold leading-[1.04] text-[clamp(36px,3.6vw,58px)] text-[#F8FAFC]" style={{ opacity: beat0Opacity, y: beat0Y, letterSpacing: '-.04em' }}>
-              {SCENE.beats[0].text}
-            </motion.h2>
-            <motion.h2 className="absolute font-title font-semibold leading-[1.04] text-[clamp(36px,3.6vw,58px)] text-[#F8FAFC]" style={{ opacity: beat1Opacity, y: beat1Y, letterSpacing: '-.04em' }}>
-              {SCENE.beats[1].text}
-            </motion.h2>
+        {/* ── LES BEATS (gauche, sur le voile) ── */}
+        <div className="absolute inset-y-0 left-[7%] z-40 flex w-[40%] flex-col justify-center">
+          <p className="t-eyebrow mb-6 font-sans text-accent-cyan">{SCENE.eyebrow}</p>
+          <div className="relative min-h-[210px]">
+            {SCENE.beats.map((b, i) => (
+              <DesktopBeat key={i} beat={b} progress={scrollYProgress} />
+            ))}
           </div>
         </div>
 
-        {/* ── LE MOCKUP — entre à GAUCHE quand la vidéo se fige, avec la micro-vibration ── */}
+        {/* ── LE MOCKUP (entre à gauche, vibre pour de vrai) ── */}
         <motion.div
-          className="absolute inset-y-0 left-[8%] z-40 flex items-center"
+          className="absolute inset-y-0 left-[9%] z-40 flex items-center"
           initial={false}
           animate={mockupOn ? { opacity: 1, x: 0 } : { opacity: 0, x: -80 }}
           transition={{ type: 'spring', stiffness: 120, damping: 26 }}
@@ -236,120 +291,189 @@ function DesktopSequence() {
           </motion.div>
         </motion.div>
 
-        {/* ── LA DESCRIPTION — continue à DROITE, sur la vidéo assombrie ── */}
+        {/* ── LA DESCRIPTION (droite, sur la vidéo assombrie) ── */}
         <motion.div className="absolute inset-y-0 right-[7%] z-40 flex w-[34%] flex-col justify-center" style={{ opacity: payoffOpacity, y: payoffY }}>
-          <h2 className="font-title font-semibold leading-[1.04] text-[clamp(36px,3.6vw,56px)] text-[#F8FAFC]" style={{ letterSpacing: '-.04em' }}>
-            {SCENE.payoff.title}
+          <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.045em' }}>
+            <span className="block" style={{ fontSize: 'clamp(38px,3.9vw,62px)' }}>{SCENE.payoff.lead}</span>
+            <span className="block text-accent-cyan" style={{ fontSize: 'clamp(38px,3.9vw,62px)' }}>
+              {SCENE.payoff.punch} <BeatEmoji char={SCENE.payoff.emoji} className="align-baseline text-[0.72em]" />
+            </span>
           </h2>
-          <p className="mt-5 max-w-[36ch] text-[17px] leading-relaxed text-white/70">{SCENE.payoff.body}</p>
+          <p className="mt-6 max-w-[34ch] text-[17px] leading-relaxed text-white/70">{SCENE.payoff.body}</p>
         </motion.div>
       </div>
     </section>
   )
 }
 
-/* ═══ MOBILE — empilé, clip auto quand visible, titres en arrivée horizontale ═══════════════ */
+/* ═══ MOBILE — même dramaturgie, clip VERTICAL, voile qui balaie du bas ══════════════════════ */
+function MobileBeat({ beat, progress }: { beat: (typeof SCENE.beats)[number]; progress: MotionValue<number> }) {
+  const opacity = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [0, 1, 1, 0])
+  const y = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [30, 0, 0, -26])
+  return (
+    <motion.div className="absolute inset-x-0" style={{ opacity, y }}>
+      <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.04em' }}>
+        <span className="block" style={{ fontSize: `calc(clamp(34px,9vw,46px) * ${beat.leadScale})` }}>{beat.lead}</span>
+        <span className="block text-accent-cyan" style={{ fontSize: 'clamp(34px,9vw,46px)' }}>
+          {beat.punch} <BeatEmoji char={beat.emoji} className="align-baseline text-[0.7em]" />
+        </span>
+      </h2>
+    </motion.div>
+  )
+}
+
 function MobileSequence() {
-  const wrapRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const seenRef = useSectionSeen<HTMLElement>('cinema_alerte_controle', 0)
+  const activeRef = useRef(false)
+  const payoffCaptured = useRef(false)
+  const [mockupOn, setMockupOn] = useState(false)
   const [canAutoplay, setCanAutoplay] = useState(true)
+  const seenRef = useSectionSeen<HTMLDivElement>('cinema_alerte_controle', 0)
+
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
+
+  // Le voile monte depuis le bas et couvre la moitié basse pendant les beats, puis recule.
+  const veilHeight = useTransform(scrollYProgress, [0, 0.08, SCENE.beats[1].out, SCENE.mockupAt], ['34%', '62%', '62%', '54%'])
+  const veilOpacity = useTransform(scrollYProgress, [0, 0.06, SCENE.mockupAt + 0.14], [0.8, 1, 0.94])
+  const zoom = useSpring(useTransform(scrollYProgress, [SCENE.zoom.start, SCENE.zoom.end], [1, SCENE.zoom.scale]), { stiffness: 110, damping: 30 })
+  const dimOpacity = useTransform(scrollYProgress, [SCENE.mockupAt - 0.05, SCENE.mockupAt + 0.06], [0, 0.5])
+  const payoffOpacity = useTransform(scrollYProgress, [SCENE.mockupAt + 0.04, SCENE.mockupAt + 0.13], [0, 1])
+  const payoffY = useTransform(scrollYProgress, [SCENE.mockupAt + 0.04, SCENE.mockupAt + 0.13], [26, 0])
+
+  useMotionValueEvent(scrollYProgress, 'change', (p) => {
+    const on = p >= SCENE.mockupAt
+    setMockupOn((prev) => (prev === on ? prev : on))
+    if (on && !payoffCaptured.current) {
+      payoffCaptured.current = true
+      try { posthog.capture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle_2d', variant: 'mobile' }) } catch { /* noop */ }
+    }
+  })
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((navigator as any).connection?.saveData) setCanAutoplay(false)
   }, [])
 
+  // Lecture continue tant que la section est visible (pas de scrub : trop coûteux en 4G).
   useEffect(() => {
+    const el = sectionRef.current
     const v = videoRef.current
-    const wrap = wrapRef.current
-    if (!v || !wrap || !canAutoplay) return
+    if (!el || !v || !canAutoplay) return
     const io = new IntersectionObserver(
       (entries) => {
-        // Dernière entrée = état réel : un fling rapide livre [entrée, sortie] groupées — lire
-        // la première laisserait la vidéo jouer (et télécharger) hors écran (audit juge:code).
         const e = entries[entries.length - 1]
-        if (e.isIntersecting && e.intersectionRatio >= 0.5) v.play().catch(() => {})
+        activeRef.current = e.isIntersecting
+        if (e.isIntersecting) v.play().catch(() => {})
         else v.pause()
       },
-      { threshold: [0, 0.5, 1] },
+      { threshold: [0, 0.25, 1] },
     )
-    io.observe(wrap)
+    io.observe(el)
     const onHide = () => { if (document.visibilityState === 'hidden') v.pause() }
     document.addEventListener('visibilitychange', onHide)
     return () => { v.pause(); io.disconnect(); document.removeEventListener('visibilitychange', onHide) }
   }, [canAutoplay])
 
-  const slideIn = (delay = 0) => ({
-    initial: { opacity: 0, x: -28 },
-    whileInView: { opacity: 1, x: 0 },
-    viewport: { once: true, margin: '-40px' },
-    transition: { duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] as const },
-  })
-
   return (
-    // md:max-w-2xl : ne concerne QUE le cas desktop+prefers-reduced-motion (cette variante sert
-    // aussi de repli sans scrub) — invisible sur vrai mobile.
-    <section ref={seenRef} className="relative mx-auto w-full overflow-hidden bg-foreas-obsidian md:max-w-2xl">
-      {/* clip — vertical quand Chandler le fournit, 16:9 letterboxé en attendant */}
-      <div ref={wrapRef} className="relative">
-        <video
+    <section ref={sectionRef} className="relative h-[300vh]">
+      <div ref={seenRef} className="sticky top-0 h-dvh overflow-clip bg-foreas-obsidian">
+        {/* clip VERTICAL 9:16 — plein cadre, étalonnage vintage */}
+        <motion.video
           ref={videoRef}
-          className="w-full object-cover"
-          style={{ aspectRatio: SCENE.clip.verticalMp4Url ? '9 / 16' : '16 / 10', filter: 'contrast(1.08) saturate(.78) brightness(.9)' }}
-          src={SCENE.clip.verticalMp4Url ?? SCENE.clip.mp4Url}
-          poster={SCENE.clip.posterUrlMobile}
+          className="absolute inset-0 z-0 h-full w-full object-cover"
+          style={{ scale: zoom, transformOrigin: SCENE.zoom.origin, filter: VINTAGE, willChange: 'transform' }}
+          src={SCENE.clip.verticalMp4Url}
+          poster={SCENE.clip.verticalPosterUrl}
           muted
           loop
           playsInline
           preload="none"
           aria-hidden="true"
         />
-        <CinemaFilter />
-      </div>
+        <motion.div className="absolute inset-0 z-10 bg-black" style={{ opacity: dimOpacity }} aria-hidden />
 
-      <div className="px-5 pb-12 pt-8">
-        <motion.p {...slideIn()} className="t-eyebrow mb-4 font-sans text-accent-cyan">{SCENE.eyebrow}</motion.p>
-        <motion.h2 {...slideIn(0.08)} className="font-title font-semibold leading-[1.05] text-[32px] text-[#F8FAFC]" style={{ letterSpacing: '-.03em' }}>
-          {SCENE.beats[0].text}
-        </motion.h2>
-        <motion.h2 {...slideIn(0.16)} className="mt-1.5 font-title font-semibold leading-[1.05] text-[32px] text-white/75" style={{ letterSpacing: '-.03em' }}>
-          {SCENE.beats[1].text}
-        </motion.h2>
-
+        {/* voile qui balaie depuis le bas */}
         <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-10"
-        >
-          <PhoneFrame widthClassName="w-[240px]">
-            <MockupScreen />
-          </PhoneFrame>
-        </motion.div>
+          className="absolute inset-x-0 bottom-0 z-20"
+          style={{
+            height: veilHeight,
+            opacity: veilOpacity,
+            background: 'linear-gradient(0deg, #060610 0%, #060610 44%, rgba(6,6,16,.7) 76%, transparent 100%)',
+          }}
+          aria-hidden
+        />
 
-        <motion.h2 {...slideIn(0.1)} className="mt-8 text-center font-title font-semibold leading-[1.05] text-[34px] text-[#F8FAFC]" style={{ letterSpacing: '-.03em' }}>
-          {SCENE.payoff.title}
-        </motion.h2>
-        <motion.p {...slideIn(0.18)} className="mx-auto mt-3 max-w-[34ch] text-center text-[15px] leading-relaxed text-white/70">
-          {SCENE.payoff.body}
-        </motion.p>
+        <CinemaFilter />
+
+        {/* beats — bas de l'écran, là où le pouce ne masque pas */}
+        <div className="absolute inset-x-0 bottom-[16%] z-40 px-5">
+          <p className="t-eyebrow mb-4 font-sans text-accent-cyan">{SCENE.eyebrow}</p>
+          <div className="relative min-h-[150px]">
+            {SCENE.beats.map((b, i) => (
+              <MobileBeat key={i} beat={b} progress={scrollYProgress} />
+            ))}
+            <motion.div className="absolute inset-x-0" style={{ opacity: payoffOpacity, y: payoffY }}>
+              <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.04em' }}>
+                <span className="block" style={{ fontSize: 'clamp(34px,9vw,46px)' }}>{SCENE.payoff.lead}</span>
+                <span className="block text-accent-cyan" style={{ fontSize: 'clamp(34px,9vw,46px)' }}>
+                  {SCENE.payoff.punch} <BeatEmoji char={SCENE.payoff.emoji} className="align-baseline text-[0.7em]" />
+                </span>
+              </h2>
+              <p className="mt-3 max-w-[34ch] text-[14.5px] leading-relaxed text-white/70">{SCENE.payoff.body}</p>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* mockup — monte depuis le bas quand la vidéo se fige, décalé pour ne pas manger le texte */}
+        <motion.div
+          className="absolute inset-x-0 top-[6%] z-30 flex justify-center"
+          initial={false}
+          animate={mockupOn ? { opacity: 1, y: 0 } : { opacity: 0, y: 60 }}
+          transition={{ type: 'spring', stiffness: 120, damping: 26 }}
+        >
+          <motion.div
+            animate={mockupOn ? { rotate: [0, -1.2, 1.6, -1, 0.6, 0], x: [0, -2, 3, -2, 1, 0] } : { rotate: 0, x: 0 }}
+            transition={{ duration: 0.55, delay: 0.35 }}
+          >
+            <PhoneFrame widthClassName="w-[190px]">
+              <MockupScreen />
+            </PhoneFrame>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   )
 }
 
-/* ═══ Export — choisit la variante (mobile / reduced-motion → empilée) ══════════════════════
+/* ═══ Repli sans scroll-story (reduced-motion) ══════════════════════════════════════════════ */
+function StaticSequence() {
+  const seenRef = useSectionSeen<HTMLElement>('cinema_alerte_controle', 0)
+  return (
+    <section ref={seenRef} className="mx-auto w-full max-w-2xl bg-foreas-obsidian px-5 py-14">
+      <p className="t-eyebrow mb-5 font-sans text-accent-cyan">{SCENE.eyebrow}</p>
+      {[...SCENE.beats, SCENE.payoff].map((b, i) => (
+        <h2 key={i} className="mb-6 font-title font-semibold leading-[1] text-[#F8FAFC]" style={{ letterSpacing: '-.04em' }}>
+          <span className="block text-[34px]">{b.lead}</span>
+          <span className="block text-[34px] text-accent-cyan">{b.punch}</span>
+        </h2>
+      ))}
+      <p className="mb-8 max-w-[34ch] text-[15px] leading-relaxed text-white/70">{SCENE.payoff.body}</p>
+      <PhoneFrame widthClassName="w-[230px]">
+        <MockupScreen />
+      </PhoneFrame>
+    </section>
+  )
+}
+
+/* ═══ Export ════════════════════════════════════════════════════════════════════════════════
    `mounted` d'abord : useIsMobile démarre à false → sans ce garde, un téléphone rendrait la
-   variante desktop 1 frame et son IntersectionObserver lancerait le téléchargement du MP4
-   (2-4 Mo) sur la 4G du chauffeur avant la bascule. La section est sous la ligne de flottaison,
-   le rendu différé d'une frame est invisible. */
+   variante desktop 1 frame et son observer lancerait le MP4 paysage sur la 4G du chauffeur. */
 export default function CinematicSequence({ isMobile }: { isMobile: boolean }) {
   const reduced = useReducedMotion()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   if (!mounted) return <div className="min-h-dvh bg-foreas-obsidian" aria-hidden />
-  if (isMobile || reduced) return <MobileSequence />
-  return <DesktopSequence />
+  if (reduced) return <StaticSequence />
+  return isMobile ? <MobileSequence /> : <DesktopSequence />
 }

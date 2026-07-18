@@ -41,6 +41,41 @@ Mobile : même histoire, empilée — clip vertical, titres en arrivée horizont
 
 Titres 100/100 déjà validés (audit copy-atomic) pour toutes les features → dans `StickyFeatures.tsx` (FEATURES). Les reprendre tels quels pour les futures séquences.
 
+## 3bis. DOCTRINE TYPO DES BEATS (à respecter pour toute nouvelle séquence)
+
+Un titre-choc doit se lire en UNE saccade oculaire. D'où la découpe en **deux temps** :
+
+```
+Terminal 2D.          ← LEAD  : le décor, ivoire #F8FAFC, neutre
+Ce matin.  🙄         ← PUNCH : l'enjeu, cyan #00D4FF + émoji APRÈS la chute
+
+Lui,                  ← LEAD  : le sujet (leadScale 1.18 = légèrement plus grand,
+personne ne l'a          JAMAIS de capitale ajoutée), la virgule suspend
+prévenu.  😏          ← PUNCH : l'injustice nommée, cyan
+```
+
+Règles dures :
+- **Un seul accent cyan par beat** — il marque toujours le mot qui porte l'enjeu, jamais la déco.
+- **L'émoji arrive APRÈS la chute**, jamais avant (sinon il spoile l'émotion et tue le beat).
+  Choisi selon le contexte émotionnel : 🙄 (fatalité), 😏 (complicité/malice), 😌 (soulagement),
+  🤫 (secret partagé). Animation légère (rotation ±6°, scale 1.08, pause 1,6 s entre deux).
+- Chaque beat **entre par le bas, tient, se retire vers le haut** — le suivant prend sa place.
+- `leadScale` agrandit le sujet sans le crier. Genos (`font-title`), letter-spacing −0.045em.
+
+Champs d'un beat : `{ in, out, lead, punch, emoji, leadScale }` — `in`/`out` = fenêtres de
+progression de la section (0→1).
+
+## 3ter. ASSETS MUX EN PLACE (séquence Alerte contrôle)
+
+| Usage | Asset ID | Playback ID | Format |
+|---|---|---|---|
+| Desktop | `vPmn7P01TS9Lk6OEZq3VkUzkrDZzOn3x7N02GZlGGTZws` | `WpmrheUgL7J8GLgCyr3sMJXsbqgoLm01mGII7JnbdiT00` | 16:9, 5,13 s |
+| Mobile | `JgtOCQHMmX2yt8wCXPKU8hSd81jbEmOeELwTejH1SRU` | `7YomMmttdmQ402t1tmYdhZT5mhkK00z3sEqMaCRR02ddpg` | 9:16, 5,06 s |
+
+MP4 `capped-1080p` activé sur les deux. Étalonnage vintage appliqué en CSS (constante `VINTAGE`) :
+`sepia(.12) contrast(1.12) saturate(.72) brightness(.88) hue-rotate(-4deg)` — le sépia porte le
+« vieux film » sans virer jaune, le noir profond du design system est préservé.
+
 ## 4. Comment ajouter une séquence (checklist exacte)
 
 1. **Clip Mux** : uploader → copier le *Playback ID* (onglet Playback and Thumbnails).
