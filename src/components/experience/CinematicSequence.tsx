@@ -154,7 +154,7 @@ function DesktopBeat({
 
   return (
     <motion.div className="absolute" style={{ opacity, y }}>
-      <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.045em' }}>
+      <h2 className="font-sans font-extrabold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.02em' }}>
         <span className="block" style={{ fontSize: `calc(clamp(38px,3.9vw,64px) * ${beat.leadScale})` }}>
           {beat.lead}
         </span>
@@ -238,7 +238,10 @@ function DesktopSequence() {
       <div ref={seenRef} className="sticky top-0 h-dvh overflow-clip bg-foreas-obsidian">
         {/* ── LA VIDÉO (droite), scrub au scroll, zoom visage, étalonnage vintage ── */}
         <motion.video
-          ref={videoRef}
+          ref={(el) => {
+            videoRef.current = el
+            if (el) el.muted = true // fix impératif muted (React/hydratation) — voir MobileSequence
+          }}
           className="absolute inset-y-0 right-0 z-0 h-full w-[72%] object-cover"
           style={{ scale: zoom, transformOrigin: SCENE.zoom.origin, filter: VINTAGE, willChange: 'transform' }}
           src={SCENE.clip.mp4Url}
@@ -293,7 +296,7 @@ function DesktopSequence() {
 
         {/* ── LA DESCRIPTION (droite, sur la vidéo assombrie) ── */}
         <motion.div className="absolute inset-y-0 right-[7%] z-40 flex w-[34%] flex-col justify-center" style={{ opacity: payoffOpacity, y: payoffY }}>
-          <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.045em' }}>
+          <h2 className="font-sans font-extrabold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.02em' }}>
             <span className="block" style={{ fontSize: 'clamp(38px,3.9vw,62px)' }}>{SCENE.payoff.lead}</span>
             <span className="block text-accent-cyan" style={{ fontSize: 'clamp(38px,3.9vw,62px)' }}>
               {SCENE.payoff.punch} <BeatEmoji char={SCENE.payoff.emoji} className="align-baseline text-[0.72em]" />
@@ -312,9 +315,9 @@ function MobileBeat({ beat, progress }: { beat: (typeof SCENE.beats)[number]; pr
   const y = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [30, 0, 0, -26])
   return (
     <motion.div className="absolute inset-x-0" style={{ opacity, y }}>
-      <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.04em' }}>
-        <span className="block" style={{ fontSize: `calc(clamp(34px,9vw,46px) * ${beat.leadScale})` }}>{beat.lead}</span>
-        <span className="block text-accent-cyan" style={{ fontSize: 'clamp(34px,9vw,46px)' }}>
+      <h2 className="font-sans font-extrabold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.015em' }}>
+        <span className="block" style={{ fontSize: `calc(clamp(30px,8.4vw,42px) * ${beat.leadScale})` }}>{beat.lead}</span>
+        <span className="block text-accent-cyan" style={{ fontSize: 'clamp(30px,8.4vw,42px)' }}>
           {beat.punch} <BeatEmoji char={beat.emoji} className="align-baseline text-[0.7em]" />
         </span>
       </h2>
@@ -380,7 +383,13 @@ function MobileSequence() {
       <div ref={seenRef} className="sticky top-0 h-dvh overflow-clip bg-foreas-obsidian">
         {/* clip VERTICAL 9:16 — plein cadre, étalonnage vintage */}
         <motion.video
-          ref={videoRef}
+          ref={(el) => {
+            videoRef.current = el
+            // React ne fiabilise pas l'attribut `muted` à l'hydratation (bug connu react-dom) —
+            // sans ce fix impératif, Safari iOS voit une vidéo NON muette + autoplay → bloque
+            // silencieusement (c'était le bug « la vidéo ne bouge pas », audit Fable 5).
+            if (el) el.muted = true
+          }}
           className="absolute inset-0 z-0 h-full w-full object-cover"
           style={{ scale: zoom, transformOrigin: SCENE.zoom.origin, filter: VINTAGE, willChange: 'transform' }}
           src={SCENE.clip.verticalMp4Url}
@@ -406,41 +415,47 @@ function MobileSequence() {
 
         <CinemaFilter />
 
-        {/* beats — bas de l'écran, là où le pouce ne masque pas */}
-        <div className="absolute inset-x-0 bottom-[16%] z-40 px-5">
-          <p className="t-eyebrow mb-4 font-sans text-accent-cyan">{SCENE.eyebrow}</p>
-          <div className="relative min-h-[150px]">
-            {SCENE.beats.map((b, i) => (
-              <MobileBeat key={i} beat={b} progress={scrollYProgress} />
-            ))}
-            <motion.div className="absolute inset-x-0" style={{ opacity: payoffOpacity, y: payoffY }}>
-              <h2 className="font-title font-semibold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.04em' }}>
-                <span className="block" style={{ fontSize: 'clamp(34px,9vw,46px)' }}>{SCENE.payoff.lead}</span>
-                <span className="block text-accent-cyan" style={{ fontSize: 'clamp(34px,9vw,46px)' }}>
-                  {SCENE.payoff.punch} <BeatEmoji char={SCENE.payoff.emoji} className="align-baseline text-[0.7em]" />
-                </span>
-              </h2>
-              <p className="mt-3 max-w-[34ch] text-[14.5px] leading-relaxed text-white/70">{SCENE.payoff.body}</p>
-            </motion.div>
+        {/* CONTENU — flex-col justify-between : texte TOUJOURS en haut, mockup TOUJOURS en bas,
+            zéro chevauchement possible quelle que soit la hauteur réelle de l'écran (bug « mockup
+            serré » = 2 blocs absolute qui se recouvraient sur petit écran, corrigé structurellement
+            plutôt qu'à coups de pourcentages magiques — audit Fable 5). */}
+        <div className="absolute inset-0 z-40 flex flex-col justify-between px-5 pb-8 pt-10">
+          <div>
+            <p className="t-eyebrow mb-4 font-sans text-accent-cyan">{SCENE.eyebrow}</p>
+            <div className="relative min-h-[160px]">
+              {SCENE.beats.map((b, i) => (
+                <MobileBeat key={i} beat={b} progress={scrollYProgress} />
+              ))}
+              <motion.div className="absolute inset-x-0" style={{ opacity: payoffOpacity, y: payoffY }}>
+                <h2 className="font-sans font-extrabold leading-[0.98] text-[#F8FAFC]" style={{ letterSpacing: '-.015em' }}>
+                  <span className="block" style={{ fontSize: 'clamp(30px,8.4vw,42px)' }}>{SCENE.payoff.lead}</span>
+                  <span className="block text-accent-cyan" style={{ fontSize: 'clamp(30px,8.4vw,42px)' }}>
+                    {SCENE.payoff.punch} <BeatEmoji char={SCENE.payoff.emoji} className="align-baseline text-[0.7em]" />
+                  </span>
+                </h2>
+                <p className="mt-3 max-w-[34ch] text-[14.5px] leading-relaxed text-white/70">{SCENE.payoff.body}</p>
+              </motion.div>
+            </div>
           </div>
-        </div>
 
-        {/* mockup — monte depuis le bas quand la vidéo se fige, décalé pour ne pas manger le texte */}
-        <motion.div
-          className="absolute inset-x-0 top-[6%] z-30 flex justify-center"
-          initial={false}
-          animate={mockupOn ? { opacity: 1, y: 0 } : { opacity: 0, y: 60 }}
-          transition={{ type: 'spring', stiffness: 120, damping: 26 }}
-        >
+          {/* mockup — piloté par la HAUTEUR disponible (pas une largeur fixe) : rentre toujours,
+              quel que soit l'écran (iPhone SE ↔ grand mobile), proportions iPhone toujours justes */}
           <motion.div
-            animate={mockupOn ? { rotate: [0, -1.2, 1.6, -1, 0.6, 0], x: [0, -2, 3, -2, 1, 0] } : { rotate: 0, x: 0 }}
-            transition={{ duration: 0.55, delay: 0.35 }}
+            className="flex justify-center pb-2"
+            initial={false}
+            animate={mockupOn ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+            transition={{ type: 'spring', stiffness: 120, damping: 26 }}
           >
-            <PhoneFrame widthClassName="w-[190px]">
-              <MockupScreen />
-            </PhoneFrame>
+            <motion.div
+              animate={mockupOn ? { rotate: [0, -1.2, 1.6, -1, 0.6, 0], x: [0, -2, 3, -2, 1, 0] } : { rotate: 0, x: 0 }}
+              transition={{ duration: 0.55, delay: 0.35 }}
+            >
+              <PhoneFrame widthClassName="h-[min(38svh,300px)] w-auto">
+                <MockupScreen />
+              </PhoneFrame>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )
@@ -453,7 +468,7 @@ function StaticSequence() {
     <section ref={seenRef} className="mx-auto w-full max-w-2xl bg-foreas-obsidian px-5 py-14">
       <p className="t-eyebrow mb-5 font-sans text-accent-cyan">{SCENE.eyebrow}</p>
       {[...SCENE.beats, SCENE.payoff].map((b, i) => (
-        <h2 key={i} className="mb-6 font-title font-semibold leading-[1] text-[#F8FAFC]" style={{ letterSpacing: '-.04em' }}>
+        <h2 key={i} className="mb-6 font-sans font-extrabold leading-[1] text-[#F8FAFC]" style={{ letterSpacing: '-.015em' }}>
           <span className="block text-[34px]">{b.lead}</span>
           <span className="block text-[34px] text-accent-cyan">{b.punch}</span>
         </h2>
