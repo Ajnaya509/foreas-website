@@ -34,6 +34,7 @@ import { useIsMobile } from '@/hooks/useDevicePerf'
 import SmoothScroll from '@/components/experience/SmoothScroll'
 import StickyFeatures from '@/components/experience/StickyFeatures'
 import CinematicSequence from '@/components/experience/CinematicSequence'
+import VerdictSequence from '@/components/experience/VerdictSequence'
 
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
@@ -85,6 +86,25 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
     try { posthog.capture('experience_desktop_modal_opened', { zone: zone || null }) } catch { /* noop */ }
   }
 
+  /**
+   * Le CTA doit ENGAGER la conversation, pas téléporter en haut de page.
+   * Desktop → ouvre la modale Ajnaya. Mobile → remonte au champ (via Lenis, jamais un hash nu
+   * qui désynchroniserait son scroll interne) et pose le focus dessus.
+   */
+  const handleCtaClick = () => {
+    try { posthog.capture('experience_sticky_cta_clicked', { mode: isMobile ? 'mobile_focus' : 'desktop_modal' }) } catch { /* noop */ }
+    if (!isMobile) { openModal(); return }
+    const hero = document.getElementById('hero')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lenis = (window as any).lenis
+    if (lenis?.scrollTo) lenis.scrollTo(hero ?? 0, { offset: -12 })
+    else hero?.scrollIntoView({ behavior: 'smooth' })
+    window.setTimeout(() => {
+      const field = document.querySelector<HTMLInputElement>('#hero input[type="text"], #hero input:not([type])')
+      field?.focus()
+    }, 700)
+  }
+
   useEffect(() => {
     try { posthog.capture('experience_page_view') } catch { /* noop */ }
   }, [])
@@ -108,7 +128,15 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
     {/* overflow-x-CLIP (pas hidden) : `hidden` crée un conteneur de scroll qui empêche
         position:sticky des sections features de coller. `clip` masque le débord sans conteneur
         de scroll → le sticky desktop fonctionnera (audit Fable 5). */}
-    <main className="relative min-h-screen overflow-x-clip bg-foreas-obsidian text-[#F8FAFC]">
+    {/* --cta-clearance : LA réserve unique pour la barre « Discuter avec Ajnaya » (56 bouton +
+        16 bas + 8 respiration du halo + encoche iPhone). Toute section qui affiche du contenu
+        signifiant DOIT la consommer en padding-bottom. C'est la cause racine du mockup coupé :
+        avant, chaque section devinait son propre pb-8 et deux éléments qui ne se connaissent pas
+        se recouvraient. Le décor (vidéo plein cadre) peut passer dessous, jamais le contenu. */}
+    <main
+      className="relative min-h-screen overflow-x-clip bg-foreas-obsidian text-[#F8FAFC]"
+      style={{ ['--cta-clearance' as string]: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}
+    >
       {/* halo + micro-grain — mêmes tokens que checkout/tarifs2 */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
         <div
@@ -267,12 +295,14 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         <AjnayaConversationModal isOpen={modalOpen} onClose={() => setModalOpen(false)} initialZone={modalZone} />
       )}
 
-      {/* ═══ SÉQUENCE CINÉMA — vidéo scrubbing au scroll + titres-chocs + mockup notification
-          (vision Chandler, 1er jet). ⚠️ ORDRE FINAL : le Verdict Instant passera en 1ʳᵉ séquence
-          quand son clip existera — celle-ci (Alerte contrôle) glissera en 2ᵉ. ═══ */}
+      {/* ═══ SÉQUENCE 1 — VERDICT INSTANT (la feature la plus forte, donc la première vue).
+          Hésitation pilotée au scroll → REFUSE par la gauche → ACCEPTE par la droite. ═══ */}
       <div ref={firstFeatureRef}>
-        <CinematicSequence isMobile={isMobile} />
+        <VerdictSequence isMobile={isMobile} />
       </div>
+
+      {/* ═══ SÉQUENCE 2 — ALERTE CONTRÔLE (communauté) ═══ */}
+      <CinematicSequence isMobile={isMobile} />
 
       {/* ═══ FEATURES — « visite produit » : téléphone collant + texte qui défile (desktop),
           empilé (mobile). Titres +100/100 (copy-atomic Fable 5). Illustrations = placeholders,
@@ -317,8 +347,13 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         </div>
       </motion.section>
 
-      {/* ═══ FAQ ═══ */}
-      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
+      {/* ═══ FAQ — dernière section avant le footer : réserve la place du CTA fixe, sinon le
+          dernier « détail » ouvert passe sous la barre ═══ */}
+      <motion.section
+        {...reveal}
+        className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14"
+        style={{ paddingBottom: 'calc(var(--cta-clearance) + 16px)' }}
+      >
         <div className="mx-auto max-w-md md:max-w-xl">
           <p className="mb-3 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Questions directes</p>
           {[
@@ -350,7 +385,8 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       {/* ═══ CTA persistant — bord-à-bord mobile, pilule centrée à md: (les translate-x/y Tailwind
           se composent via les mêmes variables --tw-translate-*, aucune collision) ═══ */}
       <div
-        className={`fixed inset-x-4 bottom-4 z-50 flex gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${showCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
+        className={`fixed inset-x-4 z-50 flex gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${showCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
+        style={{ bottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
       >
         {/* Le CTA « pulse » (demande Chandler) : un seul glow violet qui respire à 1.8s DERRIÈRE
             le bouton (R1 : jamais empilé ; famille « Ajnaya vit », exception documentée). */}
@@ -360,8 +396,16 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             className="pointer-events-none absolute -inset-2 animate-halo-pulse rounded-2xl"
             style={{ background: 'radial-gradient(60% 100% at 50% 50%, rgba(140,82,255,.38) 0%, transparent 72%)', filter: 'blur(10px)' }}
           />
-          <InkGradientButton as="link" href="#hero" variant="primary" size="lg" fullWidth
-            onClick={() => { try { posthog.capture('experience_sticky_cta_clicked') } catch { /* noop */ } }}
+          {/* Le CTA OUVRE la conversation — c'est le seul but de la page. Avant il pointait sur
+              #hero : un saut de hash qui (a) n'engage aucune conversation, (b) désynchronise Lenis
+              (le scroll natif change hors de son contrôle → rebond au coup de molette suivant).
+              Desktop → la modale Ajnaya. Mobile → scroll piloté par Lenis vers le champ + focus. */}
+          <InkGradientButton
+            as="button"
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={handleCtaClick}
           >
             Discuter avec Ajnaya
           </InkGradientButton>
