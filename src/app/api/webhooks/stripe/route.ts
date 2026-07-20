@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { sendWelcomeEmail } from '@/lib/email'
+import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
+import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
 import { sendCAPIEvent } from '@/lib/meta-capi'
 
 export const runtime = 'nodejs'
@@ -126,14 +127,40 @@ export async function POST(request: Request) {
           : null,
       })
 
-      // 2. Envoyer email de bienvenue
+      // 2. Créer le compte Supabase Auth + envoyer le mail de bienvenue AVEC les identifiants.
+      //    Ordre imposé : on provisionne D'ABORD, pour que le mail puisse porter le mot de passe.
+      //    Avant ce câblage, le mail disait « connecte-toi » alors qu'aucun compte n'existait :
+      //    premier mur rencontré par 100% des chauffeurs payés depuis le site.
       if (session.customer_details?.email) {
+        const provision = await provisionDriverAccount({
+          email: session.customer_details.email,
+          name: session.customer_details.name,
+          phone,
+          city,
+        })
+
         await sendWelcomeEmail({
           email: session.customer_details.email,
           name: session.customer_details.name || '',
           plan: planInfo.name,
           trialEnd: trialEndLabel,
+          // Identifiants seulement si le compte vient d'être créé. S'il existait déjà (rejeu
+          // Stripe, ou chauffeur déjà inscrit), on n'a touché à rien : pas de mot de passe à
+          // annoncer, il utilise le sien.
+          credentials:
+            provision.status === 'created'
+              ? { email: session.customer_details.email, password: provision.password }
+              : null,
         })
+
+        // Un paiement encaissé sans compte créé ne doit JAMAIS rester silencieux.
+        if (provision.status === 'failed' || provision.status === 'skipped') {
+          await sendProvisionFailureAlert({
+            email: session.customer_details.email,
+            name: session.customer_details.name,
+            reason: provision.reason,
+          })
+        }
       }
 
       // 3. Meta CAPI — StartTrial (trial) + Subscribe (conversion signal)

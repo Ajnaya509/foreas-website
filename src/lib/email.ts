@@ -2,7 +2,37 @@ import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string; trialEnd: string }) {
+/**
+ * Bloc identifiants — n'apparaît QUE si le compte vient d'être créé par le webhook Stripe
+ * (source `checkout`). Le mot de passe est en clair : c'est le seul que ce chauffeur possède,
+ * il n'a aucun autre moyen d'entrer dans l'app. Cf. provisionDriverAccount.ts.
+ * Si le compte existait déjà, `credentials` est null et ce bloc disparaît — on ne dit jamais
+ * « voici ton mot de passe » à quelqu'un dont on n'a pas fixé le mot de passe.
+ */
+function buildCredentialsBlock({ email, password }: { email: string; password: string }): string {
+  return `
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:36px;">
+        <tr><td style="background-color:#0e0e16;border:1px solid #2a2a3a;border-radius:14px;padding:24px;">
+          <div style="font-family:'Genos',sans-serif;font-size:14px;font-weight:600;color:#00D4FF;letter-spacing:1.5px;margin-bottom:16px;">TES IDENTIFIANTS</div>
+
+          <div style="font-family:'Montserrat',sans-serif;font-size:11px;color:#5a5a6e;letter-spacing:0.5px;margin-bottom:5px;">EMAIL</div>
+          <div style="font-family:'Montserrat',sans-serif;font-size:15px;color:#F8FAFC;font-weight:600;margin-bottom:18px;word-break:break-all;">${escapeHtml(email)}</div>
+
+          <div style="font-family:'Montserrat',sans-serif;font-size:11px;color:#5a5a6e;letter-spacing:0.5px;margin-bottom:5px;">MOT DE PASSE</div>
+          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:20px;color:#F8FAFC;font-weight:700;letter-spacing:1.5px;">${escapeHtml(password)}</div>
+
+          <div style="font-family:'Montserrat',sans-serif;font-size:12px;color:#8888a0;line-height:1.6;margin-top:18px;padding-top:16px;border-top:1px solid #1e1e2a;">
+            On l&rsquo;a g&eacute;n&eacute;r&eacute; pour toi. Tu pourras le changer dans l&rsquo;app, Profil &rsaquo; S&eacute;curit&eacute;.
+          </div>
+        </td></tr>
+      </table>
+`
+}
+
+function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
+  name: string; plan: string; trialEnd: string
+  credentials?: { email: string; password: string } | null
+}) {
   const firstName = name ? name.split(' ')[0] : 'Chauffeur'
   // Genos = titres (font-weight 600), Genos italic = taglines, Montserrat = body
   // Fallback: sans-serif sur les clients qui ne supportent pas Google Fonts
@@ -81,6 +111,8 @@ function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string
         </td></tr>
       </table>
 
+      ${credentials ? buildCredentialsBlock(credentials) : ''}
+
       <!-- Store links — gris discret -->
       <p style="text-align:center;font-family:'Montserrat',sans-serif;font-size:11px;color:#3a3a4a;margin:0 0 40px;">
         <a href="https://apps.apple.com/app/foreas/id000000000" style="color:#5a5a6e;text-decoration:none;">App Store</a>
@@ -97,7 +129,7 @@ function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string
               <td style="width:24px;vertical-align:top;padding-right:14px;padding-bottom:16px;">
                 <div style="width:24px;height:24px;border-radius:50%;background-color:#0e0e16;border:1px solid #2a2a3a;color:#6b6b80;font-family:'Genos',sans-serif;font-size:12px;font-weight:600;text-align:center;line-height:24px;">1</div>
               </td>
-              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;padding-bottom:16px;line-height:1.5;">T&eacute;l&eacute;charge l&rsquo;app et connecte-toi</td>
+              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;padding-bottom:16px;line-height:1.5;">T&eacute;l&eacute;charge l&rsquo;app et connecte-toi${credentials ? ' avec les identifiants ci-dessus' : ''}</td>
             </tr>
             <tr>
               <td style="width:24px;vertical-align:top;padding-right:14px;padding-bottom:16px;">
@@ -135,8 +167,10 @@ function buildWelcomeHTML({ name, plan, trialEnd }: { name: string; plan: string
 </html>`
 }
 
-export async function sendWelcomeEmail({ email, name, plan, trialEnd }: {
+export async function sendWelcomeEmail({ email, name, plan, trialEnd, credentials }: {
   email: string; name: string; plan: string; trialEnd: string
+  /** Renseigné uniquement quand le webhook vient de CRÉER le compte (voir provisionDriverAccount). */
+  credentials?: { email: string; password: string } | null
 }) {
   if (!resend) {
     console.log('[Email] Resend non configuré — email non envoyé à', email)
@@ -147,7 +181,7 @@ export async function sendWelcomeEmail({ email, name, plan, trialEnd }: {
       from: 'FOREAS <noreply@foreas.xyz>',
       to: email,
       subject: `Bienvenue ${name ? name.split(' ')[0] : ''} — Ton essai FOREAS est activé`,
-      html: buildWelcomeHTML({ name, plan, trialEnd }),
+      html: buildWelcomeHTML({ name, plan, trialEnd, credentials }),
     })
     console.log('[Email] Welcome email envoyé à', email)
   } catch (e) {
@@ -198,6 +232,36 @@ export async function sendPartnerApplicantEmail({ email, contactName, companyNam
 }
 
 /** Email INTERNE à contact@foreas.xyz : nouvelle demande + lien admin pour approuver. */
+/**
+ * Alerte interne : un chauffeur a PAYÉ mais son compte n'a pas pu être créé.
+ * Sans ça, l'échec est invisible — il n'existe que dans les logs Vercel, et le chauffeur se
+ * retrouve devant un écran de connexion sans identifiants, exactement le mur que le
+ * provisionnement était censé supprimer. Ici on veut être réveillé, pas informé.
+ */
+export async function sendProvisionFailureAlert({ email, name, reason }: {
+  email: string; name?: string | null; reason: string
+}) {
+  if (!resend) { console.log('[Email] Resend non configuré — alerte provisionnement non envoyée'); return }
+  const inner = `
+    <h1 style="font-family:'Genos',sans-serif;font-size:24px;font-weight:600;color:#EF4444;margin:0 0 6px;">Chauffeur payant sans compte</h1>
+    <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;margin:0 0 24px;">Le paiement est pass&eacute;, la cr&eacute;ation du compte Supabase a &eacute;chou&eacute;. Ce chauffeur ne peut pas se connecter.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;background-color:#0a0a12;border:1px solid #18182a;border-radius:12px;padding:8px 16px;">
+      <tr><td style="font-family:'Montserrat',sans-serif;font-size:12px;color:#6b6b80;padding:6px 12px 6px 0;width:110px;vertical-align:top;">Email</td><td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#ffffff;padding:6px 0;">${escapeHtml(email)}</td></tr>
+      <tr><td style="font-family:'Montserrat',sans-serif;font-size:12px;color:#6b6b80;padding:6px 12px 6px 0;vertical-align:top;">Nom</td><td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#ffffff;padding:6px 0;">${escapeHtml(name || '—')}</td></tr>
+      <tr><td style="font-family:'Montserrat',sans-serif;font-size:12px;color:#6b6b80;padding:6px 12px 6px 0;vertical-align:top;">Cause</td><td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#ffffff;padding:6px 0;">${escapeHtml(reason)}</td></tr>
+    </table>
+    <p style="font-family:'Montserrat',sans-serif;font-size:12px;color:#8888a0;line-height:1.6;margin:0;">Si la cause est <strong style="color:#ffffff;">service_role manquante</strong>, ajouter <code>SUPABASE_SERVICE_ROLE_KEY</code> aux variables d&rsquo;environnement Vercel (production) puis rejouer l&rsquo;&eacute;v&eacute;nement depuis le tableau de bord Stripe.</p>`
+  try {
+    await resend.emails.send({
+      from: 'FOREAS <noreply@foreas.xyz>',
+      to: 'contact@foreas.xyz',
+      subject: `⚠️ Compte non créé après paiement : ${email}`,
+      html: foreasEmailShell(inner),
+    })
+    console.log('[Email] Alerte provisionnement envoyée pour', email)
+  } catch (e) { console.error('[Email] Échec alerte provisionnement:', e) }
+}
+
 export async function sendPartnerInternalEmail(app: {
   companyName: string; contactName: string; email: string; phone?: string; siret?: string; message?: string
 }) {
