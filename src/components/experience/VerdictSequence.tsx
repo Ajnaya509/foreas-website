@@ -49,7 +49,10 @@ const T = {
   beats: [
     { in: 0.08, out: 0.29, lead: 'Ça sonne. Tu regardes l’écran.', punch: 'Rentable ? Aucune idée.', emoji: '🙄' },
     { in: 0.42, out: 0.55, lead: 'Celle-là, tu l’aurais prise.', punch: 'Tu viens de l’esquiver.', emoji: '🤫' },
-    { in: 0.66, out: 1.10, lead: 'Celle-là est bonne.', punch: 'Tu pars. Sans y penser.', emoji: '😌' },
+    // out 0.96 (pas 1.10) : la progression plafonne à 1.0 — un out au-delà ne s'atteint jamais,
+    // le carton restait donc plein écran quand le sticky se libère et remontait sous le header
+    // (fantôme flouté vu dans le simulateur iOS). 0.96 = fondu AVANT la libération.
+    { in: 0.66, out: 0.96, lead: 'Celle-là est bonne.', punch: 'Tu pars. Sans y penser.', emoji: '😌' },
   ],
   conclusionAt: 0.86,
 } as const
@@ -73,19 +76,27 @@ function Beat({
   const emojiRotate = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [-8, 0])
   const emojiScale = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [0.8, 1])
   const emojiOpacity = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [0, 1])
+  // Le dernier mot et l'emoji sont soudés (whitespace-nowrap) : sur 375px, l'emoji passait
+  // seul à la ligne — un orphelin d'un caractère sous le carton (vu dans le simulateur iOS).
+  const words = beat.punch.split(' ')
+  const lastWord = words.pop()
+  const head = words.join(' ')
   return (
     <motion.div className="absolute inset-x-0" style={{ opacity, y }}>
       <h2 className={`font-sans font-extrabold leading-[1.0] text-[#F8FAFC] ${sizeClass}`} style={{ letterSpacing: '-.02em', textShadow: TEXT_SHADOW }}>
         <span className="block">{beat.lead}</span>
         <span className="block text-accent-cyan">
-          {beat.punch}{' '}
-          <motion.span
-            className="inline-block align-baseline text-[0.72em]"
-            aria-hidden="true"
-            style={{ rotate: emojiRotate, scale: emojiScale, opacity: emojiOpacity }}
-          >
-            {beat.emoji}
-          </motion.span>
+          {head && `${head} `}
+          <span className="whitespace-nowrap">
+            {lastWord}{' '}
+            <motion.span
+              className="inline-block align-baseline text-[0.72em]"
+              aria-hidden="true"
+              style={{ rotate: emojiRotate, scale: emojiScale, opacity: emojiOpacity }}
+            >
+              {beat.emoji}
+            </motion.span>
+          </span>
         </span>
       </h2>
     </motion.div>
@@ -104,7 +115,9 @@ function SoundPill({ onUnlock, visible }: { onUnlock: () => void; visible: boole
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="absolute right-4 z-[45] rounded-full border border-white/[0.14] px-3 py-1.5 text-[12px] font-semibold text-[#F8FAFC] backdrop-blur-md"
-      style={{ top: 'calc(68px + 8px)', backgroundColor: 'rgba(10,12,20,.92)' }}
+      // top 62 : alignée sur la LIGNE DE L'EYEBROW (courte, à gauche) — à 76px elle chevauchait
+      // la première ligne des cartons (vu dans le simulateur iOS).
+      style={{ top: 62, backgroundColor: 'rgba(10,12,20,.92)' }}
       aria-label={unlocked ? 'Son activé' : 'Activer le son'}
     >
       {unlocked ? '🔊' : '🔊 Mets le son'}

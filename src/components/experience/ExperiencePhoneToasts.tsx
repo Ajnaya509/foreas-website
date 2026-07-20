@@ -108,16 +108,20 @@ export default function ExperiencePhoneToasts() {
             className="pointer-events-auto"
           >
             <div
-              className="flex items-center gap-3 pl-2.5 pr-3 py-2.5 rounded-2xl border max-w-[300px]"
+              // Compacte (256px, pas 300) : en mobile elle flotte au-dessus du contenu qui
+              // défile — vu dans le simulateur iOS, la version large couvrait les titres de
+              // section. hyphens none : Safari coupait « What-sApp » en fin de ligne.
+              className="flex items-center gap-2.5 pl-2.5 pr-3 py-2 rounded-2xl border max-w-[256px]"
               style={{
                 backgroundColor: 'rgba(10,12,20,.92)',
                 borderColor: 'rgba(255,255,255,.14)',
                 backdropFilter: 'blur(12px)',
                 boxShadow: `0 0 40px -18px ${ACCENT[e.accent].ring}, 0 18px 40px -18px rgba(0,0,0,.6)`,
+                hyphens: 'none',
               }}
             >
               <div
-                className="relative w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[13px]"
+                className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[12px]"
                 style={{ background: ACCENT[e.accent].bg }}
               >
                 {e.initial}
@@ -126,10 +130,10 @@ export default function ExperiencePhoneToasts() {
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] leading-tight text-[#F8FAFC] font-medium">
+                <p className="text-[12.5px] leading-tight text-[#F8FAFC] font-medium">
                   <span className="font-bold">{e.driver}</span><span className="text-white/55"> à {e.city}</span>
                 </p>
-                <p className="text-[12px] leading-tight text-white/55 mt-0.5">vient de parler à Ajnaya sur WhatsApp</p>
+                <p className="text-[11.5px] leading-tight text-white/55 mt-0.5">vient de parler à Ajnaya sur <span className="whitespace-nowrap">WhatsApp</span></p>
               </div>
               <button type="button" onClick={dismiss} aria-label="Fermer" className="self-start -mr-1 -mt-1 w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
                 <X className="w-3.5 h-3.5" />

@@ -95,29 +95,45 @@ export function useScrubbedVideo(
   })
 }
 
-/* ─── 2. CLIP DÉCLENCHÉ PAR LE SCROLL (joue une fois, gèle sur sa dernière image) ───────────── */
+/* ─── 2. CLIP DÉCLENCHÉ PAR LE SCROLL (joue une fois, se repose sur son IMAGE FORTE) ────────── */
 interface TriggerOptions {
   /** Progression à laquelle le clip se déclenche. */
   at: number
   /** En remontant sous ce seuil, le clip se réarme (hystérésis anti-clignotement). */
   rearmAt: number
   activeRef: React.MutableRefObject<boolean>
+  /**
+   * Fraction de la durée où vit l'IMAGE FORTE du clip — la notification pleinement affichée.
+   * C'est la frame de REPOS : après lecture ET après réarmement. Vu dans le simulateur iOS :
+   * geler sur la DERNIÈRE image montrait l'après-notification (carte vide, écran noir) — toute
+   * la démonstration repose sur cette notification et l'état de repos ne la montrait jamais.
+   * Même piège au réarmement : seek à 0 = frame 0, noire sur ces clips (et le seek dissout
+   * définitivement le poster iOS).
+   */
+  restFraction?: number
 }
 
 export function useScrollTriggeredClip(
   videoRef: React.MutableRefObject<HTMLVideoElement | null>,
   progress: MotionValue<number>,
-  { at, rearmAt, activeRef }: TriggerOptions,
+  { at, rearmAt, activeRef, restFraction = 0.55 }: TriggerOptions,
 ) {
   const fired = useRef(false)
   const retryRef = useRef<(() => void) | null>(null)
 
+  // Seek vers l'image forte — jamais frame 0 (noire), jamais la toute fin (post-notification).
+  const seekToRest = useCallback((v: HTMLVideoElement) => {
+    const dur = v.duration
+    if (Number.isFinite(dur) && dur > 0) {
+      v.currentTime = Math.min(dur - 0.05, dur * restFraction)
+    }
+  }, [restFraction])
+
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
-    // Gel sur la dernière image plutôt qu'un retour à l'image 0 (ou une frame noire iOS).
     const onEnded = () => {
-      v.currentTime = Math.max(0, v.duration - 0.05)
+      seekToRest(v)
       v.pause()
     }
     v.addEventListener('ended', onEnded)
@@ -128,7 +144,7 @@ export function useScrollTriggeredClip(
         window.removeEventListener('pointerdown', retryRef.current)
       }
     }
-  }, [videoRef])
+  }, [videoRef, seekToRest])
 
   useAnimationFrame(() => {
     if (!activeRef.current) return
@@ -151,7 +167,8 @@ export function useScrollTriggeredClip(
       fired.current = false
       v.pause()
       v.muted = true
-      v.currentTime = 0
+      // Pas de retour à 0 : une fois le poster dissous (1ʳᵉ lecture), frame 0 = noir.
+      seekToRest(v)
     }
   })
 

@@ -201,6 +201,26 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
     return () => { io.disconnect(); window.removeEventListener('scroll', onScroll) }
   }, [])
 
+  // Le CTA se RETIRE tant que le hero est à l'écran. Vu dans le simulateur iOS : une fois
+  // apparu, le CTA restait pour toute la session — et quand le chauffeur revenait au hero
+  // (ou y était renvoyé par le CTA lui-même), la barre recouvrait les chips et le CHAMP DE
+  // SAISIE du téléphone : le seul élément de conversion du hero, caché par le bouton de
+  // conversion. Sur le hero, le téléphone EST le CTA ; ailleurs, la barre fixe l'est.
+  const [heroVisible, setHeroVisible] = useState(true) // true au départ : hero = 1er écran
+  useEffect(() => {
+    const hero = document.getElementById('hero')
+    if (!hero) return
+    const io = new IntersectionObserver(
+      (entries) => { const e = entries[entries.length - 1]; setHeroVisible(e.isIntersecting) },
+      // -35% en bas : le CTA réapparaît dès que le hero n'occupe plus que le tiers haut —
+      // le champ de saisie est alors déjà sorti de la zone de collision.
+      { rootMargin: '0px 0px -35% 0px' },
+    )
+    io.observe(hero)
+    return () => io.disconnect()
+  }, [])
+  const ctaVisible = showCta && !heroVisible
+
   // Remonte le téléphone mobile du montant de la bannière cookies tant qu'elle couvre son champ
   // de saisie. ConsentBanner (racine du site) et cette page sont deux composants montés
   // INDÉPENDAMMENT, et le Preloader plein écran de la racine retarde le moment réel où
@@ -464,9 +484,18 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           clavier tombe sur un CTA invisible avant même d'avoir vu la 1ʳᵉ feature. `items-end` :
           garde le lien WhatsApp aligné sur le bouton maintenant que la colonne gagne une 2ᵉ
           ligne (micro-ligne de réassurance ci-dessous). ═══ */}
+      {/* Dégradé d'ancrage (mobile) : sans lui, la micro-ligne et le bouton flottaient nus sur
+          les films et le contenu qui passe dessous — vu dans le simulateur iOS, la micro-ligne
+          s'écrasait visuellement sur les chips du hero et sur les vidéos. Le fondu transparent →
+          obsidian assied la barre et garantit la lisibilité quel que soit ce qui défile derrière. */}
       <div
-        inert={!showCta || undefined}
-        className={`fixed inset-x-4 z-50 flex items-end gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${showCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
+        aria-hidden
+        className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 h-36 transition-opacity duration-300 md:hidden ${ctaVisible ? 'opacity-100' : 'opacity-0'}`}
+        style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(5,5,8,.88) 62%)' }}
+      />
+      <div
+        inert={!ctaVisible || undefined}
+        className={`fixed inset-x-4 z-50 flex items-end gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${ctaVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
         style={{ bottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
       >
         {/* Le CTA « pulse » (demande Chandler) : un seul glow violet qui respire à 1.8s DERRIÈRE
