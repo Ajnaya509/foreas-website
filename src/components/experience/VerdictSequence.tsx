@@ -211,12 +211,17 @@ function MobileVerdict() {
               />
             </motion.div>
 
-            {/* ACCEPTE — dans le téléphone, entre par la DROITE */}
+            {/* ACCEPTE — dans le téléphone, entre par la DROITE.
+                Ancré en HAUT (pas en bas) et dimensionné par la LARGEUR : le contenu utile est
+                la notification, qui vit dans le tiers haut de l'écran. En l'ancrant en bas, tout
+                agrandissement poussait le téléphone vers le haut, dans les cartons de texte.
+                Ancré en haut, il déborde par le bas — on ne perd que le biseau et la barre
+                d'accueil, et la largeur passe de 191px à 300px (échelle ×1,57). */}
             <motion.div
-              className="absolute inset-x-0 bottom-0 flex justify-center"
+              className="absolute inset-x-0 top-0 flex justify-center"
               style={{ x: accepteX, opacity: accepteOpacity }}
             >
-              <PhoneFrame widthClassName="h-[min(50svh,400px)] w-auto">
+              <PhoneFrame widthClassName="w-[min(300px,84vw)]">
                 <video
                   ref={setAccepteRef}
                   className="h-full w-full object-cover"
@@ -229,9 +234,20 @@ function MobileVerdict() {
             </motion.div>
           </div>
 
+          {/* Sortie du flux : le téléphone déborde maintenant vers le bas et passerait dessous.
+              ⚠️ `bottom-0` serait FAUX ici — un élément absolu se positionne sur le PADDING box
+              du parent, donc bottom:0 tomberait SOUS le paddingBottom de clearance, c'est-à-dire
+              sous la barre CTA (la régression déjà corrigée deux fois). On ancre donc
+              explicitement sur la même valeur de clearance. Le dégradé rend le texte lisible
+              par-dessus la vidéo du téléphone. */}
           <motion.p
-            className="mt-3 text-[14.5px] font-medium leading-relaxed text-white/70"
-            style={{ opacity: conclusionOpacity, textShadow: TEXT_SHADOW }}
+            className="absolute inset-x-5 z-10 pt-10 text-[14.5px] font-medium leading-relaxed text-white/70"
+            style={{
+              opacity: conclusionOpacity,
+              textShadow: TEXT_SHADOW,
+              bottom: 'calc(var(--cta-clearance) + 8px)',
+              background: 'linear-gradient(180deg,transparent 0%,#060610 42%)',
+            }}
           >
             Tu ne devines plus : tu sais avant d’accepter.<br />
             Ajnaya est là — demande-lui pour ta prochaine course.

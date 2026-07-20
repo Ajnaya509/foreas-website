@@ -41,11 +41,11 @@ export default function PhoneFrame({
         className="relative h-full rounded-[9%] bg-black p-[3%]"
         style={{ boxShadow: '0 0 0 1px rgba(255,255,255,.14), 0 24px 60px -20px rgba(0,0,0,.85), 0 0 60px -22px rgba(140,82,255,.4)' }}
       >
-        {/* île dynamique — détail réaliste, proportionnelle à la largeur du cadre */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-[6.7%] z-20 h-[5%] w-[34%] -translate-x-1/2 rounded-full bg-black"
-          aria-hidden
-        />
+        {/* PAS d'île dynamique ici. Elle y était (détail « réaliste ») et elle RECOUVRAIT la
+            bande haute de l'écran — exactement là où s'affichent les notifications FOREAS dans
+            les vidéos des scènes. Le seul contenu qui compte dans ces mockups était caché par
+            un ornement. Ne pas la réintroduire : les vidéos sources contiennent déjà la barre
+            d'état réelle du téléphone filmé. */}
         {/* écran — conteneur relatif : les illustrations s'empilent en absolute inset-0 */}
         <div className="relative h-full overflow-hidden rounded-[8%] bg-[#07080F]">
           {children}

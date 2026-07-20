@@ -154,16 +154,22 @@ function MobileSequence() {
             ))}
           </div>
 
-          <div className="relative flex-1">
+          {/* mt-2 : même respiration que la scène Verdict entre les cartons et le téléphone.
+              Sans elle, le téléphone démarrait pile là où finit le bloc de cartons (mesuré à
+              0px de marge) — ils se toucheraient dès qu'un carton dépasse son min-h. */}
+          <div className="relative mt-2 flex-1">
+            {/* Ancré en HAUT et dimensionné par la LARGEUR — même raison que la scène Verdict :
+                la notification vit dans le tiers haut de l'écran, donc on déborde par le bas
+                (biseau + barre d'accueil) plutôt que par le haut (les cartons de texte). */}
             <motion.div
-              className="absolute inset-x-0 bottom-0 flex justify-center"
+              className="absolute inset-x-0 top-0 flex justify-center"
               style={{ x: mockupX, opacity: mockupOpacity }}
             >
               <motion.div
                 animate={mockupOn ? { rotate: [0, -1.2, 1.6, -1, 0.6, 0], x: [0, -2, 3, -2, 1, 0] } : { rotate: 0, x: 0 }}
                 transition={{ duration: 0.55, delay: 0.3 }}
               >
-                <PhoneFrame widthClassName="h-[min(50svh,400px)] w-auto">
+                <PhoneFrame widthClassName="w-[min(300px,84vw)]">
                   <video
                     ref={setNotifRef}
                     className="h-full w-full object-cover"
@@ -177,9 +183,17 @@ function MobileSequence() {
             </motion.div>
           </div>
 
+          {/* Sortie du flux (le téléphone déborde par le bas). `bottom-0` serait faux : un
+              élément absolu se positionne sur le PADDING box, il tomberait sous la barre CTA —
+              on ancre donc explicitement sur la clearance. */}
           <motion.p
-            className="mt-3 text-[14.5px] font-medium leading-relaxed text-white/70"
-            style={{ opacity: conclusionOpacity, textShadow: TEXT_SHADOW }}
+            className="absolute inset-x-5 z-10 pt-10 text-[14.5px] font-medium leading-relaxed text-white/70"
+            style={{
+              opacity: conclusionOpacity,
+              textShadow: TEXT_SHADOW,
+              bottom: 'calc(var(--cta-clearance) + 8px)',
+              background: 'linear-gradient(180deg,transparent 0%,#060610 42%)',
+            }}
           >
             {CONCLUSION}
           </motion.p>

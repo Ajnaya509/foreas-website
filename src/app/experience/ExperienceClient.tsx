@@ -124,14 +124,6 @@ function DesktopZoneSearch({ geoCity, onSubmit }: { geoCity?: string | null; onS
             {z}
           </button>
         ))}
-        {/* Même intention forte que côté mobile — accent visuel différent des chips zone. */}
-        <button
-          type="button"
-          onClick={() => onSubmit(TRIAL_INTENT_MESSAGE)}
-          className="rounded-full border border-accent-cyan/30 bg-accent-cyan/10 px-3 py-1.5 text-[12.5px] font-semibold text-accent-cyan transition hover:bg-accent-cyan/[0.15] active:scale-[0.97]"
-        >
-          🚀 Essayer gratuitement
-        </button>
       </div>
       <p className="mt-3 text-center text-[12px] font-medium text-white/60">Elle répond tout de suite · gratuit</p>
     </div>
@@ -156,25 +148,28 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   }
 
   /**
-   * Le CTA doit ENGAGER la conversation, pas téléporter en haut de page.
-   * Desktop → ouvre la modale Ajnaya. Mobile → remonte au champ (via Lenis, jamais un hash nu
-   * qui désynchroniserait son scroll interne) et pose le focus dessus.
+   * Le CTA fixe porte l'ESSAI GRATUIT, pas une invitation à discuter.
+   * Répartition des rôles voulue : le téléphone du hero sert à convaincre les sceptiques
+   * (Ajnaya répond sur leur zone) ; le CTA fixe sert ceux qui ont scrollé, sont déjà convaincus,
+   * et veulent démarrer. Deux publics, deux portes — d'où l'absence de bouton d'essai DANS le
+   * téléphone (il y court-circuitait la démonstration au lieu de la laisser opérer).
+   *
+   * Desktop → la modale s'ouvre avec l'intention d'essai comme premier message.
+   * Mobile → remonte au téléphone (via Lenis, jamais un hash nu qui désynchroniserait son scroll)
+   *          puis LivePhone envoie ce même message (CustomEvent `foreas:trial-intent`).
    */
   const handleCtaClick = () => {
-    try { posthog.capture('experience_sticky_cta_clicked', { mode: isMobile ? 'mobile_focus' : 'desktop_modal' }) } catch { /* noop */ }
-    if (!isMobile) { openModal(); return }
+    try { posthog.capture('experience_sticky_cta_clicked', { mode: isMobile ? 'mobile_trial' : 'desktop_trial', intent: 'free_trial' }) } catch { /* noop */ }
+    if (!isMobile) { openModal(TRIAL_INTENT_MESSAGE); return }
     const hero = document.getElementById('hero')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lenis = (window as any).lenis
     if (lenis?.scrollTo) lenis.scrollTo(hero ?? 0, { offset: -12 })
     else hero?.scrollIntoView({ behavior: 'smooth' })
+    // Laisse le scroll arriver avant de lancer la conversation : sinon Ajnaya répond pendant
+    // que la page défile encore et le chauffeur rate le début de sa propre demande.
     window.setTimeout(() => {
-      // Scopé à #hero-mobile (pas #hero) : les deux branches — téléphone mobile et recherche
-      // desktop — sont désormais TOUJOURS dans le DOM (bascule en CSS, plus en ternaire React,
-      // cf. DesktopZoneSearch) ; un sélecteur non scopé attraperait le premier input du document,
-      // potentiellement celui de la branche desktop invisible.
-      const field = document.querySelector<HTMLInputElement>('#hero-mobile input[type="text"], #hero-mobile input:not([type])')
-      field?.focus()
+      window.dispatchEvent(new CustomEvent('foreas:trial-intent'))
     }, 700)
   }
 
@@ -486,10 +481,9 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
               exact du clic : ce que ça coûte, ce que ça exige. Claim vérifiable (ni le champ
               mobile ni la modale desktop ne demandent un compte ou une carte). */}
           <p className="mb-1.5 text-center text-[10.5px] font-medium text-text-tertiary">Gratuit · sans compte · sans carte</p>
-          {/* Le CTA OUVRE la conversation — c'est le seul but de la page. Avant il pointait sur
-              #hero : un saut de hash qui (a) n'engage aucune conversation, (b) désynchronise Lenis
-              (le scroll natif change hors de son contrôle → rebond au coup de molette suivant).
-              Desktop → la modale Ajnaya. Mobile → scroll piloté par Lenis vers le champ + focus. */}
+          {/* Le CTA lance l'ESSAI GRATUIT (cf. handleCtaClick) : c'est la porte de ceux qui ont
+              scrollé et sont déjà convaincus. Le téléphone du hero, lui, garde son rôle de
+              démonstration pour les sceptiques — les deux ne se marchent pas dessus. */}
           {/* Respiration douce sur le bouton lui-même (1.8s, même rythme que le halo derrière —
               les deux pulsent ensemble, pas en compétition). Portée par un wrapper motion.div,
               pas par des props passées à InkGradientButton : le composant gère déjà `transition`
@@ -507,7 +501,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
               onClick={handleCtaClick}
               className="!text-white"
             >
-              Discuter avec Ajnaya
+              Essayer gratuitement
             </InkGradientButton>
           </motion.div>
         </div>

@@ -103,7 +103,13 @@ function FeatureBlockMobile({ feature, index, isLast }: { feature: Feature; inde
       // dernier paragraphe passe dessous) — même variable que les scènes cinéma
       style={isLast ? { paddingBottom: 'calc(var(--cta-clearance) + 16px)' } : undefined}
     >
-      <PhoneFrame widthClassName="h-[min(54svh,430px)] w-auto">
+      {/* Pleine largeur disponible (335px sur un écran de 375). Avant : une contrainte de
+          HAUTEUR (h-[min(54svh,430px)]) qui dérivait une largeur de 205px — or ce bloc est en
+          flux normal, rien ne limitait sa hauteur : la contrainte ne protégeait rien et coûtait
+          40% de largeur. Les écrans sont dessinés à 430px puis mis à l'échelle (FeatureScreens,
+          ResizeObserver) : la largeur EST le facteur de lisibilité — 205px donnait une échelle
+          de 0,45, illisible. */}
+      <PhoneFrame widthClassName="w-full">
         <FeatureScreen kind={feature.illus} />
       </PhoneFrame>
       <p className="mb-2 mt-8 text-center text-[11px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.24em' }}>{feature.eyebrow}</p>

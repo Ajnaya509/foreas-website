@@ -265,6 +265,17 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
     }
   }, [input, messages, exchanges, identityId, sessionId, visitorId])
 
+  // Le CTA fixe « Essayer gratuitement » (bas de page, ExperienceClient) déclenche la même
+  // conversation que si le chauffeur avait tapé son intention lui-même. Passage par CustomEvent
+  // plutôt qu'une prop : le CTA vit à l'autre bout de l'arbre, une prop devrait traverser toute
+  // la page. Envoi UNE seule fois (`exchanges === 0`) — s'il a déjà une conversation en cours,
+  // le CTA le ramène simplement au téléphone sans écraser son échange.
+  useEffect(() => {
+    const onTrialIntent = () => { if (exchanges === 0) handleSend(TRIAL_INTENT_MESSAGE) }
+    window.addEventListener('foreas:trial-intent', onTrialIntent)
+    return () => window.removeEventListener('foreas:trial-intent', onTrialIntent)
+  }, [handleSend, exchanges])
+
   // ─── Bascule WhatsApp — billet réel (identity + contexte), pas un lien générique ────────
   const showWa = exchanges >= 1
   useEffect(() => {
@@ -307,7 +318,11 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
     // ne correspondait à aucun autre téléphone de la page. Largeur compensée pour garder le même
     // budget vertical qu'avant (~461px mobile / ~562px md), pas la même largeur.
     <div className="relative mx-auto">
-      <PhoneFrame widthClassName="w-[228px] md:w-[276px]">
+      {/* 268px max sur mobile : au-delà, les ~84px de hauteur gagnés poussent le champ de saisie
+          — l'unique élément de conversion du hero — sous la ligne de flottaison. Contrairement
+          aux autres mockups, le contenu ici est du vrai DOM (pas une image mise à l'échelle) :
+          la lisibilité se gagne sur la taille du texte, pas sur la largeur du cadre. */}
+      <PhoneFrame widthClassName="w-[268px] md:w-[276px]">
         <div className="flex h-full flex-col px-3 pb-3 pt-9">
           {/* header */}
           <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2.5">
@@ -320,7 +335,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
           </div>
 
           {/* messages */}
-          <div ref={chatRef} role="log" aria-live="polite" className="flex-1 space-y-2 overflow-y-auto py-3 pr-0.5 text-[13px] leading-relaxed">
+          <div ref={chatRef} role="log" aria-live="polite" className="flex-1 space-y-2 overflow-y-auto py-3 pr-0.5 text-[14.5px] leading-relaxed">
             {messages.map((m, i) => (
               <div
                 key={i}
@@ -355,37 +370,19 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
                     {z}
                   </button>
                 ))}
-                {/* Distinct des chips zone (explorer) : intention d'achat déjà exprimée, pas une
-                    zone — accent visuel différent pour ne pas le noyer dans la liste. */}
-                <button
-                  type="button"
-                  onClick={() => handleSend(TRIAL_INTENT_MESSAGE)}
-                  className="rounded-full border border-accent-cyan/30 bg-accent-cyan/10 px-2.5 py-1.5 text-[11.5px] font-semibold text-accent-cyan active:scale-[0.97]"
-                >
-                  🚀 Essayer gratuitement
-                </button>
               </div>
             )}
           </div>
 
-          {/* input — anneau dégradé permanent (@keyframes foreas-border-comet, globals.css), même
-              mécanique que la home (HomeHeroCream.tsx), violet royal→cyan→violet royal. Le fond du
-              form est quasi-opaque (rgba(10,11,20,.94)) — c'est ce qui masque le cône tournant pour
-              ne laisser voir qu'un fin anneau nu (sinon la lumière traverse et fait une tache). */}
+          {/* Champ de saisie — bordure fixe et sobre. L'anneau dégradé animé (foreas-border-comet)
+              qui tournait ici a été retiré : dans un mockup de téléphone déjà petit, ce halo cyan
+              permanent lisait comme un défaut d'affichage, pas comme un détail premium. Il reste
+              en place sur la recherche desktop et la home, où le champ est grand et l'effet a la
+              place de respirer. */}
           <div className="relative">
-            <div className="pointer-events-none absolute -inset-[1.5px] overflow-hidden rounded-2xl" aria-hidden="true">
-              <div
-                className="absolute left-1/2 top-1/2 aspect-square w-[150%]"
-                style={{
-                  background: 'conic-gradient(from 0deg, transparent 0deg 296deg, rgba(140,82,255,0.95) 318deg, rgba(0,212,255,1) 338deg, rgba(140,82,255,0.95) 358deg, transparent 360deg)',
-                  animation: 'foreas-border-comet 3.6s ease-in-out infinite alternate',
-                  willChange: 'transform',
-                }}
-              />
-            </div>
             <form
               onSubmit={(e) => { e.preventDefault(); handleSend() }}
-              className="relative z-10 flex items-center gap-1.5 rounded-2xl border border-white/[0.10] p-1.5"
+              className="relative z-10 flex items-center gap-1.5 rounded-2xl border border-white/[0.12] p-1.5"
               style={{ backgroundColor: 'rgba(10,11,20,.94)' }}
             >
               <input
