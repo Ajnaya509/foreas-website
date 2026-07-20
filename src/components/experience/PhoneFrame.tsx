@@ -31,7 +31,12 @@ export default function PhoneFrame({
   className = '',
 }: PhoneFrameProps) {
   return (
-    <div className={`relative mx-auto aspect-[270/460] ${widthClassName} ${className}`}>
+    // aspect 430/902 : calculé pour que l'ÉCRAN INTERNE (après le padding de 3%) tombe
+    // exactement sur 430×932 — le format iPhone moderne, celui du design « Fiches Store » ET
+    // celui des vidéos réelles (1080×2336 / 1170×2532 = 0.462). L'ancien 270/460 (= 0.587)
+    // était un format de vieil iPhone : les vidéos y étaient rognées sur les côtés et les
+    // écrans du design débordaient en hauteur.
+    <div className={`relative mx-auto aspect-[430/902] ${widthClassName} ${className}`}>
       <div
         className="relative h-full rounded-[9%] bg-black p-[3%]"
         style={{ boxShadow: '0 0 0 1px rgba(255,255,255,.14), 0 24px 60px -20px rgba(0,0,0,.85), 0 0 60px -22px rgba(140,82,255,.4)' }}
