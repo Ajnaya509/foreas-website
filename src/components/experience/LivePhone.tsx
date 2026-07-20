@@ -35,15 +35,28 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { readVisitState, recordSearch } from '@/lib/sarcasticVisits'
 import { useTypewriter } from '@/hooks/useTypewriter'
+import { hasTrackingConsent } from '@/lib/consent'
+import PhoneFrame from './PhoneFrame'
 
 interface Msg { role: 'user' | 'ajnaya'; text: string }
 interface LivePhoneProps { geoCity?: string | null }
 
-const WELCOME = "Salut, moi c'est Ajnaya. Ta zone ce soir — je te dis combien ça paie, en vrai."
+const WELCOME_BASE = "Salut, moi c'est Ajnaya."
+// Fallback SSR (bucket réel appliqué après montage, cf. useEffect ci-dessous — calculer la
+// valeur au rendu serveur ferait diverger HTML serveur/client à chaque frontière d'heure,
+// donc un mismatch d'hydratation aléatoire sur la toute première bulle).
+const WELCOME = `${WELCOME_BASE} Ta zone ce soir — je te dis ce qui s'y passe, en vrai.`
+const WELCOME_MOMENT: Record<string, string> = { matin: 'ce matin', midi: 'ce midi', 'après-midi': 'cet après-midi', soir: 'ce soir', nuit: 'cette nuit' }
 const FLUSH_MS = 40
 
 // Zones réelles (RPC get_zone_stats couvre ~51 zones) — ordre par défaut Paris-centré,
 // reordonné en tête si on détecte la ville du visiteur (voir orderZonesByCity).
+// Message d'intention forte : un chauffeur qui tape sur ce chip n'explore plus, il veut
+// démarrer. Envoyé tel quel à Ajnaya (backend Pieuvre) qui qualifie et close derrière — la
+// même string exacte est utilisée côté mobile (LivePhone) et desktop (DesktopZoneSearch),
+// cf. brief FOREAS-SHARED/briefs/AJNAYA_ACCUEIL_SELON_ENTREE.
+export const TRIAL_INTENT_MESSAGE = 'Je veux essayer gratuitement Foreas Driver'
+
 export const NATIONAL_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu', 'Lille', 'Marseille', 'Toulouse', 'Nantes', 'Strasbourg', 'Bordeaux Saint-Jean']
 const CITY_TO_ZONE: Record<string, string> = {
   paris: 'Aéroport CDG', lyon: 'Lyon Part-Dieu', marseille: 'Marseille', lille: 'Lille',
@@ -105,18 +118,47 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
   const placeholderTexts = useMemo(() => ['Écris ta zone…', ...orderedZones.map((z) => `${z}…`)], [orderedZones])
   const animatedPlaceholder = useTypewriter({ texts: placeholderTexts, typeSpeedMs: 75, pauseMs: 1300, eraseSpeedMs: 32, startDelayMs: 900 })
 
+  // Nouvelle bulle (message user, ou bulle Ajnaya qui vient d'apparaître) → défilement smooth ;
+  // remplissage de la bulle existante par les flushes de streaming → 'auto' (suivi instantané,
+  // sans quoi une animation smooth est relancée toutes les 40ms et saccade la scène).
+  const prevMsgCount = useRef(messages.length)
   useEffect(() => {
-    chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })
+    const el = chatRef.current
+    if (!el) return
+    const grew = messages.length !== prevMsgCount.current
+    prevMsgCount.current = messages.length
+    el.scrollTo({ top: el.scrollHeight, behavior: grew ? 'smooth' : 'auto' })
   }, [messages, typing])
 
   useEffect(() => () => { abortRef.current?.abort() }, []) // anti-fuite : coupe le stream si le composant démonte
 
-  // Fingerprint silencieux (FingerprintJS, même précédent que la home) — reconnaissance
-  // cross-canal via visitor_id, résolu côté backend (resolve_identity), jamais de 2e store d'identité.
+  // Message d'accueil daté au vrai moment Europe/Paris — calculé uniquement après montage
+  // (jamais au rendu serveur : à une frontière de bucket, HTML serveur et client divergeraient
+  // et casseraient l'hydratation de la toute première bulle). Garde sur prev.length === 1 pour
+  // ne jamais écraser un échange déjà commencé si l'effet re-tire.
+  useEffect(() => {
+    const m = WELCOME_MOMENT[buildNowContext().bucket] ?? 'ce soir'
+    setMessages((prev) =>
+      prev.length === 1 && prev[0].role === 'ajnaya'
+        ? [{ role: 'ajnaya', text: `${WELCOME_BASE} Ta zone ${m} — je te dis ce qui s'y passe, en vrai.` }]
+        : prev)
+  }, [])
+
+  // Fingerprint (FingerprintJS, même précédent que la home) — reconnaissance cross-canal via
+  // visitor_id, résolu côté backend (resolve_identity), jamais de 2e store d'identité.
+  // Gaté sur le consentement déjà en place (cookie foreas_consent) : un fingerprint est un
+  // traçage, l'art. 82 exige un consentement PRÉALABLE — pas question de le déclencher au
+  // montage sans lui. Écoute aussi l'événement de consentement pour résoudre dès qu'il arrive,
+  // pas seulement au premier rendu.
   useEffect(() => {
     let cancelled = false
-    getVisitorId().then((r) => { if (!cancelled) setVisitorId(r.visitorId) })
-    return () => { cancelled = true }
+    const tryResolve = () => {
+      if (!hasTrackingConsent()) return
+      getVisitorId().then((r) => { if (!cancelled) setVisitorId(r.visitorId) })
+    }
+    tryResolve()
+    window.addEventListener('foreas_consent_accepted', tryResolve)
+    return () => { cancelled = true; window.removeEventListener('foreas_consent_accepted', tryResolve) }
   }, [])
 
   const handleSend = useCallback(async (overrideText?: string) => {
@@ -260,23 +302,20 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
   const waUrl = waHref || buildWAUrl({ section: 'experience_phone', ref: sessionId })
 
   return (
-    // Vraie proportion iPhone (≈0.465 largeur/hauteur, pas un cadre trapu) — 270×460 mobile,
-    // scale ×1.22 uniforme à md: (330×561) pour garder les proportions, pas un simple étirement.
-    <div className="relative mx-auto w-[270px] md:w-[330px]">
-      <div
-        className="relative rounded-[42px] bg-black p-[8px] md:rounded-[51px] md:p-[10px]"
-        style={{ boxShadow: '0 0 0 1px rgba(255,255,255,.14), 0 24px 60px -20px rgba(0,0,0,.85), 0 0 60px -22px rgba(140,82,255,.4)' }}
-      >
-        {/* île dynamique — détail réaliste */}
-        <div className="pointer-events-none absolute left-1/2 top-[18px] z-20 h-[22px] w-[92px] -translate-x-1/2 rounded-full bg-black md:top-[22px] md:h-[27px] md:w-[112px]" aria-hidden />
-        <div className="flex h-[460px] flex-col rounded-[34px] bg-[#07080F] px-3 pb-3 pt-9 md:h-[561px] md:rounded-[41px]">
+    // Même cadre que les scènes cinéma et les 4 features (PhoneFrame, aspect-[430/902]) — avant
+    // ce composant portait un cadre construit à la main (ratio ≈0.587, format vieil iPhone) qui
+    // ne correspondait à aucun autre téléphone de la page. Largeur compensée pour garder le même
+    // budget vertical qu'avant (~461px mobile / ~562px md), pas la même largeur.
+    <div className="relative mx-auto">
+      <PhoneFrame widthClassName="w-[228px] md:w-[276px]">
+        <div className="flex h-full flex-col px-3 pb-3 pt-9">
           {/* header */}
           <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2.5">
             <span className="h-[26px] w-[26px] flex-none rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan" aria-hidden />
             <b className="text-[13px] text-[#F8FAFC]">Ajnaya</b>
             <span className="flex items-center gap-1 text-[10px] font-medium text-success">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden />
-              en ligne
+              en direct
             </span>
           </div>
 
@@ -316,6 +355,15 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
                     {z}
                   </button>
                 ))}
+                {/* Distinct des chips zone (explorer) : intention d'achat déjà exprimée, pas une
+                    zone — accent visuel différent pour ne pas le noyer dans la liste. */}
+                <button
+                  type="button"
+                  onClick={() => handleSend(TRIAL_INTENT_MESSAGE)}
+                  className="rounded-full border border-accent-cyan/30 bg-accent-cyan/10 px-2.5 py-1.5 text-[11.5px] font-semibold text-accent-cyan active:scale-[0.97]"
+                >
+                  🚀 Essayer gratuitement
+                </button>
               </div>
             )}
           </div>
@@ -345,7 +393,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={exchanges === 0 ? (input ? 'Ta zone…' : animatedPlaceholder) : 'Écris ici…'}
                 aria-label="Écrire à Ajnaya"
-                className="min-w-0 flex-1 bg-transparent px-2 text-[13px] text-[#F8FAFC] placeholder:text-text-tertiary outline-none focus-visible:outline-none"
+                className="min-w-0 flex-1 bg-transparent px-2 text-[13px] text-[#F8FAFC] placeholder:text-text-tertiary outline-none"
               />
               <button
                 type="submit"
@@ -372,9 +420,16 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
               Continuer sur WhatsApp
             </a>
           )}
+          {showWa && (
+            <p className="mt-1.5 text-center text-[10.5px] font-medium text-text-tertiary">
+              Elle reprend là où tu t&apos;es arrêté. Tu écris « stop », elle arrête.
+            </p>
+          )}
         </div>
-      </div>
-      <p className="mt-2.5 text-center text-[10.5px] text-text-tertiary">Réponse en moins d&apos;1 min · gratuit</p>
+      </PhoneFrame>
+      <p className="mt-2.5 text-center text-[10.5px] font-medium text-text-tertiary">
+        Ajnaya répond en direct, gratuitement — sans te demander ton numéro.
+      </p>
     </div>
   )
 }

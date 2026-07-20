@@ -20,9 +20,12 @@ import { useLayoutEffect, useRef, useState } from 'react'
  * La phrase d'Ajnaya en bas de chaque écran n'est pas décorative : elle fait du CTA
  * « Discuter avec Ajnaya » la SUITE d'une conversation déjà commencée, pas un démarrage à froid.
  *
- * Tokens (DESIGN_SYSTEM_MASTER §0, qui prime) : fond app #0B0F1E (Obsidian réel, pas un noir
- * inventé) · verre rgba(17,21,40,.88) · titres Genos · UI/eyebrow Inter · corps #FFFFFF ·
- * #F8FAFC réservé aux display · cyan #5EE7FF · or #E8A23D (hexagones H3).
+ * Tokens : palette du SITE (Dark Sovereign — foreas.xyz, cf. CLAUDE.md), pas celle de l'app
+ * mobile. Les deux palettes existent et NE SONT PAS interchangeables (le master app est pour
+ * l'app ; une page du site doit rester dans la palette du site, sinon deux cyans à 20nm d'écart
+ * cohabitent visiblement sur les mêmes écrans — c'est ce qui s'était glissé ici). Fond #050508 ·
+ * verre rgba(17,21,40,.88) · titres Genos · UI/eyebrow Inter · corps #FFFFFF ·
+ * #F8FAFC réservé aux display · cyan #00D4FF · or #F5C842 (hexagones H3).
  */
 
 export type ScreenKind = 'zone' | 'voice' | 'direct' | 'compta'
@@ -41,11 +44,11 @@ const T = {
 
 const GENOS = "var(--font-genos), 'Genos', sans-serif"
 const INTER = "var(--font-inter), 'Inter', system-ui, sans-serif"
-const OBSIDIAN = '#0B0F1E'
+const OBSIDIAN = '#050508'
 const GLASS = 'rgba(17,21,40,.88)'
 const GLASS_BORDER = '1px solid rgba(255,255,255,.08)'
-const CYAN = '#5EE7FF'
-const GOLD = '#E8A23D'
+const CYAN = '#00D4FF'
+const GOLD = '#F5C842'
 
 function Screen({ children }: { children: React.ReactNode }) {
   return (
@@ -159,9 +162,12 @@ function ZoneScreen() {
       <StreetGrid />
       {/* hexagones H3 : la signature « zone » de la marque */}
       <svg viewBox={`0 0 ${SCREEN_W} ${SCREEN_H}`} style={{ position: 'absolute', inset: 0, width: SCREEN_W, height: SCREEN_H }}>
-        <polygon points="215,300 271,332 271,396 215,428 159,396 159,332" fill="rgba(196,141,44,.42)" stroke={GOLD} strokeWidth="2.4" />
-        <polygon points="103,364 159,396 159,460 103,492 47,460 47,396" fill="rgba(196,141,44,.20)" stroke="rgba(232,162,61,.65)" strokeWidth="1.8" />
-        <polygon points="327,364 383,396 383,460 327,492 271,460 271,396" fill="rgba(196,141,44,.14)" stroke="rgba(232,162,61,.5)" strokeWidth="1.6" />
+        {/* fills en rgb(245,200,66) = GOLD — opacités resserrées d'un cran par rapport à l'ancien
+            or (#E8A23D) : #F5C842 est plus clair et plus saturé, sans ce réglage les hexagones
+            volaient la hiérarchie à la preuve géante ("15 min", seule héroïne de l'écran). */}
+        <polygon points="215,300 271,332 271,396 215,428 159,396 159,332" fill="rgba(245,200,66,.34)" stroke={GOLD} strokeWidth="2.4" />
+        <polygon points="103,364 159,396 159,460 103,492 47,460 47,396" fill="rgba(245,200,66,.16)" stroke="rgba(245,200,66,.55)" strokeWidth="1.8" />
+        <polygon points="327,364 383,396 383,460 327,492 271,460 271,396" fill="rgba(245,200,66,.11)" stroke="rgba(245,200,66,.42)" strokeWidth="1.6" />
       </svg>
       <Head eyebrow="OÙ ÇA PAIE" title="Arrive avant la demande." />
       {/* LA preuve, en géant : le créneau. Lisible même réduit. */}

@@ -103,7 +103,7 @@ function FeatureBlockMobile({ feature, index, isLast }: { feature: Feature; inde
       // dernier paragraphe passe dessous) — même variable que les scènes cinéma
       style={isLast ? { paddingBottom: 'calc(var(--cta-clearance) + 16px)' } : undefined}
     >
-      <PhoneFrame widthClassName="h-[min(46svh,380px)] w-auto">
+      <PhoneFrame widthClassName="h-[min(54svh,430px)] w-auto">
         <FeatureScreen kind={feature.illus} />
       </PhoneFrame>
       <p className="mb-2 mt-8 text-center text-[11px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.24em' }}>{feature.eyebrow}</p>
@@ -141,7 +141,7 @@ export default function StickyFeatures({ isMobile }: { isMobile: boolean }) {
       {/* colonne droite : le téléphone COLLÉ, dont l'écran change de feature */}
       <div className="sticky top-0 z-30 flex h-dvh items-center justify-center" style={{ perspective: 1200, paddingBottom: 'var(--cta-clearance)' }}>
         <motion.div style={{ rotateY, rotateX, transformStyle: 'preserve-3d', willChange: 'transform' }}>
-          <PhoneFrame widthClassName="h-[min(64vh,560px)] w-auto">
+          <PhoneFrame widthClassName="h-[min(68vh,600px)] w-auto">
             {FEATURES.map((f, i) => (
               <div
                 key={i}

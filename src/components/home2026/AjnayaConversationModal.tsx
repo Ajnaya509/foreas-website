@@ -878,7 +878,7 @@ export default function AjnayaConversationModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 24 }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="pointer-events-auto w-full sm:w-auto sm:max-w-lg sm:mx-4 max-h-[92vh] sm:max-h-[82vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden"
+              className="pointer-events-auto w-full sm:w-auto sm:max-w-xl sm:mx-4 max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden"
               style={{
                 backgroundColor: '#ffffff',
                 boxShadow:

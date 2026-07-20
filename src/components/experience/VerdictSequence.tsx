@@ -66,20 +66,23 @@ function Beat({
 }) {
   const opacity = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [0, 1, 1, 0])
   const y = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [26, 0, 0, -28])
+  // Emoji calé sur le MÊME progress que le reste du carton (réversible au scroll arrière comme
+  // tout le reste de la scène) — avant, un whileInView à sens unique le figeait après sa 1ère
+  // apparition, en décalage avec un carton qui, lui, réapparaît si on remonte. Léger décalage
+  // après beat.in : l'emoji ponctue le texte, il n'arrive pas en même temps que lui.
+  const emojiRotate = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [-8, 0])
+  const emojiScale = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [0.8, 1])
+  const emojiOpacity = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [0, 1])
   return (
     <motion.div className="absolute inset-x-0" style={{ opacity, y }}>
       <h2 className={`font-sans font-extrabold leading-[1.0] text-[#F8FAFC] ${sizeClass}`} style={{ letterSpacing: '-.02em', textShadow: TEXT_SHADOW }}>
         <span className="block">{beat.lead}</span>
         <span className="block text-accent-cyan">
           {beat.punch}{' '}
-          {/* une seule animation d'entrée, puis statique (§8.6 : rien ne boucle sans raison) */}
           <motion.span
             className="inline-block align-baseline text-[0.72em]"
             aria-hidden="true"
-            initial={{ rotate: -8, scale: 0.8, opacity: 0 }}
-            whileInView={{ rotate: 0, scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            style={{ rotate: emojiRotate, scale: emojiScale, opacity: emojiOpacity }}
           >
             {beat.emoji}
           </motion.span>
@@ -152,9 +155,13 @@ function MobileVerdict() {
     try { posthog.capture('experience_sound_unlocked', { scene: 'verdict' }) } catch { /* noop */ }
   }, [refuseRef])
 
+  // h-[400svh] sur la section (piste de scroll figée — la progression scrubée ne doit jamais
+  // sauter), h-[100dvh] sur l'enfant collant (pas svh) : svh = hauteur PETITE du viewport, celle
+  // mesurée barre d'URL Safari déployée. Une fois la barre rétractée au scroll, un enfant en svh
+  // laisse une bande noire en bas ; dvh suit la hauteur réellement visible.
   return (
     <section ref={sectionRef} className="relative h-[400svh]">
-      <div ref={seenRef} className="sticky top-0 z-30 h-[100svh] overflow-clip bg-foreas-obsidian">
+      <div ref={seenRef} className="sticky top-0 z-30 h-[100dvh] overflow-clip bg-foreas-obsidian">
         {/* le film — piloté par le doigt */}
         <motion.video
           ref={setHesitationRef}
@@ -199,7 +206,8 @@ function MobileVerdict() {
                 className="w-full rounded-2xl border border-white/[0.10] shadow-2xl"
                 src={`${V}/coach-refuse.play.mp4`}
                 poster={`${V}/coach-refuse.poster.jpg`}
-                muted playsInline preload="none" disableRemotePlayback aria-hidden="true"
+                muted playsInline preload="none" disableRemotePlayback
+                role="img" aria-label="Notification FOREAS : course pas rentable, refusée"
               />
             </motion.div>
 
@@ -208,13 +216,14 @@ function MobileVerdict() {
               className="absolute inset-x-0 bottom-0 flex justify-center"
               style={{ x: accepteX, opacity: accepteOpacity }}
             >
-              <PhoneFrame widthClassName="h-[min(40svh,300px)] w-auto">
+              <PhoneFrame widthClassName="h-[min(50svh,400px)] w-auto">
                 <video
                   ref={setAccepteRef}
                   className="h-full w-full object-cover"
                   src={`${V}/coach-accepte.play.mp4`}
                   poster={`${V}/coach-accepte.poster.jpg`}
-                  muted playsInline preload="none" disableRemotePlayback aria-hidden="true"
+                  muted playsInline preload="none" disableRemotePlayback
+                  role="img" aria-label="Notification FOREAS : course rentable à 13,90 €, acceptée"
                 />
               </PhoneFrame>
             </motion.div>
@@ -318,7 +327,8 @@ function DesktopVerdict() {
             className="w-full rounded-2xl border border-white/[0.10] shadow-2xl"
             src={`${V}/coach-refuse.play.mp4`}
             poster={`${V}/coach-refuse.poster.jpg`}
-            muted playsInline preload="none" disableRemotePlayback aria-hidden="true"
+            muted playsInline preload="none" disableRemotePlayback
+            role="img" aria-label="Notification FOREAS : course pas rentable, refusée"
           />
         </motion.div>
 
@@ -327,13 +337,14 @@ function DesktopVerdict() {
           className="absolute inset-y-0 right-[6%] z-30 flex items-center"
           style={{ x: accepteX, opacity: accepteOpacity }}
         >
-          <PhoneFrame widthClassName="h-[min(62vh,520px)] w-auto">
+          <PhoneFrame widthClassName="h-[min(66vh,560px)] w-auto">
             <video
               ref={setAccepteRef}
               className="h-full w-full object-cover"
               src={`${V}/coach-accepte.play.mp4`}
               poster={`${V}/coach-accepte.poster.jpg`}
-              muted playsInline preload="none" disableRemotePlayback aria-hidden="true"
+              muted playsInline preload="none" disableRemotePlayback
+              role="img" aria-label="Notification FOREAS : course rentable à 13,90 €, acceptée"
             />
           </PhoneFrame>
         </motion.div>
@@ -362,7 +373,7 @@ function StaticVerdict() {
             <img src={`${V}/coach-refuse.poster.jpg`} alt="Notification FOREAS : course pas rentable, refusée" className="w-full max-w-[340px] rounded-2xl border border-white/[0.10]" />
           )}
           {i === 2 && (
-            <PhoneFrame widthClassName="w-[230px]">
+            <PhoneFrame widthClassName="w-[260px]">
               <img src={`${V}/coach-accepte.poster.jpg`} alt="Notification FOREAS : course rentable à 13,90 €, acceptée" className="h-full w-full object-cover" />
             </PhoneFrame>
           )}
@@ -376,13 +387,39 @@ function StaticVerdict() {
   )
 }
 
+/* ─── Repli avant montage — réserve la hauteur pour Lenis, mais reste du contenu réel : un
+   div aria-hidden vide y était avant, servi pendant toute la fenêtre d'hydratation, jamais
+   visible aux lecteurs d'écran ni aux moteurs qui n'exécutent pas le JS. ─── */
+function VerdictPlaceholder() {
+  return (
+    <div className="relative min-h-[400svh] bg-foreas-obsidian">
+      <div className="sticky top-0 flex h-[100dvh] flex-col justify-center overflow-clip px-5" style={{ paddingBottom: 'calc(var(--cta-clearance) + 8px)' }}>
+        <img
+          src={`${V}/hesitation.poster.jpg`}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
+          style={{ filter: VINTAGE }}
+        />
+        <div className="relative z-10">
+          <p className="t-eyebrow mb-4 font-sans text-accent-cyan">Verdict instant</p>
+          <h2 className="font-sans text-[clamp(28px,7.6vw,38px)] font-extrabold leading-[1.0] text-[#F8FAFC]" style={{ letterSpacing: '-.02em', textShadow: TEXT_SHADOW }}>
+            <span className="block">{T.beats[0].lead}</span>
+            <span className="block text-accent-cyan">{T.beats[0].punch} <span aria-hidden="true">{T.beats[0].emoji}</span></span>
+          </h2>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function VerdictSequence({ isMobile }: { isMobile: boolean }) {
   const reduced = useReducedMotion()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   // Le placeholder réserve la VRAIE hauteur (400svh) dès le serveur : sinon la page grandit
   // ×4 à l'hydratation et Lenis recalcule sa limite (saut de scroll au rechargement).
-  if (!mounted) return <div className="min-h-[400svh] bg-foreas-obsidian" aria-hidden />
+  if (!mounted) return <VerdictPlaceholder />
   if (reduced) return <StaticVerdict />
   return isMobile ? <MobileVerdict /> : <DesktopVerdict />
 }

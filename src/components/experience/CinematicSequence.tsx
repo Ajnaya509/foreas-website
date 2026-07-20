@@ -49,6 +49,11 @@ function Beat({
 }) {
   const opacity = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [0, 1, 1, 0])
   const y = useTransform(progress, [beat.in - 0.04, beat.in + 0.02, beat.out - 0.03, beat.out + 0.03], [26, 0, 0, -28])
+  // Emoji calé sur le MÊME progress que le carton (réversible au scroll arrière, comme le reste
+  // de la scène) — un whileInView à sens unique le figeait après sa 1ère apparition.
+  const emojiRotate = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [-8, 0])
+  const emojiScale = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [0.8, 1])
+  const emojiOpacity = useTransform(progress, [beat.in - 0.01, beat.in + 0.05], [0, 1])
   return (
     <motion.div className="absolute inset-x-0" style={{ opacity, y }}>
       <h2 className={`font-sans font-extrabold leading-[1.0] text-[#F8FAFC] ${sizeClass}`} style={{ letterSpacing: '-.02em', textShadow: TEXT_SHADOW }}>
@@ -58,10 +63,7 @@ function Beat({
           <motion.span
             className="inline-block align-baseline text-[0.72em]"
             aria-hidden="true"
-            initial={{ rotate: -8, scale: 0.8, opacity: 0 }}
-            whileInView={{ rotate: 0, scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            style={{ rotate: emojiRotate, scale: emojiScale, opacity: emojiOpacity }}
           >
             {beat.emoji}
           </motion.span>
@@ -94,6 +96,7 @@ function MobileSequence() {
   const [filmRef, setFilmRef] = useMutedVideoRef()
   const [notifRef, setNotifRef] = useMutedVideoRef()
   const [mockupOn, setMockupOn] = useState(false)
+  const payoffFiredRef = useRef(false) // 1 seul événement par visite, pas 1 par frame de scroll
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
   const activeRef = useSectionActive(sectionRef)
@@ -110,14 +113,18 @@ function MobileSequence() {
   useMotionValueEvent(scrollYProgress, 'change', (p) => {
     const on = p >= T.mockupAt
     setMockupOn((prev) => (prev === on ? prev : on))
-    if (on) {
+    // posthog.capture vivait ICI sans garde : à chaque frame de scroll tant que p >= mockupAt,
+    // donc des dizaines à des centaines d'événements pour un seul geste — en plein pendant la
+    // scène la plus lourde (vidéo scrub + clip + grain), jank injecté au moment du payoff.
+    if (on && !payoffFiredRef.current) {
+      payoffFiredRef.current = true
       try { posthog.capture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle', variant: 'mobile' }) } catch { /* noop */ }
     }
   })
 
   return (
     <section ref={sectionRef} className="relative h-[400svh]">
-      <div ref={seenRef} className="sticky top-0 z-30 h-[100svh] overflow-clip bg-foreas-obsidian">
+      <div ref={seenRef} className="sticky top-0 z-30 h-[100dvh] overflow-clip bg-foreas-obsidian">
         <motion.video
           ref={setFilmRef}
           className="absolute inset-0 z-0 h-full w-full object-cover"
@@ -156,13 +163,14 @@ function MobileSequence() {
                 animate={mockupOn ? { rotate: [0, -1.2, 1.6, -1, 0.6, 0], x: [0, -2, 3, -2, 1, 0] } : { rotate: 0, x: 0 }}
                 transition={{ duration: 0.55, delay: 0.3 }}
               >
-                <PhoneFrame widthClassName="h-[min(40svh,300px)] w-auto">
+                <PhoneFrame widthClassName="h-[min(50svh,400px)] w-auto">
                   <video
                     ref={setNotifRef}
                     className="h-full w-full object-cover"
                     src={`${V}/boers-cdg.play.mp4`}
                     poster={`${V}/boers-cdg.poster.jpg`}
-                    muted playsInline preload="none" disableRemotePlayback aria-hidden="true"
+                    muted playsInline preload="none" disableRemotePlayback
+                    role="img" aria-label="Notification FOREAS : contrôle signalé au Terminal 2D"
                   />
                 </PhoneFrame>
               </motion.div>
@@ -188,6 +196,7 @@ function DesktopSequence() {
   const [filmRef, setFilmRef] = useMutedVideoRef()
   const [notifRef, setNotifRef] = useMutedVideoRef()
   const [mockupOn, setMockupOn] = useState(false)
+  const payoffFiredRef = useRef(false)
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
   const activeRef = useSectionActive(sectionRef)
@@ -204,7 +213,8 @@ function DesktopSequence() {
   useMotionValueEvent(scrollYProgress, 'change', (p) => {
     const on = p >= T.mockupAt
     setMockupOn((prev) => (prev === on ? prev : on))
-    if (on) {
+    if (on && !payoffFiredRef.current) {
+      payoffFiredRef.current = true
       try { posthog.capture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle' }) } catch { /* noop */ }
     }
   })
@@ -256,13 +266,14 @@ function DesktopSequence() {
             animate={mockupOn ? { rotate: [0, -1.2, 1.6, -1, 0.6, 0], x: [0, -2, 3, -2, 1, 0] } : { rotate: 0, x: 0 }}
             transition={{ duration: 0.55, delay: 0.3 }}
           >
-            <PhoneFrame widthClassName="h-[min(62vh,520px)] w-auto">
+            <PhoneFrame widthClassName="h-[min(66vh,560px)] w-auto">
               <video
                 ref={setNotifRef}
                 className="h-full w-full object-cover"
                 src={`${V}/boers-cdg.play.mp4`}
                 poster={`${V}/boers-cdg.poster.jpg`}
-                muted playsInline preload="none" disableRemotePlayback aria-hidden="true"
+                muted playsInline preload="none" disableRemotePlayback
+                role="img" aria-label="Notification FOREAS : contrôle signalé au Terminal 2D"
               />
             </PhoneFrame>
           </motion.div>
@@ -289,7 +300,7 @@ function StaticSequence() {
         </h2>
       ))}
       <div className="my-8">
-        <PhoneFrame widthClassName="w-[230px]">
+        <PhoneFrame widthClassName="w-[260px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${V}/boers-cdg.poster.jpg`} alt="Notification FOREAS : contrôle signalé au Terminal 2D" className="h-full w-full object-cover" />
         </PhoneFrame>
@@ -299,11 +310,36 @@ function StaticSequence() {
   )
 }
 
+/* ─── Repli avant montage — réserve la hauteur pour Lenis avec du contenu réel (pas un div
+   aria-hidden vide, servi pendant toute la fenêtre d'hydratation). ─── */
+function SequencePlaceholder() {
+  return (
+    <div className="relative min-h-[400svh] bg-foreas-obsidian">
+      <div className="sticky top-0 flex h-[100dvh] flex-col justify-center overflow-clip px-5" style={{ paddingBottom: 'calc(var(--cta-clearance) + 8px)' }}>
+        <img
+          src={`${V}/alerte-mobile.poster.jpg`}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
+          style={{ filter: VINTAGE }}
+        />
+        <div className="relative z-10">
+          <p className="t-eyebrow mb-4 font-sans text-accent-cyan">Entre chauffeurs</p>
+          <h2 className="font-sans text-[clamp(28px,7.6vw,38px)] font-extrabold leading-[1.0] text-[#F8FAFC]" style={{ letterSpacing: '-.02em', textShadow: TEXT_SHADOW }}>
+            <span className="block">{T.beats[0].lead}</span>
+            <span className="block text-accent-cyan">{T.beats[0].punch} <span aria-hidden="true">{T.beats[0].emoji}</span></span>
+          </h2>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CinematicSequence({ isMobile }: { isMobile: boolean }) {
   const reduced = useReducedMotion()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
-  if (!mounted) return <div className="min-h-[400svh] bg-foreas-obsidian" aria-hidden />
+  if (!mounted) return <SequencePlaceholder />
   if (reduced) return <StaticSequence />
   return isMobile ? <MobileSequence /> : <DesktopSequence />
 }

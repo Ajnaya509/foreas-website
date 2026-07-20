@@ -3,10 +3,22 @@
 /**
  * ExperiencePhoneToasts — bulles "vient de parler à Ajnaya sur WhatsApp" en bas-gauche.
  * Même mécanique que CheckoutProofToasts (Provely-style, preuve sociale Cialdini), thème
- * réorienté vers WhatsApp puisque /experience pousse à continuer là-bas (capture du numéro).
+ * réorienté vers WhatsApp puisque /experience pousse à continuer là-bas.
  *
- * Honnêteté (même règle que CheckoutProofToasts) : action plausible, NON chiffrée, noms/villes
- * déjà publics ailleurs sur le site (témoignages) — pas de claim inventé ex-nihilo.
+ * Deux corrections par rapport à la version précédente (supprimée un temps, restaurée sur
+ * demande — les bulles sont un vrai levier de conversion, seule leur exécution posait
+ * problème) :
+ *  1. PLUS de compteur "il y a X min" tiré au hasard (Math.random) : un visiteur qui reste
+ *     quelques minutes voyait le même nom repasser avec un délai différent — le mensonge se
+ *     démasquait tout seul, et un chauffeur méfiant qui l'attrape en flagrant délit ne clique
+ *     plus jamais. Aucune revendication de fraîcheur maintenant : nom + zone + action, rien
+ *     de vérifiable-donc-falsifiable.
+ *  2. Position ancrée sur --cta-clearance (la réserve réelle de la barre CTA), pas un
+ *     bottom-24 deviné en dur — reste juste au-dessus du bouton quel que soit son budget réel,
+ *     plus bas/plus proche du bord qu'avant (retour Chandler : "un peu haute").
+ *
+ * Thème verre sombre (pas la carte blanche Apple-light d'origine) : cohérent avec Dark
+ * Sovereign, et une tache blanche sur fond noir absolu volait l'attention au CTA.
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -42,15 +54,10 @@ function pickNext(prev: number | null, len: number): number {
   if (n >= prev) n += 1
   return n
 }
-function agoLabel(): string {
-  const m = 1 + Math.floor(Math.random() * 14)
-  return m === 1 ? 'il y a 1 min' : `il y a ${m} min`
-}
 
 export default function ExperiencePhoneToasts() {
   const reduced = useReducedMotion()
   const [idx, setIdx] = useState<number | null>(null)
-  const [ago, setAgo] = useState('il y a 3 min')
   const [dismissed, setDismissed] = useState(false)
   const idxRef = useRef<number | null>(null)
   const timers = useRef<{ show?: ReturnType<typeof setTimeout>; hide?: ReturnType<typeof setTimeout> }>({})
@@ -66,7 +73,6 @@ export default function ExperiencePhoneToasts() {
     const show = () => {
       const n = pickNext(idxRef.current, ENTRIES.length)
       idxRef.current = n
-      setAgo(agoLabel())
       setIdx(n)
       timers.current.hide = setTimeout(() => { setIdx(null); timers.current.show = setTimeout(show, next()) }, DWELL)
     }
@@ -84,11 +90,13 @@ export default function ExperiencePhoneToasts() {
   if (dismissed) return null
   const e = idx !== null ? ENTRIES[idx] : null
 
-  // bottom-24 (pas bottom-5) : la page /experience a son propre CTA sticky bottom-4 sur toute la
-  // largeur — on reste au-dessus pour ne jamais le chevaucher (même principe que hasStickyBelow
-  // du widget flottant).
   return (
-    <div className="fixed bottom-24 left-5 z-[60] pointer-events-none" aria-live="polite" role="status">
+    <div
+      className="fixed left-5 z-[60] pointer-events-none"
+      style={{ bottom: 'calc(var(--cta-clearance, 100px) + 8px)' }}
+      aria-live="polite"
+      role="status"
+    >
       <AnimatePresence>
         {e && (
           <motion.div
@@ -100,27 +108,30 @@ export default function ExperiencePhoneToasts() {
             className="pointer-events-auto"
           >
             <div
-              className="flex items-center gap-3 pl-2.5 pr-3 py-2.5 rounded-2xl border bg-white shadow-xl max-w-[330px]"
-              style={{ borderColor: 'rgba(0,0,0,0.06)', boxShadow: `0 18px 40px -18px ${ACCENT[e.accent].ring}, 0 4px 14px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)` }}
+              className="flex items-center gap-3 pl-2.5 pr-3 py-2.5 rounded-2xl border max-w-[300px]"
+              style={{
+                backgroundColor: 'rgba(10,12,20,.92)',
+                borderColor: 'rgba(255,255,255,.14)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: `0 0 40px -18px ${ACCENT[e.accent].ring}, 0 18px 40px -18px rgba(0,0,0,.6)`,
+              }}
             >
-              <motion.div
+              <div
                 className="relative w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[13px]"
                 style={{ background: ACCENT[e.accent].bg }}
-                animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
               >
                 {e.initial}
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#10B981', border: '1px solid #fff' }} aria-hidden>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#10B981', border: '1px solid rgba(10,12,20,.92)' }} aria-hidden>
                   <MessageCircle className="w-2 h-2 text-white" strokeWidth={3} />
                 </span>
-              </motion.div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] leading-tight text-[#1d1d1f] font-medium">
-                  <span className="font-bold">{e.driver}</span><span className="text-[#6e6e73]"> à {e.city}</span>
-                </p>
-                <p className="text-[12px] leading-tight text-[#6e6e73] mt-0.5">vient de parler à Ajnaya sur WhatsApp</p>
-                <p className="text-[10px] leading-tight text-[#a1a1a6] mt-0.5 tabular-nums">{ago}</p>
               </div>
-              <button type="button" onClick={dismiss} aria-label="Fermer" className="self-start -mr-1 -mt-1 w-6 h-6 rounded-full flex items-center justify-center text-[#a1a1a6] hover:text-[#1d1d1f] hover:bg-black/[0.04] transition-colors">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] leading-tight text-[#F8FAFC] font-medium">
+                  <span className="font-bold">{e.driver}</span><span className="text-white/55"> à {e.city}</span>
+                </p>
+                <p className="text-[12px] leading-tight text-white/55 mt-0.5">vient de parler à Ajnaya sur WhatsApp</p>
+              </div>
+              <button type="button" onClick={dismiss} aria-label="Fermer" className="self-start -mr-1 -mt-1 w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
