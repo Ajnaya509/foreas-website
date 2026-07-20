@@ -173,7 +173,7 @@ function MobileVerdict() {
   // mesurée barre d'URL Safari déployée. Une fois la barre rétractée au scroll, un enfant en svh
   // laisse une bande noire en bas ; dvh suit la hauteur réellement visible.
   return (
-    <section ref={sectionRef} className="relative h-[400svh]">
+    <section ref={sectionRef} data-cinema-scene className="relative h-[400svh]">
       <div ref={seenRef} className="sticky top-0 z-30 h-[100dvh] overflow-clip bg-foreas-obsidian">
         {/* le film — piloté par le doigt */}
         <motion.video

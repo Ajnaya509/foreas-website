@@ -70,7 +70,17 @@ export default function ExperiencePhoneToasts() {
     if (reduced || dismissed || typeof window === 'undefined' || window.innerWidth < 380) return
     const DWELL = 5500
     const next = () => 16000 + Math.random() * 12000
+    // Silence pendant les scènes cinéma. Vu dans le simulateur iOS : la bulle surgissait
+    // par-dessus le film du contrôle de police — une pastille promo qui casse le moment
+    // narratif le plus fort de la page, juste avant le paiement émotionnel. La preuve sociale
+    // sert les moments de LECTURE, pas les moments de TENSION : on reporte simplement.
+    const cinemaOnScreen = () =>
+      Array.from(document.querySelectorAll('[data-cinema-scene]')).some((el) => {
+        const r = el.getBoundingClientRect()
+        return r.top < window.innerHeight && r.bottom > 0
+      })
     const show = () => {
+      if (cinemaOnScreen()) { timers.current.show = setTimeout(show, 3500); return }
       const n = pickNext(idxRef.current, ENTRIES.length)
       idxRef.current = n
       setIdx(n)
@@ -111,7 +121,7 @@ export default function ExperiencePhoneToasts() {
               // Compacte (256px, pas 300) : en mobile elle flotte au-dessus du contenu qui
               // défile — vu dans le simulateur iOS, la version large couvrait les titres de
               // section. hyphens none : Safari coupait « What-sApp » en fin de ligne.
-              className="flex items-center gap-2.5 pl-2.5 pr-3 py-2 rounded-2xl border max-w-[256px]"
+              className="flex items-center gap-2.5 pl-2 pr-2.5 py-1.5 rounded-full border max-w-[240px]"
               style={{
                 backgroundColor: 'rgba(10,12,20,.92)',
                 borderColor: 'rgba(255,255,255,.14)',
@@ -129,12 +139,14 @@ export default function ExperiencePhoneToasts() {
                   <MessageCircle className="w-2 h-2 text-white" strokeWidth={3} />
                 </span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[12.5px] leading-tight text-[#F8FAFC] font-medium">
-                  <span className="font-bold">{e.driver}</span><span className="text-white/55"> à {e.city}</span>
-                </p>
-                <p className="text-[11.5px] leading-tight text-white/55 mt-0.5">vient de parler à Ajnaya sur <span className="whitespace-nowrap">WhatsApp</span></p>
-              </div>
+              {/* UNE seule ligne. En deux lignes (nom, puis action) la bulle montait au-dessus
+                  de la zone assombrie et recouvrait les titres de section — « La zone s'allume… »,
+                  « Ce client est à… » coupés en plein milieu (vu dans le simulateur iOS). Une
+                  ligne la maintient dans le dégradé d'ancrage du CTA, où le contenu qui défile
+                  est déjà atténué : elle ne cache plus rien de lisible. */}
+              <p className="min-w-0 flex-1 text-[12.5px] leading-tight text-white/60">
+                <span className="font-bold text-[#F8FAFC]">{e.driver}</span> parle à Ajnaya
+              </p>
               <button type="button" onClick={dismiss} aria-label="Fermer" className="self-start -mr-1 -mt-1 w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>

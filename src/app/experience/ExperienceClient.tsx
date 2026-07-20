@@ -263,7 +263,14 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         passer dessous, jamais le contenu. */}
     <main
       className="relative min-h-screen overflow-x-clip bg-foreas-obsidian text-[#F8FAFC]"
-      style={{ ['--cta-clearance' as string]: 'calc(100px + env(safe-area-inset-bottom, 0px))' }}
+      // hyphens none : Safari iOS coupait les mots en fin de ligne — « ton numé-ro »,
+      // « What-sApp » (vus dans le simulateur). Sur des textes courts et centrés la césure
+      // n'apporte rien et abîme les mots de marque. Préfixe -webkit- requis sur Safari.
+      style={{
+        ['--cta-clearance' as string]: 'calc(100px + env(safe-area-inset-bottom, 0px))',
+        ['WebkitHyphens' as string]: 'none',
+        hyphens: 'none',
+      }}
     >
       {/* halo + micro-grain — mêmes tokens que checkout/tarifs2 */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -490,7 +497,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           obsidian assied la barre et garantit la lisibilité quel que soit ce qui défile derrière. */}
       <div
         aria-hidden
-        className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 h-36 transition-opacity duration-300 md:hidden ${ctaVisible ? 'opacity-100' : 'opacity-0'}`}
+        className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 h-48 transition-opacity duration-300 md:hidden ${ctaVisible ? 'opacity-100' : 'opacity-0'}`}
         style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(5,5,8,.88) 62%)' }}
       />
       <div

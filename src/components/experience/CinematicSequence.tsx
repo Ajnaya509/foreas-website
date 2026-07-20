@@ -133,7 +133,7 @@ function MobileSequence() {
   })
 
   return (
-    <section ref={sectionRef} className="relative h-[400svh]">
+    <section ref={sectionRef} data-cinema-scene className="relative h-[400svh]">
       <div ref={seenRef} className="sticky top-0 z-30 h-[100dvh] overflow-clip bg-foreas-obsidian">
         <motion.video
           ref={setFilmRef}
