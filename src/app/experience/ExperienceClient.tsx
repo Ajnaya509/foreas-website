@@ -428,8 +428,12 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-accent-cyan/25 bg-accent-cyan/10 px-3 py-1.5 text-[12.5px] tabular-nums text-accent-cyan">
               ≈ 1&nbsp;€ par jour · moins qu&apos;un café
             </div>
+            {/* 249,99€/an (abonnement unique, décision Chandler 22/07) : "2 mois offerts" était
+                juste à 299,90€ (10 mois payés sur 12, ×29,99) mais devient FAUX à 249,99€ —
+                l'écart réel est ≈3,7 mois, pas 2. Reformulé en pourcentage exact et défendable :
+                109,89€ économisés / 359,88€ = 30,5%, arrondi à -30% (jamais au-dessus du réel). */}
             <p className="mt-3.5 text-[12px] text-white/50">
-              En annuel&nbsp;: <b className="text-[#F5C842] tabular-nums">2 mois offerts</b> — 299,90&nbsp;€/an au lieu de 359,88&nbsp;€
+              En annuel&nbsp;: <b className="text-[#F5C842] tabular-nums">-30&nbsp;%</b> — 249,99&nbsp;€/an au lieu de 359,88&nbsp;€
             </p>
             <div className="mt-3 inline-flex rounded-full border border-success/40 bg-success/10 px-3 py-1.5 text-[11.5px] font-semibold text-[#34D399]">
               ✓ Garanti 30 jours — remboursé sans discuter
@@ -438,7 +442,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             <div className="mt-5 flex items-start gap-3 border-t border-dashed border-white/[0.12] pt-5 text-left">
               <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.05] text-[19px]">📱</span>
               <p className="text-[12.5px] leading-relaxed text-white/70">
-                <b className="text-[#F8FAFC]">Un an de FOREAS (299,90&nbsp;€)</b> coûte moins qu&apos;un téléphone reconditionné à 500-600&nbsp;€. Lui, il ne te dit rien. FOREAS te dit où aller, quand, et ce que ça vaut.
+                <b className="text-[#F8FAFC]">Un an de FOREAS (249,99&nbsp;€)</b> coûte moins qu&apos;un téléphone reconditionné à 500-600&nbsp;€. Lui, il ne te dit rien. FOREAS te dit où aller, quand, et ce que ça vaut.
               </p>
             </div>
           </div>

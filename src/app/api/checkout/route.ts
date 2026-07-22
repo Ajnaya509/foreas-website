@@ -120,9 +120,14 @@ export async function POST(request: NextRequest) {
     // Reactivation / tarifs2 (paiement immédiat) : prix canonique 29,99€/mois,
     // construit dynamiquement — ne dépend PAS d'un Price ID Stripe pré-créé sur Vercel,
     // pour ne jamais désynchroniser affichage vs montant réellement prélevé.
-    // Annuel = même règle que /pay/[id] (×10 = 2 mois offerts, recurring interval year) —
-    // sans ce cas, un plan `*_annual` était silencieusement facturé au mois (bug corrigé 13/07).
+    // Annuel = même règle que /pay/[id] (recurring interval year) — sans ce cas, un plan
+    // `*_annual` était silencieusement facturé au mois (bug corrigé 13/07). 249,99€ fixe
+    // (pas ×10) depuis le passage à l'abonnement unique (décision Chandler, brief
+    // BRIEF_PALIERS_ABONNEMENT_2026-07-22) — même constante en miroir dans
+    // src/app/pay/[id]/route.ts, à garder synchro : deux points d'entrée (site direct et
+    // lien WhatsApp) doivent facturer exactement le même montant annuel.
     const REACTIVATION_PRICE_CENTS = 2999
+    const REACTIVATION_ANNUAL_PRICE_CENTS = 24999
     let lineItem: Stripe.Checkout.SessionCreateParams.LineItem
     if (immediate) {
       const isAnnual = typeof plan === 'string' && plan.endsWith('_annual')
@@ -130,7 +135,7 @@ export async function POST(request: NextRequest) {
         price_data: {
           currency: 'eur',
           product_data: { name: isAnnual ? 'FOREAS Pro — Annuel' : 'FOREAS Pro' },
-          unit_amount: isAnnual ? REACTIVATION_PRICE_CENTS * 10 : REACTIVATION_PRICE_CENTS,
+          unit_amount: isAnnual ? REACTIVATION_ANNUAL_PRICE_CENTS : REACTIVATION_PRICE_CENTS,
           recurring: { interval: isAnnual ? 'year' : 'month' },
         },
         quantity: 1,

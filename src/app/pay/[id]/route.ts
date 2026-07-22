@@ -17,6 +17,11 @@ import Stripe from 'stripe'
  */
 
 const REACTIVATION_PRICE_CENTS = 2999 // 29,99€/mois — garder synchronisé avec pieuvre_pricing_plans
+// 249,99€/an — abonnement unique (décision Chandler, brief BRIEF_PALIERS_ABONNEMENT_2026-07-22).
+// Avant : dérivé de REACTIVATION_PRICE_CENTS × 10 (= 299,90€, "2 mois offerts" sur l'ancien
+// mensuel). Constante dédiée : le prix annuel ne doit plus jamais se recalculer depuis le
+// mensuel — la même règle vit en miroir dans src/app/api/checkout/route.ts, à garder synchro.
+const REACTIVATION_ANNUAL_PRICE_CENTS = 24999
 
 function getSupabaseServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -97,7 +102,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             price_data: {
               currency: 'eur',
               product_data: { name: isAnnual ? 'FOREAS Pro — Annuel' : 'FOREAS Pro' },
-              unit_amount: isAnnual ? REACTIVATION_PRICE_CENTS * 10 : REACTIVATION_PRICE_CENTS,
+              unit_amount: isAnnual ? REACTIVATION_ANNUAL_PRICE_CENTS : REACTIVATION_PRICE_CENTS,
               recurring: { interval: isAnnual ? 'year' : 'month' },
             },
             quantity: 1,
