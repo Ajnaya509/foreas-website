@@ -248,9 +248,6 @@ function TarifsContent() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [flowState, setFlowState] = useState<'idle' | 'bridge' | 'checkout'>('idle')
-  // Index de la fonctionnalité dépliée (une seule à la fois : deux détails ouverts en même
-  // temps rallongent la carte et font perdre le fil sur mobile). null = tout replié.
-  const [openFeature, setOpenFeature] = useState<number | null>(null)
 
   // Une seule offre → plus de branche Free (redirigeait vers /free-signup) ni de branche
   // decoy Elite (faisait défiler vers #faq-elite au lieu d'ouvrir le paiement).
@@ -445,78 +442,42 @@ function TarifsContent() {
             <div className="h-px bg-white/[0.06] my-6" />
 
             {/* ── Ce que tu as ──────────────────────────────────────────────────
-                8 promesses, une par ligne, lisibles en 5 secondes. Le détail vit
-                derrière le « ? » : on le déplie SUR PLACE plutôt que dans une modale
-                — sur mobile (80 % du trafic) une modale prend l'écran, bloque le
-                scroll et demande un geste pour sortir, pour 2 lignes de texte. Ici,
-                re-tap au même endroit et c'est refermé, sans jamais perdre sa place
-                dans la liste. */}
-            <div className="mb-7 divide-y divide-white/[0.05]">
-              {FEATURES.map((f, j) => {
-                const open = openFeature === j
-                return (
-                  <div key={j} className="py-3 first:pt-0">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-violet-500/20 ring-1 ring-violet-400/25 flex items-center justify-center flex-shrink-0 mt-[3px]">
-                        <svg className="w-3 h-3 text-violet-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        {/* Le prix barré passe SOUS la phrase en mobile (flex-wrap) : côte à
-                            côte sur 375 px, il écrasait la phrase à 2-3 mots par ligne. */}
-                        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                          <p className="text-[#F8FAFC] font-semibold text-[15px] sm:text-base leading-snug">
-                            {f.punch}
-                          </p>
-                          {f.worth && (
-                            <span className="text-white/30 line-through text-[11px] sm:text-xs tabular-nums whitespace-nowrap">
-                              {f.worth}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Zone tactile 44×44 (recommandation Apple) obtenue par -m/+p :
-                          le rond visible fait 22 px, la cible du doigt le double. */}
-                      <button
-                        type="button"
-                        onClick={() => setOpenFeature(open ? null : j)}
-                        aria-expanded={open}
-                        aria-label={open ? `Masquer le détail : ${f.punch}` : `En savoir plus : ${f.punch}`}
-                        className="-m-[11px] p-[11px] flex-shrink-0 group"
-                      >
-                        <span
-                          className={`w-[22px] h-[22px] rounded-full border flex items-center justify-center text-[11px] font-bold transition-colors ${
-                            open
-                              ? 'border-violet-400/50 bg-violet-500/25 text-violet-100'
-                              : 'border-white/15 text-white/45 group-hover:border-white/30 group-hover:text-white/70'
-                          }`}
-                        >
-                          {open ? '×' : '?'}
-                        </span>
-                      </button>
-                    </div>
-
-                    <AnimatePresence initial={false}>
-                      {open && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                          className="overflow-hidden"
-                        >
-                          <p className="text-white/60 text-[13px] leading-relaxed pl-8 pr-1 pt-2">
-                            {f.detail}
-                          </p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                Détail affiché d'emblée (retour Chandler) : le replier derrière un « ? »
+                obligeait à 8 gestes pour lire ce qu'on vend. Un chauffeur qui compare ne
+                déplie pas — il scanne. Tout est dit, tout de suite.
+                Design system : #F8FAFC sur la promesse (jamais blanc pur), jamais de
+                graisse < 500 sur fond noir, opacité de texte jamais sous 0.60 (le prix
+                barré est la seule exception assumée — il DOIT s'effacer derrière la
+                promesse tout en restant lisible), grille d'espacement 4 pt, tabular-nums
+                sur tous les chiffres. */}
+            <div className="mb-7 space-y-4">
+              {FEATURES.map((f, j) => (
+                <div key={j} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-violet-500/20 ring-1 ring-violet-400/25 flex items-center justify-center flex-shrink-0 mt-[3px]">
+                    <svg className="w-3 h-3 text-violet-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                   </div>
-                )
-              })}
+
+                  <div className="min-w-0 flex-1">
+                    {/* flex-wrap : sur 375 px, le prix barré côte à côte écrasait la
+                        promesse à 2-3 mots par ligne. Il passe dessous, elle respire. */}
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      <p className="text-[#F8FAFC] font-semibold text-[15px] sm:text-base leading-snug">
+                        {f.punch}
+                      </p>
+                      {f.worth && (
+                        <span className="text-white/45 line-through text-[11px] sm:text-xs font-medium tabular-nums whitespace-nowrap">
+                          {f.worth}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-white/65 font-medium text-[13px] sm:text-[13.5px] leading-relaxed mt-1">
+                      {f.detail}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Honnêteté sur les prix barrés : d'où ils sortent, sans les gonfler. */}

@@ -68,10 +68,14 @@ export function ConsentBanner() {
             cible déjà méfiante, ça se lit « ils me traquent pour me vendre un truc », juste
             avant de lui demander sa confiance. Le détail des partenaires reste accessible en
             un clic dans la politique de confidentialité, ce que la CNIL demande. */}
-        <p className="text-[13px] sm:text-sm text-white/65 leading-relaxed flex-1">
-          <span className="text-white/90 font-semibold">Des cookies pour mesurer ce qui sert vraiment.</span>{' '}
-          Quelles pages aident les chauffeurs, lesquelles non. Tu refuses&nbsp;? Le site marche exactement pareil.{' '}
-          <Link href="/confidentialite" className="text-[#00D4FF] underline underline-offset-2 hover:text-cyan-300">
+        {/* Tenu en 2 lignes sur 375 px : la version longue occupait 170 px, soit 21 % de
+            l'écran mobile — sur la page tarifs, ça mangeait l'offre elle-même. Chaque mot
+            restant fait un travail : la finalité (mesure, obligation CNIL), la réassurance
+            (rien ne casse si tu refuses), le lien vers le détail. */}
+        <p className="text-[13px] sm:text-sm text-white/65 leading-snug sm:leading-relaxed flex-1">
+          <span className="text-white/90 font-semibold">Des cookies pour mesurer ce qui sert.</span>{' '}
+          Tu refuses&nbsp;? Le site marche pareil.{' '}
+          <Link href="/confidentialite" className="text-[#00D4FF] underline underline-offset-2 hover:text-cyan-300 whitespace-nowrap">
             Ce qu&apos;on collecte
           </Link>
         </p>
