@@ -52,24 +52,44 @@ export function ConsentBanner() {
   if (!showBanner) return null
 
   return (
-    <div ref={bannerRef} className="fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0a10] border-t border-[#00D4FF]/30 px-4 py-3 md:py-4">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <p className="text-xs md:text-sm text-gray-400 flex-1 leading-relaxed">
-          On utilise des pixels de mesure (TikTok, Meta) pour optimiser nos campagnes.{' '}
-          <Link href="/confidentialite" className="text-[#00D4FF] hover:underline">
-            Politique de confidentialité
+    /* pb-[env(safe-area-inset-bottom)] : sur iPhone, sans ça les boutons tombent sous la
+       barre de gestes et deviennent intappables. */
+    <div
+      ref={bannerRef}
+      className="fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0a10]/95 backdrop-blur-md border-t border-white/10 px-4 pt-3.5"
+      style={{ paddingBottom: 'calc(0.875rem + env(safe-area-inset-bottom, 0px))' }}
+      role="dialog"
+      aria-label="Cookies"
+    >
+      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+        {/* Le texte dit la FINALITÉ (obligation CNIL) sans dérouler la mécanique
+            d'acquisition. L'ancienne version — « pixels de mesure (TikTok, Meta) pour
+            optimiser nos campagnes » — annonçait notre stratégie pub au visiteur : sur une
+            cible déjà méfiante, ça se lit « ils me traquent pour me vendre un truc », juste
+            avant de lui demander sa confiance. Le détail des partenaires reste accessible en
+            un clic dans la politique de confidentialité, ce que la CNIL demande. */}
+        <p className="text-[13px] sm:text-sm text-white/65 leading-relaxed flex-1">
+          <span className="text-white/90 font-semibold">Des cookies pour mesurer ce qui sert vraiment.</span>{' '}
+          Quelles pages aident les chauffeurs, lesquelles non. Tu refuses&nbsp;? Le site marche exactement pareil.{' '}
+          <Link href="/confidentialite" className="text-[#00D4FF] underline underline-offset-2 hover:text-cyan-300">
+            Ce qu&apos;on collecte
           </Link>
         </p>
-        <div className="flex gap-2 flex-shrink-0">
+
+        {/* Les deux boutons ont EXACTEMENT le même poids : même hauteur, même largeur, même
+            rayon. La CNIL demande que refuser soit aussi simple qu'accepter — un « Refuser »
+            en texte gris à côté d'un « Accepter » plein cyan ne l'est pas. h-11 = 44 px, la
+            cible tactile minimale (avant : 30 px). */}
+        <div className="flex gap-2.5 flex-shrink-0">
           <button
             onClick={handleReject}
-            className="px-3 py-1.5 border border-gray-600 text-gray-400 rounded-md hover:border-gray-400 transition text-xs font-medium"
+            className="h-11 flex-1 sm:flex-none sm:w-[124px] rounded-xl border border-white/25 text-white/85 hover:bg-white/[0.06] active:scale-[0.97] transition text-sm font-semibold"
           >
             Refuser
           </button>
           <button
             onClick={handleAccept}
-            className="px-3 py-1.5 bg-[#00D4FF] text-[#050508] rounded-md hover:bg-cyan-400 transition text-xs font-bold"
+            className="h-11 flex-1 sm:flex-none sm:w-[124px] rounded-xl bg-[#00D4FF] text-[#050508] hover:bg-cyan-300 active:scale-[0.97] transition text-sm font-bold"
           >
             Accepter
           </button>
