@@ -13,15 +13,14 @@ import { authUrls } from '@/lib/auth-urls'
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
 // ─── Utils ───────────────────────────────────────────────────────────────────
-function getNextMonday18hParis(): Date {
-  const now = new Date()
-  const dayOfWeek = now.getUTCDay()
-  const daysToAdd = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek
-  const monday = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
-  const m = monday.getUTCMonth()
-  const utcHour = (m >= 2 && m <= 9) ? 16 : 17
-  monday.setUTCHours(utcHour, 0, 0, 0)
-  return monday
+// Essai GLISSANT de 3 jours — identique pour tout le monde (décision Chandler 22/07).
+// Avant : « prochain lundi 18h », un point fixe hebdomadaire → l'essai durait 1 jour pour
+// qui s'inscrivait le dimanche soir, 6 jours pour qui s'inscrivait le mardi. Même promesse
+// affichée, expérience du simple au sextuple. Doit rester synchronisé avec TRIAL_DAYS
+// dans src/app/api/checkout/route.ts (c'est LUI qui pose le vrai trial_end chez Stripe).
+const TRIAL_DAYS = 3
+function getTrialEndDate(): Date {
+  return new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000)
 }
 function formatDateFR(d: Date): string {
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -69,21 +68,21 @@ function FaqItem({ q, a, id }: { q: string; a: string; id?: string }) {
   )
 }
 
-// ── INTERRUPTEUR PAIEMENT (brief réactivation, Chandler 2026-06-29) ───────────
-// true  = paiement IMMÉDIAT + garantie 30j (stratégie cash-now ACTUELLE).
-// false = essai gratuit 7j (toute l'archi essai est CONSERVÉE → rebrancher = repasser false).
-// Tous les textes "essai/0€" + la TrialBridge sont gated par ce flag.
-const IMMEDIATE_PAYMENT = true
+// ── INTERRUPTEUR PAIEMENT ─────────────────────────────────────────────────────
+// false = ESSAI 3 JOURS, carte demandée à l'inscription, 0 € débité avant la fin (ACTUEL,
+//         décision Chandler 22/07). true = paiement immédiat + garantie 30j (ancien mode
+//         cash-now, archi conservée telle quelle → rebrancher = repasser true).
+const IMMEDIATE_PAYMENT = false
 
 // ─── Trial Bridge ────────────────────────────────────────────────────────────
 function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onConfirm: () => void; onClose: () => void }) {
-  const nextMonday = getNextMonday18hParis()
-  const trialDays = Math.max(1, Math.round((nextMonday.getTime() - Date.now()) / 86400000))
+  const trialEnd = getTrialEndDate()
+  const trialDays = TRIAL_DAYS
 
   const steps = [
     { icon: '🎁', label: "Aujourd'hui", sub: `Accès complet FOREAS ${planName}`, hl: '0€ débité', hlC: 'text-green-400 bg-green-500/10', active: true },
     { icon: '📱', label: `${trialDays} jour${trialDays > 1 ? 's' : ''} pour tester`, sub: 'Tu testes Ajnaya sur tes vraies courses', hl: null, hlC: '', active: false },
-    { icon: '📅', label: `${formatDateFR(nextMonday)} à 18h`, sub: "Fin de l'essai — tu décides", hl: 'Annule avant → 0€', hlC: 'text-blue-300 bg-blue-500/10', active: false },
+    { icon: '📅', label: formatDateFR(trialEnd), sub: "Fin de l'essai — tu décides", hl: 'Annule avant → 0€', hlC: 'text-blue-300 bg-blue-500/10', active: false },
     { icon: '💳', label: 'Premier débit (si tu restes)', sub: 'Annulable en 1 clic, à n\'importe quel moment', hl: null, hlC: '', active: false },
   ]
 
@@ -118,7 +117,7 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
               <span className="text-base mt-0.5">🔒</span>
               <div>
                 <p className="text-white/90 text-sm font-semibold mb-1">Pourquoi une carte est demandée ?</p>
-                <p className="text-white/60 text-xs leading-relaxed">Stripe la garde de côté pour activer ton abonnement <strong className="text-white/85">après</strong> l'essai — pas avant. <strong className="text-white/85">0€ aujourd'hui, 0€ jusqu'au {formatDateFR(nextMonday)} 18h.</strong> Si tu annules avant, il n'y a rien à payer. C'est tout.</p>
+                <p className="text-white/60 text-xs leading-relaxed">Stripe la garde de côté pour activer ton abonnement <strong className="text-white/85">après</strong> l'essai — pas avant. <strong className="text-white/85">0€ aujourd'hui, 0€ pendant {TRIAL_DAYS} jours.</strong> Si tu annules avant, il n'y a rien à payer. C'est tout.</p>
               </div>
             </div>
           </div>
@@ -134,7 +133,7 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
 
 // ─── Checkout Modal ──────────────────────────────────────────────────────────
 function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 'monthly' | 'annual'; onClose: () => void }) {
-  const nextMonday = getNextMonday18hParis()
+  const trialEnd = getTrialEndDate()
   const fetchClientSecret = useCallback(async () => {
     const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: `${planId}_${billing}`, mode: 'embedded', immediate: IMMEDIATE_PAYMENT }) })
     const data = await res.json()
@@ -147,7 +146,7 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-violet-900/30 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center"><span className="text-[10px] font-bold text-white">F</span></div>
-            <div><p className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">{IMMEDIATE_PAYMENT ? 'Paiement aujourd\'hui · garanti 30 jours remboursé' : `0€ débité · Premier débit le ${formatDateFR(nextMonday)}`}</p></div>
+            <div><p className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">{IMMEDIATE_PAYMENT ? 'Paiement aujourd\'hui · garanti 30 jours remboursé' : `0€ débité · Premier débit le ${formatDateFR(trialEnd)}`}</p></div>
           </div>
           <button onClick={onClose} className="text-white/55 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
         </div>
@@ -166,76 +165,81 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
   )
 }
 
-// ─── Plan Data — Pricing V2 09/06/2026 (Chandler verrouillé) ─────────────────
-// Pro 29,99€/mois · Elite 247€/mois · Annuel 2 mois offerts
-// Free = tout ✗ (FOMO design — Apple decoy 3 colonnes)
-// Cascade MLM V2 : 25€/8€/2€
+// ─── L'ABONNEMENT (un seul) — 29,99 €/mois · 249,99 €/an ─────────────────────
+// Décision Chandler 22/07 : fini Free/Pro/Elite. Une offre, tout dedans.
+// Le decoy à 3 colonnes servait à rendre Pro évident — avec une offre unique il n'y a
+// plus rien à rendre évident, il n'y a plus de choix à faire. Le seul arbitrage restant
+// est mensuel vs annuel, porté par le toggle.
+//
+// Chaque ligne = 1 fonctionnalité RÉELLE de l'app (source : FOREAS-SHARED/
+// CARTE_FONCTIONNALITES_AJNAYA.md — les `forbidden_claims` de ce fichier sont respectés :
+// aucun « garanti », aucun « 100 % », aucun « remplace Uber »).
+//   punch  = la phrase qui vend le RÉSULTAT, pas la fonction (méthode Steve Jobs :
+//            « 1000 chansons dans votre poche », pas « 5 Go de stockage »).
+//   detail = ce que c'est vraiment, en clair, pour que la promesse reste vérifiable.
+//   worth  = ce que coûte l'équivalent ailleurs (value stacking). ⚠️ Voir COMMENT_WORTH.
+interface Feature { punch: string; detail: string; worth?: string }
+
+// ⚠️ COMMENT_WORTH — d'où sortent les prix barrés (à valider par Chandler avant diffusion) :
+//   • 80 €/mois (compta)      → tarif constaté d'un expert-comptable pour auto-entrepreneur VTC
+//                               (fourchette réelle 60-120 €/mois) — le plus bas de la fourchette.
+//   • 25 €/mois (site perso)  → abonnement site vitrine type Wix/Squarespace + nom de domaine.
+//   • 25 % (clients directs)  → commission plateforme réellement prélevée sur une course.
+//   Les 3 ci-dessus sont des références marché vérifiables. Les autres lignes n'ont PAS de
+//   prix barré : aucun équivalent marché honnête à citer, et inventer un chiffre ici serait
+//   exactement la faute qu'on a corrigée ailleurs sur le site (claim non défendable → CNIL).
+const FEATURES: Feature[] = [
+  {
+    punch: 'Le vrai prix de la course. Avant de dire oui.',
+    detail: 'Une course tombe : Ajnaya déduit la commission et te sort ton net réel en moins d\'une seconde. Accepte, ou laisse passer.',
+  },
+  {
+    punch: 'La ville qui paie, en couleurs.',
+    detail: 'La carte s\'allume là où la demande monte, à 800 m près. Tu te places avant que ça sonne.',
+  },
+  {
+    punch: 'Un collègue qui connaît la ville. Dans ta poche.',
+    detail: 'Tu lui parles à voix haute pendant que tu roules — « où je vais ce soir ? » — elle répond. Mains sur le volant.',
+  },
+  {
+    punch: 'Le contrôle, tu le sais avant de le voir.',
+    detail: 'Les chauffeurs se signalent les contrôles, accidents et bouchons, avec la distance. Tu n\'es plus seul sur la route.',
+  },
+  {
+    punch: 'Une course à 25 € ? 25 € pour toi.',
+    detail: 'Un sticker dans ta voiture, un mini-site à ton nom : le client scanne et réserve en direct. La plateforme ne touche rien.',
+    worth: '25 % de commission',
+  },
+  {
+    punch: 'Ta tirelire URSSAF se calcule toute seule.',
+    detail: 'Course après course, tu vois la provision à sortir au trimestre. Zéro saisie, zéro douche froide.',
+    worth: '80 €/mois',
+  },
+  {
+    punch: 'Ton site à ton nom. Le client scanne, il réserve.',
+    detail: 'foreas.xyz/ton-prénom, ton QR code prêt à coller dans la voiture. Monté pour toi, rien à configurer.',
+    worth: '25 €/mois',
+  },
+  {
+    punch: 'Ton vrai tarif horaire. Pas celui que tu crois.',
+    detail: 'Ton net par heure, ton net par km, ton temps à vide. C\'est là que tu vois où part ta journée.',
+  },
+]
+
 interface Plan {
   id: string; name: string; tagline: string
   monthlyPrice: number; annualMonthlyPrice: number; annualTotal: number
-  features: { text: string; ok: boolean; star?: boolean }[]
-  cta: string; ctaVariant: 'ghost' | 'primary' | 'elite'
-  popular?: boolean; isDecoy?: boolean
+  cta: string
 }
 
-const PLANS: Plan[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    tagline: 'Découvrir FOREAS. Sans CB.',
-    monthlyPrice: 0, annualMonthlyPrice: 0, annualTotal: 0,
-    features: [
-      { text: 'Heatmap full multi-source', ok: false },
-      { text: 'Ajnaya IA illimitée', ok: false },
-      { text: 'Voix Koraly (TTS)', ok: false },
-      { text: 'Coach courses (verdict 0.3s)', ok: false },
-      { text: 'Concierge B2B Témoin Vivant', ok: false },
-      { text: 'Site driver perso', ok: false },
-      { text: 'Compta IA OCR + URSSAF auto', ok: false },
-      { text: 'Courses FOREAS prioritaires', ok: false },
-    ],
-    cta: 'Commencer gratuit',
-    ctaVariant: 'ghost',
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    tagline: 'Le plan que 8 chauffeurs sur 10 choisissent.',
-    monthlyPrice: 29.99, annualMonthlyPrice: 24.99, annualTotal: 299.90,
-    popular: true,
-    features: [
-      { text: 'Heatmap full multi-source (PredictHQ + SNCF + météo)', ok: true, star: true },
-      { text: 'Ajnaya IA illimitée + voix Koraly', ok: true, star: true },
-      { text: 'Coach courses verdict 0.3s (accept/refuse Uber/Bolt)', ok: true, star: true },
-      { text: 'Concierge B2B Témoin Vivant (outreach + delivery)', ok: true },
-      { text: 'Site driver perso (foreas.xyz/ton-prénom)', ok: true },
-      { text: 'Compta IA OCR + Tirelire URSSAF auto', ok: true },
-      { text: 'Parrainage 25€/filleul à vie (8€ N2 · 2€ N3)', ok: true },
-      { text: 'Chat communauté + support standard', ok: true },
-    ],
-    cta: IMMEDIATE_PAYMENT ? 'Démarrer maintenant' : 'Essayer 7 jours — 0€ aujourd\'hui',
-    ctaVariant: 'primary',
-  },
-  {
-    id: 'elite',
-    name: 'Elite',
-    tagline: 'Courses FOREAS prioritaires + coaching privé.',
-    monthlyPrice: 247, annualMonthlyPrice: 205.83, annualTotal: 2470,
-    isDecoy: true,
-    features: [
-      { text: 'Tout Pro inclus', ok: true, star: true },
-      { text: 'Courses FOREAS prioritaires — Elite-first (+200€/sem)', ok: true, star: true },
-      { text: 'Early access nouvelles features', ok: true, star: true },
-      { text: 'Coaching Ajnaya privé (mode advisor 1-to-1)', ok: true },
-      { text: 'Support 1ère ligne (réponse < 1h jours ouvrés)', ok: true },
-      { text: 'Audit IA hebdo de tes courses', ok: true },
-      { text: 'Badge Elite or dans la communauté', ok: true },
-      { text: 'Cascade MLM complète N1 + N2 + N3', ok: true },
-    ],
-    cta: 'En savoir plus →',
-    ctaVariant: 'elite',
-  },
-]
+const PLAN: Plan = {
+  id: 'pro',           // clé conservée : l'API attend `pro_monthly` / `pro_annual`
+  name: 'FOREAS',
+  tagline: 'Tout est dedans. Il n\'y a rien d\'autre à choisir.',
+  // 249,99 / 12 = 20,8325 → 20,83 €/mois affiché en annuel
+  monthlyPrice: 29.99, annualMonthlyPrice: 20.83, annualTotal: 249.99,
+  cta: IMMEDIATE_PAYMENT ? 'Démarrer maintenant' : `Essayer ${TRIAL_DAYS} jours — 0 € aujourd\'hui`,
+}
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 function TarifsContent() {
@@ -245,18 +249,12 @@ function TarifsContent() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [flowState, setFlowState] = useState<'idle' | 'bridge' | 'checkout'>('idle')
 
+  // Une seule offre → plus de branche Free (redirigeait vers /free-signup) ni de branche
+  // decoy Elite (faisait défiler vers #faq-elite au lieu d'ouvrir le paiement).
   const openFlow = (plan: Plan) => {
-    if (plan.id === 'free') {
-      window.location.href = '/free-signup'
-      return
-    }
-    if (plan.isDecoy) {
-      // Elite décoy → scroll FAQ #elite
-      document.getElementById('faq-elite')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      return
-    }
     setSelectedPlan(plan)
-    // Immédiat → on va DIRECT au paiement (pas de TrialBridge qui promet "0€ aujourd'hui").
+    // Essai → on montre d'abord la TrialBridge (ce qui se passe, quand, combien).
+    // Paiement immédiat → droit au checkout, pas de bridge qui promettrait « 0 € aujourd'hui ».
     setFlowState(IMMEDIATE_PAYMENT ? 'checkout' : 'bridge')
     const price = billing === 'monthly' ? plan.monthlyPrice : plan.annualMonthlyPrice
     trackInitiateCheckout(plan.name, price)
@@ -265,14 +263,14 @@ function TarifsContent() {
   const confirmCheckout = () => setFlowState('checkout')
 
   const faqs = [
-    { id: 'faq-diff', q: "Quelle est la vraie différence entre les 3 plans ?", a: "Free = rien (c'est fait pour ça — pour te montrer ce que tu rates). Pro = tout ce qui fait gagner du temps et de l'argent : Ajnaya illimitée + voix Koraly + Coach courses verdict 0.3s + Concierge B2B + site perso + Compta IA OCR (le plan choisi par 8 chauffeurs sur 10). Elite = en plus, courses FOREAS prioritaires (dispatch direct des clients FOREAS aux Elite avant les autres, +200€/sem en moyenne) + early access nouvelles features + coaching Ajnaya privé + support <1h." },
+    { id: 'faq-diff', q: "Il y a un seul abonnement ? Pas de version light ?", a: "Un seul, et tout est dedans. Avant il y avait trois formules — le temps que tu passais à comparer, tu ne le passais pas à rouler. Ce que tu prends aujourd'hui, c'est ce que prend le chauffeur d'à côté : le Coach qui calcule ton net avant que tu acceptes, la carte des zones, Ajnaya à la voix, tes clients directs sans commission, ta provision URSSAF, ton site perso. Rien à débloquer plus tard." },
     IMMEDIATE_PAYMENT
       ? { id: 'faq-carte', q: "Je paie tout de suite ? Et si ça me va pas ?", a: "Oui, tu paies aujourd'hui — et tu es couvert par la garantie 30 jours : pas convaincu, tu te fais rembourser sans discuter, sans question. Tu testes en vrai sur tes courses, tu risques zéro. (Le plan Free reste 100% gratuit, juste un email.)" }
       : { id: 'faq-carte', q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro : Stripe garde ta carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0€ jusqu'à lundi 18h. Tu annules en 1 clic depuis l'app. Si tu annules avant, il n'y a rien à payer. Point." },
-    { id: 'faq-mensuel', q: "Pourquoi mensuel et non hebdomadaire ?", a: "Simple : plus lisible. 29,99€/mois = moins d'1€/jour, un café. Tu sais exactement ce que tu paies. Pas de calcul. L'annuel à 299,90€ te donne 2 mois offerts — c'est 59,98€ économisés si tu restes toute l'année." },
-    { id: 'faq-parrainage', q: "25€/filleul à vie, est-ce un piège ?", a: "Non. Tant que ton filleul reste abonné Pro ou Elite ET que toi aussi, tu touches 25€/mois sur lui (N1). Plus 8€ s'il parraine quelqu'un (N2). Plus 2€ au niveau 3. Activé dès le 1er paiement de ton filleul. Virement automatique. Pas de plafond, pas d'expiration. Un lien parrain donne -20% à vie sur le mensuel à ton filleul." },
-    { id: 'faq-elite', q: "Elite, ça veut dire quoi exactement \"courses FOREAS prioritaires\" ?", a: "FOREAS dispatch ses propres clients privés (hôtels, Airbnb, corporate) qui réservent directement via foreas.xyz — sans Uber/Bolt. Quand un client réserve, on dispatch d'abord aux Elite dans le rayon (5 min), puis aux Pro (10 min). C'est ce qui justifie le delta Elite/Pro — tu captures les clients premium FOREAS direct avant tout le monde. En moyenne +200€/sem sur les chauffeurs Elite actifs (Paris)." },
-    { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — tu dois faire le tri. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un dashboard de plus. C'est le seul qui prend la décision avec toi en temps réel. " + (IMMEDIATE_PAYMENT ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : "Le tier Pro te laisse tester 7 jours sans payer pour te faire ta propre idée.") },
+    { id: 'faq-mensuel', q: "Pourquoi mensuel et pas hebdomadaire ?", a: "Parce que 29,99€/mois, c'est 1€ par jour — une bouteille d'eau. Tu n'as aucun calcul à faire, tu sais exactement ce que tu paies. En annuel, 249,99€ : c'est l'ordre de grandeur d'une journée de chiffre d'affaires, posée une fois, pour 365 jours de décisions." },
+    { id: 'faq-parrainage', q: "25€/filleul à vie, est-ce un piège ?", a: "Non. Tant que ton filleul reste abonné ET que toi aussi, tu touches 25€/mois sur lui (N1). Plus 8€ s'il parraine quelqu'un (N2). Plus 2€ au niveau 3. Activé dès son 1er paiement. Virement automatique. Pas de plafond, pas d'expiration. Un lien parrain donne -20% à vie sur le mensuel à ton filleul." },
+    { id: 'faq-directs', q: "« Clients directs », ça veut dire quoi concrètement ?", a: "Un sticker avec ton QR code dans la voiture, et un mini-site à ton nom (foreas.xyz/ton-prénom). Le client scanne, il réserve avec toi, il te paie. Aucune plateforme au milieu, donc aucune commission prélevée : une course à 25€, c'est 25€ pour toi. Ça ne remplace pas Uber du jour au lendemain — ça se construit course après course, avec les clients qui reviennent." },
+    { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — et c'est toi qui fais le tri, le soir, fatigué. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un tableau de bord de plus. " + (IMMEDIATE_PAYMENT ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : `Et tu as ${TRIAL_DAYS} jours pour te faire ta propre idée sur tes vraies courses, sans rien payer.`) },
     { id: 'faq-desactivation', q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme te coupe, tu redistribues ton temps sur les autres en 1 minute. La communauté FOREAS te briefe sur les bons réflexes pour récupérer ton compte." },
     { id: 'faq-annulation', q: "Et si je veux arrêter dans 3 mois ?", a: "Tu cliques 'Annuler', tu confirmes, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Et si tu veux juste downgrade vers Free, tu gardes l'accès heatmap basique sans payer." },
   ]
@@ -348,7 +346,9 @@ function TarifsContent() {
               Haitham, Paris&nbsp;: <span className="text-[#F8FAFC] font-semibold tabular-nums">+387&nbsp;€</span> ce mois-ci. Sans une heure en plus.
             </p>
             <p className="text-white/55 text-base sm:text-[15px] max-w-xl mx-auto leading-relaxed mt-3">
-              Pas de magie. L'IA Ajnaya te dit <span className="text-[#F8FAFC]/85">où aller</span>, <span className="text-[#F8FAFC]/85">quand</span>, et <span className="text-[#F8FAFC]/85">combien tu vas faire</span>. C'est tout.
+              {/* « IA » retiré volontairement (décision Chandler) : le mot est devenu
+                  anti-conversion sur cette cible. On dit ce qu'elle FAIT, pas ce qu'elle est. */}
+              Pas de magie. Ajnaya te dit <span className="text-[#F8FAFC]/85">où aller</span>, <span className="text-[#F8FAFC]/85">quand</span>, et <span className="text-[#F8FAFC]/85">combien tu vas faire</span>. C'est tout.
             </p>
           </motion.div>
         </div>
@@ -374,159 +374,122 @@ function TarifsContent() {
           className={`text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${billing === 'annual' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
         >
           Annuel
+          {/* « 2 MOIS OFFERTS » était juste à 299,90€ (= 10 mois payés sur 12). À 249,99€
+              l'écart réel est de ~3,7 mois : le badge sous-vendait ET devenait faux. On
+              affiche le pourcentage exact, arrondi vers le BAS (109,89/359,88 = 30,5%). */}
           <span className="bg-green-500/20 text-green-400 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap" style={{ letterSpacing: '0.05em' }}>
-            2 MOIS OFFERTS
+            −30&nbsp;%
           </span>
         </button>
       </div>
 
-      {/* ── 3 PRICING CARDS — Apple decoy ── */}
+      {/* ── L'OFFRE — une seule carte ── */}
       <section className="px-4 pb-20">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-          {PLANS.map((plan, i) => {
-            const price = billing === 'monthly' ? plan.monthlyPrice : plan.annualMonthlyPrice
-            const perDay = plan.monthlyPrice > 0 ? (plan.monthlyPrice / 30).toFixed(2).replace('.', ',') : null
-            const isFree = plan.id === 'free'
-            const isPro = plan.popular
-            const isElite = plan.isDecoy
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative rounded-2xl p-6 sm:p-8 border border-violet-500/40 bg-gradient-to-b from-violet-900/15 to-black"
+            style={{ boxShadow: '0 0 60px rgba(140,82,255,0.18), inset 0 0 0 1px rgba(140,82,255,0.20)' }}
+          >
+            <p className="text-[10px] font-extrabold text-[#00D4FF]/85 uppercase mb-2" style={{ letterSpacing: '0.25em' }}>
+              {PLAN.name}
+            </p>
+            <p className="text-sm text-white/75 mb-6 leading-snug">{PLAN.tagline}</p>
 
-            return (
-              <motion.div
-                key={plan.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className={`relative rounded-2xl p-6 sm:p-7 border transition-all ${
-                  isPro
-                    ? 'border-violet-500/40 bg-gradient-to-b from-violet-900/15 to-black md:-mt-4 md:pb-10'
-                    : isElite
-                    ? 'border-amber-500/20 bg-gradient-to-b from-amber-900/08 to-black'
-                    : 'border-white/[0.06] bg-white/[0.02]'
-                }`}
-                style={isPro ? { boxShadow: '0 0 60px rgba(140,82,255,0.18), inset 0 0 0 1px rgba(140,82,255,0.20)' } : undefined}
-              >
-                {isPro && (
-                  <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-600 to-violet-500 text-white text-[10px] font-extrabold uppercase px-4 py-1 rounded-full whitespace-nowrap"
-                    style={{ letterSpacing: '0.18em', boxShadow: '0 0 20px rgba(140,82,255,0.45)' }}
-                  >
-                    LE PLUS CHOISI · 8/10 chauffeurs
-                  </div>
+            {/* ── Prix + l'ancrage qui va avec ── */}
+            <motion.div key={billing} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
+              <div className="flex items-end gap-2 mb-2">
+                {billing === 'annual' && (
+                  <span className="text-white/30 line-through text-xl mb-1.5 tabular-nums">{PLAN.monthlyPrice}€</span>
                 )}
+                <span className="text-5xl sm:text-6xl font-black text-[#F8FAFC] tabular-nums" style={{ letterSpacing: '-0.045em' }}>
+                  {billing === 'monthly'
+                    ? `${PLAN.monthlyPrice}€`
+                    : `${PLAN.annualMonthlyPrice.toFixed(2).replace('.', ',')}€`}
+                </span>
+                <span className="text-white/50 text-base mb-2.5">/mois</span>
+              </div>
 
-                <p className="text-[10px] font-extrabold text-[#00D4FF]/85 uppercase mb-2" style={{ letterSpacing: '0.25em' }}>
-                  {plan.name}
-                </p>
-                <p className="text-sm text-white/75 mb-5 min-h-[36px] leading-snug">{plan.tagline}</p>
-
-                <motion.div key={billing} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
-                  {isFree ? (
-                    <div className="mb-5">
-                      <span className="text-4xl sm:text-5xl font-black text-[#F8FAFC] tabular-nums" style={{ letterSpacing: '-0.045em' }}>0€</span>
-                      <span className="text-white/50 text-sm ml-1">/mois</span>
-                      <p className="text-white/35 text-xs mt-1.5">Sans CB · Accès limité</p>
-                    </div>
-                  ) : (
-                    <div className="mb-5">
-                      <div className="flex items-end gap-1.5 mb-1">
-                        {billing === 'annual' && (
-                          <span className="text-white/30 line-through text-lg mb-1 tabular-nums">{plan.monthlyPrice}€</span>
-                        )}
-                        <span className="text-4xl sm:text-5xl font-black text-[#F8FAFC] tabular-nums" style={{ letterSpacing: '-0.045em' }}>
-                          {billing === 'monthly'
-                            ? `${plan.monthlyPrice}€`
-                            : `${plan.annualMonthlyPrice.toFixed(2).replace('.', ',')}€`
-                          }
-                        </span>
-                        <span className="text-white/50 text-sm mb-2">/mois</span>
-                      </div>
-                      {billing === 'monthly' && perDay && (
-                        <p className="text-cyan-300/80 text-xs mb-1 tabular-nums">
-                          soit {perDay}€/jour{isPro && <span className="text-cyan-200 font-semibold"> — le prix d'un péage</span>}
-                        </p>
-                      )}
-                      {billing === 'annual' && (
-                        <p className="text-white/40 text-xs mt-1 tabular-nums">
-                          Facturé {plan.annualTotal.toLocaleString('fr-FR')}€/an
-                          {' · '}<span className="text-green-400 font-semibold">
-                            économise {(plan.monthlyPrice * 12 - plan.annualTotal).toLocaleString('fr-FR')}€
-                          </span>
-                        </p>
-                      )}
-                      {isPro && billing === 'monthly' && (
-                        <p className="text-green-400/85 text-[11px] font-semibold mt-1.5">💡 Une seule course no-show = ton mois remboursé</p>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-
-                <div className="h-px bg-white/[0.06] my-5" />
-
-                <div className="space-y-1.5 mb-6">
-                  {plan.features.map((f, j) => (
-                    <div key={j} className="flex items-start gap-2.5 py-0.5">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        f.ok
-                          ? (f.star ? 'bg-violet-500/25 ring-1 ring-violet-400/30' : 'bg-violet-500/15')
-                          : 'bg-white/[0.04]'
-                      }`}>
-                        {f.ok ? (
-                          <svg className={`w-3 h-3 ${f.star ? 'text-violet-200' : 'text-violet-400/85'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        ) : (
-                          <span className="text-white/25 text-xs">×</span>
-                        )}
-                      </div>
-                      <span className={`text-sm leading-tight ${
-                        f.ok
-                          ? (f.star ? 'text-[#F8FAFC] font-semibold' : 'text-white/80')
-                          : 'text-white/30 line-through'
-                      }`}>{f.text}</span>
-                    </div>
-                  ))}
+              {billing === 'monthly' ? (
+                /* 29,99 € / 30 jours = 1,00 € — la comparaison est arithmétiquement juste,
+                   pas une image marketing. Une bouteille d'eau, c'est le prix que personne
+                   ne discute : on ne compare plus à un abonnement, on compare à un réflexe. */
+                <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/[0.06] px-4 py-3">
+                  <p className="text-cyan-200 text-sm font-semibold flex items-center gap-2">
+                    <span className="text-lg">💧</span> 1&nbsp;€ par jour. Une bouteille d&apos;eau.
+                  </p>
+                  <p className="text-white/50 text-xs mt-1">
+                    Tu la bois sans y penser. Celle-là, tu la récupères à la première course que tu ne prends pas pour rien.
+                  </p>
                 </div>
+              ) : (
+                /* L'annuel ne se vend pas en « économies » mais en investissement : 249,99 €,
+                   c'est l'ordre de grandeur d'UNE journée de CA — pour 365 jours de décisions.
+                   On énonce ce qui est vrai (le coût, la durée), jamais un gain chiffré promis. */
+                <div className="rounded-xl border border-[#F5C842]/25 bg-[#F5C842]/[0.06] px-4 py-3">
+                  <p className="text-[#F5C842] text-sm font-semibold flex items-center gap-2">
+                    <span className="text-lg">🗓️</span> Une journée de CA. Pour 365 jours de décisions.
+                  </p>
+                  <p className="text-white/50 text-xs mt-1 tabular-nums">
+                    Facturé {PLAN.annualTotal.toLocaleString('fr-FR')}&nbsp;€/an — soit 0,68&nbsp;€/jour. Tu investis une journée de chiffre d&apos;affaires ; ce que tu récupères, ce sont les bonnes décisions de toutes les autres.
+                  </p>
+                </div>
+              )}
+            </motion.div>
 
-                {/* CTA par variante */}
-                {plan.ctaVariant === 'ghost' && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                    onClick={() => openFlow(plan)}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold transition-all bg-white/[0.06] border border-white/15 hover:bg-white/10 text-white"
-                  >
-                    {plan.cta} →
-                  </motion.button>
-                )}
-                {plan.ctaVariant === 'primary' && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                    onClick={() => openFlow(plan)}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white"
-                    style={{ boxShadow: '0 0 28px rgba(140,82,255,0.40)' }}
-                  >
-                    {plan.cta}
-                  </motion.button>
-                )}
-                {plan.ctaVariant === 'elite' && (
-                  <motion.button
-                    whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                    onClick={() => openFlow(plan)}
-                    className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all bg-white/[0.04] border border-amber-500/20 text-amber-300/80 hover:border-amber-500/40 hover:text-amber-200"
-                  >
-                    {plan.cta}
-                  </motion.button>
-                )}
+            <div className="h-px bg-white/[0.06] my-6" />
 
-                {isPro && (
-                  <p className="text-center text-white/45 text-[10px] mt-3 tabular-nums">{IMMEDIATE_PAYMENT ? 'Garanti 30 jours · remboursé sans question' : '0€ aujourd\'hui · Annulation 1 clic'}</p>
-                )}
-              </motion.div>
-            )
-          })}
+            {/* ── Ce que tu as — phrase d'abord, prix barré à côté ── */}
+            <div className="space-y-4 mb-7">
+              {FEATURES.map((f, j) => (
+                <div key={j} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-violet-500/20 ring-1 ring-violet-400/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-violet-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-[#F8FAFC] font-semibold text-[15px] leading-snug">{f.punch}</p>
+                      {f.worth && (
+                        <span className="text-white/30 line-through text-xs tabular-nums flex-shrink-0 whitespace-nowrap">
+                          {f.worth}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-white/55 text-[13px] leading-relaxed mt-1">{f.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Honnêteté sur les prix barrés : d'où ils sortent, sans les gonfler. */}
+            <p className="text-white/30 text-[10.5px] leading-relaxed mb-6">
+              Prix barrés = ce que coûte l&apos;équivalent ailleurs (expert-comptable pour auto-entrepreneur VTC, abonnement site vitrine, commission plateforme). Les autres lignes n&apos;ont pas d&apos;équivalent à citer — on préfère ne rien barrer plutôt qu&apos;inventer un chiffre.
+            </p>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              onClick={() => openFlow(PLAN)}
+              className="w-full py-4 rounded-xl text-[15px] font-bold transition-all bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white"
+              style={{ boxShadow: '0 0 28px rgba(140,82,255,0.40)' }}
+            >
+              {PLAN.cta}
+            </motion.button>
+            <p className="text-center text-white/45 text-[11px] mt-3">
+              {IMMEDIATE_PAYMENT
+                ? 'Garanti 30 jours · remboursé sans question'
+                : `Carte demandée, 0 € débité pendant ${TRIAL_DAYS} jours · annulation 1 clic`}
+            </p>
+          </motion.div>
+
+          {/* Note parrain */}
+          <p className="text-center text-white/40 text-xs mt-6 max-w-lg mx-auto">
+            Tu as un lien parrain&nbsp;? Ton mensuel est à <span className="text-white/70 font-semibold tabular-nums">−20&nbsp;% à vie</span> (23,99&nbsp;€/mois). L&apos;annuel est au tarif fixe.
+          </p>
         </div>
-
-        {/* Note parrain sous les cards */}
-        <p className="text-center text-white/40 text-xs mt-6 max-w-lg mx-auto">
-          Tu as un lien parrain ? Ton mensuel est à <span className="text-white/70 font-semibold tabular-nums">−20% à vie</span> (Pro à 23,99€/mois · Elite à 197,60€/mois). L'annuel est au tarif fixe.
-        </p>
       </section>
 
       {/* ── KPIs ── */}
@@ -648,7 +611,7 @@ function TarifsContent() {
             <h3 className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-3 leading-tight" style={{ letterSpacing: '-0.025em' }}>
               {IMMEDIATE_PAYMENT
                 ? <>Pas convaincu sous 30 jours&nbsp;?<br />Remboursé, sans discuter.</>
-                : <>Si tu n&apos;es pas convaincu en 7 jours,<br />tu ne paies rien.</>}
+                : <>{TRIAL_DAYS} jours pour te faire ton avis.<br />Sur tes vraies courses.</>}
             </h3>
             <p className="text-white/65 text-sm leading-relaxed">
               {IMMEDIATE_PAYMENT
@@ -680,7 +643,7 @@ function TarifsContent() {
             <h2 className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]" style={{ letterSpacing: '-0.045em' }}>
               {IMMEDIATE_PAYMENT
                 ? <>Ce soir,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu reprends la main.</span></>
-                : <>Dans 7 jours,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu sauras.</span></>}
+                : <>Dans {TRIAL_DAYS} jours,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu sauras.</span></>}
             </h2>
             <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
               {IMMEDIATE_PAYMENT
@@ -692,11 +655,11 @@ function TarifsContent() {
             </p>
             <motion.button
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              onClick={() => openFlow(PLANS[1])}
+              onClick={() => openFlow(PLAN)}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-extrabold py-4 px-12 rounded-2xl text-lg transition-all"
               style={{ boxShadow: '0 0 80px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
             >
-              {IMMEDIATE_PAYMENT ? <>Démarrer maintenant →</> : <>Activer ton essai 7 jours (0&nbsp;€) →</>}
+              {IMMEDIATE_PAYMENT ? <>Démarrer maintenant →</> : <>Activer mon essai {TRIAL_DAYS} jours (0&nbsp;€) →</>}
             </motion.button>
             <div className="flex items-center justify-center gap-x-6 gap-y-2 mt-6 text-white/50 text-[11px] flex-wrap tabular-nums">
               <span>🔒 Stripe · SSL</span>
@@ -709,7 +672,7 @@ function TarifsContent() {
                 <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Si tu hésites encore, ce n&apos;est pas grave. Mais reviens dans 6 mois, et compare. Tu seras au même point. Le seul truc qui aura changé, c&apos;est ton compteur d&apos;années perdues.<br /><br />
                 {IMMEDIATE_PAYMENT
                   ? <>Si tu cliques aujourd&apos;hui, tu as 30 jours pour voir si on est sérieux. Si on ne l&apos;est pas, on te rembourse. <span className="text-[#F8FAFC] font-semibold not-italic">Tu ne perds rien. Tu testes en vrai.</span></>
-                  : <>Si tu cliques aujourd&apos;hui, tu as 7 jours pour voir si on est sérieux. Si on ne l&apos;est pas, tu pars. <span className="text-[#F8FAFC] font-semibold not-italic">Tu ne perds rien. Tu testes juste.</span></>}
+                  : <>Si tu cliques aujourd&apos;hui, tu as {TRIAL_DAYS} jours pour voir si on est sérieux. Si on ne l&apos;est pas, tu pars, et rien n&apos;est débité. <span className="text-[#F8FAFC] font-semibold not-italic">Tu ne perds rien. Tu testes juste.</span></>}
               </p>
               <p className="text-white/55 text-xs mt-4 text-left">— Chandler, fondateur FOREAS</p>
             </div>

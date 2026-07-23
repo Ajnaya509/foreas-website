@@ -2,31 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
 
-// ─── Price IDs LIVE Pricing V2 09/06/2026 (Chandler verrouillé) ─────────────
-// Source : FOREAS-SHARED/PRICING_FEATURES_MASTER.md §1.1 (Pricing V2)
-// Passage weekly → mensuel. Env vars Vercel à setter :
-//   STRIPE_PRICE_ID_PRO_MONTHLY   = price_1TgVSvK89oTss0SbIwh0ukMZ  (97€/mois)
-//   STRIPE_PRICE_ID_ELITE_MONTHLY = price_1TgVSwK89oTss0Sba3HYDjf6  (247€/mois)
-//   STRIPE_PRICE_ID_PRO_ANNUAL    = price_1TgVSwK89oTss0SbYyQVTKbz  (970€/an)
-//   STRIPE_PRICE_ID_ELITE_ANNUAL  = price_1TgVSxK89oTss0Sb2DLX3pUu  (2470€/an)
-// Grandfathering weekly (NE PAS SUPPRIMER — abonnés Phase A existants) :
-//   STRIPE_PRICE_ID_PRO_WEEKLY / STRIPE_PRICE_ID_ELITE_WEEKLY (inchangés)
-const PRICE_IDS: Record<string, string | undefined> = {
-  // ── Pro V3 — 97 €/mois · 970 €/an (2 mois offerts)
-  pro_monthly:   process.env.STRIPE_PRICE_ID_PRO_MONTHLY,
-  pro_annual:    process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
-  // ── Elite V3 — 247 €/mois · 2 470 €/an (2 mois offerts)
-  elite_monthly: process.env.STRIPE_PRICE_ID_ELITE_MONTHLY,
-  elite_annual:  process.env.STRIPE_PRICE_ID_ELITE_ANNUAL,
-  // ── Grandfathering Phase A weekly (NE PAS SUPPRIMER)
-  pro_weekly:    process.env.STRIPE_PRICE_ID_PRO_WEEKLY,
-  elite_weekly:  process.env.STRIPE_PRICE_ID_ELITE_WEEKLY,
-  vip_weekly:    process.env.STRIPE_PRICE_ID_ELITE_WEEKLY,
-  vip_annual:    process.env.STRIPE_PRICE_ID_ELITE_ANNUAL,
-  // ── Legacy alias page /tarifs
-  weekly:        process.env.STRIPE_PRICE_ID_PRO_WEEKLY,
-  annual:        process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
-}
+// ─── Prix : construits dynamiquement, PAS de Price ID Stripe pré-créé ────────
+// Le mapping PRICE_IDS (Pro 97€ / Elite 247€ / weekly grandfathering / alias vip_*) a été
+// retiré le 22/07 avec le passage à l'abonnement unique (29,99€/mois · 249,99€/an).
+// Il portait l'ANCIENNE grille et n'avait plus aucun appelant vivant (audit grep : 6 clés
+// mortes sur 8). Le laisser aurait été un piège : le chemin essai le consultait encore et
+// aurait facturé 97€ au lieu de 29,99€. Les montants vivent maintenant en un seul endroit,
+// plus bas dans POST (PRICE_CENTS / ANNUAL_PRICE_CENTS), en miroir de src/app/pay/[id]/route.ts.
+// Les abonnés Phase A déjà créés côté Stripe gardent leur Price d'origine — rien ne change
+// pour eux, ce fichier ne sert qu'à créer de NOUVELLES sessions.
 
 // Lazy init to avoid build-time error when STRIPE_SECRET_KEY is not set
 function getStripe() {
@@ -55,23 +39,18 @@ async function ensureReferralCoupon(stripe: Stripe, pct: number): Promise<string
   return id
 }
 
-function getNextMonday18hParis(): number {
-  const now = new Date()
-  const dayOfWeek = now.getUTCDay()
-  const daysMap: Record<number, number> = { 0: 1, 1: 7, 2: 6, 3: 5, 4: 4, 5: 3, 6: 2 }
-  let daysToAdd = daysMap[dayOfWeek]
-  if (daysToAdd < 2) daysToAdd += 7
-  const monday = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
-  const year = monday.getUTCFullYear()
-  const marchLast = new Date(Date.UTC(year, 2, 31))
-  const lastSundayMarch = 31 - (marchLast.getUTCDay() % 7)
-  const dstStart = new Date(Date.UTC(year, 2, lastSundayMarch, 1, 0, 0))
-  const octLast = new Date(Date.UTC(year, 9, 31))
-  const lastSundayOct = 31 - (octLast.getUTCDay() % 7)
-  const dstEnd = new Date(Date.UTC(year, 9, lastSundayOct, 1, 0, 0))
-  const isSummer = monday.getTime() >= dstStart.getTime() && monday.getTime() < dstEnd.getTime()
-  monday.setUTCHours(isSummer ? 16 : 17, 0, 0, 0)
-  return Math.floor(monday.getTime() / 1000)
+/**
+ * Essai GLISSANT de 3 jours (decision Chandler, brief BRIEF_PALIERS_ABONNEMENT_2026-07-22).
+ * Avant : essai jusqu'au "prochain lundi 18h Paris" — un point fixe hebdomadaire, donc une
+ * duree reelle qui variait de 1 a 7 jours selon le jour d'inscription. Un chauffeur qui
+ * s'inscrivait le dimanche soir avait ~1 jour d'essai, celui du mardi matin en avait 6 :
+ * meme promesse affichee, experience deux fois differente. Glissant = tout le monde a
+ * exactement 3 jours, quel que soit le moment de l'inscription.
+ * Stripe exige trial_end >= 48h dans le futur : 3 jours passe largement.
+ */
+const TRIAL_DAYS = 3
+function getTrialEnd(): number {
+  return Math.floor(Date.now() / 1000) + TRIAL_DAYS * 24 * 60 * 60
 }
 
 export async function POST(request: NextRequest) {
@@ -126,36 +105,27 @@ export async function POST(request: NextRequest) {
     // BRIEF_PALIERS_ABONNEMENT_2026-07-22) — même constante en miroir dans
     // src/app/pay/[id]/route.ts, à garder synchro : deux points d'entrée (site direct et
     // lien WhatsApp) doivent facturer exactement le même montant annuel.
-    const REACTIVATION_PRICE_CENTS = 2999
-    const REACTIVATION_ANNUAL_PRICE_CENTS = 24999
-    let lineItem: Stripe.Checkout.SessionCreateParams.LineItem
-    if (immediate) {
-      const isAnnual = typeof plan === 'string' && plan.endsWith('_annual')
-      lineItem = {
-        price_data: {
-          currency: 'eur',
-          product_data: { name: isAnnual ? 'FOREAS Pro — Annuel' : 'FOREAS Pro' },
-          unit_amount: isAnnual ? REACTIVATION_ANNUAL_PRICE_CENTS : REACTIVATION_PRICE_CENTS,
-          recurring: { interval: isAnnual ? 'year' : 'month' },
-        },
-        quantity: 1,
-      }
-    } else {
-      const priceId = PRICE_IDS[plan]
-      if (!priceId) {
-        // Soit le plan n'existe pas (ex: free_*, essentiel_* archivé), soit l'env
-        // var Vercel n'est pas configurée. Message explicite côté client.
-        return NextResponse.json(
-          {
-            error: `Plan invalide ou env var manquante : ${plan}. Vérifier STRIPE_PRICE_ID_<TIER>_<BILLING> sur Vercel.`,
-          },
-          { status: 400 },
-        )
-      }
-      lineItem = { price: priceId, quantity: 1 }
+    const PRICE_CENTS = 2999
+    const ANNUAL_PRICE_CENTS = 24999
+    const isAnnual = typeof plan === 'string' && plan.endsWith('_annual')
+
+    // ⚠️ Prix construit dynamiquement dans LES DEUX cas (essai ET paiement immédiat).
+    // Avant, seul le chemin `immediate` utilisait price_data ; le chemin essai passait par
+    // PRICE_IDS[plan] → des Price Stripe pré-créés qui portent ENCORE l'ancienne grille
+    // (STRIPE_PRICE_ID_PRO_MONTHLY = 97€/mois, _ANNUAL = 970€/an, cf. en-tête du fichier).
+    // Rebrancher l'essai sans ça aurait facturé 97€ au lieu de 29,99€ — le triple, en silence.
+    // Un seul chemin de prix = l'affichage et le montant prélevé ne peuvent plus diverger.
+    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
+      price_data: {
+        currency: 'eur',
+        product_data: { name: isAnnual ? 'FOREAS — Annuel' : 'FOREAS' },
+        unit_amount: isAnnual ? ANNUAL_PRICE_CENTS : PRICE_CENTS,
+        recurring: { interval: isAnnual ? 'year' : 'month' },
+      },
+      quantity: 1,
     }
     const origin = request.nextUrl.origin
-    const trialEnd = getNextMonday18hParis()
+    const trialEnd = getTrialEnd()
     const isEmbedded = mode === 'embedded'
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
@@ -166,8 +136,8 @@ export async function POST(request: NextRequest) {
       // Railway webhook reads this to create partner_referrals row
       ...(effectiveReferralCode ? { client_reference_id: effectiveReferralCode } : {}),
       subscription_data: {
-        // Cash-now (brief réactivation) : `immediate` → on encaisse TOUT DE SUITE (pas de
-        // trial_end), garantie 30j gérée hors-Stripe. Sinon : essai jusqu'au lundi 18h.
+        // `immediate` → on encaisse TOUT DE SUITE (pas de trial_end).
+        // Sinon : essai glissant de 3 jours, identique pour tous (voir getTrialEnd).
         ...(immediate ? {} : { trial_end: trialEnd }),
         metadata: {
           plan,
@@ -220,7 +190,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const trialEnd = getNextMonday18hParis()
+  const trialEnd = getTrialEnd()
   const trialDate = new Date(trialEnd * 1000)
   const now = new Date()
   const trialDays = Math.round((trialEnd * 1000 - now.getTime()) / (24 * 60 * 60 * 1000))
@@ -228,6 +198,6 @@ export async function GET() {
     status: 'ok',
     hasKey: !!process.env.STRIPE_SECRET_KEY,
     keyPrefix: (process.env.STRIPE_SECRET_KEY || '').substring(0, 14),
-    billing: { nextMonday18hParis: trialDate.toISOString(), trialDays, rule: 'Lundi 18h Paris = sacré.' },
+    billing: { trialEndsAt: trialDate.toISOString(), trialDays, rule: `Essai glissant ${TRIAL_DAYS} jours — identique pour tous.` },
   })
 }
