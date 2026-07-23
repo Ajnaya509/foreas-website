@@ -177,10 +177,13 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
 //   punch  = la phrase qui vend le RÉSULTAT, pas la fonction (méthode Steve Jobs :
 //            « 1000 chansons dans votre poche », pas « 5 Go de stockage »).
 //   detail = ce que c'est vraiment, en clair, pour que la promesse reste vérifiable.
-//   worth  = ce que coûte l'équivalent ailleurs (value stacking). ⚠️ Voir COMMENT_WORTH.
+//   worth  = ce que coûte l'équivalent ailleurs (value stacking). Voir COMMENT_WORTH.
 interface Feature { punch: string; detail: string; worth?: string }
 
-// ⚠️ COMMENT_WORTH — d'où sortent les prix barrés (à valider par Chandler avant diffusion) :
+// COMMENT_WORTH — d'où sortent les prix barrés. ✅ VALIDÉS PAR CHANDLER le 23/07/2026.
+// Ce sont des références marché, pas des tarifs FOREAS : si l'un d'eux est contesté un jour,
+// c'est cette liste qui sert de justificatif. Ne pas les gonfler, ne pas en ajouter sans
+// source vérifiable — la mention affichée sous la liste engage publiquement leur provenance.
 //   • 80 €/mois (compta)      → tarif constaté d'un expert-comptable pour auto-entrepreneur VTC
 //                               (fourchette réelle 60-120 €/mois) — le plus bas de la fourchette.
 //   • 25 €/mois (site perso)  → abonnement site vitrine type Wix/Squarespace + nom de domaine.
