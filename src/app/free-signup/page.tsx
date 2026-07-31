@@ -21,12 +21,24 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-)
+// Client PARTAGÉ et PARESSEUX (src/lib/supabase.ts) — pas un createClient local.
+//
+// Avant, ce fichier faisait `const supabase = createClient(env ?? '', env ?? '')` au niveau
+// module. Deux conséquences, dont une grave :
+//
+// 1. BUILD — Next.js prérend cette page au build (elle est 'use client', mais son HTML initial
+//    est généré côté serveur). Le niveau module s'exécute donc pendant `next build`. Si une des
+//    deux variables manque, le `?? ''` passe une chaîne vide à createClient, qui jette
+//    « supabaseUrl is required » → « Export encountered an error on /free-signup/page,
+//    exiting the build ». Ce n'est PAS cette page qui tombe : c'est le DÉPLOIEMENT ENTIER.
+//    Panne silencieuse : tout marche jusqu'au jour où une variable est renommée sur Vercel.
+//    Reproduit en local le 31/07 (aucune variable Supabase dans .env.local → build KO).
+// 2. AUTH — deux clients Supabase dans la même app ne partagent pas leur état de session.
+//    La session écrite ici n'était pas forcément vue par le reste du site.
+//
+// Le Proxy exporté par @/lib/supabase ne construit le client qu'au PREMIER accès à une
+// propriété, donc jamais au build. Même motif déjà en production sur dashboard/login.
+import { supabase } from '@/lib/supabase'
 
 function FreeSignupContent() {
   const router = useRouter()

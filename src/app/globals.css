@@ -523,13 +523,33 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* ── Hyphens automatiques (paragraphes français — Lupton p.122) ── */
+/* ── Césure automatique : RETIRÉE le 31/07/2026 ──────────────────────────────
+   La règle précédente posait `hyphens: auto` sur tout `p`, `.prose`, `.text-prose`,
+   au nom du confort de lecture des paragraphes français (Lupton p.122).
+
+   Pourquoi c'était une erreur ICI : cette recommandation vaut pour du texte JUSTIFIÉ,
+   où la césure sert à combler les trous entre les mots. Vérifié sur tout src/ :
+   ZÉRO occurrence de `text-justify` / `text-align: justify` / `textAlign: 'justify'`.
+   Tout le site est en drapeau (ragged-right). En drapeau, la césure ne compense rien —
+   elle coupe des mots, point.
+
+   Constaté dans le VRAI Safari iOS (iPhone 16e, 390 pt) sur /tarifs2, la page qui encaisse :
+     « tu la récu-/pères »            « Ajnaya déduit la com-/mission »
+     « elle ré-/pond »                 « où part ta jour-/née »
+     « pas d'équi-/valent »            « expert-comp-/table »  ← mot déjà composé, recoupé
+   Six mots hachés dans un argumentaire de vente, sur 80 % du trafic. `lang="fr"` est bien
+   posé (layout.tsx:98) : ce sont des césures françaises correctes, mais indésirables.
+
+   `overflow-wrap: break-word` reprend le seul service réel que rendait la césure : empêcher
+   un mot plus long que sa colonne de déborder horizontalement. Il n'existait aucun garde de
+   ce type dans ce fichier avant — le retrait sec aurait laissé ce trou ouvert.
+
+   `manual` (et non `none`) = valeur par défaut CSS : on garde la possibilité de forcer une
+   coupure ponctuelle avec un `&shy;` si un mot très long l'exige un jour. */
 p, .prose, .text-prose {
-  hyphens: auto;
-  -webkit-hyphens: auto;
-  hyphenate-limit-chars: 6 3 3;     /* min 6 char total, 3 avant césure, 3 après */
-  hyphenate-limit-lines: 2;          /* max 2 lignes consécutives avec césure */
-  hyphenate-limit-last: always;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  overflow-wrap: break-word;
 }
 
 /* ── Measure constraint Bringhurst (45-75 char/ligne, 66 = idéal Lupton) ── */
