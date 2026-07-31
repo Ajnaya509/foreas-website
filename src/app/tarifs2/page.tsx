@@ -306,6 +306,15 @@ function TarifsContent() {
 
       <Header />
 
+      {/* Cale de la hauteur EXACTE du header (h-16 / lg:h-20, cf. Header.tsx).
+          Sans elle, le bandeau live démarrait à y=0, donc SOUS le header qui est `fixed top-0`
+          et transparent tant qu'on n'a pas scrollé : sur mobile le logo se dessinait
+          littéralement par-dessus le texte du bandeau (65 px de recouvrement, mesuré au
+          navigateur en 375 px), sur desktop le bandeau et les liens de nav se retrouvaient
+          empilés dans la même bande. Défaut préexistant à la refonte tarifs unique.
+          Cale locale à cette page : le Header est partagé par tout le site, on ne le touche pas. */}
+      <div className="h-16 lg:h-20" aria-hidden />
+
       {/* Live bar */}
       <div className="relative border-b border-white/[0.06] bg-black/40 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap">
@@ -324,7 +333,10 @@ function TarifsContent() {
       </div>
 
       {/* ── HERO ── */}
-      <section className="relative pt-16 pb-8 px-4">
+      {/* pt réduit de 16 → 8 : le pt-16 d'origine servait à compenser le header fixe, rôle
+          désormais tenu par la cale au-dessus du bandeau. Le garder aurait cumulé les deux et
+          repoussé le prix hors du premier écran sur mobile (80 % du trafic). */}
+      <section className="relative pt-8 pb-8 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <p className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-6" style={{ letterSpacing: '0.25em' }}>
