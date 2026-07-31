@@ -437,9 +437,14 @@ function MessageBubble({
               }
         }
       >
+        {/* break-words : une bulle de chat n'est pas un <p>, l'`overflow-wrap` global ne la
+            couvre donc pas. Avec `html { overflow-x: hidden }` (globals.css:493), un mot plus
+            long que la bulle serait rogné EN SILENCE — le visiteur verrait son propre message
+            amputé sans comprendre. Posé sur les deux côtés : ce qu'il écrit ET ce qu'Ajnaya
+            répond (une réponse peut contenir une URL ou un nom de zone à rallonge). */}
         {isAjnaya
-          ? <TypewriterText text={msg.text ?? ''} />
-          : <span className="whitespace-pre-wrap">{msg.text}</span>}
+          ? <span className="block break-words"><TypewriterText text={msg.text ?? ''} /></span>
+          : <span className="whitespace-pre-wrap break-words">{msg.text}</span>}
 
         {/* Audio toggle — Ajnaya messages seulement */}
         {isAjnaya && (msg.tts_text || msg.text) && (

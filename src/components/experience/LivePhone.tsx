@@ -340,9 +340,14 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
               <div
                 key={i}
                 className={
+                  // break-words : ces bulles ne sont pas des <p>, donc l'`overflow-wrap`
+                  // global de globals.css ne les couvre pas. Or `html { overflow-x: hidden }`
+                  // (globals.css:493) fait qu'un mot plus long que la bulle serait ROGNÉ EN
+                  // SILENCE — pas de barre de défilement pour le signaler. Un visiteur qui
+                  // colle une URL ou un mot long à Ajnaya verrait son propre texte disparaître.
                   m.role === 'user'
-                    ? 'ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-gradient-to-br from-accent-purple to-accent-purple-deep px-3 py-2 text-white'
-                    : 'max-w-[86%] rounded-2xl rounded-bl-md border border-white/[0.08] bg-white/[0.055] px-3 py-2 text-[#F8FAFC]'
+                    ? 'ml-auto max-w-[86%] break-words rounded-2xl rounded-br-md bg-gradient-to-br from-accent-purple to-accent-purple-deep px-3 py-2 text-white'
+                    : 'max-w-[86%] break-words rounded-2xl rounded-bl-md border border-white/[0.08] bg-white/[0.055] px-3 py-2 text-[#F8FAFC]'
                 }
               >
                 {m.text || <span className="inline-flex gap-1 py-0.5">{[0, 1, 2].map((d) => (
