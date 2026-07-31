@@ -26,9 +26,25 @@ async function getContent(topic: string): Promise<LandingContent | null> {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+    // SELECT EXPLICITE — surtout pas `select('*')`.
+    //
+    // LandingPageTemplate est un composant `'use client'` : tout ce qu'on lui passe est
+    // sérialisé par Next.js dans le payload RSC **embarqué dans le HTML public**. Avec
+    // `select('*')`, les colonnes plates héritées partaient donc en ligne même si aucune
+    // n'était affichée — lisibles dans « afficher la source », par Google, par n'importe
+    // quel scraper.
+    //
+    // Constaté le 31/07/2026 sur la production : `desire_vs_reality` et `aha_moment`
+    // servaient encore « tu franchis les 3500€/mois », « entre 1800 et 2200€/mois net »
+    // (/revenus) et « top 10% des chauffeurs par revenu horaire » (/premium) — des gains
+    // chiffrés inventés, sur une page dont le sujet est justement l'honnêteté des chiffres.
+    // La réécriture du contenu avait nettoyé `content`, pas la ligne entière.
+    //
+    // Ce select ne prend que les 4 champs réellement rendus (cf. interface LandingContent).
+    // Une colonne héritée ne peut plus fuiter, aujourd'hui ni après un futur ajout.
     const { data } = await supabase
       .from('landing_pages')
-      .select('*')
+      .select('topic_slug, meta_title, meta_description, content')
       .eq('topic_slug', topic)
       .eq('active', true)
       .single()

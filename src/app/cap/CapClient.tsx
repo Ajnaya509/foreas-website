@@ -61,7 +61,7 @@ const BENEFITS = [
   { icon: Zap, label: 'IA positionnement temps réel', sub: 'Sais où être 15 min avant la demande' },
   { icon: TrendingUp, label: 'Tu vois où ça paie, en direct', sub: 'Ajnaya lit 7 plateformes — tu choisis tes courses' },
   { icon: Users, label: 'Parrainage à vie', sub: '10€/mois par chauffeur filleul actif' },
-  { icon: Star, label: 'Essai sans risque', sub: '0€ prélevé avant le prochain lundi 18h' },
+  { icon: Star, label: 'Essai sans risque', sub: '0 € prélevé pendant 3 jours' },
 ]
 
 // ─── Cookie setter (client-only side effect) ──────────────────────────────────
@@ -306,7 +306,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <p className="font-body text-xs text-white/35">
-              0€ débité avant lundi 18h · Annulation en 1 clic
+              0 € débité pendant 3 jours · Annulation en 1 clic
             </p>
           </motion.div>
 
@@ -401,7 +401,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
               transition={{ delay: 0.1 }}
               className="font-body text-sm text-white/45"
             >
-              Hebdomadaire · Annuel disponible (−20%) · 0€ débité avant le premier lundi 18h
+              Mensuel · Annuel disponible (−30 %) · 0 € débité pendant 3 jours
             </motion.p>
           </div>
 

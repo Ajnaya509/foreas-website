@@ -22,7 +22,7 @@ const DEFAULT_WELCOME = "Salut ! Je suis Ajnaya, l'IA FOREAS. En quoi je peux t'
 const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
   { pattern: /^(salut|bonjour|bonsoir|yo|hey|coucou|hello|allo|allô|slt|bjr|cc|bj|bsr|wesh|oui|ok|d'accord|parfait|super|top|merci|svp|stp)[\s!.,?]*$/i, key: 'greeting', reply: "Salut ! Moi c'est Ajnaya, l'IA FOREAS pour les chauffeurs VTC. T'es sur quelle zone en ce moment ?" },
   { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: "L'abonnement commence à 1,42€/jour avec essai gratuit, 0€ débité. Tous les détails sont sur /tarifs2." },
-  { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit jusqu'au prochain lundi 18h. 0€ prélevé. Annulation en 1 clic." },
+  { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit pendant 3 jours. 0 € prélevé. Annulation en 1 clic." },
   { pattern: /comment ça marche|fonctionnement|comment|fonctionne/i, key: 'how', reply: 'Je croise trains, vols, événements, météo et habitudes locales en temps réel pour te dire où te positionner 15 min avant la demande.' },
   { pattern: /uber|bolt|heetch/i, key: 'platforms', reply: 'Compatible avec toutes les apps VTC. Je ne les remplace pas — je te dis où être pour avoir les meilleures courses.' },
   { pattern: /partenaire|flotte|entreprise|h[oô]tel|airbnb/i, key: 'b2b', reply: 'Pour les partenaires, on propose un accompagnement sur mesure avec dashboard dédié. Le mieux : prenez contact via /contact.' },

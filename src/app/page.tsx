@@ -65,7 +65,7 @@ const JSON_LD = {
         '@type': 'Offer',
         price: '0',
         priceCurrency: 'EUR',
-        description: 'Essai 7 jours gratuit, sans inscription, sans carte.',
+        description: 'Essai 3 jours gratuit, sans inscription, sans carte.',
       },
       // aggregateRating retiré : pas d'avis vérifiables. Un faux rich-snippet de notation
       // = risque pénalité Google + pratique commerciale trompeuse. À remettre quand de

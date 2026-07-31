@@ -224,7 +224,7 @@ export default function RevenueSimulator() {
               </div>
               <div>
                 <p className="text-green-400 font-medium">ROI : {results.roi}%</p>
-                <p className="text-white/50 text-sm">L'abonnement (12,97€) se rembourse en ~1 course</p>
+                <p className="text-white/50 text-sm">L'abonnement (29,99 €/mois) se rembourse en une course</p>
               </div>
             </div>
 
@@ -233,7 +233,7 @@ export default function RevenueSimulator() {
               href="/tarifs2"
               className="block w-full py-4 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold text-center hover:opacity-90 transition-opacity"
             >
-              Tester FOREAS 7 jours, 0€ →
+              Tester FOREAS 3 jours, 0€ →
             </a>
           </motion.div>
         </div>

@@ -139,7 +139,7 @@ export default function FacturationElectroniqueVTC2026() {
               </Link>
             </div>
             <p className="mt-4 text-sm text-white/50">
-              Pas de carte bancaire · Essai 7 jours offert · 12,97€/semaine abonnement Pro
+              Essai 3 jours · 0 € aujourd'hui · 29,99 €/mois ensuite
             </p>
           </div>
         </section>
@@ -301,7 +301,7 @@ export default function FacturationElectroniqueVTC2026() {
                 },
                 {
                   q: "Combien coûte l'ajout du module E-Factures ?",
-                  a: "Le module est inclus dans l'abonnement FOREAS Pro (12,97€/semaine) pour tous les chauffeurs existants à partir de septembre 2026. Pas de surprise, pas de surcoût.",
+                  a: "Le module est inclus dans l'abonnement FOREAS (29,99 €/mois) pour tous les chauffeurs existants à partir de septembre 2026. Pas de surprise, pas de surcoût.",
                 },
               ].map((faq) => (
                 <details
@@ -340,7 +340,7 @@ export default function FacturationElectroniqueVTC2026() {
               Je prépare ma conformité →
             </Link>
             <p className="mt-4 text-sm text-white/50">
-              7 jours gratuits · Sans carte bancaire · Résiliable à tout moment
+              3 jours gratuits · 0 € aujourd'hui · Résiliable à tout moment
             </p>
           </div>
         </section>

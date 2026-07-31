@@ -286,7 +286,7 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
 
               <div className="flex items-center justify-center gap-4 mt-5 text-[10px]" style={{ color: '#a1a1a6' }}>
                 <span>· Sans engagement ·</span>
-                <span>Essai 7 jours · 0€</span>
+                <span>Essai 3 jours · 0€</span>
               </div>
             </div>
           </motion.div>

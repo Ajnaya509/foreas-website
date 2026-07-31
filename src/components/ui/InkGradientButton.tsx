@@ -24,7 +24,7 @@ import Link from 'next/link'
  *
  * Usage :
  *   <InkGradientButton variant="primary" size="lg">
- *     Essayer gratuit 7 jours →
+ *     Essayer gratuit 3 jours →
  *   </InkGradientButton>
  *
  *   <InkGradientButton as="link" href="/tarifs2" size="md">

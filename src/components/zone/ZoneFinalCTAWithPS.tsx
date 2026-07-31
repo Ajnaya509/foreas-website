@@ -7,7 +7,7 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 /**
  * ZoneFinalCTAWithPS — Section 7 final CTA + PS signature humaine
  *
- * Copy-atomic : Loss aversion (Ariely) "Dans 7 jours, tu sauras."
+ * Copy-atomic : Loss aversion (Ariely) "Dans 3 jours, tu sauras."
  *               + forced choice "tu préfères savoir, ou pas ?"
  *               + PS Halbert "lettre d'un ami" signée Chandler.
  *
@@ -53,7 +53,7 @@ export default function ZoneFinalCTAWithPS() {
             className="t-display-xl text-[#F8FAFC] mb-5 leading-[1.05]"
             style={{ letterSpacing: '-0.045em' }}
           >
-            Teste 7 jours.{' '}
+            Teste 3 jours.{' '}
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
               Tu verras vite.
             </span>
@@ -86,7 +86,7 @@ export default function ZoneFinalCTAWithPS() {
           <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">
             <p className="text-white/65 t-body leading-relaxed text-left italic">
               <span className="text-cyan-300/85 font-semibold not-italic">PS</span> — Tu peux fermer cette page, c&apos;est ton droit. Mais demain matin au volant, la question est la même&nbsp;: tu roules au hasard, ou quelqu&apos;un calcule pour toi&nbsp;?{' '}
-              <span className="text-[#F8FAFC] font-semibold not-italic">Vérifier te coûte 0&nbsp;€ et 7 jours.</span>
+              <span className="text-[#F8FAFC] font-semibold not-italic">Vérifier te coûte 0&nbsp;€ et 3 jours.</span>
             </p>
             <p className="text-white/55 t-caption mt-4 text-left">
               — Chandler, fondateur FOREAS
