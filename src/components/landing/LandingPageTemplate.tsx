@@ -24,8 +24,29 @@ export interface LandingContent {
     aha_headline: string
     aha_body: string
     proof_items: Array<{ name: string; location: string; period: string; result: string }>
+    // FAQ objections (foreas-copy-atomic §6.1 étape 7 + RAG "Section Action" : coût de
+    // l'inaction + FAQ). Optionnel pour compat arrière avec un contenu qui n'aurait pas
+    // encore ces champs — le template dégrade proprement (section masquée) si absent.
+    faq_items?: Array<{ q: string; a: string }>
+    // Une phrase : ce qui ne change pas si le chauffeur ferme l'onglet aujourd'hui.
+    // Jamais une pression ("dépêche-toi"), toujours un fait ("demain sera pareil").
+    inaction_cost?: string
     cta_headline: string
     cta_guarantee: string
+    // Libellés de bouton — optionnels, repli sur "Essayer gratuitement" partout.
+    // Existent pour /flotte : une audience B2B (gérants) à qui on ne demande pas
+    // un essai carte-bancaire mais un échange. Sans ce champ, le bouton disait
+    // "Essayer gratuitement" et le micro-texte "0€ débité pendant l'essai" sous un
+    // CTA qui promettait explicitement "sans engagement" trois lignes au-dessus —
+    // contradiction visible à l'écran, relevée par l'audit gendarme.
+    cta_button_label?: string
+    cta_final_button_label?: string
+    cta_final_micro?: string
+    // Destination du CTA — optionnelle, repli sur `/go/${topic_slug}` (essai chauffeur).
+    // /flotte s'adresse à des gérants, pas à des chauffeurs indépendants : les envoyer
+    // vers `/tarifs2` (abonnement solo, carte bancaire) n'a pas de sens. On les envoie
+    // vers `/contact`, la vraie page de prise de contact B2B du site.
+    cta_target?: string
   }
 }
 
@@ -95,6 +116,37 @@ function useLandingTracking(topicSlug: string) {
   return { trackCTAClick }
 }
 
+// ─── FAQ accordéon — même motif que /tarifs2 (cohérence design system) ───────
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border-b border-white/10">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex justify-between items-center py-5 text-left gap-4 group"
+      >
+        <span className="text-white/90 font-medium text-sm sm:text-base group-hover:text-white transition-colors">
+          {q}
+        </span>
+        <span className={`text-[#00D4FF] text-xl transition-transform flex-shrink-0 ${open ? 'rotate-45' : ''}`}>
+          +
+        </span>
+      </button>
+      {open && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          className="overflow-hidden"
+        >
+          <p className="text-gray-400 text-sm pb-5 leading-relaxed">{a}</p>
+        </motion.div>
+      )}
+    </div>
+  )
+}
+
 // ─── Section fade-in wrapper ──────────────────────────────────────────────────
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const prefersReduced = useReducedMotion()
@@ -127,7 +179,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
-  const ctaHref = `/go/${topic_slug}`
+  const ctaHref = c.cta_target || `/go/${topic_slug}`
 
   return (
     <div className="bg-[#050508] text-white min-h-screen overflow-x-hidden">
@@ -156,7 +208,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
             onClick={trackCTAClick}
             className="inline-block px-8 py-4 bg-[#00D4FF] text-[#050508] font-black text-base rounded-2xl hover:bg-cyan-300 transition-all shadow-[0_0_30px_rgba(0,212,255,0.3)]"
           >
-            Essayer gratuitement →
+            {c.cta_button_label || 'Essayer gratuitement →'}
           </Link>
         </FadeIn>
 
@@ -257,9 +309,15 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
       </section>
 
       {/* ── SECTION 6 — PREUVES ───────────────────────────────────────────── */}
+      {/* Attribution explicite : "leurs mots, en vidéo" plutôt qu'un résultat en vert
+          gras sans contexte. Un chiffre affiché ainsi se lit comme une promesse FOREAS ;
+          en le rattachant à "témoignage vidéo", il redevient ce qu'il est réellement —
+          la parole d'un chauffeur filmé, pas une garantie de résultat. */}
       <section className="px-4 py-20 max-w-2xl mx-auto">
         <FadeIn>
-          <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-8 text-center">Résultats réels</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-8 text-center">
+            Leurs mots, en vidéo
+          </p>
           <div className="space-y-4">
             {c.proof_items.map((proof, i) => (
               <FadeIn key={i} delay={i * 0.08}>
@@ -270,6 +328,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
                   </div>
                   <div className="text-right">
                     <p className="text-[#10B981] font-black text-lg">{proof.result}</p>
+                    <p className="text-gray-600 text-[10px] uppercase tracking-wide">témoignage vidéo</p>
                   </div>
                 </div>
               </FadeIn>
@@ -278,12 +337,56 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
         </FadeIn>
       </section>
 
+      {/* ── SECTION 6.b — CTA INTERMÉDIAIRE ───────────────────────────────── */}
+      {/* Juste après la preuve sociale = le point de température maximale du parcours
+          (RAG : "placer un CTA sous chaque option/bloc"). Un seul écran plus bas que le
+          hero, avant que l'attention retombe sur la FAQ et les objections. */}
+      <section className="px-4 pb-4 text-center">
+        <FadeIn>
+          <Link
+            href={ctaHref}
+            onClick={trackCTAClick}
+            className="inline-block px-8 py-4 bg-white/5 border border-[#00D4FF]/30 text-white font-bold text-sm rounded-2xl hover:bg-[#00D4FF]/10 hover:border-[#00D4FF]/50 transition-all"
+          >
+            Voir l&apos;offre →
+          </Link>
+        </FadeIn>
+      </section>
+
+      {/* ── SECTION 6.c — FAQ OBJECTIONS ──────────────────────────────────── */}
+      {/* Traiter l'objection AVANT que le visiteur la formule (foreas-copy-atomic §3.4) :
+          effet "ils m'ont compris". Masquée proprement si une page n'a pas encore ce
+          contenu (compat arrière sur d'anciennes lignes). */}
+      {!!c.faq_items?.length && (
+        <section className="px-4 py-16 max-w-2xl mx-auto">
+          <FadeIn>
+            <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2 text-center">
+              Avant de te décider
+            </p>
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-8 text-center" style={{ fontFamily: 'Genos, sans-serif' }}>
+              Ce que tu te demandes probablement
+            </h2>
+            <div>
+              {c.faq_items.map((faq, i) => (
+                <FaqItem key={i} q={faq.q} a={faq.a} />
+              ))}
+            </div>
+          </FadeIn>
+        </section>
+      )}
+
       {/* ── SECTION 7 — CTA FINAL ─────────────────────────────────────────── */}
       <section className="px-4 py-24 text-center relative">
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at center bottom, rgba(0,212,255,0.06) 0%, transparent 60%)' }} />
 
         <FadeIn>
+          {/* Coût de l'inaction — un FAIT, jamais une pression. La doctrine (§8 anti-
+              patterns) bannit l'urgence fake ; ceci n'est pas un compte à rebours, c'est
+              ce qui reste vrai demain si rien ne change aujourd'hui. */}
+          {c.inaction_cost && (
+            <p className="text-gray-500 text-xs mb-4 max-w-sm mx-auto italic">{c.inaction_cost}</p>
+          )}
           <h2 className="text-3xl md:text-4xl font-black text-white mb-4 max-w-lg mx-auto" style={{ fontFamily: 'Genos, sans-serif' }}>
             {c.cta_headline}
           </h2>
@@ -294,11 +397,11 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
             onClick={trackCTAClick}
             className="inline-block px-10 py-5 bg-[#00D4FF] text-[#050508] font-black text-lg rounded-2xl hover:bg-cyan-300 transition-all shadow-[0_0_50px_rgba(0,212,255,0.4)] mb-4"
           >
-            Commencer l&apos;essai gratuit →
+            {c.cta_final_button_label || "Commencer l'essai gratuit →"}
           </Link>
 
           <p className="text-xs text-gray-600 mt-4">
-            Annulation en 1 clic · Pas d&apos;engagement · 0€ débité pendant l&apos;essai
+            {c.cta_final_micro || "Annulation en 1 clic · Pas d'engagement · 0€ débité pendant l'essai"}
           </p>
         </FadeIn>
       </section>
@@ -311,7 +414,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
             onClick={trackCTAClick}
             className="block w-full py-4 bg-[#00D4FF] text-[#050508] font-black text-center rounded-2xl shadow-[0_0_30px_rgba(0,212,255,0.4)]"
           >
-            Essayer gratuitement →
+            {c.cta_button_label || 'Essayer gratuitement →'}
           </Link>
         </div>
       )}
