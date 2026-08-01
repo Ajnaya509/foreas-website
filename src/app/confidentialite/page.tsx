@@ -164,6 +164,8 @@ export default function ConfidentialitePage() {
                   { name: 'ElevenLabs', desc: 'Synthèse vocale pour l\'assistant Ajnaya — Traitement en temps réel, aucune rétention audio' },
                   { name: 'Railway', desc: 'Infrastructure backend et déploiement des services IA — Hébergement sécurisé' },
                   { name: 'Vercel', desc: 'Hébergement du site web foreas.xyz — Aucune donnée utilisateur applicative' },
+                  { name: 'Meta (Facebook, Instagram)', desc: 'Mesure et optimisation publicitaire — email et téléphone transmis sous forme chiffrée (hachage), jamais en clair — uniquement si vous acceptez les cookies de mesure' },
+                  { name: 'TikTok', desc: 'Mesure et optimisation publicitaire — email et téléphone transmis sous forme chiffrée (hachage), jamais en clair — uniquement si vous acceptez les cookies de mesure' },
                 ].map((item) => (
                   <div key={item.name} className="p-3.5 bg-white/[0.03] rounded-xl">
                     <p className="font-title italic text-sm font-semibold text-white/75 mb-1">{item.name}</p>
