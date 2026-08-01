@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
       utm_source,
       utm_medium,
       utm_campaign,
+      faq_question,
     } = body
 
     if (!topic_slug || !event_type) {
@@ -46,6 +47,12 @@ export async function POST(req: NextRequest) {
         p_utm_source: utm_source || 'direct',
         p_utm_medium: utm_medium || 'none',
         p_utm_campaign: utm_campaign || 'none',
+      })
+    } else if (event_type === 'faq_click') {
+      await supabase.rpc('record_faq_click', {
+        p_topic_slug: topic_slug,
+        p_faq_question: faq_question,
+        p_utm_source: utm_source || 'direct',
       })
     }
 

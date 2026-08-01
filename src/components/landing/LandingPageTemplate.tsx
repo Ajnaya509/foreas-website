@@ -113,16 +113,35 @@ function useLandingTracking(topicSlug: string) {
     }).catch(() => {})
   }, [topicSlug, getUtm])
 
-  return { trackCTAClick }
+  const trackFAQClick = useCallback((faqQuestion: string) => {
+    fetch('/api/track-landing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic_slug: topicSlug,
+        event_type: 'faq_click',
+        faq_question: faqQuestion,
+        ...getUtm(),
+      }),
+    }).catch(() => {})
+  }, [topicSlug, getUtm])
+
+  return { trackCTAClick, trackFAQClick }
 }
 
 // ─── FAQ accordéon — même motif que /tarifs2 (cohérence design system) ───────
-function FaqItem({ q, a }: { q: string; a: string }) {
+// onOpen : appelé uniquement quand la question passe de fermée à ouverte (pas à
+// la fermeture) — sert le tracking sans jamais compter un double-clic comme 2 vues.
+function FaqItem({ q, a, onOpen }: { q: string; a: string; onOpen?: () => void }) {
   const [open, setOpen] = useState(false)
+  const handleToggle = () => {
+    if (!open) onOpen?.()
+    setOpen(!open)
+  }
   return (
     <div className="border-b border-white/10">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className="w-full flex justify-between items-center py-5 text-left gap-4 group"
       >
         <span className="text-white/90 font-medium text-sm sm:text-base group-hover:text-white transition-colors">
@@ -166,7 +185,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LandingPageTemplate({ content }: { content: LandingContent }) {
   const { topic_slug, content: c } = content
-  const { trackCTAClick } = useLandingTracking(topic_slug)
+  const { trackCTAClick, trackFAQClick } = useLandingTracking(topic_slug)
   const [showStickyCtA, setShowStickyCta] = useState(false)
 
   // Sticky CTA après 50% scroll
@@ -368,7 +387,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
             </h2>
             <div>
               {c.faq_items.map((faq, i) => (
-                <FaqItem key={i} q={faq.q} a={faq.a} />
+                <FaqItem key={i} q={faq.q} a={faq.a} onOpen={() => trackFAQClick(faq.q)} />
               ))}
             </div>
           </FadeIn>
