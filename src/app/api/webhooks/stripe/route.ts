@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
 import { sendCAPIEvent } from '@/lib/meta-capi'
+import { sendTikTokEvent } from '@/lib/tiktok-events-api'
 
 export const runtime = 'nodejs'
 
@@ -179,7 +180,13 @@ export async function POST(request: Request) {
         country: 'FR',
         externalId: session.customer as string | undefined,
       }
-      // Fire-and-forget — jamais bloquer le webhook Stripe
+      // Même conversion, deux canaux pub. Fire-and-forget — jamais bloquer le webhook
+      // Stripe pour une pub qui échouerait (les deux sendX() sont déjà fail-open).
+      const tiktokUserData = {
+        email: capiUserData.email,
+        phone: capiUserData.phone,
+        externalId: capiUserData.externalId,
+      }
       Promise.allSettled([
         sendCAPIEvent({
           eventName: 'StartTrial',
@@ -204,6 +211,19 @@ export async function POST(request: Request) {
           },
           eventSourceUrl: session.url || 'https://foreas.xyz/tarifs2',
           actionSource: 'website',
+        }),
+        // TikTok n'a pas d'équivalent standard "StartTrial" — Subscribe seul suffit
+        // à marquer le début de l'abonnement pour l'optimisation de campagne.
+        sendTikTokEvent({
+          eventName: 'Subscribe',
+          userData: tiktokUserData,
+          customData: {
+            value: purchaseValue,
+            currency,
+            contentName: planInfo.name,
+            orderId: session.subscription as string,
+          },
+          eventSourceUrl: session.url || 'https://foreas.xyz/tarifs2',
         }),
       ]).catch(() => {})
 

@@ -4,6 +4,16 @@ import Script from 'next/script'
 import { useEffect, useState } from 'react'
 import { hasTrackingConsent } from '@/lib/consent'
 
+/**
+ * ⚠️ 31/07/2026 — CE PIXEL N'A JAMAIS RIEN MESURÉ.
+ * Le code contenait littéralement `fbq('init', '[META_PIXEL_ID]')` : un gabarit
+ * jamais rempli depuis sa création. Chaque visite du site partait dans le vide.
+ * Le jeu de données a été créé ce jour dans le Gestionnaire d'évènements Meta
+ * (« FOREAS - foreas.xyz »), son identifiant réel est ci-dessous.
+ * Surchargeable par variable d'environnement pour les environnements de test.
+ */
+const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || '1711802230104933'
+
 export function MetaPixel() {
   const [hasConsent, setHasConsent] = useState(false)
 
@@ -27,7 +37,7 @@ export function MetaPixel() {
         t.src=v;s=b.getElementsByTagName(e)[0];
         s.parentNode.insertBefore(t,s)}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', '[META_PIXEL_ID]');
+        fbq('init', '${PIXEL_ID}');
         fbq('track', 'PageView');
       `}
     </Script>

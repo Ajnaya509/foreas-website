@@ -32,6 +32,23 @@ interface UserMatchData {
   externalId?: string
 }
 
+// Les composants du site appellent trackEvent() avec des noms d'events Meta
+// ('Lead', 'Purchase', ...) — TikTok a sa propre nomenclature standard. Mappé ici,
+// une seule fois, pour que tout le site (déjà écrit contre les noms Meta) envoie
+// aussi TikTok sans que chaque appelant ait besoin de connaître les deux vocabulaires.
+const META_TO_TIKTOK_EVENT: Record<string, string> = {
+  PageView: 'ViewContent',
+  ViewContent: 'ViewContent',
+  InitiateCheckout: 'InitiateCheckout',
+  AddPaymentInfo: 'AddPaymentInfo',
+  Purchase: 'CompletePayment',
+  Lead: 'SubmitForm',
+  CompleteRegistration: 'CompleteRegistration',
+  Contact: 'Contact',
+  Subscribe: 'Subscribe',
+  StartTrial: 'Subscribe', // TikTok n'a pas d'équivalent "StartTrial" standard
+}
+
 function uuid(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
@@ -88,11 +105,40 @@ export function trackEvent(
   })
 
   // ─── TikTok Pixel (client) ─────────────────────────────────────────────
+  // Même event_id que Meta pour la dédup pixel/CAPI TikTok — voir tiktok-events-api.ts.
+  const tiktokEventName = META_TO_TIKTOK_EVENT[eventName] || eventName
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window as any).ttq) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(window as any).ttq.track(eventName, params)
+    ;(window as any).ttq.track(tiktokEventName, params, { event_id: eventId })
   }
+
+  // ─── TikTok Events API (server) ────────────────────────────────────────
+  // Miroir server-side, même logique que le bloc Meta CAPI ci-dessus. Sans clé
+  // TikTok configurée, l'endpoint répond simplement { ok:false } — jamais d'erreur
+  // visible côté visiteur (voir tiktok-events-api.ts, fail-open volontaire).
+  fetch('/api/pixel/tiktok-capi', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventName: tiktokEventName,
+      eventId,
+      eventSourceUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+      userData: { externalId: getStoredVisitorId() ?? undefined, ...(userData || {}) },
+      customData: params
+        ? {
+            value: typeof params.value === 'number' ? params.value : undefined,
+            currency: typeof params.currency === 'string' ? params.currency : undefined,
+            contentName: typeof params.content_name === 'string' ? params.content_name : undefined,
+            contentIds: Array.isArray(params.content_ids) ? params.content_ids : undefined,
+            contentType: typeof params.content_type === 'string' ? params.content_type : undefined,
+          }
+        : undefined,
+    }),
+    keepalive: true,
+  }).catch(() => {
+    /* silent — fallback pixel client */
+  })
 }
 
 // Convenience wrappers for common events
