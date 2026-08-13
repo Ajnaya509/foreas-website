@@ -19,40 +19,18 @@
  *    par les pixels, lus côté serveur directement (voir /api/observe).
  */
 
-export const ACQ_COOKIE = 'foreas_acq'
-const NINETY_DAYS_SEC = 60 * 60 * 24 * 90
+// Le nom du cookie et la forme des données vivent dans un module NEUTRE
+// (acquisitionShared.ts). Les importer d'ici côté serveur donnait une client
+// reference au lieu de la chaîne — voir l'en-tête de acquisitionShared.ts.
+import {
+  ACQ_COOKIE,
+  ACQ_MAX_AGE_SEC as NINETY_DAYS_SEC,
+  ACQ_URL_KEYS as URL_KEYS,
+  type Acquisition,
+} from './acquisitionShared'
 
-/** Champs captés. Tous optionnels — on ne stocke que ce qui existe vraiment. */
-export interface Acquisition {
-  utm_source?: string
-  utm_medium?: string
-  utm_campaign?: string
-  utm_content?: string
-  utm_term?: string
-  fbclid?: string
-  gclid?: string
-  ttclid?: string
-  /** Click-to-WhatsApp Ads (Meta) — la clé d'attribution des campagnes CTWA. */
-  ctwa_clid?: string
-  /** Referrer de la toute première page vue (origine seule, jamais l'URL complète). */
-  referrer?: string
-  /** Chemin de la page d'atterrissage. */
-  landing_path?: string
-  /** Horodatage du premier contact. */
-  first_seen_at?: string
-}
-
-const URL_KEYS: Array<keyof Acquisition> = [
-  'utm_source',
-  'utm_medium',
-  'utm_campaign',
-  'utm_content',
-  'utm_term',
-  'fbclid',
-  'gclid',
-  'ttclid',
-  'ctwa_clid',
-]
+export { ACQ_COOKIE }
+export type { Acquisition }
 
 function clean(v: string | null): string | undefined {
   if (!v) return undefined

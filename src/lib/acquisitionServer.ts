@@ -1,6 +1,9 @@
 import type { NextRequest } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ACQ_COOKIE, type Acquisition } from './acquisition'
+// JAMAIS depuis './acquisition' : ce module est `'use client'`, et Next y remplace
+// ACQ_COOKIE par une client reference. `cookies.get(<fonction>)` renvoie undefined
+// et l'origine part vide, en silence. On lit le contrat depuis le module neutre.
+import { ACQ_COOKIE, type Acquisition } from './acquisitionShared'
 
 /**
  * acquisitionServer — lecture serveur de l'origine du visiteur + rattachement à
