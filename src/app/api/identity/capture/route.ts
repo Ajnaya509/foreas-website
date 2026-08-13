@@ -1,46 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { sendCAPIEvent } from '@/lib/meta-capi'
+import { resolveIdentity, normalizePhoneE164, type IdentityCanal } from '@/lib/identityGate'
+import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
 
 /**
- * Identity Bridge capture — écrit dans la table maître `identity_bridge`.
+ * Capture téléphone du widget → identité.
  *
- * Conformité : /Users/chandlermilien/FOREAS-SHARED/AJNAYA_CONTRACTS.md §1
- * Règle : SHA-256 **uniquement server-side** (jamais côté client).
- * Hash canonique : Edge Function `hash-identity` (garantit cohérence cross-canal).
- * Fallback : crypto.createHash local si Edge Function indisponible.
- * Matching key : phone_hash. Si une row existe déjà → merge au lieu de créer.
+ * ⚠️ CORRECTIF P0.h (2026-08-13). Avant : cette route faisait elle-même
+ * `select / insert / update` sur `identity_bridge`. Elle contournait donc le
+ * résolveur canonique `resolve_identity` et, avec lui :
+ *   - le verrou anti-concurrence (deux envois simultanés = deux identités),
+ *   - le matching sur `metadata->'phone_hashes'` / `'visitor_ids'` (elle ne
+ *     regardait QUE la colonne `phone_hash`, donc la personne déjà connue en
+ *     anonyme par son empreinte repartait en identité neuve),
+ *   - la fusion des doublons + la trace dans `identity_merges`,
+ *   - le garde-fou `merge_conflict`.
+ * Elle n'écrit plus une seule ligne d'`identity_bridge` : tout passe par
+ * `@/lib/identityGate` → RPC `resolve_identity`, la même porte que WhatsApp et l'app.
  *
- * Écrit aussi un premier fragment dans canal_memory pour que le Responder Pieuvre
- * puisse personnaliser la prochaine réponse cross-canal.
+ * Elle reste responsable de ce qui vient APRÈS la résolution :
+ * mémoire de canal, lien prospect, event bus, webhook Pieuvre, Meta CAPI.
  */
-
-type Canal = 'widget' | 'whatsapp' | 'app' | 'instagram' | 'facebook' | 'sms' | 'voice' | 'email' | 'referral' | 'ads'
-
-function normalizeE164(raw: string): string | null {
-  const digits = raw.replace(/[\s.\-()]/g, '')
-  if (/^\+33\d{9}$/.test(digits)) return digits
-  if (/^0\d{9}$/.test(digits)) return '+33' + digits.slice(1)
-  return null
-}
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone_raw, prospect_id, canal = 'widget', page_source } = (await request.json()) as {
+    const {
+      phone_raw,
+      prospect_id,
+      canal = 'widget',
+      page_source,
+      visitor_id,
+    } = (await request.json()) as {
       phone_raw?: string
       prospect_id?: string
-      canal?: Canal
+      canal?: IdentityCanal
       page_source?: string
+      visitor_id?: string
     }
 
     if (!phone_raw) {
       return NextResponse.json({ error: 'missing_phone' }, { status: 400 })
     }
 
-    const phone_e164 = normalizeE164(phone_raw)
+    const phone_e164 = normalizePhoneE164(phone_raw)
     if (!phone_e164) {
       return NextResponse.json({ error: 'invalid_phone' }, { status: 400 })
     }
@@ -50,95 +55,25 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // ── SHA-256 canonique via Edge Function hash-identity (cross-canal cohérence garantie)
-    // Fallback : crypto local si Edge Function indisponible (hash identique pour même input)
-    let phone_hash: string
-    try {
-      const { data: hashData, error: hashError } = await supabase.functions.invoke<{
-        phone_hash: string
-        normalized: { phone: string }
-      }>('hash-identity', { body: { phone: phone_e164 } })
+    // Badge appareil durable posé par le middleware (cookie 1ère partie, 1 an).
+    const device_cookie_id = request.cookies.get('foreas_vid')?.value ?? null
 
-      if (hashError || !hashData?.phone_hash) {
-        throw new Error(hashError?.message || 'no phone_hash in response')
-      }
-      phone_hash = hashData.phone_hash
-    } catch (edgeFnErr) {
-      // Edge Function down/unreachable — fallback to local crypto
-      console.warn('[identity/capture] hash-identity fallback:', (edgeFnErr as Error).message)
-      phone_hash = crypto.createHash('sha256').update(phone_e164).digest('hex')
+    // ── LA PORTE UNIQUE ────────────────────────────────────────────────────
+    const resolved = await resolveIdentity(supabase, {
+      phone_raw: phone_e164,
+      visitor_id: visitor_id ?? null,
+      device_cookie_id,
+      canal,
+    })
+
+    if (!resolved) {
+      return NextResponse.json({ error: 'resolve_failed' }, { status: 500 })
     }
 
-    // 1. Chercher une row identity_bridge existante avec ce phone_hash
-    const { data: existing } = await supabase
-      .from('identity_bridge')
-      .select('id, prospect_id, driver_id, first_canal, user_type, metadata, identified_at')
-      .eq('phone_hash', phone_hash)
-      .maybeSingle()
+    const identity_id = resolved.identity_id
+    const merged = resolved.merged
 
-    let identity_id: string
-    let first_seen: string
-    let user_type: string
-    let merged = false
-
-    if (existing) {
-      // MERGE : on enrichit la row existante sans écraser first_canal/first_seen
-      identity_id = existing.id
-      first_seen = existing.identified_at || new Date().toISOString()
-      user_type = existing.user_type
-
-      const mergedMeta = {
-        ...(existing.metadata || {}),
-        last_seen_canal: canal,
-        last_seen_at: new Date().toISOString(),
-        all_canals: Array.from(
-          new Set([...(existing.metadata?.all_canals || [existing.first_canal]), canal])
-        ),
-      }
-
-      const updates: Record<string, unknown> = {
-        metadata: mergedMeta,
-        updated_at: new Date().toISOString(),
-      }
-
-      // Si on a un prospect_id et la row n'en avait pas, on le lie
-      if (prospect_id && !existing.prospect_id) {
-        updates.prospect_id = prospect_id
-      }
-
-      await supabase.from('identity_bridge').update(updates).eq('id', identity_id)
-      merged = true
-    } else {
-      // CREATE : nouvelle identité
-      const { data: created, error: createErr } = await supabase
-        .from('identity_bridge')
-        .insert({
-          prospect_id: prospect_id || null,
-          phone_hash,
-          first_canal: canal,
-          user_type: 'prospect',
-          metadata: {
-            last_seen_canal: canal,
-            last_seen_at: new Date().toISOString(),
-            all_canals: [canal],
-            ...(page_source ? { first_page_source: page_source } : {}),
-          },
-        })
-        .select('id, identified_at, user_type')
-        .single()
-
-      if (createErr || !created) {
-        console.error('[identity/capture] insert failed:', createErr?.message)
-        return NextResponse.json({ error: 'insert_failed' }, { status: 500 })
-      }
-
-      identity_id = created.id
-      first_seen = created.identified_at
-      user_type = created.user_type
-    }
-
-    // 2. Upsert dans canal_memory — fragment "phone_captured"
-    //    Le Responder Pieuvre consultera cette mémoire avant la prochaine réponse
+    // 2. Mémoire de canal — fragment "phone_captured" lu par le Responder Pieuvre.
     await supabase.from('canal_memory').upsert(
       {
         identity_id,
@@ -153,56 +88,51 @@ export async function POST(request: NextRequest) {
       { onConflict: 'identity_id,canal,context_key', ignoreDuplicates: false }
     )
 
-    // 3. Rétrocompat : enrichir aussi pieuvre_prospects.metadata si prospect_id fourni
-    //    (transition — à retirer quand tous les consumers lisent identity_bridge)
+    // 2bis. Origine d'acquisition — on la colle à la personne au moment où elle
+    // devient identifiable. Même table de mémoire, pas de nouvelle table.
+    const acquisition = readAcquisitionFromRequest(request)
+    await persistAcquisition(supabase, identity_id, canal, acquisition)
+
+    // 3. Lien prospect ↔ identité (colonne réelle `identity_id` de pieuvre_prospects,
+    //    plus l'attribution d'acquisition sur les colonnes qui existent vraiment).
     if (prospect_id) {
-      const { data: prospect } = await supabase
-        .from('pieuvre_prospects')
-        .select('metadata')
-        .eq('id', prospect_id)
-        .maybeSingle()
+      const prospectUpdate: Record<string, unknown> = { identity_id }
+      if (acquisition.utm_source) prospectUpdate.utm_source = acquisition.utm_source
+      if (acquisition.utm_campaign) prospectUpdate.utm_campaign = acquisition.utm_campaign
+      if (acquisition.ctwa_clid) prospectUpdate.ctwa_clid = acquisition.ctwa_clid
 
-      const updatedMeta = {
-        ...(prospect?.metadata || {}),
-        identity_hash: phone_hash, // legacy alias
-        identity_id, // pointer vers la nouvelle table
-        canal,
-        phone_captured_at: new Date().toISOString(),
-      }
-
-      await supabase
+      const { error: linkErr } = await supabase
         .from('pieuvre_prospects')
-        .update({ metadata: updatedMeta })
+        .update(prospectUpdate)
         .eq('id', prospect_id)
+      if (linkErr) console.warn('[identity/capture] prospect link:', linkErr.code, linkErr.message)
     }
 
-    // 4. Émettre event bus — colonnes v1.1 (identity_id + canal_source directs)
+    // 4. Event bus — colonnes v1.1 (identity_id + canal_source directs)
     await supabase.from('pieuvre_analytics_events').insert({
       event_name: 'widget.phone_captured',
-      identity_id,                         // v1.1 direct column
-      canal_source: canal,                 // v1.1 direct column
+      identity_id,
+      canal_source: canal,
       processed: false,
       meta: {
-        // rétrocompat 7j (consumers legacy lisent meta.identity_id)
         identity_id,
         canal,
         page_source: page_source || null,
         merged,
-        user_type,
+        is_known: resolved.is_known,
+        conflict: resolved.conflict ?? false,
+        user_type: resolved.user_type ?? null,
+        acquisition,
       },
       ts: Date.now(),
     })
 
-    // 5. Fire-and-forget Pieuvre webhook /webhook/phone-captured (v58 — fil pieuvre P0)
-    //    Trigger Variable Reward workflow wF5dzYGUReKt3TGB côté N8N.
-    //    On NE bloque PAS la réponse au widget — fail silently.
+    // 5. Webhook Pieuvre /webhook/phone-captured — fire-and-forget.
     const pieuvreBaseUrl = process.env.PIEUVRE_RESPOND_URL || ''
     const pieuvreSecret = process.env.PIEUVRE_RESPOND_SECRET || ''
     if (pieuvreBaseUrl && pieuvreSecret) {
-      // Extract origin from PIEUVRE_RESPOND_URL (which contains /webhook/ajnaya-respond)
       const origin = pieuvreBaseUrl.replace(/\/webhook\/.*$/, '')
       const phoneCapturedUrl = `${origin}/webhook/phone-captured`
-      // Fire-and-forget — don't await
       fetch(phoneCapturedUrl, {
         method: 'POST',
         headers: {
@@ -214,7 +144,8 @@ export async function POST(request: NextRequest) {
           canal,
           page_source: page_source || null,
           merged,
-          user_type,
+          user_type: resolved.user_type ?? null,
+          acquisition,
           ts: Date.now(),
         }),
       }).catch((err) => {
@@ -222,29 +153,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 6. Meta CAPI server-side — event Lead (v58 — fil pieuvre P0 #7)
-    //    Critique pour attribution CTWA / Advantage+ Meta. Fire-and-forget.
-    //    Le pixel client envoie aussi Lead avec eventID partagé via tracking.ts ;
-    //    Meta déduplique via event_id. Ici on émet en plus côté server-side parce
-    //    que la capture phone est l'événement de conversion principale.
+    // 6. Meta CAPI server-side — event Lead (attribution CTWA / Advantage+).
     const forwardedFor = request.headers.get('x-forwarded-for') || ''
     const clientIp = forwardedFor.split(',')[0]?.trim() || request.headers.get('x-real-ip') || undefined
     const clientUa = request.headers.get('user-agent') || undefined
-    const cookieHeader = request.headers.get('cookie') || ''
-    const fbcMatch = cookieHeader.match(/_fbc=([^;]+)/)
-    const fbpMatch = cookieHeader.match(/_fbp=([^;]+)/)
     sendCAPIEvent({
       eventName: 'Lead',
-      // eventId omis = nouveau Lead unique (pas de dedup avec un pixel client à
-      // ce moment précis car la capture s'est faite via l'API, pas via fbq client)
       eventSourceUrl: page_source ? `https://foreas.xyz${page_source}` : 'https://foreas.xyz',
       userData: {
-        phone: phone_e164,                    // sera normalisé + sha256 par buildUserData
-        externalId: identity_id,              // identity_bridge.id pour matching
+        phone: phone_e164,
+        externalId: identity_id,
         clientIpAddress: clientIp,
         clientUserAgent: clientUa,
-        fbc: fbcMatch?.[1] || null,
-        fbp: fbpMatch?.[1] || null,
+        fbc: acquisition.fbc ?? null,
+        fbp: acquisition.fbp ?? null,
       },
       customData: {
         contentName: 'phone_captured_widget',
@@ -258,8 +180,8 @@ export async function POST(request: NextRequest) {
       ok: true,
       identity_id,
       merged,
-      first_seen,
-      user_type,
+      is_known: resolved.is_known,
+      user_type: resolved.user_type ?? null,
     })
   } catch (error) {
     console.error('[identity/capture] Error:', (error as Error).message)

@@ -8,6 +8,8 @@ import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from
 import { speakText, stopSpeaking, unlockAudio, prefetchTTS, playBlob } from '@/lib/tts'
 import { useAnyOverlayOpen } from '@/lib/overlayStore'
 import { streamAjnayaChat } from '@/lib/ajnayaStream'
+import { getStoredVisitorId } from '@/lib/observe'
+import { getCachedVisitorId } from '@/lib/zoneFingerprint'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
 const WELCOME_MESSAGES: Record<string, string> = {
@@ -427,11 +429,19 @@ export default function AjnayaWidget() {
           if (data.prospectId) setProspectId(data.prospectId)
         }
 
-        // 2. Identity Bridge — hash via Edge Function hash-identity (server-side only)
+        // 2. Identité — porte unique (resolve_identity côté base, via /api/identity/capture).
+        //    `visitor_id` est la MÊME empreinte que celle envoyée à /api/observe :
+        //    sans elle, la personne déjà connue en anonyme repart en identité neuve.
         const captureRes = await fetch('/api/identity/capture', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone_raw: cleaned, prospect_id: prospectId, canal: 'widget', page_source: pathname }),
+          body: JSON.stringify({
+            phone_raw: cleaned,
+            prospect_id: prospectId,
+            canal: 'widget',
+            page_source: pathname,
+            visitor_id: getStoredVisitorId() ?? getCachedVisitorId(),
+          }),
         })
         if (captureRes.ok) {
           const captureData = await captureRes.json()

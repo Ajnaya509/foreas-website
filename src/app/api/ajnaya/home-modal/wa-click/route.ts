@@ -63,13 +63,16 @@ export async function POST(request: NextRequest) {
       // Identité : le client renvoie l'identity_id reçu aux tours précédents ; repli
       // sur resolve_identity(visitor_id|cookie) pour ne JAMAIS perdre la personne au
       // moment le plus précieux du tunnel (le clic WhatsApp). Brief Chantier B.
+      // P0.h — porte unique : @/lib/identityGate → RPC resolve_identity.
       let identityId: string | null = body.identity_id ?? null
-      if (!identityId) {
-        const key = body.visitor_id || device_cookie_id
-        if (key) {
-          const { data } = await sb.rpc('resolve_identity', { p_visitor_id: key, p_canal: 'home_modal' })
-          identityId = (data as { identity_id?: string } | null)?.identity_id ?? null
-        }
+      if (!identityId && (body.visitor_id || device_cookie_id)) {
+        const { resolveIdentity } = await import('@/lib/identityGate')
+        const resolved = await resolveIdentity(sb, {
+          visitor_id: body.visitor_id ?? null,
+          device_cookie_id,
+          canal: 'home_modal',
+        })
+        identityId = resolved?.identity_id ?? null
       }
 
       await sb.rpc('record_funnel_event', {

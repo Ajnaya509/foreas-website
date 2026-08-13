@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
 
@@ -275,6 +276,9 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
 // Brief AJNAYA_FIX_TUNNEL_SITE_HOME_MODAL §Chantier B : rattacher CHAQUE funnel_event
 // à une PERSONNE pour que le DG puisse relancer un lâcheur. resolve_identity(p_visitor_id)
 // crée/résout une identité (user_type='anonymous') depuis le fingerprint + renvoie son id.
+// P0.h — passe par la porte unique `@/lib/identityGate` (RPC resolve_identity),
+// la même que WhatsApp, l'app et /api/identity/capture. Plus aucun accès direct
+// à identity_bridge depuis le site.
 async function resolveIdentityId(opts: {
   identity_id: string | null
   visitor_id: string | null
@@ -283,13 +287,17 @@ async function resolveIdentityId(opts: {
   // Déjà résolu côté client / tour précédent → on garde la même identité.
   if (opts.identity_id) return opts.identity_id
   // Sans aucune clé anonyme, ne PAS créer d'identité orpheline (non re-matchable).
-  const key = opts.visitor_id || opts.device_cookie_id
-  if (!key) return null
+  if (!opts.visitor_id && !opts.device_cookie_id) return null
   try {
     const sb = await getSupabase()
     if (!sb) return null
-    const { data } = await sb.rpc('resolve_identity', { p_visitor_id: key, p_canal: 'home_modal' })
-    return (data as { identity_id?: string } | null)?.identity_id ?? null
+    const { resolveIdentity } = await import('@/lib/identityGate')
+    const resolved = await resolveIdentity(sb, {
+      visitor_id: opts.visitor_id,
+      device_cookie_id: opts.device_cookie_id,
+      canal: 'home_modal',
+    })
+    return resolved?.identity_id ?? null
   } catch {
     return null
   }
@@ -495,6 +503,15 @@ export async function POST(request: NextRequest) {
     const ab_variant = (body as { ab_variant?: string }).ab_variant ?? null
     const resolvedIdentityId = await resolveIdentityId({ identity_id, visitor_id, device_cookie_id })
 
+    // Origine du visiteur (utm_*/fbclid/gclid/ttclid/ctwa_clid/_fbc/_fbp), lue
+    // côté serveur depuis les cookies 1ère partie. Avant P0.h, le cerveau
+    // recevait littéralement `utm: {}` — l'origine n'était captée nulle part.
+    const acquisition = readAcquisitionFromRequest(request)
+    if (resolvedIdentityId && turn === 1) {
+      const sbAcq = await getSupabase()
+      if (sbAcq) await persistAcquisition(sbAcq, resolvedIdentityId, 'home_modal', acquisition)
+    }
+
     // 1. Fetch zone data on turn 1
     let resolvedZoneData: ZoneData | null = clientZoneData
     if (turn === 1) {
@@ -559,7 +576,11 @@ export async function POST(request: NextRequest) {
           session_id,
           message: { role: 'user', text: message, type: 'text' },
           context: extendedContext,
-          meta: { device: 'web', utm: {}, user_agent: '' },
+          meta: {
+            device: 'web',
+            utm: { ...acquisition } as Record<string, string>,
+            user_agent: request.headers.get('user-agent') || '',
+          },
         })
 
         if (result?.reply?.text) {
