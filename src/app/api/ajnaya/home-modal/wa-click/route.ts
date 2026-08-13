@@ -67,12 +67,15 @@ export async function POST(request: NextRequest) {
       let identityId: string | null = body.identity_id ?? null
       if (!identityId && (body.visitor_id || device_cookie_id)) {
         const { resolveIdentity } = await import('@/lib/identityGate')
-        const resolved = await resolveIdentity(sb, {
+        const resolution = await resolveIdentity(sb, {
           visitor_id: body.visitor_id ?? null,
           device_cookie_id,
           canal: 'home_modal',
         })
-        identityId = resolved?.identity_id ?? null
+        // `conflict` : plusieurs personnes identifiées derrière cet appareil.
+        // Un clic WhatsApp attribué au mauvais chauffeur ouvre la conversation
+        // d'un autre — on préfère l'événement sans identité.
+        identityId = resolution.status === 'resolved' ? resolution.identity.identity_id : null
       }
 
       await sb.rpc('record_funnel_event', {

@@ -59,17 +59,36 @@ export async function POST(request: NextRequest) {
     const device_cookie_id = request.cookies.get('foreas_vid')?.value ?? null
 
     // ── LA PORTE UNIQUE ────────────────────────────────────────────────────
-    const resolved = await resolveIdentity(supabase, {
+    const resolution = await resolveIdentity(supabase, {
       phone_raw: phone_e164,
       visitor_id: visitor_id ?? null,
       device_cookie_id,
       canal,
     })
 
-    if (!resolved) {
+    // ⚠️ `conflict` = la base ne sait pas de QUI il s'agit (plusieurs personnes
+    // fortes sur les mêmes clés). Continuer, c'est coller ce téléphone au dossier
+    // d'un autre chauffeur, lui envoyer le handoff WhatsApp d'un autre et pousser
+    // le mauvais téléphone dans Meta CAPI. On s'arrête et on trace : la base a
+    // déjà écrit `merge_conflict` dans pieuvre_watchdog_logs, on ajoute ici la
+    // trace côté funnel pour qu'un humain voie le lead perdu.
+    if (resolution.status === 'conflict') {
+      await supabase.from('pieuvre_analytics_events').insert({
+        event_name: 'identity.capture_conflict',
+        canal_source: canal,
+        processed: false,
+        meta: { canal, page_source: page_source || null, has_visitor_id: Boolean(visitor_id), has_device_cookie: Boolean(device_cookie_id) },
+        ts: Date.now(),
+      })
+      console.warn('[identity/capture] merge_conflict — capture refusée, aucun rattachement')
+      return NextResponse.json({ error: 'identity_conflict' }, { status: 409 })
+    }
+
+    if (resolution.status !== 'resolved') {
       return NextResponse.json({ error: 'resolve_failed' }, { status: 500 })
     }
 
+    const resolved = resolution.identity
     const identity_id = resolved.identity_id
     const merged = resolved.merged
 
@@ -120,7 +139,7 @@ export async function POST(request: NextRequest) {
         page_source: page_source || null,
         merged,
         is_known: resolved.is_known,
-        conflict: resolved.conflict ?? false,
+        device_shared: resolved.device_shared ?? false,
         user_type: resolved.user_type ?? null,
         acquisition,
       },

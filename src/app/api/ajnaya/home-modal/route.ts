@@ -292,12 +292,16 @@ async function resolveIdentityId(opts: {
     const sb = await getSupabase()
     if (!sb) return null
     const { resolveIdentity } = await import('@/lib/identityGate')
-    const resolved = await resolveIdentity(sb, {
+    const resolution = await resolveIdentity(sb, {
       visitor_id: opts.visitor_id,
       device_cookie_id: opts.device_cookie_id,
       canal: 'home_modal',
     })
-    return resolved?.identity_id ?? null
+    // `conflict` : appareil porté par plusieurs personnes identifiées. On préfère
+    // un funnel_event sans identité qu'un funnel_event collé au mauvais chauffeur
+    // (qui déclencherait une relance du DG vers quelqu'un qui n'a rien demandé).
+    if (resolution.status !== 'resolved') return null
+    return resolution.identity.identity_id
   } catch {
     return null
   }
