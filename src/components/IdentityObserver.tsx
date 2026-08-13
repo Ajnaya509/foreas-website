@@ -14,11 +14,18 @@ import { useEffect, useRef } from 'react'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { observeVisit } from '@/lib/observe'
 import { hasTrackingConsent } from '@/lib/consent'
+import { captureAcquisition } from '@/lib/acquisition'
 
 export default function IdentityObserver() {
   const done = useRef(false)
 
   useEffect(() => {
+    // Origine du visiteur figée au PREMIER contact (cookie 1ère partie, 90 j).
+    // Fait avant la porte de consentement : ce sont les paramètres de campagne
+    // déjà présents dans l'URL du visiteur, pas un traceur. Leur ENVOI reste
+    // gaté par le consentement (observeVisit ci-dessous).
+    captureAcquisition()
+
     const run = async () => {
       if (done.current || !hasTrackingConsent()) return
       try {

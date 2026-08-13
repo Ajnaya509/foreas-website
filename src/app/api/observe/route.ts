@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
 
@@ -70,7 +71,24 @@ export async function POST(request: NextRequest) {
     })
     if (!res.ok) return NextResponse.json({ ok: false, reason: `upstream_${res.status}` }, { status: 200 })
     const data = await res.json().catch(() => ({}))
-    return NextResponse.json({ ok: true, identity_id: data?.identity_id ?? null, is_known: data?.is_known ?? null })
+    const identityId: string | null = data?.identity_id ?? null
+
+    // P0.h — origine de la visite collée à la personne dès qu'elle est résolue.
+    // Lue côté serveur (cookie 1ère partie `foreas_acq` + cookies pixels), écrite
+    // dans `canal_memory` : la mémoire que le Responder Pieuvre lit déjà.
+    if (identityId) {
+      try {
+        const acq = readAcquisitionFromRequest(request)
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const srk = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (url && srk) {
+          const { createClient } = await import('@supabase/supabase-js')
+          await persistAcquisition(createClient(url, srk), identityId, canal, acq)
+        }
+      } catch { /* l'observation ne casse jamais la visite */ }
+    }
+
+    return NextResponse.json({ ok: true, identity_id: identityId, is_known: data?.is_known ?? null })
   } catch {
     return NextResponse.json({ ok: false, reason: 'error' }, { status: 200 }) // jamais casser le client
   }
