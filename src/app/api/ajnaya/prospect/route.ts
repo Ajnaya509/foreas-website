@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readAcquisitionFromRequest } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
 
@@ -8,6 +9,26 @@ async function getSupabase() {
   if (!url || !key) return null
   const { createClient } = await import('@supabase/supabase-js')
   return createClient(url, key)
+}
+
+/**
+ * `pieuvre_prospects.source` porte un CHECK strict en base :
+ *   whatsapp | ctwa | cold_call | cold_email | referral | organic | b2b_fleet |
+ *   scraper | tribal | home_search_v1
+ * Le site envoyait `widget_site`, qui n'y figure pas → 23514, INSERT refusé.
+ * On traduit ici plutôt que d'élargir la contrainte (la base n'est pas dans ce
+ * périmètre, et un vocabulaire d'origine qui s'élargit à chaque appelant ne veut
+ * plus rien dire).
+ */
+const ALLOWED_SOURCES = new Set([
+  'whatsapp', 'ctwa', 'cold_call', 'cold_email', 'referral',
+  'organic', 'b2b_fleet', 'scraper', 'tribal', 'home_search_v1',
+])
+
+function toAllowedSource(raw: string, ctwaClid?: string): string {
+  if (ctwaClid) return 'ctwa'            // venu d'une pub Click-to-WhatsApp
+  if (ALLOWED_SOURCES.has(raw)) return raw
+  return 'organic'                        // visiteur du site sans campagne identifiée
 }
 
 // POST — Create or find a prospect
@@ -60,18 +81,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new prospect
-    const newProspect = {
+    //
+    // ⚠️ CORRECTIF P0.h (2026-08-13) : cet INSERT portait un champ `metadata`.
+    // La table `pieuvre_prospects` N'A PAS de colonne `metadata` (colonnes réelles :
+    // id, phone, email, first_name, last_name, source, status, score, objections,
+    // conversations_count, last_conversation_at, last_contacted_at,
+    // assigned_tentacle, utm_source, utm_campaign, conversion_value, lost_reason,
+    // notes, driver_id, created_at, updated_at, referred_by_driver_id,
+    // referral_code_used, identity_id, ctwa_clid). PostgREST rejetait donc 100 %
+    // des créations de prospect venant du widget — d'où 0 prospect widget en base.
+    // `pageSource` part dans `notes`, colonne qui existe.
+    const acquisition = readAcquisitionFromRequest(request)
+    const newProspect: Record<string, unknown> = {
       phone: phone ? phone.replace(/[\s.\-()]/g, '') : null,
       email: email || null,
       first_name: firstName || null,
-      source,
+      source: toAllowedSource(source, acquisition.ctwa_clid),
       status: 'new',
       score: 10,
       objections: [],
       conversations_count: 0,
-      utm_source: utm_source || null,
-      utm_campaign: utm_campaign || null,
-      metadata: { pageSource },
+      // Origine RÉELLE du visiteur (cookie 1ère partie), avec repli sur ce que
+      // l'appelant transmet. Avant, seule une constante côté Pieuvre remplissait
+      // ces colonnes.
+      utm_source: acquisition.utm_source || utm_source || null,
+      utm_campaign: acquisition.utm_campaign || utm_campaign || null,
+      ctwa_clid: acquisition.ctwa_clid || null,
+      notes: pageSource ? `page_source=${String(pageSource).slice(0, 200)}` : null,
     }
 
     const { data, error } = await sb
@@ -81,7 +117,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[ajnaya/prospect] Insert error:', error.message)
+      console.error('[ajnaya/prospect] Insert error:', error.code, error.message)
       return NextResponse.json({ error: 'Erreur création prospect' }, { status: 500 })
     }
 
