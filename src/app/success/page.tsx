@@ -27,6 +27,7 @@ import Stripe from 'stripe'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SuccessChecmark from './SuccessCheckmark'
+import { PLAY_STORE_URL } from '@/lib/app-stores'
 
 export const dynamic = 'force-dynamic' // session unique → pas de cache CDN
 export const runtime = 'nodejs'
@@ -264,7 +265,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
             title="Téléchargez l'app"
             description="Android — disponible Play Store. iOS bientôt."
             ctaLabel="Play Store →"
-            ctaHref="https://play.google.com/store/apps/details?id=com.foreas.driver"
+            ctaHref={PLAY_STORE_URL}
             external
             accent="violet"
           />

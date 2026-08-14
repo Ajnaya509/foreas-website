@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { SectionHeader, EyebrowLabel } from '@/components/ui'
+import { APP_STORE_URL } from '@/lib/app-stores'
 
 /**
  * CTA — Site2026v44 (Phase 3.2)
@@ -65,7 +66,7 @@ export default function CTA() {
           {/* Download cards — touch target ≥ 56pt (iOS HIG + Norman) */}
           <div className="flex flex-col sm:flex-row gap-md justify-center mt-huge mb-xxl">
             <motion.a
-              href="https://apps.apple.com/app/foreas-driver"
+              href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.02, y: -1 }}

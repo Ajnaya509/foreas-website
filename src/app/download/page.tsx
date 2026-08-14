@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 
 type Device = 'ios' | 'android' | 'desktop'
 
@@ -15,8 +16,8 @@ function detectDevice(): Device {
   return 'desktop'
 }
 
-const APP_STORE = 'https://apps.apple.com/app/foreas/id000000000'
-const PLAY_STORE = 'https://play.google.com/store/apps/details?id=com.foreas.app'
+const APP_STORE = APP_STORE_URL
+const PLAY_STORE = PLAY_STORE_URL
 
 export default function DownloadPage() {
   const [device, setDevice] = useState<Device>('desktop')

@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -115,9 +116,9 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
 
       <!-- Store links — gris discret -->
       <p style="text-align:center;font-family:'Montserrat',sans-serif;font-size:11px;color:#3a3a4a;margin:0 0 40px;">
-        <a href="https://apps.apple.com/app/foreas/id000000000" style="color:#5a5a6e;text-decoration:none;">App Store</a>
+        <a href="${APP_STORE_URL}" style="color:#5a5a6e;text-decoration:none;">App Store</a>
         <span style="color:#2a2a3a;"> &nbsp;&middot;&nbsp; </span>
-        <a href="https://play.google.com/store/apps/details?id=com.foreas.app" style="color:#5a5a6e;text-decoration:none;">Google Play</a>
+        <a href="${PLAY_STORE_URL}" style="color:#5a5a6e;text-decoration:none;">Google Play</a>
       </p>
 
       <!-- ═══ NEXT STEPS — minimaliste ═══ -->

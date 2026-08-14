@@ -1,18 +1,23 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import { boutiquePourAgent } from '@/lib/app-stores'
 
+/**
+ * /go — lien court universel (QR codes, campagnes, SMS).
+ * Envoie vers la bonne boutique selon le téléphone ; sur ordinateur, vers /go/desktop
+ * qui propose les deux.
+ *
+ * AVANT le 14/08/2026, les deux destinations étaient des HTTP 404 :
+ * `id[APP_ID]` (un gabarit jamais rempli, parti en production) et `com.foreas.driver`
+ * (un identifiant de paquet qui n'existe pas). Les vraies fiches — vérifiées 200 —
+ * vivent maintenant dans src/lib/app-stores.ts, seul endroit où elles sont écrites.
+ */
 export async function GET() {
   const headersList = await headers()
-  const ua = headersList.get('user-agent') || ''
+  const boutique = boutiquePourAgent(headersList.get('user-agent'))
 
-  const isIOS = /iPhone|iPad|iPod/i.test(ua)
-  const isAndroid = /Android/i.test(ua)
-
-  if (isIOS) {
-    return NextResponse.redirect('https://apps.apple.com/app/foreas-driver/id[APP_ID]', 307)
-  } else if (isAndroid) {
-    return NextResponse.redirect('https://play.google.com/store/apps/details?id=com.foreas.driver', 307)
-  } else {
-    return NextResponse.redirect(new URL('/go/desktop', 'https://foreas.xyz'), 307)
+  if (boutique) {
+    return NextResponse.redirect(boutique, 307)
   }
+  return NextResponse.redirect(new URL('/go/desktop', 'https://www.foreas.xyz'), 307)
 }

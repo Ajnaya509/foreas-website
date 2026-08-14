@@ -2,6 +2,7 @@
 
 import { QRCodeSVG } from 'qrcode.react'
 import Link from 'next/link'
+import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 
 export default function GoDesktopPage() {
   return (
@@ -37,13 +38,13 @@ export default function GoDesktopPage() {
 
         <div className="flex flex-col gap-3 max-w-xs mx-auto">
           <Link
-            href="https://apps.apple.com/app/foreas-driver/id[APP_ID]"
+            href={APP_STORE_URL}
             className="block w-full py-3 bg-[#00D4FF] text-[#050508] font-bold rounded-xl hover:bg-cyan-300 transition text-sm"
           >
             App Store (iOS)
           </Link>
           <Link
-            href="https://play.google.com/store/apps/details?id=com.foreas.driver"
+            href={PLAY_STORE_URL}
             className="block w-full py-3 bg-[#8C52FF] text-white font-bold rounded-xl hover:bg-purple-600 transition text-sm"
           >
             Google Play (Android)
