@@ -6,8 +6,10 @@ import { TrendingUp, Clock, MapPin, Brain, Layers, Zap } from 'lucide-react'
 const features = [
   {
     icon: TrendingUp,
-    title: '7 apps en 1 écran',
-    description: 'Uber, Bolt, Heetch + 4, en direct.',
+    // 14/08/2026 — « 7 apps » : select distinct platform from rides → Uber, Bolt,
+    // Heetch (+ « Private » = course directe) = 3 plateformes réelles.
+    title: 'Tes 3 apps en 1 écran',
+    description: 'Uber, Bolt, Heetch, au même endroit.',
     color: 'from-green-500 to-emerald-500',
     iconBg: 'bg-green-500/10',
     iconColor: 'text-green-400',

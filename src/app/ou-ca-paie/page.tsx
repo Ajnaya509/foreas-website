@@ -63,12 +63,13 @@ const JSON_LD = {
       operatingSystem: 'Web, iOS, Android, WhatsApp',
       applicationCategory: 'BusinessApplication',
       description:
-        "L'IA FOREAS qui dit aux chauffeurs VTC où aller — analyse 7 plateformes en temps réel, anticipe la demande, parle vocal et texte.",
+        "Ajnaya, le copilote FOREAS qui dit aux chauffeurs VTC où aller — lit tes courses Uber, Bolt et Heetch, et te répond à la voix comme au clavier.",
       offers: {
         '@type': 'Offer',
         price: '0',
         priceCurrency: 'EUR',
-        description: 'Essai gratuit 3 jours, sans inscription, sans carte.',
+        // 14/08/2026 — « sans carte » était faux (payment_method_collection:'always').
+            description: 'Essai 3 jours à 0 € — carte demandée, rien débité, annulation en un clic.',
       },
       // aggregateRating retiré : pas d'avis vérifiables. Un faux rich-snippet de notation
       // = risque pénalité Google + pratique commerciale trompeuse. À remettre quand de

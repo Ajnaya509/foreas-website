@@ -26,7 +26,9 @@ export default function HomeProofStrip() {
     },
     {
       icon: Layers,
-      label: '7 plateformes lues',
+      // 14/08/2026 — « 7 plateformes lues » alors que le détail juste en dessous n'en
+          // nomme que 3. select distinct platform from rides → Uber, Bolt, Heetch.
+          label: 'Tes 3 apps réunies',
       detail: 'Uber, Bolt, Heetch…',
     },
     {

@@ -63,7 +63,7 @@ export default function AProposPage() {
           >
             <h2 className="font-title text-xl md:text-2xl font-semibold text-white mb-3 md:mb-4">Comment</h2>
             <p className="text-sm md:text-base text-white/50 leading-relaxed">
-              Ajnaya lit le marché en temps réel. Elle anticipe la demande.
+              Ajnaya lit ce que paient vraiment les courses, zone par zone, heure par heure.
               Elle te dit où aller avant les autres. Résultat : tu arrêtes de rouler à vide.
             </p>
           </motion.div>

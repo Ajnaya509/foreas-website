@@ -67,7 +67,7 @@ export default function CGUPage() {
               </p>
               <ul className="mt-3 space-y-2.5 list-none">
                 <li className="pl-4 border-l border-white/15 font-sans text-sm md:text-base text-white/65 leading-relaxed">Des recommandations de zones et d&apos;horaires basées sur l&apos;analyse de données géographiques, temporelles et contextuelles ;</li>
-                <li className="pl-4 border-l border-white/15 font-sans text-sm md:text-base text-white/65 leading-relaxed">Des alertes et suggestions en temps réel via l&apos;assistant vocal Ajnaya ;</li>
+                <li className="pl-4 border-l border-white/15 font-sans text-sm md:text-base text-white/65 leading-relaxed">Des alertes et suggestions via Ajnaya, à la voix comme au clavier ;</li>
                 <li className="pl-4 border-l border-white/15 font-sans text-sm md:text-base text-white/65 leading-relaxed">Des tableaux de bord de suivi de performance et de revenus ;</li>
                 <li className="pl-4 border-l border-white/15 font-sans text-sm md:text-base text-white/65 leading-relaxed">Des indicateurs d&apos;optimisation d&apos;itinéraires et de temps de repositionnement.</li>
               </ul>

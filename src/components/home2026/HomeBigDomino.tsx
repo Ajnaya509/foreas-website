@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
  * - Big Domino (identification stratégique + crédibilité)
  *   "Pendant que tu tournes à vide,
  *    l'appli sait déjà où sont les courses."
- * - Sub-line crédibilité : "Ajnaya lit la demande en temps réel sur 51 zones.
+ * - Sub-line crédibilité : "Ajnaya lit la demande sur 52 zones.
  *    Toi, tu conduis. Elle, elle calcule."
  * - Fond dégradé crème (#F8F4ED) → noir Apple absolu (#000000)
  *

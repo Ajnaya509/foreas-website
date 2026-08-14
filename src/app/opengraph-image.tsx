@@ -91,7 +91,7 @@ export default async function OpengraphImage() {
               }}
             >
               <div style={{ width: 10, height: 10, borderRadius: 9999, backgroundColor: '#10B981', display: 'flex' }} />
-              Uber · Bolt · Heetch · +4 — lus en direct
+              Uber · Bolt · Heetch — au même endroit
             </div>
           </div>
 
@@ -149,7 +149,7 @@ export default async function OpengraphImage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', fontSize: 28, color: '#F8FAFC', fontWeight: 700 }}>foreas.xyz</div>
               <div style={{ display: 'flex', fontSize: 23, color: '#9AA3B2', fontWeight: 500 }}>
-                FOREAS lit les 7 apps en direct
+                Uber, Bolt, Heetch au même endroit
               </div>
             </div>
           </div>

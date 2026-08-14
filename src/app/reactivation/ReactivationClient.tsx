@@ -6,7 +6,8 @@
  * → paiement IMMÉDIAT (pas d'essai) + garantie 30j satisfait-remboursé (risk reversal Hormozi).
  *
  * Copy : copy-atomic (base FROIDE + product-aware → on vend la PREUVE + l'OFFRE + la GARANTIE,
- * tutoiement pro Koraly, "gagne plus roule moins", 29,99€/mois = source pricing (pieuvre_pricing_plans, 12/07/2026), zéro chiffre inventé).
+ * tutoiement pro Koraly, "gagne plus roule moins", zéro chiffre inventé).
+ * Prix : src/lib/offre.ts (source unique côté site). Affirmations : src/lib/verite-commerciale.ts.
  * Design : design-system site "Dark Sovereign" (#050508), un seul héros, garantie proéminente,
  * tabular-nums, quiet-tech. Distraction zéro (pas de nav riche — règle landing §6.8).
  */
@@ -15,8 +16,18 @@ import { useState } from 'react'
 import { ShieldCheck, Check, Lock, ArrowRight, Loader2 } from 'lucide-react'
 import TestimonialVideoCard from '@/components/zone/TestimonialVideoCard'
 import { TESTIMONIALS } from '@/components/zone/testimonials.data'
+import { PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
+import { COMMUNAUTE_PHRASES, COMPTA_PHRASES } from '@/lib/verite-commerciale'
 
 const BINATE = TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[1]
+
+/**
+ * ⚠️ Le prix était écrit EN DUR à 4 endroits de ce fichier (« 29,99€ »).
+ * Mesure du 14/08/2026 : le site encaissait déjà DEUX prix différents pour le même
+ * produit (29,99 € via /api/checkout, 97 € via /api/subscription/create) parce
+ * qu'un montant vivait à plusieurs endroits. Source unique = src/lib/offre.ts.
+ */
+const PRIX_MOIS = formaterEuros(PRIX_MENSUEL_CENTIMES)
 
 const C = {
   bg: '#050508',
@@ -84,7 +95,7 @@ export default function ReactivationClient() {
         {!loading && <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />}
       </button>
       <p className="text-[12px]" style={{ color: C.muted }}>
-        Paiement aujourd&apos;hui · 29,99€/mois · annulation 1 clic
+        Paiement aujourd&apos;hui · {PRIX_MOIS}/mois · annulation 1 clic
       </p>
       {err && <p className="text-[12px]" style={{ color: '#F87171' }}>{err}</p>}
     </div>
@@ -123,30 +134,53 @@ export default function ReactivationClient() {
         {/* Remplaçable par la vidéo FONDATEUR quand elle est prête. En attendant : Binaté, cas réel. */}
         <section className="mt-8">
           <TestimonialVideoCard testimonial={BINATE} index={0} showQuote />
+          {/*
+            ⚠️ Ici s'affichait « 8 chauffeurs sur 10 qui reviennent choisissent Pro ».
+            Mesuré faux le 14/08/2026 : `select count(*) from subscriptions` → 4 (toutes
+            actives), `select count(*) filter (where subscription_active), count(*) from
+            drivers` → 8/30, et `pieuvre_pricing_plans.plan_code='pro_monthly'` est
+            `is_active=false`. Aucune table de « chauffeurs revenus » : le ratio 8/10
+            n'avait aucune source calculable, et aucun plan « Pro » n'existe.
+            Remplacé par la seule preuve vérifiable de cette page — les visages filmés
+            (src/components/zone/testimonials.data.ts → 6), servie par verite-commerciale.ts.
+          */}
           <p className="mt-3 text-center text-[13px]" style={{ color: C.muted }}>
-            <strong style={{ color: C.green }}>8 chauffeurs sur 10</strong> qui reviennent choisissent Pro.
+            <strong style={{ color: C.green }}>{COMMUNAUTE_PHRASES.preuveHonnete}</strong>. Regarde-les
+            avant de sortir ta carte.
           </p>
         </section>
 
-        {/* ── BÉNÉFICE + ancrage prix (3,23€/jour = un péage) ───────────────── */}
+        {/* ── BÉNÉFICE + ancrage prix (le prix/jour vient de offre.ts, pas d'un chiffre écrit ici) ── */}
         <section className="mt-10 text-center">
           <h2 className="text-[26px] sm:text-[32px] font-extrabold tracking-tight" style={{ color: C.hero }}>
             Gagne plus, roule moins.
           </h2>
+          {/*
+            ⚠️ « Une seule course récupérée dans la semaine, et c'est remboursé » promettait
+            un gain que rien ne mesure (aucun agrégat de revenu chauffeur, cf. verite-commerciale.ts).
+            Remplacé par un fait vérifiable dans le code : `annulationEnUnClic: true`.
+          */}
           <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed" style={{ color: C.text }}>
-            <strong style={{ color: C.hero }}>29,99€/mois</strong>, c&apos;est{' '}
-            <strong style={{ color: C.cyan }}>1€/jour</strong> — le prix d&apos;un café. Une seule course
-            récupérée dans la semaine, et c&apos;est remboursé.
+            <strong style={{ color: C.hero }}>{PRIX_MOIS}/mois</strong>, c&apos;est{' '}
+            <strong style={{ color: C.cyan }}>moins d&apos;1 € par jour</strong> — le prix d&apos;un café.
+            Et tu coupes en un clic, quand tu veux.
           </p>
         </section>
 
         {/* ── OFFRE + CTA (un seul chemin) ──────────────────────────────────── */}
         <section className="mt-8 rounded-3xl p-6 sm:p-8" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
           <div className="flex items-center justify-between">
+            {/*
+              ⚠️ « Pro · le plus choisi » : double mensonge mesuré le 14/08/2026.
+              (1) `pieuvre_pricing_plans.plan_code='pro_monthly'` → `is_active=false` : aucun
+              plan « Pro » n'est vendable, src/lib/offre.ts n'expose que mensuel/annuel.
+              (2) « le plus choisi » est un superlatif qu'aucun agrégat n'alimente
+              (4 abonnements au total) — interdit par verite-commerciale.ts §1.
+            */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: C.violet }}>Pro · le plus choisi</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: C.violet }}>Une seule offre, tout dedans</p>
               <p className="mt-1 text-[34px] font-extrabold tabular-nums leading-none" style={{ color: C.hero }}>
-                29,99€<span className="text-[15px] font-semibold" style={{ color: C.muted }}>/mois</span>
+                {PRIX_MOIS}<span className="text-[15px] font-semibold" style={{ color: C.muted }}>/mois</span>
               </p>
             </div>
             <Guarantee className="hidden sm:inline-flex" />
@@ -154,10 +188,25 @@ export default function ReactivationClient() {
 
           <ul className="mt-5 space-y-2.5">
             {[
-              'Ajnaya IA illimitée + voix Koraly',
+              /*
+                ⚠️ « Ajnaya IA illimitée » : le mot « IA » est banni du site (Ajnaya a un nom,
+                on l'emploie — verite-commerciale.ts). Et « illimitée » n'est adossé à aucun
+                quota mesuré : la voix passe par un quota ElevenLabs qui, lui, s'épuise.
+              */
+              'Ajnaya avec toi au volant — et sa voix, Koraly',
               'Heatmap multi-source (où ça paie, en vrai)',
               'Coach courses : accepter / refuser en 0,3s',
-              'Compta IA + Tirelire URSSAF auto',
+              /*
+                ⚠️ « Compta IA + Tirelire URSSAF auto » = promesse d'un service financier qui
+                n'existe pas. Mesure du 14/08/2026 : sur 356 tables, `select table_name from
+                information_schema.tables where table_schema='public' and (table_name ilike
+                '%wallet%' or '%tirelire%' or '%urssaf%')` → 0 ligne. Aucun portefeuille, aucun
+                cantonnement, aucun mouvement d'argent. L'URSSAF SE CALCULE, elle ne se met pas
+                de côté. Et FOREAS est copilote de gestion, jamais expert-comptable
+                (Ordonnance du 19 sept. 1945, art. 20). Formulation servie par
+                verite-commerciale.ts → COMPTA_PHRASES, déjà appliquée sur /checkout.
+              */
+              `${COMPTA_PHRASES.titre} : ${COMPTA_PHRASES.sousTitre}`,
             ].map((f) => (
               <li key={f} className="flex items-start gap-2.5 text-[14px]" style={{ color: C.text }}>
                 <Check size={17} style={{ color: C.green }} className="mt-0.5 shrink-0" />
@@ -181,7 +230,12 @@ export default function ReactivationClient() {
         {/* ── OBJECTIONS (les 3 craintes du grincheux, courtes + factuelles) ── */}
         <section className="mt-10 space-y-3">
           {[
-            { q: '« C\'est trop cher. »', a: '1€/jour. Une course que tu rates te coûte plus. Le retour se voit dès la première semaine.' },
+            /*
+              ⚠️ « Le retour se voit dès la première semaine » : promesse de résultat daté,
+              qu'aucune mesure ne soutient (aucun agrégat de revenu chauffeur en base).
+              Remplacée par une comparaison de prix, vérifiable par n'importe qui.
+            */
+            { q: '« C\'est trop cher. »', a: `Moins d'1 € par jour. Le mois entier coûte moins qu'un plein.` },
             { q: '« Ça marche pas pour moi. »', a: 'Garantie 30 jours, remboursé sans discuter. Tu testes en vrai, tu risques zéro.' },
             { q: '« J\'ai pas le temps. »', a: '2 minutes pour activer. Après, Ajnaya bosse pendant que tu conduis.' },
           ].map((o) => (
@@ -197,7 +251,7 @@ export default function ReactivationClient() {
           <p className="mb-4 text-[15px]" style={{ color: C.text }}>
             Tu as déjà perdu un an. Ce soir, tu peux reprendre la main.
           </p>
-          <CTA label="Reprendre la main — 29,99€" />
+          <CTA label={`Reprendre la main — ${PRIX_MOIS}`} />
         </section>
 
         <p className="mt-10 text-center text-[11px]" style={{ color: C.muted }}>

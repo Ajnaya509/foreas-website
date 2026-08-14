@@ -582,7 +582,7 @@ export default function ChauffeursPage() {
             eyebrow="Comment ça marche"
             title="L'IA qui voit"
             gradient="avant la demande."
-            subtitle="Pas de magie. Des données en temps réel : trains, événements, météo, habitudes locales."
+            subtitle="Pas de magie. Les courses réellement enregistrées dans ta zone, à ton heure."
           />
         </div>
         <ScrollMapAnimation />

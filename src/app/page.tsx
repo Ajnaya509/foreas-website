@@ -22,11 +22,11 @@ const ExitIntentModal = dynamic(() => import('@/components/home2026/ExitIntentMo
 export const metadata: Metadata = {
   title: 'FOREAS — Gagne plus, roule moins. Pour les chauffeurs VTC.',
   description:
-    'Ton net réel, commission déduite, avant d\'accepter la course. Tarif horaire, demande et pool optimal sur 51 zones VTC. Tape ta zone, vois ce qui paie ce soir.',
+    'Ton net réel, commission déduite, avant d\'accepter la course. Tarif horaire, demande et pool optimal sur 52 zones VTC. Tape ta zone, vois ce qui paie ce soir.',
   openGraph: {
     title: 'FOREAS — Gagne plus, roule moins',
     description:
-      'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. FOREAS lit les 7 plateformes en direct.',
+      'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
     type: 'website',
     locale: 'fr_FR',
     url: 'https://www.foreas.xyz/',
@@ -60,12 +60,16 @@ const JSON_LD = {
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web, iOS, Android, WhatsApp',
       description:
-        'FOREAS pour chauffeurs VTC indépendants — lit 7 plateformes en temps réel et sort ton net réel, commission déduite, avant que t\'acceptes.',
+        'FOREAS pour chauffeurs VTC indépendants — rassemble tes courses Uber, Bolt et Heetch et sort ton net réel, commission déduite, avant que t\'acceptes.',
       offers: {
         '@type': 'Offer',
         price: '0',
         priceCurrency: 'EUR',
-        description: 'Essai 3 jours gratuit, sans inscription, sans carte.',
+        // 14/08/2026 — disait « sans carte ». Faux : api/checkout crée la session avec
+            // payment_method_collection:'always', la carte EST enregistrée. Cette phrase
+            // vit dans les données structurées lues par Google : une promesse fausse
+            // qui s'indexe et qu'on ne voit jamais à l'écran.
+            description: 'Essai 3 jours à 0 € — carte demandée, rien débité, annulation en un clic.',
       },
       // aggregateRating retiré : pas d'avis vérifiables. Un faux rich-snippet de notation
       // = risque pénalité Google + pratique commerciale trompeuse. À remettre quand de

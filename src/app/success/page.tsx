@@ -27,15 +27,28 @@ import Stripe from 'stripe'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SuccessChecmark from './SuccessCheckmark'
-import { PLAY_STORE_URL } from '@/lib/app-stores'
 
 export const dynamic = 'force-dynamic' // session unique → pas de cache CDN
 export const runtime = 'nodejs'
 
 // ─── Metadata branded (override layout title FOREAS générique) ────────────────
+/**
+ * ⚠️ MENSONGE CORRIGÉ LE 14/08/2026 — « Essai activé » dans l'onglet du navigateur.
+ *
+ * Deux parcours SANS essai atterrissent sur cette même page :
+ *   · /reactivation envoie `immediate: true` (ReactivationClient.tsx:47) →
+ *     src/app/api/checkout/route.ts:142 ne pose alors aucun `trial_end`, et le
+ *     success_url reste `${origin}/success?session_id=…` (api/checkout:167) ;
+ *   · /pay/[id] crée pour un revenant une session sans essai
+ *     (pay/[id]/route.ts:98-127), avec le même success_url (ligne 118).
+ * Un chauffeur qui vient d'être débité lisait donc « Essai activé » jusque dans le
+ * titre de son onglet. Un titre statique ne peut pas trancher entre les deux cas :
+ * il ne dit plus que ce qui est vrai dans les deux. L'eyebrow, lui, est conditionné
+ * plus bas à la présence réelle d'un `trial_end` Stripe.
+ */
 export const metadata: Metadata = {
-  title: 'Bienvenue dans FOREAS · Essai activé',
-  description: 'Votre essai FOREAS est activé. Prochaines étapes : télécharger l\'app, configurer votre profil chauffeur, rejoindre la communauté.',
+  title: 'Bienvenue dans FOREAS',
+  description: 'Votre abonnement FOREAS est en place. Prochaines étapes : télécharger l\'app, configurer votre profil chauffeur, rejoindre la communauté.',
   robots: { index: false, follow: false }, // page transactionnelle privée
 }
 
@@ -111,10 +124,30 @@ export default async function SuccessPage({ searchParams }: PageProps) {
   // Tier réel via price.lookup_key (préférable au metadata.plan qui peut diverger)
   const firstItem = subscription?.items?.data?.[0]
   const lookupKey = firstItem?.price?.lookup_key
-  const interval = firstItem?.price?.recurring?.interval // 'week' | 'year'
+  const interval = firstItem?.price?.recurring?.interval // 'day' | 'week' | 'month' | 'year' (Stripe)
   const tier = detectTier(lookupKey)
   const tierName = tierLabel(tier)
-  const billingLabel = interval === 'year' ? 'annuel' : 'hebdomadaire'
+
+  /**
+   * ⚠️ MENSONGE CORRIGÉ LE 14/08/2026 — « votre cycle hebdomadaire ».
+   *
+   * La ligne valait `interval === 'year' ? 'annuel' : 'hebdomadaire'` : tout ce qui
+   * n'était pas annuel était étiqueté hebdomadaire. Or les abonnements sont créés au
+   * MOIS — `recurring.interval: 'month'` dans api/checkout/route.ts:124,
+   * api/subscription/create/route.ts:155 (via `FORMULES.mensuel.intervalle`) et
+   * pay/[id]/route.ts:110. Et l'offre hebdo n'est plus au catalogue :
+   * `select plan_code, billing_period, is_active from pieuvre_pricing_plans
+   *  where billing_period = 'weekly'` → weekly / 12,97 / is_active = false.
+   *
+   * On n'étiquette plus que ce que Stripe dit réellement. Un intervalle inconnu ne
+   * prend AUCUNE valeur par défaut : la phrase se contente alors de « votre cycle ».
+   * C'est la valeur par défaut plausible qui avait fabriqué le faux.
+   */
+  const billingLabel =
+    interval === 'year' ? 'annuel'
+    : interval === 'month' ? 'mensuel'
+    : interval === 'week' ? 'hebdomadaire'
+    : null
 
   // Trial end (Stripe trial_period_days ou trial_end natif)
   const trialEndUnix = subscription?.trial_end
@@ -174,12 +207,18 @@ export default async function SuccessPage({ searchParams }: PageProps) {
         {/* ─── Animated check (client wrapper pour Framer Motion) ───────────── */}
         <SuccessChecmark />
 
-        {/* Eyebrow */}
+        {/*
+          Eyebrow — conditionné au `trial_end` RÉEL de l'abonnement Stripe.
+          Il était rendu inconditionnellement : /reactivation (immediate: true) et
+          /pay/[id] créent des sessions SANS essai qui atterrissent ici, et leur
+          chauffeur, débité à l'instant, lisait « ESSAI ACTIVÉ ». Voir la mesure
+          complète dans le commentaire de `metadata` en haut de fichier.
+        */}
         <p
           className="text-[10px] font-extrabold uppercase text-center mb-4 tabular-nums"
           style={{ color: '#10B981', letterSpacing: '0.25em' }}
         >
-          FOREAS · ESSAI ACTIVÉ
+          {trialEndUnix ? 'FOREAS · ESSAI ACTIVÉ' : 'FOREAS · ABONNEMENT ACTIVÉ'}
         </p>
 
         {/* H1 brièveté radicale (≤ 5 mots/phrase) — Genos display */}
@@ -235,7 +274,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
               )}
             </>
           ) : (
-            <>Premier débit selon votre cycle {billingLabel}.</>
+            <>Premier débit selon votre cycle{billingLabel ? ` ${billingLabel}` : ''}.</>
           )}
         </p>
 
@@ -260,12 +299,23 @@ export default async function SuccessPage({ searchParams }: PageProps) {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
+          {/*
+            ⚠️ MENSONGE CORRIGÉ LE 14/08/2026 — « iOS bientôt ».
+            Mesure : `curl -L -o /dev/null -w '%{http_code}' https://apps.apple.com/fr/app/id6782316405`
+            → HTTP 200, <title> « App FOREAS Driver - App Store ». La fiche iPhone est
+            publiée (src/lib/app-stores.ts, APP_STORE_URL vérifiée 200 le 14/08/2026),
+            au même titre que la fiche Android (com.chandler509.foreasdriver → 200 ;
+            l'ancien com.foreas.driver, lui, était un 404).
+            Le lien suit la phrase : il ne pointe plus en dur vers Google Play — un
+            iPhone y aurait atterri sur une fiche ininstallable — mais vers /go, qui
+            lit le user-agent et ouvre la bonne boutique (src/app/go/route.ts).
+          */}
           <NextStepCard
             number={1}
             title="Téléchargez l'app"
-            description="Android — disponible Play Store. iOS bientôt."
-            ctaLabel="Play Store →"
-            ctaHref={PLAY_STORE_URL}
+            description="Android et iPhone — les deux fiches sont en ligne."
+            ctaLabel="Installer l'app →"
+            ctaHref="/go"
             external
             accent="violet"
           />

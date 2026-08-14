@@ -10,13 +10,26 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { InkGradientButton } from '@/components/ui'
-import { Check, ShieldCheck, Smartphone, Mail } from 'lucide-react'
+import { Check, ShieldCheck, Smartphone } from 'lucide-react'
 
 type OS = 'ios' | 'android' | 'other'
 
-// ⚠️ Passer à true quand l'app iPhone est PUBLIÉE sur l'App Store (+ remplir le vrai App ID dans /go).
-const IOS_LIVE = false
-
+/**
+ * ⚠️ MENSONGE CORRIGÉ LE 14/08/2026 — le drapeau `IOS_LIVE = false` a été SUPPRIMÉ.
+ *
+ * Il faisait afficher, à un chauffeur sur iPhone qui venait de payer :
+ * « L'app iPhone arrive très bientôt 🍏 — elle est en validation App Store. On t'envoie
+ * le lien par email dès qu'elle est dispo. » Trois affirmations, trois faux :
+ *   · `curl -L -o /dev/null -w '%{http_code}' https://apps.apple.com/fr/app/id6782316405`
+ *     → HTTP 200, <title> « App FOREAS Driver - App Store » : la fiche EST publiée ;
+ *   · le dépôt le savait déjà — src/lib/app-stores.ts, APP_STORE_URL « vérifiée
+ *     HTTP 200 le 14/08/2026 ». Seul ce drapeau local était resté à false ;
+ *   · l'email promis n'existe pas sur ce parcours (voir plus bas).
+ *
+ * Un drapeau booléen recopié à la main est le même piège qu'un prix écrit en dur :
+ * il n'est relié à rien. `/go` interroge le user-agent et envoie chaque téléphone
+ * vers sa vraie fiche — il n'y a plus rien à tenir à jour ici.
+ */
 export default function MerciClient() {
   const [os, setOs] = useState<OS>('other')
 
@@ -67,40 +80,57 @@ export default function MerciClient() {
         <h1 className="text-[30px] sm:text-[34px] font-extrabold leading-[1.05] text-[#F8FAFC]" style={{ letterSpacing: '-0.035em' }}>
           Bienvenue à bord. 🎉
         </h1>
+        {/*
+          « FOREAS Pro » retiré : ce nom désigne une offre morte. Mesure —
+          `select plan_code, price_amount, is_active from pieuvre_pricing_plans`
+          → pro_monthly / 97,00 / is_active = false, et la seule formule vendue est
+          `FORMULES.mensuel.libelle` = « FOREAS » (src/lib/offre.ts, 29,99 €/mois).
+        */}
         <p className="mt-3 text-[15.5px] leading-relaxed text-white/72">
-          Ton abonnement <strong className="text-[#F8FAFC]">FOREAS Pro</strong> est actif. Ajnaya t’attend dans l’app —
+          Ton abonnement <strong className="text-[#F8FAFC]">FOREAS</strong> est actif. Ajnaya t’attend dans l’app —
           installe-la et lance ta première journée.
         </p>
 
-        {/* téléchargement intelligent */}
+        {/* téléchargement intelligent — /go choisit la boutique selon le téléphone */}
         <div className="mt-7">
-          {os === 'ios' && !IOS_LIVE ? (
-            // iPhone pas encore publié → pas de lien mort, on rassure
-            <div className="rounded-2xl px-5 py-4 text-left" style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.25)' }}>
-              <p className="text-[14.5px] font-semibold text-[#F8FAFC]">L’app iPhone arrive très bientôt 🍏</p>
-              <p className="mt-1 text-[13px] leading-relaxed text-white/65">Elle est en validation App Store. On t’envoie le lien par email dès qu’elle est dispo — ton accès Pro t’attend.</p>
-            </div>
-          ) : (
-            <>
-              <InkGradientButton as="link" href="/go" variant="violet" size="lg" className="w-full">
-                <span className="inline-flex items-center justify-center gap-2">
-                  <Smartphone size={18} /> {label}
-                </span>
-              </InkGradientButton>
-              <p className="mt-3 text-[12.5px] text-white/45">
-                {os === 'other'
-                  ? 'Ouvre cette page sur ton téléphone, ou scanne le QR sur l’écran suivant.'
-                  : 'Le bon store s’ouvre tout seul selon ton téléphone.'}
-              </p>
-            </>
-          )}
+          <InkGradientButton as="link" href="/go" variant="violet" size="lg" className="w-full">
+            <span className="inline-flex items-center justify-center gap-2">
+              <Smartphone size={18} /> {label}
+            </span>
+          </InkGradientButton>
+          <p className="mt-3 text-[12.5px] text-white/45">
+            {os === 'other'
+              ? 'Ouvre cette page sur ton téléphone, ou scanne le QR sur l’écran suivant.'
+              : 'Le bon store s’ouvre tout seul selon ton téléphone.'}
+          </p>
         </div>
 
-        {/* rassurance : email + garantie */}
+        {/* rassurance : comment tu entres dans l'app + garantie */}
         <div className="mt-8 space-y-2.5 text-left">
+          {/*
+            ⚠️ MENSONGE CORRIGÉ LE 14/08/2026 — « Un email de confirmation arrive avec
+            ton reçu et le lien de connexion. » Aucun email n'est envoyé sur ce parcours.
+
+            Mesure, dans le code déployé : l'email de bienvenue n'est déclenché que par
+            `if (event.type === 'checkout.session.completed')`
+            (src/app/api/webhooks/stripe/route.ts:78), `sendWelcomeEmail` étant appelé
+            ligne 143 à l'intérieur de cette branche, sous `if (session.customer_details?.email)`
+            ligne 135. Or /checkout n'ouvre AUCUNE Checkout Session : il appelle
+            /api/subscription/create, qui fait `stripe.subscriptions.create`
+            (route.ts:144). L'évènement n'arrive donc jamais — et le client Stripe est
+            en plus créé sans adresse (`stripe.customers.create(email ? { email } : {})`,
+            route.ts:142), le corps de la requête n'en envoyant aucune.
+
+            Ce qui est VRAI, et vérifiable par le chauffeur dans les 10 secondes : le
+            mobile qu'il vient de saisir est son identifiant. Il est exigé par le
+            formulaire (CheckoutClient.tsx:92) puis attaché au client et à l'abonnement
+            Stripe en E.164 (/api/subscription/contact) — c'est l'ancre du compte.
+            Icône passée de Mail à Smartphone pour ne pas laisser une enveloppe
+            promettre un email à côté d'un texte qui parle de téléphone.
+          */}
           <div className="flex items-start gap-2.5 rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <Mail size={16} className="mt-0.5 text-[#00D4FF]" />
-            <p className="text-[13px] leading-relaxed text-white/70">Un <strong className="text-white/90">email de confirmation</strong> arrive avec ton reçu et le lien de connexion.</p>
+            <Smartphone size={16} className="mt-0.5 text-[#00D4FF]" />
+            <p className="text-[13px] leading-relaxed text-white/70">Ton accès est lié au <strong className="text-white/90">numéro de mobile</strong> que tu viens de saisir. C’est avec lui que tu te connectes dans l’app.</p>
           </div>
           <div className="flex items-start gap-2.5 rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <ShieldCheck size={16} className="mt-0.5 text-[#10B981]" />

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { SectionHeader, EyebrowLabel } from '@/components/ui'
-import { APP_STORE_URL } from '@/lib/app-stores'
+import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 
 /**
  * CTA — Site2026v44 (Phase 3.2)
@@ -85,7 +85,10 @@ export default function CTA() {
             </motion.a>
 
             <motion.a
-              href="https://play.google.com/store/apps/details?id=com.chandler509.foreasdriver"
+              // Source unique src/lib/app-stores.ts : ce lien était écrit en dur ici,
+              // seul rescapé alors que le bouton App Store juste au-dessus utilisait déjà
+              // la constante. Un lien en dur finit toujours par diverger de son jumeau.
+              href={PLAY_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.02, y: -1 }}

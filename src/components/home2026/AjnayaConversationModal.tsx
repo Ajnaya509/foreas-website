@@ -245,7 +245,9 @@ function ZoneCard({ data }: { data: ZoneData }) {
               letterSpacing: '0.12em',
             }}
           >
-            {data.is_estimate ? 'ESTIMATION' : 'TEMPS RÉEL'}
+            {/* 14/08/2026 — disait « TEMPS RÉEL ». La donnée non estimée vient de courses
+                déjà enregistrées : c'est mesuré, pas temps réel. */}
+            {data.is_estimate ? 'ESTIMATION' : 'MESURÉ'}
           </span>
         </div>
         {/* CONTRACTS v1.7 — Brief PIEUVRE_ZONE_LANDMARKS — affiche max 2 lieux séparés par · */}

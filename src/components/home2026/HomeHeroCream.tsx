@@ -38,7 +38,7 @@ const QUICK_ZONES = ['Aéroport CDG', 'La Défense', 'Bercy', 'Lyon Part-Dieu']
  *
  * Skills :
  * - foreas-design-system : variant blanc Apple absolu, palette restreinte
- * - foreas-copy-atomic : tutoiement, vérité mécanisme (Ajnaya lit 7 plateformes en direct)
+ * - foreas-copy-atomic : tutoiement, vérité mécanisme (les 3 plateformes réellement lues)
  */
 export default function HomeHeroCream() {
   const [zoneInput, setZoneInput] = useState('')
@@ -218,7 +218,7 @@ export default function HomeHeroCream() {
         </div>
 
         <div className="relative w-full max-w-3xl mx-auto px-5 sm:px-8 text-center pt-24 pb-20 sm:pt-24 sm:pb-24">
-          {/* Chip live "Ajnaya lit 7 plateformes en direct" — neutre Apple */}
+          {/* Chip d'accroche — neutre Apple */}
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -237,7 +237,12 @@ export default function HomeHeroCream() {
               className="text-[11px] sm:text-xs font-semibold"
               style={{ color: '#1d1d1f' }}
             >
-              Ajnaya lit <span className="tabular-nums">7</span> plateformes en direct
+              {/* 14/08/2026 — disait « Ajnaya lit 7 plateformes en direct ». Deux faux en une
+                  phrase : select distinct platform from rides → Uber, Bolt, Heetch (+ « Private »
+                  = course directe, pas une plateforme) = 3 ; et driver_ride_features → 0 ligne,
+                  donc aucune lecture continue. Nommer les 3 rend la promesse vérifiable — c'est
+                  voulu : une promesse tenue vaut mieux qu'un chiffre rond et faux. */}
+              Uber, Bolt, Heetch — au même endroit
             </span>
           </motion.div>
 
@@ -281,7 +286,7 @@ export default function HomeHeroCream() {
             <strong style={{ color: '#1d1d1f', fontWeight: 700 }}>
               Uber, Bolt, Heetch
             </strong>{' '}
-            + 4 autres en direct et te dit combien ça paie ce soir — avant de démarrer.
+            et te dit ce que paie ta zone ce soir — avant de démarrer.
           </motion.p>
 
           {/* Search bar — blanc pur Apple avec ombre précise */}
@@ -434,7 +439,7 @@ export default function HomeHeroCream() {
             </div>
             </div>
 
-            {/* Site2026v79 nano-detail #saisie : autocomplete des 51 zones canoniques */}
+            {/* Site2026v79 nano-detail #saisie : autocomplete des 52 zones canoniques */}
             {/* Position absolute → ne décale pas le layout sous la barre */}
             <ZoneAutocomplete
               value={zoneInput}
@@ -537,7 +542,7 @@ export default function HomeHeroCream() {
                 className="text-[11px] font-medium tabular-nums"
                 style={{ color: '#86868b' }}
               >
-                51 zones
+                52 zones
               </span>
               <span style={{ color: '#d2d2d7' }} aria-hidden="true">·</span>
               <span

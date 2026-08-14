@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Handshake } from 'lucide-react'
 import Link from 'next/link'
+import { PARRAINAGE } from '@/lib/verite-commerciale'
 
 /**
  * ZoneCapPartnerCTA — Section 6 CAP / Partenaires
@@ -46,18 +47,34 @@ export default function ZoneCapPartnerCTA() {
               >
                 VOUS PILOTEZ UNE FLOTTE / UN GROUPE&nbsp;?
               </p>
+              {/* CE QUI ÉTAIT FAUX — mesuré le 14/08/2026 :
+                  · « Cascade 10 € / 4 € / 2 € à vie sur 3 niveaux » ne correspond à AUCUNE
+                    source. `referral_program_tiers` → 25 € / 35 € / 50 €, et ce sont des
+                    PALIERS DE VOLUME, pas des niveaux de pyramide : présenter la table comme
+                    « vous en haut, vos recrues en dessous » en inverse la lecture.
+                  · `referral_tree` → 0 ligne et `referral_commissions` → 0 ligne : il n'existe
+                    ni arbre de parrainage, ni reversement sur le filleul d'un filleul. La
+                    mécanique multi-niveaux est retirée tant qu'elle n'est pas implémentée,
+                    chiffrée en base et encadrée par les CGU.
+                  · « à vie » n'est adossé à aucune clause : les CGU ne prévoient aucune durée.
+                  Trois barèmes incompatibles cohabitaient en production (ici 10/4/2, /cap
+                  10 €/filleul, /tarifs2 25/8/2). Les montants viennent maintenant de
+                  src/lib/verite-commerciale.ts, seule source autorisée. */}
               <h2
                 className="t-h1 text-[#F8FAFC] mb-2 leading-tight"
                 style={{ letterSpacing: '-0.025em' }}
               >
                 La même intelligence,{' '}
                 <span className="bg-gradient-to-r from-rose-300 to-violet-300 bg-clip-text text-transparent">
-                  mais en cascade.
+                  pour toute votre flotte.
                 </span>
               </h2>
               <p className="text-white/70 t-body leading-relaxed mb-5">
-                Vous en haut, vos recrues en dessous. Cascade <span className="font-semibold tabular-nums text-[#F8FAFC]">10&nbsp;€ / 4&nbsp;€ / 2&nbsp;€</span>{' '}
-                à vie sur 3 niveaux.
+                Chaque chauffeur que vous amenez vous rapporte{' '}
+                <span className="font-semibold tabular-nums text-[#F8FAFC]">
+                  {PARRAINAGE.paliers.map((p) => `${p.commissionEur} €`).join(' / ')}
+                </span>{' '}
+                selon votre palier de volume.
               </p>
               <Link
                 href="/devenir-partenaire"

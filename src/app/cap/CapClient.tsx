@@ -7,6 +7,14 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { CheckCircle2, Zap, Users, TrendingUp, Star, ArrowRight, Gift } from 'lucide-react'
 import { authUrls, loginWithNext } from '@/lib/auth-urls'
+import {
+  PRIX_MENSUEL_CENTIMES,
+  PRIX_ANNUEL_CENTIMES,
+  ESSAI_JOURS,
+  FORMULES,
+  formaterEuros,
+} from '@/lib/offre'
+import { PLATEFORMES, PARRAINAGE, COMPTA_PHRASES } from '@/lib/verite-commerciale'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PartnerData {
@@ -29,39 +37,94 @@ interface CapClientProps {
 }
 
 // ─── Plans (warm variant — with discount applied) ─────────────────────────────
+// CE QUI ÉTAIT FAUX : trois formules HEBDOMADAIRES — Essentiel 12,97 €, Pro 14,97 €,
+// Elite 34,97 €. Aucune n'est encaissable. MESURE 14/08/2026 : `src/app/api/checkout/route.ts`
+// ne connaît que PRIX_MENSUEL_CENTIMES (2999) et PRIX_ANNUEL_CENTIMES (24999) ; le mapping
+// PRICE_IDS des anciennes formules a été retiré le 22/07 (commentaire lignes 6-14 du même
+// fichier). Et /tarifs2 — où mène le bouton de cette carte — répond en production « Un seul,
+// et tout est dedans ». Deux pages en ligne se contredisaient : trois formules ici, une seule
+// là-bas, à un autre prix et à une autre périodicité.
+// RÈGLE : plus aucun montant en dur ici. Tout vient de src/lib/offre.ts.
+const ECONOMIE_ANNUELLE_CENTIMES = PRIX_MENSUEL_CENTIMES * 12 - PRIX_ANNUEL_CENTIMES
+const ANNUEL_PAR_MOIS_CENTIMES = Math.round(PRIX_ANNUEL_CENTIMES / 12)
+
+// Un seul abonnement : les deux cartes sont la MÊME offre, payée au mois ou à l'année.
+// D'où une liste d'inclus unique — il n'y a rien à débloquer plus tard.
+// « Zones chaudes IA », « Ajnaya IA illimitée » : le mot IA est banni du site, Ajnaya a un nom.
+// « Parrainage 10€/filleul » : aucun montant à 10 € n'existe — `referral_program_tiers`
+// (14/08/2026) → 25 € / 35 € / 50 €.
+// URSSAF : formulation imposée par le garde-fou légal (ordonnance du 19 sept. 1945, art. 20) —
+// FOREAS calcule ce qui sera dû, FOREAS ne met rien de côté et n'est pas expert-comptable.
+const INCLUS = [
+  `Vos courses ${PLATEFORMES.reellementVues.join(', ')} au même endroit`,
+  'La carte des zones',
+  'Ajnaya, à la voix ou au clavier',
+  'Le net de la course, calculé avant que vous acceptiez',
+  // Formulation impersonnelle volontaire : FOREAS calcule ce qui sera dû. FOREAS ne met
+  // rien de côté (aucun compte de cantonnement n'existe) et n'est pas expert-comptable.
+  `${COMPTA_PHRASES.titre} : ce qui sera dû, calculé au fil des courses`,
+  'Vos clients directs, sans commission — votre site à votre nom',
+  `Parrainage : ${PARRAINAGE.paliers[0].commissionEur} € par chauffeur que vous amenez`,
+]
+
 const PLANS = [
   {
-    id: 'essentiel',
-    name: 'Essentiel',
-    weeklyFull: 12.97,
-    annualFull: 539.55,
-    description: 'Pour démarrer et tester FOREAS',
-    features: ['Dashboard temps réel', 'Zones chaudes IA', 'Tracking multi-plateforme', 'Support email'],
+    id: 'mensuel',
+    name: FORMULES.mensuel.libelle,
+    centimes: PRIX_MENSUEL_CENTIMES,
+    periode: 'par mois',
+    // AVANT : « Le choix de la majorité des chauffeurs ». Il n'existe aucune majorité à
+    // constater — 5 abonnements actifs sur 30 chauffeurs au 14/08/2026, et aucune ventilation
+    // par formule puisque les formules hebdomadaires ne sont plus facturables.
+    description: FORMULES.mensuel.sousTitre,
+    miseEnAvant: true,
+    // AVANT : badge « Le plus populaire », piloté par un `popular: true` écrit à la main —
+    // aucun agrégat de souscriptions n'alimente cette page (aucun fetch dans le fichier).
+    // Remplacé par un fait vérifiable : l'annulation en un clic, sans engagement.
+    badge: 'Sans engagement',
+    features: INCLUS,
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    weeklyFull: 14.97,
-    annualFull: 622.75,
-    description: 'Le choix de la majorité des chauffeurs',
-    popular: true,
-    features: ['Tout Essentiel +', 'Ajnaya IA illimitée', 'Site chauffeur perso', 'Parrainage 10€/filleul', 'Conciergerie clients'],
-  },
-  {
-    id: 'elite',
-    name: 'Elite',
-    weeklyFull: 34.97,
-    annualFull: 1454.75,
-    description: 'Acquisition B2B + clone vocal',
-    features: ['Tout Pro +', 'Voice Clone Ajnaya', 'Acquisition B2B clients', 'Support prioritaire 24/7', 'Coaching revenue mensuel'],
+    id: 'annuel',
+    name: FORMULES.annuel.libelle,
+    centimes: PRIX_ANNUEL_CENTIMES,
+    periode: 'par an',
+    // Économie calculée à partir des deux montants canoniques, jamais écrite à la main.
+    description: `soit ${formaterEuros(ANNUEL_PAR_MOIS_CENTIMES)} par mois — ${formaterEuros(
+      ECONOMIE_ANNUELLE_CENTIMES,
+    )} d’économie sur l’année`,
+    miseEnAvant: false,
+    badge: null,
+    features: INCLUS,
   },
 ]
 
+// CE QUI ÉTAIT FAUX ici :
+// · « Ajnaya lit 7 plateformes » + « en direct » → `select distinct platform from rides`
+//   (14/08/2026) renvoie Uber, Bolt, Heetch et « Private » (course directe, pas une
+//   plateforme) : 3 plateformes réelles, jamais 7. Et la table qui porterait une lecture
+//   continue (`driver_ride_features`) est VIDE. Nommer les 3 rend la promesse vérifiable.
+// · « Parrainage à vie · 10€/mois par filleul actif » → `referral_program_tiers` : 25/35/50 €
+//   par palier de volume. Ni 10 €, ni « à vie », ni mensuel.
+// · « IA positionnement temps réel » → mot banni + promesse de précision (« 15 min avant »)
+//   qu'aucune mesure ne soutient.
 const BENEFITS = [
-  { icon: Zap, label: 'IA positionnement temps réel', sub: 'Sais où être 15 min avant la demande' },
-  { icon: TrendingUp, label: 'Tu vois où ça paie, en direct', sub: 'Ajnaya lit 7 plateformes — tu choisis tes courses' },
-  { icon: Users, label: 'Parrainage à vie', sub: '10€/mois par chauffeur filleul actif' },
-  { icon: Star, label: 'Essai sans risque', sub: '0 € prélevé pendant 3 jours' },
+  { icon: Zap, label: 'Tu sais où te poser', sub: 'La carte des zones plutôt que ton intuition' },
+  {
+    icon: TrendingUp,
+    label: 'Tes courses au même endroit',
+    sub: `${PLATEFORMES.reellementVues.join(', ')} — tu choisis, tu ne subis pas`,
+  },
+  {
+    icon: Users,
+    label: 'Tu parraines, tu touches',
+    sub: `${PARRAINAGE.paliers[0].commissionEur} € par chauffeur que tu amènes, jusqu’à ${PARRAINAGE.paliers[2].commissionEur} € selon ton volume`,
+  },
+  {
+    icon: Star,
+    label: `${ESSAI_JOURS} jours d’essai`,
+    sub: 'Carte demandée, 0 € prélevé. Tu annules en un clic.',
+  },
 ]
 
 // ─── Cookie setter (client-only side effect) ──────────────────────────────────
@@ -86,7 +149,12 @@ function PricingCard({
   referralCode: string | null
 }) {
   const hasDiscount = discountPct > 0
-  const discountedWeekly = hasDiscount ? plan.weeklyFull * (1 - discountPct / 100) : plan.weeklyFull
+  // La remise partenaire est réelle : /api/checkout crée le coupon Stripe `foreas_ref_{pct}`
+  // à partir du même pourcentage. On l'applique donc au prix CANONIQUE, plus à un tarif
+  // hebdomadaire qui n'existe plus.
+  const centimesAffiches = hasDiscount
+    ? Math.round(plan.centimes * (1 - discountPct / 100))
+    : plan.centimes
 
   return (
     <motion.div
@@ -95,20 +163,20 @@ function PricingCard({
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
       className={`relative rounded-2xl p-6 flex flex-col ${
-        plan.popular
+        plan.miseEnAvant
           ? 'border border-violet-500/40 bg-violet-500/[0.06]'
           : 'border border-white/[0.06] bg-white/[0.03]'
       }`}
       style={
-        plan.popular
+        plan.miseEnAvant
           ? { boxShadow: '0 0 40px rgba(140,82,255,0.12), 0 0 80px rgba(255,102,153,0.06)' }
           : {}
       }
     >
-      {plan.popular && (
+      {plan.miseEnAvant && plan.badge && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="bg-gradient-to-r from-violet-500 to-rose-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
-            Le plus populaire
+            {plan.badge}
           </span>
         </div>
       )}
@@ -123,10 +191,10 @@ function PricingCard({
         {hasDiscount ? (
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="font-title text-3xl font-bold text-white">
-              {discountedWeekly.toFixed(2).replace('.', ',')}€
+              {formaterEuros(centimesAffiches)}
             </span>
-            <span className="font-body text-sm text-white/40">/sem</span>
-            <span className="line-through text-white/30 text-sm">{plan.weeklyFull.toFixed(2).replace('.', ',')}€</span>
+            <span className="font-body text-sm text-white/40">{plan.periode}</span>
+            <span className="line-through text-white/30 text-sm">{formaterEuros(plan.centimes)}</span>
             <span className="text-rose-400 text-xs font-semibold bg-rose-500/10 px-2 py-0.5 rounded-full">
               -{discountPct}%
             </span>
@@ -134,9 +202,9 @@ function PricingCard({
         ) : (
           <div className="flex items-baseline gap-2">
             <span className="font-title text-3xl font-bold text-white">
-              {plan.weeklyFull.toFixed(2).replace('.', ',')}€
+              {formaterEuros(plan.centimes)}
             </span>
-            <span className="font-body text-sm text-white/40">/semaine</span>
+            <span className="font-body text-sm text-white/40">{plan.periode}</span>
           </div>
         )}
       </div>
@@ -155,12 +223,17 @@ function PricingCard({
       <Link
         href={`/tarifs2${referralCode ? `?ref=${referralCode}` : ''}`}
         className={`block text-center py-3 px-5 rounded-xl font-body font-semibold text-sm transition-all duration-200 ${
-          plan.popular
+          plan.miseEnAvant
             ? 'bg-gradient-to-r from-violet-600 to-rose-600 text-white hover:from-violet-500 hover:to-rose-500 shadow-lg shadow-violet-900/20'
             : 'border border-white/10 text-white/80 hover:border-white/20 hover:text-white'
         }`}
       >
-        {hasDiscount ? `Commencer — ${discountPct}% off` : 'Commencer l\'essai gratuit'}
+        {/* « Essai gratuit » sans autre précision laissait croire qu'aucune carte n'est
+            demandée : /api/checkout est en `payment_method_collection: 'always'`. La carte
+            est enregistrée, 0 € est prélevé pendant l'essai. On l'écrit. */}
+        {hasDiscount
+          ? `Commencer — ${discountPct}% en moins`
+          : `Essayer ${ESSAI_JOURS} jours — 0 € aujourd’hui`}
       </Link>
     </motion.div>
   )
@@ -217,9 +290,14 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-title text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight mb-5"
           >
+            {/* AVANT : « L'IA qui multiplie vos courses VTC ». Deux problèmes. Le mot « IA »
+                est banni du site (Ajnaya a un nom, on l'emploie). Et « multiplie vos courses »
+                promet un résultat qu'aucune mesure ne soutient : `rides` ne contient que
+                18 lignes au 14/08/2026, tous chauffeurs confondus — il n'existe aucun
+                avant/après à comparer. Ce qui reste, et qui est vrai : Ajnaya dit où se poser. */}
             {discount ? (
               <>
-                <span className="text-white">L&apos;IA qui multiplie</span>
+                <span className="text-white">Vous ne roulez plus au hasard.</span>
                 <br />
                 <span
                   style={{
@@ -228,13 +306,13 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  vos courses VTC —{' '}
+                  Ajnaya vous dit où vous poser —{' '}
                   <span className="whitespace-nowrap">-{discountPct}% offerts</span>
                 </span>
               </>
             ) : (
               <>
-                <span className="text-white">L&apos;IA qui multiplie</span>
+                <span className="text-white">Vous ne roulez plus au hasard.</span>
                 <br />
                 <span
                   style={{
@@ -243,7 +321,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  vos courses VTC
+                  Ajnaya vous dit où vous poser
                 </span>
               </>
             )}
@@ -256,10 +334,15 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
             transition={{ duration: 0.6, delay: 0.2 }}
             className="font-body text-base md:text-lg text-white/55 max-w-2xl mx-auto mb-8"
           >
+            {/* AVANT : « FOREAS analyse la demande en temps réel [...] 15 minutes à l'avance ».
+                Deux affirmations non tenues : la table qui porterait une lecture continue
+                (`driver_ride_features`) est VIDE au 14/08/2026, et aucune prédiction n'est
+                vérifiée (`was_right` NULL sur les 169 lignes). On garde ce que le produit fait
+                vraiment : conseiller une zone, et calculer le net avant d'accepter. */}
             {partner?.landing_message ||
               (discount
-                ? `${partnerName} vous offre ${discountPct}% de réduction pendant ${discountMonths} mois. FOREAS analyse la demande en temps réel pour vous dire où vous positionner — 15 minutes à l'avance.`
-                : 'FOREAS analyse la demande en temps réel pour vous dire où vous positionner — 15 minutes à l\'avance. Essai gratuit, 0€ débité.')}
+                ? `${partnerName} vous offre ${discountPct}% de réduction pendant ${discountMonths} mois. Ajnaya vous conseille une zone et calcule ce que la course vous laisse vraiment, avant que vous acceptiez.`
+                : `Ajnaya vous conseille une zone et calcule ce que la course vous laisse vraiment, avant que vous acceptiez. ${ESSAI_JOURS} jours d’essai, 0 € prélevé.`)}
           </motion.p>
 
           {/* Discount banner */}
@@ -302,11 +385,14 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 boxShadow: '0 4px 24px rgba(140,82,255,0.35)',
               }}
             >
-              <span>S&apos;inscrire — Essai gratuit</span>
+              <span>S&apos;inscrire — {ESSAI_JOURS} jours d&apos;essai</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
+            {/* La durée vient de src/lib/offre.ts (ESSAI_JOURS), pas d'un 3 écrit à la main.
+                Et on annonce la carte : /api/checkout est en `payment_method_collection:
+                'always'` — la carte EST enregistrée, l'abonnement Stripe EST créé. */}
             <p className="font-body text-xs text-white/35">
-              0 € débité pendant 3 jours · Annulation en 1 clic
+              Carte demandée · 0 € prélevé pendant {ESSAI_JOURS} jours · Annulation en 1 clic
             </p>
           </motion.div>
 
@@ -390,9 +476,11 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
               transition={{ duration: 0.5 }}
               className="font-title text-3xl md:text-4xl font-bold text-white mb-3"
             >
+              {/* « Choisissez votre plan » n'a plus d'objet : il n'y a qu'un abonnement,
+                  au mois ou à l'année (src/lib/offre.ts). C'est aussi ce que répond /tarifs2. */}
               {discount
                 ? `Votre offre exclusive — -${discountPct}% pendant ${discountMonths} mois`
-                : 'Choisissez votre plan'}
+                : 'Un seul abonnement, tout est dedans'}
             </motion.h2>
             <motion.p
               initial={{ opacity: 0 }}
@@ -401,12 +489,16 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
               transition={{ delay: 0.1 }}
               className="font-body text-sm text-white/45"
             >
-              Mensuel · Annuel disponible (−30 %) · 0 € débité pendant 3 jours
+              {/* « −30 % » était un chiffre écrit à la main : l'économie réelle se calcule
+                  à partir des deux montants canoniques, elle ne se devine pas. */}
+              Au mois ou à l&apos;année · {formaterEuros(ECONOMIE_ANNUELLE_CENTIMES)} d&apos;économie
+              en annuel · Carte demandée, 0 € prélevé pendant {ESSAI_JOURS} jours
             </motion.p>
           </div>
 
-          {/* Plans grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Plans grid — 2 colonnes depuis la suppression des formules Essentiel/Pro/Elite :
+              une grille de 3 laisserait une colonne vide et casserait le rendu. */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl mx-auto">
             {PLANS.map((plan) => (
               <PricingCard
                 key={plan.id}
@@ -424,7 +516,12 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
             viewport={{ once: true }}
             className="text-center font-body text-xs text-white/25 mt-6"
           >
-            Réduction appliquée automatiquement via votre code partenaire. Annulation sans frais à tout moment.
+            {/* La phrase « Réduction appliquée automatiquement » s'affichait même sans code
+                partenaire valide, donc sans aucune réduction. Elle est maintenant conditionnée
+                au cas où la remise existe réellement (coupon Stripe `foreas_ref_{pct}`). */}
+            {discountPct > 0
+              ? 'Réduction appliquée automatiquement via votre code partenaire. Annulation sans frais à tout moment.'
+              : 'Annulation sans frais à tout moment, en un clic.'}
           </motion.p>
         </div>
       </section>
@@ -433,10 +530,28 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
       <section className="py-16 px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* CE QUI ÉTAIT FAUX — les trois témoignages étaient invraisemblables, mesuré le
+                14/08/2026 :
+                · « Karim B. — +38% de CA en 2 mois » : le chauffeur existe en base, avec un
+                  abonnement INACTIF et une carte VTC NON vérifiée. Aucune fiche à son nom dans
+                  `pieuvre_closer_testimonials` → aucun transcript, aucun consentement, aucun
+                  calcul. Et `rides` ne contient que 18 lignes au total, tous chauffeurs
+                  confondus : il n'existe aucun avant/après à comparer.
+                · « Soufiane M. — +412€/mois » : 0 ligne dans `drivers`, 0 dans
+                  `pieuvre_closer_testimonials`. Le même nom portait des attributs différents
+                  sur /tarifs2 — deux versions du même homme en production.
+                · « Théodore R. — -28% de km à vide » : 0 ligne en base, et la métrique est
+                  structurellement impossible : `rides` ne porte ni distance à vide, ni trace
+                  GPS entre deux courses. Le CLAUDE.md du dépôt lui attribue en plus un autre
+                  chiffre (« -28% fatigue »).
+                REMPLACÉS par trois chauffeurs filmés à visage découvert, consentis et
+                vérifiables — source : src/components/zone/testimonials.data.ts (vidéos Mux
+                publiques). Les verbatims sont des extraits fidèles de ce qu'ils disent à
+                l'écran ; aucun chiffre de gain n'est mis en promesse. */}
             {[
-              { name: 'Karim B.', city: 'Paris 11e', quote: '+38% de CA en 2 mois', detail: 'Zone aéroport + événements pro' },
-              { name: 'Soufiane M.', city: 'Lyon', quote: '+412€/mois', detail: 'Positionnement gare + nightlife' },
-              { name: 'Théodore R.', city: 'Bordeaux', quote: '-28% de km à vide', detail: 'Optimisation retours à vide' },
+              { name: 'Binate A.', city: 'Marne-la-Vallée', quote: '« Travailler moins pour avoir plus. »', detail: 'Tesla · 5 ans VTC · témoignage filmé' },
+              { name: 'Dragan P.', city: 'Paris', quote: '« Deux ans avec FOREAS. J’y suis, j’y reste. »', detail: '9 ans VTC · témoignage filmé' },
+              { name: 'Haitham B.', city: 'Paris', quote: '« Je me concentre à 100 % sur mon boulot. »', detail: '7 ans VTC · témoignage filmé' },
             ].map((t, i) => (
               <motion.div
                 key={t.name}
@@ -446,11 +561,10 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]"
               >
-                <div className="flex gap-0.5 mb-3">
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="w-3.5 h-3.5 fill-violet-400 text-violet-400" />
-                  ))}
-                </div>
+                {/* Les 5 étoiles affichées ici étaient une note que personne n'a jamais
+                    donnée : aucune table d'avis, aucune colonne de satisfaction n'existe
+                    (mesuré le 14/08/2026). Une note inventée sur un vrai chauffeur est pire
+                    qu'un témoignage inventé — le bloc est retiré, le verbatim reste. */}
                 <p className="font-title text-xl font-bold text-white mb-1">{t.quote}</p>
                 <p className="font-body text-xs text-white/40 mb-3">{t.detail}</p>
                 <p className="font-body text-sm font-medium text-white/70">
@@ -475,10 +589,13 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
             <h2 className="font-title text-3xl md:text-4xl font-bold text-white mb-3">
               Prêt à rouler plus intelligemment ?
             </h2>
+            {/* « Essai gratuit » seul laissait entendre qu'aucune carte n'est demandée.
+                Elle l'est (`payment_method_collection: 'always'`), et un abonnement Stripe
+                est créé dès l'inscription : il faut l'annuler, ce n'est pas « rien à faire ». */}
             <p className="font-body text-sm text-white/50 mb-7">
               {discount
                 ? `Profitez de votre -${discountPct}% pendant ${discountMonths} mois via ${partnerName}.`
-                : 'Essai gratuit. 0€ débité. Annulation en 1 clic.'}
+                : `${ESSAI_JOURS} jours d’essai. Carte demandée, 0 € prélevé. Vous annulez en un clic avant la fin, vous n’êtes pas débité.`}
             </p>
             <Link
               href={`/tarifs2${referralCode ? `?ref=${referralCode}` : ''}`}
@@ -488,7 +605,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 boxShadow: '0 4px 28px rgba(140,82,255,0.40)',
               }}
             >
-              Commencer mon essai gratuit
+              Commencer mes {ESSAI_JOURS} jours d&apos;essai
               <ArrowRight className="w-4 h-4" />
             </Link>
             {discount && (

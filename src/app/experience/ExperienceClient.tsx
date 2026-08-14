@@ -340,7 +340,8 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
             </span>
             <span className="text-[11px] font-semibold text-white/80 sm:text-xs">
-              Ajnaya lit <span className="tabular-nums">7</span> plateformes en direct
+              {/* 14/08/2026 — « 7 plateformes en direct » : 3 en base, et aucune lecture continue. */}
+              Uber, Bolt, Heetch — au même endroit
             </span>
           </div>
 
@@ -459,7 +460,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         <div className="mx-auto max-w-md md:max-w-xl">
           <p className="mb-3 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Questions directes</p>
           {[
-            ['Comment tu sais où ça paie ?', 'Ajnaya lit 7 plateformes en même temps, en direct — pas ce qui s’est passé le mois dernier, ce qui se passe maintenant autour de toi. Le détail de la recette, on le garde pour nous.'],
+            ['Comment tu sais où ça paie ?', 'Ajnaya rassemble tes courses Uber, Bolt et Heetch au même endroit, et croise ça avec ce qui bouge autour de toi — pas avec ce qui s’est passé le mois dernier. Le détail de la recette, on le garde pour nous.'],
             ['29,99 €, c’est cher ?', 'C’est moins d’1 € par jour. Une bonne course de plus dans le mois et c’est remboursé. Sinon : 30 jours, remboursé.'],
             ['Je peux annuler quand ?', 'Quand tu veux, en 1 clic. Pas d’appel, pas de mail de rétention.'],
             ['Vous allez m’appeler ?', 'Non. Ajnaya te répond sur WhatsApp, c’est tout. Tu écris « stop », elle arrête. Aucun appel sans que tu l’aies demandé.'],

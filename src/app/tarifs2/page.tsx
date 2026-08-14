@@ -9,6 +9,13 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { trackInitiateCheckout } from '@/lib/tracking'
 import { authUrls } from '@/lib/auth-urls'
+// 14/08/2026 — les montants et la durée d'essai ne sont plus écrits à la main dans cette
+// page. Ils viennent des DEUX sources uniques : offre.ts (ce qu'on facture) et
+// verite-commerciale.ts (ce qu'on a le droit d'affirmer, avec la requête qui le prouve).
+// C'est exactement le mécanisme qui produisait les faux : un chiffre plausible recopié
+// dans un .tsx, plus relié à rien, qui dérive dès que la vraie valeur bouge.
+import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
+import { PARRAINAGE, PLATEFORMES, COMMUNAUTE } from '@/lib/verite-commerciale'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -18,7 +25,10 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 // qui s'inscrivait le dimanche soir, 6 jours pour qui s'inscrivait le mardi. Même promesse
 // affichée, expérience du simple au sextuple. Doit rester synchronisé avec TRIAL_DAYS
 // dans src/app/api/checkout/route.ts (c'est LUI qui pose le vrai trial_end chez Stripe).
-const TRIAL_DAYS = 3
+// 14/08/2026 — la durée n'est plus recopiée ici : elle vient d'offre.ts, comme
+// /api/checkout. C'est cette recopie qui laissait « 7 JOURS » vivre en bas de page
+// pendant que Stripe posait un trial_end à J+3 (GET /api/checkout → trialDays: 3).
+const TRIAL_DAYS = ESSAI_JOURS
 function getTrialEndDate(): Date {
   return new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000)
 }
@@ -83,7 +93,11 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
     { icon: '🎁', label: "Aujourd'hui", sub: `Accès complet FOREAS ${planName}`, hl: '0€ débité', hlC: 'text-green-400 bg-green-500/10', active: true },
     { icon: '📱', label: `${trialDays} jour${trialDays > 1 ? 's' : ''} pour tester`, sub: 'Tu testes Ajnaya sur tes vraies courses', hl: null, hlC: '', active: false },
     { icon: '📅', label: formatDateFR(trialEnd), sub: "Fin de l'essai — tu décides", hl: 'Annule avant → 0€', hlC: 'text-blue-300 bg-blue-500/10', active: false },
-    { icon: '💳', label: 'Premier débit (si tu restes)', sub: 'Annulable en 1 clic, à n\'importe quel moment', hl: null, hlC: '', active: false },
+    // 14/08/2026 — « si tu restes » laissait croire qu'il fallait FAIRE quelque chose pour
+    // être débité. Le code déployé dit l'inverse : /api/checkout crée une session
+    // mode:'subscription' avec subscription_data.trial_end ET payment_method_collection
+    // 'always' — l'abonnement démarre tout seul, c'est l'annulation qui demande un geste.
+    { icon: '💳', label: 'Premier débit — sauf si tu as annulé avant', sub: 'Annulable en 1 clic, à n\'importe quel moment', hl: null, hlC: '', active: false },
   ]
 
   return (
@@ -151,7 +165,11 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
           <button onClick={onClose} className="text-white/55 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
         </div>
         <div className="flex items-center justify-center gap-4 px-5 py-2.5 bg-green-500/5 border-b border-green-500/10">
-          {['SSL chiffré', 'Annulation 1 clic', 'Remboursement 30j'].map(t => (
+          {/* 14/08/2026 — « Remboursement 30j » s'affichait dans les DEUX modes, y compris en
+              mode essai (IMMEDIATE_PAYMENT = false), où aucune garantie 30 jours n'existe :
+              ni sur cette page, ni dans le parcours Stripe. Promesse affichée au moment
+              exact où on demande la carte, sans rien derrière. Le badge suit le mode. */}
+          {['SSL chiffré', 'Annulation 1 clic', IMMEDIATE_PAYMENT ? 'Remboursement 30j' : `0 € pendant ${TRIAL_DAYS} jours`].map(t => (
             <span key={t} className="flex items-center gap-1.5 text-green-400 text-xs">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>{t}
             </span>
@@ -213,9 +231,13 @@ const FEATURES: Feature[] = [
     detail: 'Un sticker dans ta voiture, un mini-site à ton nom : le client scanne et réserve en direct. La plateforme ne touche rien.',
     worth: '25 % de commission',
   },
+  // 14/08/2026 — « tirelire » promettait un service financier que FOREAS ne rend pas :
+  // aucune table de portefeuille, aucun compte de cantonnement, aucun mouvement d'argent
+  // n'existe. L'URSSAF SE CALCULE, elle ne se met pas de côté. FOREAS est copilote de
+  // gestion, jamais expert-comptable (ordonnance du 19 sept. 1945, art. 20).
   {
-    punch: 'Ta tirelire URSSAF se calcule toute seule.',
-    detail: 'Course après course, tu vois la provision à sortir au trimestre. Zéro saisie, zéro douche froide.',
+    punch: 'Ce que tu devras à l\'URSSAF, calculé au fil des courses.',
+    detail: 'Course après course, tu vois la provision à garder pour le trimestre. C\'est ton argent, il reste sur ton compte — on calcule, on n\'y touche pas.',
     worth: '80 €/mois',
   },
   {
@@ -235,14 +257,29 @@ interface Plan {
   cta: string
 }
 
+// 14/08/2026 — les trois montants étaient écrits en dur ici. Ils descendent maintenant
+// d'offre.ts (source unique, alignée sur ce que Stripe facture réellement).
+// 249,99 / 12 = 20,8325 → 20,83 €/mois affiché en annuel.
 const PLAN: Plan = {
   id: 'pro',           // clé conservée : l'API attend `pro_monthly` / `pro_annual`
   name: 'FOREAS',
   tagline: 'Tout est dedans. Il n\'y a rien d\'autre à choisir.',
-  // 249,99 / 12 = 20,8325 → 20,83 €/mois affiché en annuel
-  monthlyPrice: 29.99, annualMonthlyPrice: 20.83, annualTotal: 249.99,
+  monthlyPrice: PRIX_MENSUEL_CENTIMES / 100,
+  annualMonthlyPrice: Math.round(PRIX_ANNUEL_CENTIMES / 12) / 100,
+  annualTotal: PRIX_ANNUEL_CENTIMES / 100,
   cta: IMMEDIATE_PAYMENT ? 'Démarrer maintenant' : `Essayer ${TRIAL_DAYS} jours — 0 € aujourd\'hui`,
 }
+
+// Remise annuelle réelle, arrondie vers le BAS : 1 − 249,99/(29,99×12) = 30,5 % → 30 %.
+const REMISE_ANNUELLE_PCT = Math.floor((1 - PRIX_ANNUEL_CENTIMES / (PRIX_MENSUEL_CENTIMES * 12)) * 100)
+
+// 14/08/2026 — le site annonçait « −20 % à vie » au filleul. Aucun palier à 20 % n'existe :
+// `select tier, commission_eur, discount_pct from referral_program_tiers` → 25 €/−10 %,
+// 35 €/−15 %, 50 €/−18 %, et `get_referral_discount_for_code` renvoie COALESCE(v_pct, 10).
+// Un code chauffeur donne donc 10 %, 18 % au mieux — jamais 20 %.
+const REMISE_PARRAIN_MIN_PCT = PARRAINAGE.paliers[0].remisePct
+const REMISE_PARRAIN_MAX_PCT = PARRAINAGE.paliers[PARRAINAGE.paliers.length - 1].remisePct
+const PRIX_AVEC_PARRAIN = formaterEuros(Math.round(PRIX_MENSUEL_CENTIMES * (1 - REMISE_PARRAIN_MIN_PCT / 100)))
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 function TarifsContent() {
@@ -267,15 +304,27 @@ function TarifsContent() {
 
   const faqs = [
     { id: 'faq-diff', q: "Il y a un seul abonnement ? Pas de version light ?", a: "Un seul, et tout est dedans. Avant il y avait trois formules — le temps que tu passais à comparer, tu ne le passais pas à rouler. Ce que tu prends aujourd'hui, c'est ce que prend le chauffeur d'à côté : le Coach qui calcule ton net avant que tu acceptes, la carte des zones, Ajnaya à la voix, tes clients directs sans commission, ta provision URSSAF, ton site perso. Rien à débloquer plus tard." },
+    // 14/08/2026 — ces réponses vendaient un « plan Free » et un « plan Pro » qui n'existent
+    // plus : offre.ts ne connaît que `mensuel` et `annuel` (« les deux seules formules
+    // vendables aujourd'hui »). Un prospect qui vient chercher la version gratuite ne trouve
+    // rien, et repart. Réponse refaite sur ce qui est réellement facturé.
     IMMEDIATE_PAYMENT
-      ? { id: 'faq-carte', q: "Je paie tout de suite ? Et si ça me va pas ?", a: "Oui, tu paies aujourd'hui — et tu es couvert par la garantie 30 jours : pas convaincu, tu te fais rembourser sans discuter, sans question. Tu testes en vrai sur tes courses, tu risques zéro. (Le plan Free reste 100% gratuit, juste un email.)" }
-      : { id: 'faq-carte', q: "Pourquoi une carte est demandée si c'est gratuit ?", a: "Le plan Free n'en demande aucune — c'est vraiment gratuit, juste un email. Pour Pro : Stripe garde ta carte de côté pour activer l'abonnement APRÈS l'essai — pas avant. 0 € pendant tes 3 jours d'essai. Tu annules en 1 clic depuis l'app. Si tu annules avant, il n'y a rien à payer. Point." },
-    { id: 'faq-mensuel', q: "Pourquoi mensuel et pas hebdomadaire ?", a: "Parce que 29,99€/mois, c'est 1€ par jour — une bouteille d'eau. Tu n'as aucun calcul à faire, tu sais exactement ce que tu paies. En annuel, 249,99€ : c'est l'ordre de grandeur d'une journée de chiffre d'affaires, posée une fois, pour 365 jours de décisions." },
-    { id: 'faq-parrainage', q: "25€/filleul à vie, est-ce un piège ?", a: "Non. Tant que ton filleul reste abonné ET que toi aussi, tu touches 25€/mois sur lui (N1). Plus 8€ s'il parraine quelqu'un (N2). Plus 2€ au niveau 3. Activé dès son 1er paiement. Virement automatique. Pas de plafond, pas d'expiration. Un lien parrain donne -20% à vie sur le mensuel à ton filleul." },
+      ? { id: 'faq-carte', q: "Je paie tout de suite ? Et si ça me va pas ?", a: "Oui, tu paies aujourd'hui — et tu es couvert par la garantie 30 jours : pas convaincu, tu te fais rembourser sans discuter, sans question. Tu testes en vrai sur tes courses, tu risques zéro." }
+      : { id: 'faq-carte', q: "Pourquoi une carte est demandée si je ne paie rien ?", a: `Parce que Stripe la garde de côté pour activer ton abonnement APRÈS l'essai — pas avant. 0 € aujourd'hui, 0 € pendant tes ${TRIAL_DAYS} jours. À la fin, l'abonnement démarre tout seul : si tu ne veux pas continuer, tu annules en 1 clic depuis l'app avant la fin de l'essai, et rien n'est débité. On te le dit maintenant plutôt que de te le faire découvrir sur ton relevé.` },
+    { id: 'faq-mensuel', q: "Pourquoi mensuel et pas hebdomadaire ?", a: `Parce que ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois, c'est 1 € par jour — une bouteille d'eau. Tu n'as aucun calcul à faire, tu sais exactement ce que tu paies. En annuel, ${formaterEuros(PRIX_ANNUEL_CENTIMES)} : c'est l'ordre de grandeur d'une journée de chiffre d'affaires, posée une fois, pour 365 jours de décisions.` },
+    // 14/08/2026 — la cascade N1 25 € / N2 8 € / N3 2 € n'existe nulle part.
+    // `select * from referral_program_tiers` → 3 lignes, et ce sont des PALIERS DE VOLUME
+    // (0-14 filleuls : 25 € · 15-49 : 35 € · 50+ : 50 €), pas des niveaux de pyramide :
+    // aucun reversement sur le filleul de ton filleul. « Virement automatique » non plus :
+    // `select count(*) from referral_commissions` → 0, aucune commission n'a jamais été
+    // versée. Le dire franchement vaut mieux que de le faire découvrir au premier filleul.
+    { id: 'faq-parrainage', q: `${PARRAINAGE.paliers[0].commissionEur}€/filleul à vie, est-ce un piège ?`, a: `Non, et voilà exactement comment ça marche. Tant que ton filleul reste abonné ET que toi aussi, tu touches ${PARRAINAGE.paliers[0].commissionEur} € par mois sur lui. À partir de 15 filleuls, c'est ${PARRAINAGE.paliers[1].commissionEur} €. À partir de 50, c'est ${PARRAINAGE.paliers[2].commissionEur} €. Ce sont des paliers de volume, pas une pyramide : on ne te promet rien sur les filleuls de tes filleuls. Ton filleul, lui, a −${REMISE_PARRAIN_MIN_PCT} % à vie sur le mensuel, jusqu'à −${REMISE_PARRAIN_MAX_PCT} % selon ton palier. Et on est cash : le programme vient d'ouvrir, aucune commission n'a encore été versée. Tu serais dans les premiers.` },
     { id: 'faq-directs', q: "« Clients directs », ça veut dire quoi concrètement ?", a: "Un sticker avec ton QR code dans la voiture, et un mini-site à ton nom (foreas.xyz/ton-prénom). Le client scanne, il réserve avec toi, il te paie. Aucune plateforme au milieu, donc aucune commission prélevée : une course à 25€, c'est 25€ pour toi. Ça ne remplace pas Uber du jour au lendemain — ça se construit course après course, avec les clients qui reviennent." },
     { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — et c'est toi qui fais le tri, le soir, fatigué. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un tableau de bord de plus. " + (IMMEDIATE_PAYMENT ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : `Et tu as ${TRIAL_DAYS} jours pour te faire ta propre idée sur tes vraies courses, sans rien payer.`) },
     { id: 'faq-desactivation', q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme te coupe, tu redistribues ton temps sur les autres en 1 minute. La communauté FOREAS te briefe sur les bons réflexes pour récupérer ton compte." },
-    { id: 'faq-annulation', q: "Et si je veux arrêter dans 3 mois ?", a: "Tu cliques 'Annuler', tu confirmes, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Et si tu veux juste downgrade vers Free, tu gardes l'accès heatmap basique sans payer." },
+    // 14/08/2026 — « downgrade vers Free » promettait une formule gratuite qui n'existe pas
+    // (offre.ts : seules `mensuel` et `annuel` sont vendables). Retiré, pas remplacé.
+    { id: 'faq-annulation', q: "Et si je veux arrêter dans 3 mois ?", a: "Tu cliques 'Annuler', tu confirmes, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Tu gardes l'accès jusqu'à la fin de la période déjà payée." },
   ]
 
   return (
@@ -323,7 +372,14 @@ function TarifsContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
             </span>
-            Ajnaya lit 7 plateformes en direct
+            {/* 14/08/2026 — « Ajnaya lit 7 plateformes en direct » était deux faux en une
+                phrase. Le compte : `select distinct platform from rides` → Uber, Bolt,
+                Heetch, Private (« Private » = course directe du chauffeur, pas une
+                plateforme tierce) → 3, jamais 7. Et « en direct » : la table qui porterait
+                une lecture continue, `driver_ride_features`, est VIDE (0 ligne), tout comme
+                `extracted_surge_data`. Nommer les 3 rend la promesse vérifiable par
+                n'importe quel chauffeur — c'est le but. */}
+            Tes courses {PLATEFORMES.reellementVues.join(', ')} au même endroit
           </span>
           <span className="text-white/20 hidden sm:inline">·</span>
           <span className="text-white/55 text-xs">
@@ -357,8 +413,16 @@ function TarifsContent() {
                 cette semaine&nbsp;?
               </span>
             </h1>
+            {/* 14/08/2026 — « Haitham, Paris : +387 € ce mois-ci » n'existe nulle part :
+                `select * from pieuvre_closer_testimonials where driver_name ilike '%haitham%'`
+                → 0 ligne, et sa fiche documentée (src/components/zone/testimonials.data.ts,
+                Haitham B.) ne porte AUCUN chiffre de gain (gainBadge « Liberté + lien »).
+                Une personne identifiable + un gain chiffré sans source, c'est le combo qui
+                se paie devant la DGCCRF. Remplacé par la seule phrase chiffrée qu'on peut
+                produire : celle que Binate A. dit lui-même, face caméra, dans une vidéo
+                publiée sur ce site. Son chiffre, pas le nôtre — et c'est dit tel quel. */}
             <p className="text-white/75 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-              Haitham, Paris&nbsp;: <span className="text-[#F8FAFC] font-semibold tabular-nums">+387&nbsp;€</span> ce mois-ci. Sans une heure en plus.
+              Binate A., Marne-la-Vallée&nbsp;: <span className="text-[#F8FAFC] font-semibold">«&nbsp;Mes revenus sont montés de 30&nbsp;%. Travailler moins pour avoir plus.&nbsp;»</span> Son chiffre, dit face caméra.
             </p>
             <p className="text-white/55 text-base sm:text-[15px] max-w-xl mx-auto leading-relaxed mt-3">
               {/* « IA » retiré volontairement (décision Chandler) : le mot est devenu
@@ -393,7 +457,7 @@ function TarifsContent() {
               l'écart réel est de ~3,7 mois : le badge sous-vendait ET devenait faux. On
               affiche le pourcentage exact, arrondi vers le BAS (109,89/359,88 = 30,5%). */}
           <span className="bg-green-500/20 text-green-400 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap" style={{ letterSpacing: '0.05em' }}>
-            −30&nbsp;%
+            −{REMISE_ANNUELLE_PCT}&nbsp;%
           </span>
         </button>
       </div>
@@ -515,9 +579,13 @@ function TarifsContent() {
             </p>
           </motion.div>
 
-          {/* Note parrain */}
+          {/* Note parrain — 14/08/2026 : « −20 % à vie (23,99 €/mois) » annonçait une remise
+              qui n'existe dans aucun palier. La fonction en base
+              `get_referral_discount_for_code` renvoie COALESCE(v_pct, 10) et les paliers
+              plafonnent à 18 % : un chauffeur arrivé par un lien parrain aurait vu 26,99 €
+              au checkout après avoir lu 23,99 € ici. Perdu au pire moment, sur 3 € d'écart. */}
           <p className="text-center text-white/40 text-xs mt-6 max-w-lg mx-auto">
-            Tu as un lien parrain&nbsp;? Ton mensuel est à <span className="text-white/70 font-semibold tabular-nums">−20&nbsp;% à vie</span> (23,99&nbsp;€/mois). L&apos;annuel est au tarif fixe.
+            Tu as un lien parrain&nbsp;? Ton mensuel est à <span className="text-white/70 font-semibold tabular-nums">−{REMISE_PARRAIN_MIN_PCT}&nbsp;% à vie</span> ({PRIX_AVEC_PARRAIN}/mois), et jusqu&apos;à −{REMISE_PARRAIN_MAX_PCT}&nbsp;% selon le palier de ton parrain. L&apos;annuel est au tarif fixe.
           </p>
         </div>
       </section>
@@ -525,14 +593,23 @@ function TarifsContent() {
       {/* ── KPIs ── */}
       <section className="py-14 sm:py-16 px-4 border-y border-white/[0.06]">
         <div className="max-w-4xl mx-auto">
+          {/* 14/08/2026 — ces trois compteurs annonçaient « 387 € gagnés en plus / mois »,
+              « 3h de temps mort en moins / jour » et « 90 sec pour ton 1ᵉʳ insight ». Aucun
+              des trois ne se mesure : `driver_ride_features` → 0 ligne,
+              `driver_ride_features_daily_stats` → 0 ligne, et il n'existe AUCUNE colonne de
+              temps à vide dans le schéma. Le mot « objectifs visés » ne sauve pas un gain
+              chiffré affiché en 6xl — c'est ce que la DGCCRF regarde. On garde trois
+              compteurs, mais chacun porte un chiffre qu'un chauffeur peut vérifier seul
+              (src/lib/verite-commerciale.ts : plateformes réellement vues, témoignages
+              filmés, durée d'essai réellement posée chez Stripe). */}
           <p className="text-center text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-8" style={{ letterSpacing: '0.28em' }}>
-            OBJECTIFS VISÉS · PREMIERS 60 JOURS
+            TROIS CHIFFRES · TOUS VÉRIFIABLES
           </p>
           <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
             {[
-              { target: 387, suffix: '€', label: 'gagnés en plus / mois', color: 'from-violet-300 via-violet-200 to-cyan-200' },
-              { target: 3, suffix: 'h', label: 'temps mort en moins / jour', color: 'from-cyan-300 via-cyan-200 to-cyan-100' },
-              { target: 90, suffix: 'sec', label: "pour ton 1ᵉʳ insight Ajnaya", color: 'from-green-300 via-green-200 to-cyan-200' },
+              { target: PLATEFORMES.nombre, suffix: '', label: `plateformes : ${PLATEFORMES.reellementVues.join(', ')}`, color: 'from-violet-300 via-violet-200 to-cyan-200' },
+              { target: COMMUNAUTE.temoignagesVideoReels, suffix: '', label: 'chauffeurs filmés, à visage découvert', color: 'from-cyan-300 via-cyan-200 to-cyan-100' },
+              { target: TRIAL_DAYS, suffix: 'j', label: "d'essai — 0 € débité", color: 'from-green-300 via-green-200 to-cyan-200' },
             ].map((kpi, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
                 <div className={'text-4xl sm:text-6xl font-black bg-gradient-to-r ' + kpi.color + ' bg-clip-text text-transparent mb-2 tabular-nums'} style={{ letterSpacing: '-0.04em' }}>
@@ -565,33 +642,46 @@ function TarifsContent() {
                 <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Tu finis à 22h, pas convaincu d'avoir bien bossé.</span></li>
                 <li className="flex gap-2.5"><span className="text-white/30 mt-1">○</span><span>Le mois prochain, tu fais pareil. Et le suivant aussi.</span></li>
               </ul>
+              {/* 14/08/2026 — « Net moyen 2 840 € » vs « 3 227 € » était un écart fabriqué :
+                  aucun agrégat de revenu chauffeur n'existe en base (`driver_ride_features`
+                  et `driver_ride_features_daily_stats` → 0 ligne). Les deux colonnes
+                  comparent maintenant ce qui est vrai et vérifiable en une soirée : ce que
+                  tu SAIS en rentrant. */}
               <div className="mt-6 pt-5 border-t border-white/[0.06]">
-                <p className="text-white/50 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Net moyen</p>
-                <p className="text-2xl font-black text-white/70 tabular-nums" style={{ letterSpacing: '-0.03em' }}>2 840 €<span className="text-sm text-white/40 font-medium">&nbsp;/ mois</span></p>
+                <p className="text-white/50 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Ce que tu sais en rentrant</p>
+                <p className="text-2xl font-black text-white/70" style={{ letterSpacing: '-0.03em' }}>À peu près<span className="text-sm text-white/40 font-medium">&nbsp;— au feeling</span></p>
               </div>
             </div>
             <div className="rounded-2xl p-6 sm:p-7 border border-violet-500/30 bg-gradient-to-b from-violet-900/15 to-black relative" style={{ boxShadow: '0 0 60px rgba(140,82,255,0.15)' }}>
+              {/* 14/08/2026 — trois faux dans cette colonne.
+                  · « FOREAS PRO » : la formule Pro n'existe plus, il y a UNE offre (offre.ts).
+                  · « Surge multi-plateformes en temps réel » : `extracted_surge_data` → 0
+                    ligne, `pieuvre_surge_predictions` → 0 ligne, `driver_ride_features` → 0
+                    ligne. Aucune donnée de surge, d'aucune plateforme, à aucune date.
+                  · « +47 € vs hier » et « ta moyenne monte mécaniquement » : gains chiffrés
+                    et promesse de résultat, invérifiables et interdits (CNIL/DGCCRF).
+                  Ce qui reste est ce que l'app fait vraiment : elle t'aide à décider. */}
               <p className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>
-                AVEC FOREAS PRO · 29,99&nbsp;€/MOIS
+                AVEC FOREAS · {formaterEuros(PRIX_MENSUEL_CENTIMES)}/MOIS
               </p>
               <ul className="space-y-3 text-[15px] text-[#F8FAFC]/90 leading-relaxed">
                 <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span><strong className="text-[#F8FAFC]">Ajnaya te briefe le matin</strong> : 3 zones chaudes du jour, ordre optimal.</span></li>
                 <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Tu prends <strong className="text-[#F8FAFC]">la course qui paie</strong>, tu refuses celle qui te plombe.</span></li>
-                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Surge multi-plateformes en temps réel — <strong className="text-[#F8FAFC]">tu y es avant les autres</strong>.</span></li>
-                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Tu rentres à 19h, <strong className="text-[#F8FAFC]">+47&nbsp;€ vs hier</strong>, conscient.</span></li>
-                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Le mois prochain, ta moyenne monte. <strong className="text-[#F8FAFC]">Mécaniquement.</strong></span></li>
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Tu vois <strong className="text-[#F8FAFC]">les zones qui montent</strong> avant de bouger, au lieu de tourner au hasard.</span></li>
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Tu rentres quand ta journée est faite — et <strong className="text-[#F8FAFC]">tu sais ce qu&apos;elle t&apos;a rapporté</strong>.</span></li>
+                <li className="flex gap-2.5"><span className="text-violet-300 mt-1">●</span><span>Le mois prochain, tu décides avec <strong className="text-[#F8FAFC]">ce que ce mois-ci t&apos;a appris</strong>.</span></li>
               </ul>
               <div className="mt-6 pt-5 border-t border-violet-500/15">
-                <p className="text-cyan-300/85 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Net moyen</p>
-                <p className="text-2xl font-black tabular-nums bg-gradient-to-r from-violet-300 to-cyan-200 bg-clip-text text-transparent" style={{ letterSpacing: '-0.03em' }}>
-                  3 227 €<span className="text-sm text-cyan-300/70 font-medium">&nbsp;/ mois</span>
+                <p className="text-cyan-300/85 text-xs uppercase mb-1" style={{ letterSpacing: '0.2em' }}>Ce que tu sais en rentrant</p>
+                <p className="text-2xl font-black bg-gradient-to-r from-violet-300 to-cyan-200 bg-clip-text text-transparent" style={{ letterSpacing: '-0.03em' }}>
+                  Ton net exact<span className="text-sm text-cyan-300/70 font-medium">&nbsp;— au centime</span>
                 </p>
-                <p className="text-green-400/85 text-[11px] font-semibold mt-1">+387&nbsp;€ · soit 13,6&nbsp;% de marge en plus</p>
+                <p className="text-green-400/85 text-[11px] font-semibold mt-1">Par heure, par km, par course.</p>
               </div>
             </div>
           </div>
           <p className="text-center text-white/45 text-xs mt-6 max-w-2xl mx-auto">
-            Ce sont des objectifs visés, pas une promesse. Chaque chauffeur est différent : tes résultats dépendent de ton activité, de ta zone et de tes horaires.
+            On ne te promet aucun chiffre. Ce qui change, c&apos;est ce que tu sais avant de décider. Le reste dépend de ton activité, de ta zone et de tes horaires.
           </p>
         </div>
       </section>
@@ -600,15 +690,35 @@ function TarifsContent() {
       <section className="py-16 px-4 bg-white/[0.02] border-b border-white/[0.06]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>VRAIS CHAUFFEURS · VRAIS VIREMENTS</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3" style={{ letterSpacing: '-0.03em' }}>Pas des promesses. Des virements.</h2>
-            <p className="text-white/55">3 chauffeurs. 3 villes. 3 trajectoires.</p>
+            {/* 14/08/2026 — « VRAIS VIREMENTS » / « Pas des promesses. Des virements. » :
+                aucun virement n'a jamais été émis (`select count(*) from
+                referral_commissions` → 0), et FOREAS ne verse rien à un chauffeur abonné.
+                Ce qu'on a vraiment, et qui vaut mieux : 6 chauffeurs filmés à visage
+                découvert (src/components/zone/testimonials.data.ts). */}
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>VRAIS CHAUFFEURS · FILMÉS À VISAGE DÉCOUVERT</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3" style={{ letterSpacing: '-0.03em' }}>Pas des promesses. Des visages.</h2>
+            <p className="text-white/55">3 des {COMMUNAUTE.temoignagesVideoReels} chauffeurs qu&apos;on a filmés. Leurs mots, pas les nôtres.</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-5">
+            {/* 14/08/2026 — les trois témoignages affichés ici étaient inventés, chiffres compris.
+                · Haitham B. : « +387 €/mois », « Paris · 4 ans », un vol AF1234 suivi en direct.
+                  Sa vraie fiche (src/components/zone/testimonials.data.ts) dit « Paris · 7 ans »,
+                  gainBadge « Liberté + lien », aucun chiffre — et aucun connecteur de suivi
+                  aérien n'existe nulle part dans le code (grep 'AF1234|flight|vol_' sur src/
+                  → cette ligne, et rien d'autre).
+                · Soufiane M. « Lyon », « +412 €/mois » : `pieuvre_closer_testimonials` → 0 ligne,
+                  absent des 6 vidéos, et placé à « Paris 11ᵉ » dans un autre composant du
+                  même site.
+                · Théodore R. « Bordeaux », « -3h/jour à vide » : 0 ligne en base, « Marseille »
+                  ailleurs sur le site, et AUCUNE colonne de temps à vide n'existe dans le schéma.
+                Personne identifiable + gain chiffré + zéro consentement (`driver_consent` ne
+                porte aucun champ image ni témoignage) = le combo qui se paie devant la CNIL.
+                Remplacés par 3 des 6 chauffeurs réellement filmés, avec LEURS mots et LEURS
+                badges, copiés depuis testimonials.data.ts. */}
             {[
-              { name: 'Haitham B.', city: 'Paris · 4 ans VTC', avatar: 'HB', gain: '+387 €/mois', detail: 'Vendredi 18h, CDG', quote: "Avant je tournais en rond entre Bercy et Bastille. Maintenant Ajnaya me dit 'pose-toi à Roissy à 18h25, vol AF1234 atterrit'. Je me retrouve premier sur la file. C'est ça le truc.", stars: 5 },
-              { name: 'Soufiane M.', city: 'Lyon · 2 ans VTC', avatar: 'SM', gain: '+412 €/mois', detail: 'Mois 1 vs mois 0', quote: "412 € de plus le premier mois. L'abo se paie en une course. Le reste, c'est du bonus que je mets de côté pour passer en SAS.", stars: 5 },
-              { name: 'Théodore R.', city: 'Bordeaux · 6 ans VTC', avatar: 'TR', gain: '-3h/jour à vide', detail: 'Au lieu de 11h, je rentre en 8h', quote: "Le vrai gain n'est pas dans mon compte. Il est dans ma tête. Je conduis 3h de moins, je gagne autant. Mes lombaires me remercient.", stars: 5 },
+              { name: 'Haitham B.', city: 'Paris · 7 ans VTC', avatar: 'HB', gain: 'Liberté + lien', detail: '7 ans · Paris', quote: "Foreas m'aide à me concentrer à 100 % sur mon boulot. Quand on a besoin de quoi que ce soit, on a une réponse instantanément.", stars: 5 },
+              { name: 'Dragan P.', city: 'Paris · 9 ans VTC', avatar: 'DP', gain: '2 ans, il reste', detail: '9 ans VTC · 2 ans FOREAS', quote: "Plus de deux ans avec FOREAS, aucun souci. Tout se passe pour le mieux. J'y suis, j'y reste.", stars: 5 },
+              { name: 'Hadietou', city: 'Banlieue parisienne · 9 ans VTC', avatar: 'HD', gain: 'Il recommande', detail: 'Indépendant · 9 ans VTC', quote: "FOREAS représente un confort et un futur. Quand j'envoie un mail, on me répond dans les 24 heures. Je le recommanderais à mes amis proches.", stars: 5 },
             ].map((t, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 hover:border-violet-500/30 transition-all"
@@ -643,10 +753,16 @@ function TarifsContent() {
                 ? <>Pas convaincu sous 30 jours&nbsp;?<br />Remboursé, sans discuter.</>
                 : <>{TRIAL_DAYS} jours pour te faire ton avis.<br />Sur tes vraies courses.</>}
             </h3>
+            {/* 14/08/2026 — « tu fermes l'app, il n'y a rien à annuler » était faux, et c'est
+                le pire endroit du site pour l'être : /api/checkout crée une session
+                mode:'subscription' avec subscription_data.trial_end ET
+                payment_method_collection:'always'. Un abonnement Stripe EST créé, la carte
+                EST enregistrée : ne rien faire, c'est être débité à J+3. Le chauffeur qui
+                ferme l'app en confiance découvre le prélèvement sur son relevé. */}
             <p className="text-white/65 text-sm leading-relaxed">
               {IMMEDIATE_PAYMENT
                 ? <>Tu paies aujourd&apos;hui. Tu testes en vrai, sur tes vraies courses. Pas convaincu sous 30 jours&nbsp;? On te rembourse, sans question. Tu risques zéro. <span className="text-white/80">Point.</span></>
-                : <>0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ pendant 3 jours. Si tu as un doute, tu fermes l&apos;app — il n&apos;y a rien à annuler. Si tu restes, c&apos;est que ça vaut le coup. <span className="text-white/80">Point.</span></>}
+                : <>0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ pendant {TRIAL_DAYS} jours. À la fin de l&apos;essai, ton abonnement démarre tout seul&nbsp;: si tu ne veux pas continuer, tu annules en 1 clic avant, et rien n&apos;est débité. <span className="text-white/80">On te le dit avant, pas après.</span></>}
             </p>
           </div>
         </div>
@@ -669,7 +785,12 @@ function TarifsContent() {
         <div className="absolute inset-0 pointer-events-none animate-halo-pulse" aria-hidden style={{ background: 'radial-gradient(ellipse 50% 40% at 50% 60%, rgba(140,82,255,0.18) 0%, transparent 70%)' }} />
         <div className="max-w-2xl mx-auto text-center relative">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>{IMMEDIATE_PAYMENT ? 'GARANTI 30 JOURS · ZÉRO RISQUE · TU DÉCIDES' : '7 JOURS · ZÉRO RISQUE · TU DÉCIDES'}</p>
+            {/* 14/08/2026 — « 7 JOURS » : l'essai en dure 3. Mesuré sur l'API de prod
+                (GET /api/checkout → trialDays: 3, trialEndsAt = J+3) et contredit par le
+                reste de la page, qui affichait déjà 3 jours partout ailleurs. Un chauffeur
+                qui lit 7 et se fait débiter à J+3 ne revient pas. La valeur vient
+                maintenant d'offre.ts, elle ne peut plus diverger. */}
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>{IMMEDIATE_PAYMENT ? 'GARANTI 30 JOURS · ZÉRO RISQUE · TU DÉCIDES' : `${TRIAL_DAYS} JOURS · ZÉRO RISQUE · TU DÉCIDES`}</p>
             <h2 className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]" style={{ letterSpacing: '-0.045em' }}>
               {IMMEDIATE_PAYMENT
                 ? <>Ce soir,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu reprends la main.</span></>

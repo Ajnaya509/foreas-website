@@ -4,7 +4,7 @@ import CapClient from './CapClient'
 
 export const metadata: Metadata = {
   title: 'Rejoindre FOREAS — Offre partenaire',
-  description: 'Votre partenaire vous a invité à rejoindre FOREAS, l\'IA pour les chauffeurs VTC.',
+  description: 'Votre partenaire vous a invité à rejoindre FOREAS, le copilote des chauffeurs VTC.',
   robots: { index: false, follow: false }, // No public indexing for partner landings
 }
 

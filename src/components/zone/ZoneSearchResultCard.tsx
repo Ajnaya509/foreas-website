@@ -65,7 +65,7 @@ export default function ZoneSearchResultCard({
           <span className="font-semibold">{stats.zone_match}</span>, je ne la donne pas en public — elle bouge trop vite.
         </p>
         <p className="text-white/65 text-sm leading-relaxed mb-5">
-          Mais Ajnaya la lit en direct. Demande-lui le chiffre de ta zone : elle te répond avec ce qu&apos;elle voit là, maintenant.
+          Mais Ajnaya la connaît. Demande-lui le chiffre de ta zone : elle te répond avec ce qu&apos;elle a vu passer là, à cette heure-ci.
         </p>
         <a
           href={waUrl}

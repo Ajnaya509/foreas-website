@@ -81,11 +81,14 @@ export const COMMUNAUTE_PHRASES = {
  * Et « en direct » est une seconde affirmation, distincte : la table qui porterait
  * une lecture continue (`driver_ride_features`) est **VIDE (0 ligne)**.
  */
+const PLATEFORMES_REELLES = ['Uber', 'Bolt', 'Heetch'] as const
+
 export const PLATEFORMES = {
-  reellementVues: ['Uber', 'Bolt', 'Heetch'] as const,
-  get nombre() {
-    return PLATEFORMES.reellementVues.length
-  },
+  reellementVues: PLATEFORMES_REELLES,
+  // Valeur simple, pas un accesseur : un `get` dans un objet `as const` se
+  // comporte différemment selon le compilateur et le minifieur, et un chiffre
+  // affiché au public ne doit dépendre d'aucune subtilité de transpilation.
+  nombre: PLATEFORMES_REELLES.length,
   /** Faux au 14/08/2026 : aucune lecture continue ne tourne. */
   lectureEnDirect: false,
 } as const

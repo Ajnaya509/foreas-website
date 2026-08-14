@@ -185,7 +185,7 @@ export default function ZonePainCalculator() {
         >
           <p className="text-[#F8FAFC] t-bodylg leading-relaxed mb-5">
             Tu bosses bien. Le problème, c'est pas toi — c'est les courses à vide
-            qu'on te refile. Ajnaya repère, en temps réel, celles qui te laissent
+            qu'on te refile. Ajnaya repère celles qui te laissent
             le plus en net. <span className="text-[#F8FAFC] font-semibold">Même volant, mieux placé.</span>
           </p>
 

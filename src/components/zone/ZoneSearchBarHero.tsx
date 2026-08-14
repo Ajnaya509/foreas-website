@@ -249,7 +249,9 @@ export default function ZoneSearchBarHero() {
 
           {/* Trust strip sous la barre */}
           <p className="text-white/45 text-xs mt-3 tabular-nums">
-            Données réelles · 7 plateformes lues en direct · sans inscription
+            {/* 14/08/2026 — « 7 plateformes lues en direct » : la base n'en connaît que 3
+                    (Uber, Bolt, Heetch), et aucune lecture continue ne tourne. */}
+                Uber, Bolt, Heetch · sans inscription
           </p>
         </motion.form>
 

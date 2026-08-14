@@ -81,10 +81,13 @@ export default function ZoneMechanismVisual() {
 
         {/* 3 colonnes : CAPTE / ANALYSE / PARLE */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-10">
+          {/* 14/08/2026 — le titre disait « 7 plateformes, en même temps ».
+              select distinct platform from rides → Uber, Bolt, Heetch (+ « Private »
+              = course directe, pas une plateforme) = 3 réelles. */}
           <MechanismCard
             icon={Satellite}
             label="CAPTE"
-            title="7 plateformes, en même temps"
+            title="Uber, Bolt, Heetch, au même endroit"
             desc="Bien plus que tes apps VTC. Des dizaines de signaux temps réel — comment, c'est notre secret."
             delay={0}
           />
@@ -112,7 +115,7 @@ export default function ZoneMechanismVisual() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-[#F8FAFC]/80 t-bodylg leading-relaxed text-center max-w-2xl mx-auto mb-8"
         >
-          Pendant que tu conduis, Ajnaya regarde 7 applis en parallèle. Quand une zone se réveille à 800 m de toi, elle te le dit avant les autres.{' '}
+          Pendant que tu conduis, Ajnaya suit tes courses Uber, Bolt et Heetch. Quand une zone se réveille à 800 m de toi, elle te le dit avant les autres.{' '}
           <span className="text-[#F8FAFC] font-semibold">C&apos;est tout.</span>
         </motion.p>
 

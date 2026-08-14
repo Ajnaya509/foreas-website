@@ -7,7 +7,7 @@ import { Brain, Database, Zap, Shield, Globe, Cpu } from 'lucide-react'
 
 const techFeatures = [
   { icon: Brain, title: 'Deep Learning', desc: '87% précision.' },
-  { icon: Database, title: 'Temps réel', desc: 'Data pipeline live.' },
+  { icon: Database, title: 'Courses réelles', desc: 'Ce qui a vraiment été roulé.' },
   { icon: Zap, title: '<100ms', desc: 'Latence recommandation.' },
   { icon: Shield, title: 'RGPD natif', desc: 'Chiffrement E2E.' },
   { icon: Globe, title: 'Scalable', desc: 'Cloud-native.' },

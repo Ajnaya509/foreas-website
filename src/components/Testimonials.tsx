@@ -4,6 +4,8 @@ import { motion, useInView } from 'framer-motion'
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { useIsMobile } from '@/hooks/useDevicePerf'
 import dynamic from 'next/dynamic'
+// Le nombre de témoignages affiché vient du canon, pas d'un chiffre écrit à la main.
+import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
 
 // Lazy load Mux Player — only loaded when user clicks play (saves ~200KB from critical path)
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
@@ -24,24 +26,70 @@ interface Testimonial {
   accentColor: string
 }
 
+/* ─── CORRECTION 14/08/2026 — les badges et les citations reviennent à leur source
+ *
+ * CE QUI ÉTAIT FAUX : les six badges chiffrés et les six citations de ce carrousel
+ * étaient écrits à la main, sans source, et superposés au visage de personnes
+ * identifiables (vidéos Mux publiques). On leur faisait donc dire des phrases
+ * qu'elles n'ont jamais prononcées et annoncer des gains que personne n'a mesurés.
+ *
+ * LES MESURES (base de production, 14/08/2026) :
+ *   · select code, driver_name from pieuvre_closer_testimonials → 3 lignes SEULEMENT
+ *     (binate_disneyland, zefi_zone_disney, demo_course). Aucune fiche Haitham,
+ *     Nikolic, Hadietou ni Dragan : ni chiffre source, ni transcript, ni consentement.
+ *   · select distinct platform from rides → Bolt, Heetch, Private, Uber (4, dont
+ *     « Private » qui est une course directe, pas une plateforme). Jamais 7.
+ *   · rides = 18 lignes au total, tous chauffeurs confondus, sans horodatage
+ *     d'attente, sans charges, sans distance à vide : « -40 % temps mort »,
+ *     « +22 % revenus nets » et « -35 % km à vide » ne sont pas seulement faux,
+ *     ils sont STRUCTURELLEMENT incalculables avec les données existantes.
+ *
+ * LA RÈGLE QUI EN DÉCOULE, à ne pas défaire dans six mois : un badge chiffré ne
+ * s'affiche ici que si (1) la base porte le chiffre ET (2) le chauffeur l'énonce
+ * lui-même à l'écran. Un seul cas remplit les deux conditions aujourd'hui : Binaté
+ * (pieuvre_closer_testimonials.revenue_increase_pct = 30.00, qu'il dit en vidéo).
+ * Les cinq autres badges sont qualitatifs — et un badge qualitatif vrai vaut mieux
+ * qu'un pourcentage rond que le premier chauffeur venu peut démentir.
+ *
+ * Les citations viennent désormais des propos filmés : key_quotes en base pour les
+ * deux chauffeurs fichés, src/components/zone/testimonials.data.ts (source des
+ * 6 témoignages vidéo, référencée par src/lib/verite-commerciale.ts) pour les autres.
+ * Aucune n'est du copywriting.
+ * ───────────────────────────────────────────────────────────────────────────────── */
 const TESTIMONIALS: Testimonial[] = [
   {
     id: 1,
-    name: 'Binate',
-    city: 'Paris',
+    // FAUX : affiché « Binate ». Base : driver_name = 'Binaté'.
+    name: 'Binaté',
+    // FAUX : affiché « Paris ». Base : driver_city = 'Disneyland / Marne-la-Vallée'.
+    city: 'Marne-la-Vallée',
     since: 'Chauffeur VTC',
-    stat: { value: '7', label: 'apps en 1 écran' },
-    quote: "FOREAS a changé ma manière de travailler. Je sais exactement où aller.",
+    // FAUX : « 7 apps en 1 écran ». Aucune trace de 7 plateformes nulle part
+    // (rides → 4 valeurs, pieuvre_rides → 4 valeurs), et il n'a jamais parlé
+    // d'écran unique. Son seul chiffre documenté : revenue_increase_pct = 30.00.
+    stat: { value: '+30 %', label: 'ses revenus' },
+    // FAUX : « FOREAS a changé ma manière de travailler. Je sais exactement où
+    // aller. » n'apparaît dans AUCUN de ses propos enregistrés. Remplacé par deux
+    // de ses key_quotes, mot pour mot.
+    quote: "Mes revenus sont montés de 30 %. Je travaille moins pour avoir plus. C'est ça la différence.",
     playbackId: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
     accentColor: '#00d4ff',
   },
   {
     id: 2,
-    name: 'Kitenge',
-    city: 'Paris',
+    // FAUX : affiché « Kitenge ». Base : driver_name = 'Zefi Kitengue'.
+    name: 'Zefi K.',
+    // FAUX : affiché « Paris ». Base : driver_city = 'Disneyland / Marne-la-Vallée'.
+    city: 'Marne-la-Vallée',
     since: 'Chauffeur VTC',
-    stat: { value: '0', label: 'course à vide visée' },
-    quote: "FOREAS a transformé ma vision du métier. Je sais où aller, quand y aller.",
+    // FAUX : « 0 course à vide visée » est une promesse produit posée sur son
+    // visage. Sa fiche l'interdit noir sur blanc (transcript_summary) : « il parle
+    // de SA propre connaissance du terrain, il ne parle PAS de l'application ».
+    // Le badge dit donc ce qu'il dit vraiment : sa zone, il la connaît.
+    stat: { value: 'Sa zone', label: 'connue par cœur' },
+    // FAUX : « FOREAS a transformé ma vision du métier… » n'existe dans aucun de
+    // ses propos. Remplacé par sa key_quote — son terrain, pas le produit.
+    quote: "Je connais presque tous les hôtels autour de Disney. C'est plus facile pour moi de me rendre rapidement.",
     playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
     accentColor: '#a855f7',
   },
@@ -50,8 +98,14 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'Haitham',
     city: 'Île-de-France',
     since: 'Chauffeur VTC',
-    stat: { value: '-40%', label: 'temps mort' },
-    quote: "Moins de temps à attendre, plus de temps à rouler. C'est concret.",
+    // FAUX : « -40 % temps mort ». Aucune fiche Haitham dans
+    // pieuvre_closer_testimonials, 0 ligne dans drivers, et rides ne porte aucun
+    // horodatage d'acceptation ni d'attente : ce pourcentage n'est pas mesurable,
+    // donc il n'a pas été mesuré. Ne le réafficher qu'avec relevé avant/après.
+    stat: { value: 'Réponse', label: 'quand il en a besoin' },
+    // FAUX : « Moins de temps à attendre, plus de temps à rouler » était du
+    // copywriting posé sur un visage réel. Remplacé par ses propos filmés.
+    quote: "FOREAS m'aide à me concentrer à 100 % sur mon boulot. Quand on a besoin de quoi que ce soit, on a une réponse.",
     playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
     accentColor: '#22c55e',
   },
@@ -60,18 +114,31 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'Nikolic',
     city: 'Paris',
     since: 'Chauffeur VTC',
-    stat: { value: '+28%', label: 'courses/jour' },
-    quote: "FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui comprennent le terrain.",
+    // FAUX : « +28 % courses/jour ». Aucune fiche Nikolic, 0 ligne dans drivers,
+    // et rides ne contient que 18 courses tous chauffeurs confondus : il n'existe
+    // aucun avant/après capable de produire ce chiffre.
+    stat: { value: 'Sérieux', label: "et à l'écoute" },
+    // FAUX : « FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui
+    // comprennent le terrain. » n'est pas de lui. Remplacé par ses propos filmés.
+    quote: "Société sérieuse. Quand on a besoin d'une explication, ils sont là, à notre écoute.",
     playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
     accentColor: '#f59e0b',
   },
   {
     id: 5,
     name: 'Hadietou',
-    city: 'Paris',
+    // FAUX : affiché « Paris ». Ses propos filmés le situent en banlieue
+    // parisienne, pas dans Paris.
+    city: 'Île-de-France',
     since: 'Chauffeur VTC',
-    stat: { value: '+22%', label: 'revenus nets' },
-    quote: "Je recommande FOREAS à tous les chauffeurs qui veulent travailler intelligemment.",
+    // FAUX : « +22 % revenus nets ». Aucune fiche Hadietou, et rides porte
+    // fare_amount / driver_earnings mais AUCUNE charge : un revenu « net » n'est
+    // calculable nulle part. C'est la formulation la plus exposée du lot — un gain
+    // chiffré après charges, sur une personne identifiable, sans le moindre relevé.
+    stat: { value: 'Confort', label: 'et un futur' },
+    // FAUX : « Je recommande FOREAS à tous les chauffeurs… » n'est pas de lui.
+    // Remplacé par ses propos filmés (au conditionnel, comme il le dit).
+    quote: "FOREAS représente un confort et un futur. Je le recommanderais à mes amis proches.",
     playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
     accentColor: '#ef4444',
   },
@@ -80,8 +147,16 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'Dragan',
     city: 'Île-de-France',
     since: 'Chauffeur VTC',
-    stat: { value: '-35%', label: 'km à vide' },
-    quote: "Avant je tournais en rond. Maintenant chaque kilomètre compte.",
+    // FAUX : « -35 % km à vide ». Un km à vide se mesure par télémétrie : rides ne
+    // porte que distance_km (course chargée), aucune trace GPS entre deux courses.
+    // La mesure est structurellement absente. La même promesse était par ailleurs
+    // annoncée à 40 % pour toute la cohorte (src/app/chauffeurs/page.tsx) : deux
+    // chiffres inventés qui se contredisaient sur le même site.
+    stat: { value: 'Fidèle', label: 'il reste' },
+    // FAUX : « Avant je tournais en rond. Maintenant chaque kilomètre compte. »
+    // reprenait en prose la promesse chiffrée qu'on vient de retirer. Remplacé par
+    // ses propos filmés.
+    quote: "Aucun souci avec FOREAS. Tout se passe pour le mieux. J'y suis, j'y reste.",
     playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
     accentColor: '#06b6d4',
   },
@@ -506,8 +581,11 @@ export default function Testimonials() {
                 </motion.div>
               ))}
             </div>
+            {/* Le « 6 » était écrit en dur. Il vient maintenant de
+                src/lib/verite-commerciale.ts (COMMUNAUTE.temoignagesVideoReels = 6,
+                mesuré le 14/08/2026), pour qu'il ne puisse plus dériver tout seul. */}
             <span className="text-white/60 text-xs font-medium tracking-wide">
-              6 témoignages terrain
+              {COMMUNAUTE_PHRASES.preuveHonnete}
             </span>
           </motion.div>
 
@@ -523,9 +601,13 @@ export default function Testimonials() {
               En toute transparence.
             </motion.span>
           </h2>
+          {/* FAUX : « Des chauffeurs VTC parlent de FOREAS » — la fiche de Zefi K.
+              (pieuvre_closer_testimonials.transcript_summary, 14/08/2026) précise
+              qu'il parle de SA connaissance du terrain et PAS de l'application. On
+              ne peut donc pas annoncer que les six parlent tous du produit. */}
           <p className="text-white/50 text-base md:text-lg max-w-2xl mx-auto">
-            Des chauffeurs VTC parlent de FOREAS, de leur expérience et du sérieux
-            de notre démarche. Sans filtre, sans script.
+            Des chauffeurs VTC parlent de leur métier, de leur zone et de leur
+            expérience avec FOREAS. Leurs mots, pas les nôtres.
           </p>
         </motion.div>
 
@@ -630,8 +712,10 @@ export default function Testimonials() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="text-center text-white/35 text-xs mt-10 px-6 max-w-2xl mx-auto leading-relaxed"
         >
-          Témoignages recueillis auprès de chauffeurs VTC utilisant FOREAS.
-          Les résultats varient selon la zone, les horaires et l&apos;usage de l&apos;application.
+          Témoignages filmés auprès de chauffeurs VTC utilisant FOREAS.
+          Le seul chiffre cité est celui du chauffeur qui parle, pour sa propre
+          activité : il ne préjuge d&apos;aucun résultat pour toi. Les résultats varient
+          selon la zone, les horaires et l&apos;usage de l&apos;application.
         </motion.p>
       </div>
     </section>

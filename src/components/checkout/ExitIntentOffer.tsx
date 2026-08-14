@@ -14,10 +14,31 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Clock, ArrowRight } from 'lucide-react'
+import { FORMULES, formaterEuros, resoudreFormule, type FormuleActive } from '@/lib/offre'
 
 const SEEN_KEY = 'foreas_exit20_seen'
 const DEADLINE_KEY = 'foreas_exit20_deadline'
 const WINDOW_MS = 15 * 60 * 1000 // 15 min — vraie fenêtre
+
+/**
+ * ⚠️ MENSONGE CORRIGÉ LE 14/08/2026 — « Tu démarres à 77,60 € au lieu de 97 € ».
+ *
+ * Mesuré en production : le chunk /_next/static/chunks/app/checkout/page-*.js servi
+ * par https://www.foreas.xyz/checkout contenait littéralement
+ * « 77,60 € » … « au lieu de 97 € ce mois-ci ». Aucun de ces deux montants n'est
+ * facturé nulle part :
+ *   · le serveur débite PRIX_MENSUEL_CENTIMES = 2999 (src/lib/offre.ts), moins le
+ *     coupon `foreas_exit20_once` (percent_off 20, duration 'once' —
+ *     src/app/api/subscription/create/route.ts) → 23,99 € ;
+ *   · `select plan_code, price_amount, is_active from pieuvre_pricing_plans
+ *      where is_active` → mensuel 29,99 · annuel 299,90. Le tarif à 97 €
+ *     (pro_monthly) existe encore en base mais avec is_active = false.
+ *
+ * Les deux montants se CALCULENT désormais depuis la source unique. Un prix écrit
+ * en dur dans un .tsx est précisément ce qui a produit ce couple 77,60 / 97.
+ */
+/** Doit rester égal au `percent_off` du coupon `foreas_exit20_once` (route serveur). */
+const REMISE_PCT = 20
 
 function fmt(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000))
@@ -29,6 +50,22 @@ export default function ExitIntentOffer({ onAccept }: { onAccept: () => void }) 
   const [open, setOpen] = useState(false)
   const [remaining, setRemaining] = useState(WINDOW_MS)
   const armed = useRef(false)
+
+  // La formule vient de l'URL, exactement comme /checkout (`?plan=`), défaut mensuel.
+  // Sans ça, un chauffeur venu pour l'annuel lisait des montants mensuels.
+  const [formule, setFormule] = useState<FormuleActive>('mensuel')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const demande = new URLSearchParams(window.location.search).get('plan')
+    setFormule(resoudreFormule(demande) ?? 'mensuel')
+  }, [])
+
+  const offre = FORMULES[formule]
+  const estAnnuel = offre.intervalle === 'year'
+  const prixPlein = formaterEuros(offre.centimes)
+  // Même arithmétique que Stripe : la REMISE est arrondie, puis retranchée.
+  // 2999 − round(2999 × 0,20) = 2999 − 600 = 2399 → « 23,99 € ».
+  const prixRemise = formaterEuros(offre.centimes - Math.round(offre.centimes * (REMISE_PCT / 100)))
 
   // Arme la détection (sauf si déjà vu une fois)
   useEffect(() => {
@@ -103,11 +140,11 @@ export default function ExitIntentOffer({ onAccept }: { onAccept: () => void }) 
               <div className="relative">
                 <p className="text-[10px] font-extrabold uppercase text-[#00D4FF]" style={{ letterSpacing: '0.22em' }}>Attends une seconde</p>
                 <h2 className="mt-3 font-title text-[30px] font-bold leading-tight text-[#F8FAFC]" style={{ letterSpacing: '-0.01em' }}>
-                  −20% sur ton 1<sup>er</sup> mois.
+                  −{REMISE_PCT}% sur {estAnnuel ? <>ta 1<sup>re</sup> année</> : <>ton 1<sup>er</sup> mois</>}.
                 </h2>
                 <p className="mt-2.5 text-[14.5px] leading-relaxed text-white/70">
-                  Juste pour toi, <strong className="text-white/90">une seule fois</strong>. Tu démarres à <strong className="text-[#F8FAFC] tabular-nums">77,60&nbsp;€</strong> au lieu de 97&nbsp;€ ce mois-ci.
-                  La garantie 30 jours tient toujours.
+                  Juste pour toi, <strong className="text-white/90">une seule fois</strong>. Tu démarres à <strong className="text-[#F8FAFC] tabular-nums">{prixRemise}</strong> au lieu de <span className="tabular-nums">{prixPlein}</span> {estAnnuel ? 'cette année' : 'ce mois-ci'}.
+                  {estAnnuel ? ' L’année suivante' : ' Le mois suivant'}, tu repasses à <span className="tabular-nums">{prixPlein}</span>. La garantie 30 jours tient toujours.
                 </p>
 
                 <div className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}>

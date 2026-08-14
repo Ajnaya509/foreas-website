@@ -10,7 +10,9 @@ export default function DashboardMockup() {
 
   const metrics = [
     { label: 'Courses/jour', value: '47', trend: '+12%', color: '#00D4FF' },
-    { label: 'Satisfaction', value: '4.8', trend: '/5', color: '#8C52FF' },
+    // 14/08/2026 — « Satisfaction 4,8/5 » : aucune table, aucune colonne de
+  // satisfaction n'existe. Remplacé par une donnée réellement en base.
+  { label: 'Courses suivies', value: '18', trend: '', color: '#8C52FF' },
     { label: 'Revenus', value: '€2.4k', trend: '/sem', color: '#10B981' },
   ]
 

@@ -284,7 +284,7 @@ function CheckoutInner() {
               {[
                 // « IA » banni du site : on dit Ajnaya, c'est son nom (règle cross-fil).
                 ['Ajnaya, sans limite', 'et sa voix, Koraly'],
-                ['Où ça paie, en temps réel', 'la bonne course, au bon moment'],
+                ['Où ça paie, zone par zone', 'la bonne course, au bon moment'],
                 ['Coach courses', 'accepter / refuser en 0,3s'],
                 // ⚠️ Garde-fou légal M18 : FOREAS est un COPILOTE de gestion, jamais un
                 // expert-comptable (Ordonnance du 19 sept. 1945, art. 20). Et l'URSSAF

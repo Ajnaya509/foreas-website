@@ -77,8 +77,12 @@ export default function LiveEngineBar() {
 
         {/* Faits vrais, échelle typo identique au reste */}
         <span className="text-sm font-medium" style={{ color: '#6e6e73' }}>
-          <span className="tabular-nums" style={{ color: '#1d1d1f', fontWeight: 600 }}>7</span> plateformes ·{' '}
-          <span className="tabular-nums" style={{ color: '#1d1d1f', fontWeight: 600 }}>51</span> zones, sans interruption
+          {/* 14/08/2026 — annoncé « faits vrais », deux chiffres faux : « 7 plateformes »
+              (rides → 3 réelles) et « 51 zones » (zones_canonical → 52 : faux d'une unité,
+              donc plausible, donc jamais relu). « sans interruption » : aucune mesure de
+              disponibilité n'existe. */}
+          Uber, Bolt, Heetch ·{' '}
+          <span className="tabular-nums" style={{ color: '#1d1d1f', fontWeight: 600 }}>52</span> zones couvertes
         </span>
       </div>
     </section>
