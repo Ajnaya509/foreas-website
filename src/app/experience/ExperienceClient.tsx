@@ -521,7 +521,13 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           {/* Réassurance juste au-dessus du bouton — le seul frein qu'il reste à lever au moment
               exact du clic : ce que ça coûte, ce que ça exige. Claim vérifiable (ni le champ
               mobile ni la modale desktop ne demandent un compte ou une carte). */}
-          <p className="mb-1.5 text-center text-[10.5px] font-medium text-text-tertiary">Gratuit · sans compte · sans carte</p>
+          {/* 14/08/2026 — disait « Gratuit · sans compte · sans carte ». C'était VRAI
+                  (le chat ne demande rien) mais AMBIGU sur une page qui vend un
+                  abonnement : le visiteur applique « sans carte » à l'abonnement,
+                  où la carte EST demandée. Une exception dans le vérificateur du
+                  canon aurait masqué le problème au lieu de le régler — mieux vaut
+                  une phrase qui ne peut pas être mal lue. */}
+              <p className="mb-1.5 text-center text-[10.5px] font-medium text-text-tertiary">Discuter est gratuit · sans compte</p>
           {/* Le CTA lance l'ESSAI GRATUIT (cf. handleCtaClick) : c'est la porte de ceux qui ont
               scrollé et sont déjà convaincus. Le téléphone du hero, lui, garde son rôle de
               démonstration pour les sceptiques — les deux ne se marchent pas dessus. */}

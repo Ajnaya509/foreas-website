@@ -7,7 +7,8 @@
     "build": "node scripts/verifier-canon.mjs && next build",
     "start": "next start",
     "lint": "next lint",
-    "canon": "node scripts/verifier-canon.mjs"
+    "canon": "node scripts/verifier-canon.mjs",
+    "porte": "node scripts/porte-de-sortie.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

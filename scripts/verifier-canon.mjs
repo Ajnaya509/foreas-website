@@ -73,8 +73,7 @@ const REGLES = [
     motif: /\bsans carte\b/i,
     quoi: '« sans carte »',
     pourquoi:
-      'api/checkout crée la session avec payment_method_collection:"always" : la carte EST enregistrée. Vrai uniquement pour le CHAT gratuit — si c’est ce cas, écris « sans compte » ou précise « pour discuter ».',
-    exceptions: [/experience/],
+      'api/checkout crée la session avec payment_method_collection:"always" : la carte EST enregistrée. Même quand c’est vrai du CHAT, le visiteur l’applique à l’abonnement — écris « sans compte », ou « discuter est gratuit ». Pas d’exception : une exception masque le problème au lieu de le régler.',
   },
   {
     motif: /\b(7|sept)\s+jours\s+(d’|d')?essai|essai\s+(de\s+)?(7|sept)\s+jours/i,
