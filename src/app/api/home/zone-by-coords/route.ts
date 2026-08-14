@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { deduireProvenance, type Provenance } from '@/lib/provenance'
 import { createClient } from '@supabase/supabase-js'
 import { findNearestZone } from '@/lib/zoneCentroids'
 
@@ -30,6 +31,8 @@ interface ZoneStats {
   week_iso: string
   last_updated: string
   has_data: boolean
+  /** D'où vient ce chiffre (src/lib/provenance.ts). Jamais absent. */
+  provenance: Provenance
   fallback_zone: { name: string; avg_hourly: number; note?: string } | null
 }
 
@@ -96,6 +99,7 @@ export async function GET(request: Request) {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: false,
+    provenance: 'indisponible',
     fallback_zone: in_range
       ? null
       : {
@@ -124,6 +128,10 @@ export async function GET(request: Request) {
           week_iso: row.week_iso ?? getCurrentWeekISO(),
           last_updated: row.last_updated ?? new Date().toISOString(),
           has_data: Boolean(row.has_data),
+          provenance: deduireProvenance({
+            aDesDonnees: Boolean(row.has_data),
+            zoneDeRepli: row.fallback_zone ?? stats.fallback_zone,
+          }),
           fallback_zone: row.fallback_zone ?? stats.fallback_zone,
         }
       }

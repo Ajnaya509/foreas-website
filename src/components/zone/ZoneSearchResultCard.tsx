@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle, MapPin } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import { ETIQUETTE_PROVENANCE, EXPLICATION_PROVENANCE, type Provenance } from '@/lib/provenance'
 import type { SarcasmLevel } from '@/lib/sarcasticVisits'
 
 interface ZoneStats {
@@ -14,6 +15,8 @@ interface ZoneStats {
   week_iso: string
   last_updated: string
   has_data: boolean
+  /** D'où vient le chiffre — src/lib/provenance.ts. */
+  provenance?: Provenance
   fallback_zone?: { name: string; avg_hourly: number }
 }
 
@@ -123,6 +126,20 @@ export default function ZoneSearchResultCard({
         <div>
           <p className="text-white/50 text-[10px] uppercase mb-1" style={{ letterSpacing: '0.2em' }}>
             Tarif horaire moyen
+          </p>
+          {/*
+            14/08/2026 — la moitié POSITIVE de la provenance. Cacher les chiffres
+            inventés était nécessaire ; dire d'où vient un VRAI chiffre est ce qui le
+            rend croyable. Un chauffeur à qui on annonce un tarif sans source se
+            méfie — à juste titre, vu ce que ce site racontait jusqu'ici.
+          */}
+          <p
+            className="mb-1.5 inline-flex items-center gap-1.5 text-[9px] font-extrabold uppercase text-green-400/80"
+            style={{ letterSpacing: '0.16em' }}
+            title={EXPLICATION_PROVENANCE[stats.provenance ?? 'mesuree']}
+          >
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-400" aria-hidden />
+            {ETIQUETTE_PROVENANCE[stats.provenance ?? 'mesuree']}
           </p>
           <p
             className="text-3xl sm:text-4xl font-black tabular-nums bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent"

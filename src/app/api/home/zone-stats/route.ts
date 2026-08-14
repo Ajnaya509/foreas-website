@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { deduireProvenance, type Provenance } from '@/lib/provenance'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
@@ -29,108 +30,31 @@ interface ZoneStats {
   week_iso: string
   last_updated: string
   has_data: boolean
+  /** D'où vient ce chiffre (src/lib/provenance.ts). Jamais absent. */
+  provenance: Provenance
   /** Zone de repli suggérée par la RPC (quand has_data=false).
    *  note est un message optionnel libre (ex: "zone voisine la plus proche") */
   fallback_zone: { name: string; avg_hourly: number; note?: string } | null
 }
 
-// ─── Mocks fallback (sécurité au cas où la RPC est indisponible) ────────────
-const ZONES_MOCK_FALLBACK: Record<string, ZoneStats> = {
-  cdg: {
-    zone_match: 'Aéroport CDG',
-    avg_hourly: 41.8,
-    demand_delta_pct: 38,
-    top_pool: 'T1 (9 prio)',
-    courses_count: 47,
-    week_iso: getCurrentWeekISO(),
-    last_updated: new Date().toISOString(),
-    has_data: true,
-    fallback_zone: null,
-  },
-  orly: {
-    zone_match: 'Aéroport Orly',
-    avg_hourly: 38.4,
-    demand_delta_pct: 22,
-    top_pool: 'Sud (parking VTC)',
-    courses_count: 31,
-    week_iso: getCurrentWeekISO(),
-    last_updated: new Date().toISOString(),
-    has_data: true,
-    fallback_zone: null,
-  },
-  defense: {
-    zone_match: 'La Défense',
-    avg_hourly: 36.2,
-    demand_delta_pct: 14,
-    top_pool: 'Place de La Défense',
-    courses_count: 58,
-    week_iso: getCurrentWeekISO(),
-    last_updated: new Date().toISOString(),
-    has_data: true,
-    fallback_zone: null,
-  },
-  bercy: {
-    zone_match: 'Bercy / Gare de Lyon',
-    avg_hourly: 33.7,
-    demand_delta_pct: 9,
-    top_pool: 'Gare de Lyon · sortie 1',
-    courses_count: 42,
-    week_iso: getCurrentWeekISO(),
-    last_updated: new Date().toISOString(),
-    has_data: true,
-    fallback_zone: null,
-  },
-  partdieu: {
-    zone_match: 'Lyon Part-Dieu',
-    avg_hourly: 32.5,
-    demand_delta_pct: 18,
-    top_pool: 'Gare Part-Dieu · sortie Vivier-Merle',
-    courses_count: 38,
-    week_iso: getCurrentWeekISO(),
-    last_updated: new Date().toISOString(),
-    has_data: true,
-    fallback_zone: null,
-  },
-  bordeauxgare: {
-    zone_match: 'Bordeaux Saint-Jean',
-    avg_hourly: 30.4,
-    demand_delta_pct: 11,
-    top_pool: 'Gare · parvis Belcier',
-    courses_count: 29,
-    week_iso: getCurrentWeekISO(),
-    last_updated: new Date().toISOString(),
-    has_data: true,
-    fallback_zone: null,
-  },
-}
-
-const FALLBACK_DEFAULT = { name: 'Aéroport CDG', avg_hourly: 41.8 }
-
-function normalize(input: string): string {
-  return input
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]/g, '')
-}
-
-function fuzzyMatchMock(input: string): keyof typeof ZONES_MOCK_FALLBACK | null {
-  const n = normalize(input)
-  if (!n) return null
-  const matchers: Record<keyof typeof ZONES_MOCK_FALLBACK, string[]> = {
-    cdg: ['cdg', 'roissy', 'aeroportcdg', 'charlesdegaulle', 'paris2'],
-    orly: ['orly', 'aeroportorly', 'paris7'],
-    defense: ['defense', 'ladefense', 'puteaux', 'courbevoie'],
-    bercy: ['bercy', 'gareldelyon', 'garedelyon'],
-    partdieu: ['partdieu', 'lyon', 'lyonpartdieu'],
-    bordeauxgare: ['bordeaux', 'saintjean', 'bordeauxsaintjean'],
-  }
-  for (const [key, keywords] of Object.entries(matchers) as [keyof typeof ZONES_MOCK_FALLBACK, string[]][]) {
-    if (keywords.some(kw => n.includes(kw) || kw.includes(n))) return key
-  }
-  return null
-}
+// ─── SUPPRIMÉ LE 14/08/2026 : NEUF ZONES DE CHIFFRES INVENTÉS ───────────────
+//
+// Ce fichier contenait un `ZONES_MOCK_FALLBACK` de 9 zones aux valeurs fabriquées
+// (CDG 41,80 €/h · 47 courses · +38 % de demande, Orly 38,40 €/h, La Défense
+// 36,20 €/h, Bercy, Part-Dieu, Bordeaux…) renvoyées avec `has_data: true` et une
+// date « mise à jour à l'instant » — donc présentées au chauffeur comme des
+// données mesurées, alors qu'elles n'étaient reliées à rien.
+//
+// Elles ne sortaient PAS en production le jour du constat : la base répondait,
+// avec des zéros honnêtes. Mais elles étaient ARMÉES — deux `catch` muets y
+// menaient au premier hoquet réseau, à la première erreur de droits, au premier
+// quota dépassé. Et personne ne l'aurait remarqué : la page aurait eu l'air
+// MEILLEURE que d'habitude.
+//
+// NE PAS LES REMETTRE au nom de la « résilience ». La règle est dans
+// src/lib/provenance.ts : quand on ne sait pas, on le dit. Un repli qui
+// fabrique une valeur crédible est pire qu'une panne visible — la panne se
+// répare, le mensonge plausible s'installe.
 
 function getCurrentWeekISO(): string {
   const now = new Date()
@@ -150,9 +74,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'missing_zone' }, { status: 400 })
   }
 
-  // ─── Tentative RPC Supabase (Phase 2) ─────────────────────────────────────
+  // ─── Lecture réelle en base ───────────────────────────────────────────────
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  /** Pourquoi on n'a pas pu répondre — journalisé, jamais renvoyé au visiteur. */
+  let motifEchec: string | null = null
 
   if (supabaseUrl && supabaseKey) {
     try {
@@ -164,8 +91,16 @@ export async function GET(request: Request) {
         zone_input: zoneInput,
       })
 
-      if (!error && Array.isArray(data) && data.length > 0) {
+      if (error) {
+        // ⚠️ Ce `catch` était MUET avant le 14/08/2026 : l'erreur disparaissait et
+        // la route servait des chiffres inventés à la place. Une lecture refusée
+        // par les droits (RLS) renvoie zéro ligne EN SILENCE — indistinguable
+        // d'une zone réellement vide. On nomme donc la cause, toujours.
+        motifEchec = `rpc_error:${error.code ?? '?'}:${error.message}`
+      } else if (Array.isArray(data) && data.length > 0) {
         const row = data[0]
+        const aDesDonnees = Boolean(row.has_data)
+        const zoneDeRepli = row.fallback_zone ?? null
         const stats: ZoneStats = {
           zone_match: row.zone_match ?? zoneInput,
           avg_hourly: Number(row.avg_hourly ?? 0),
@@ -174,24 +109,35 @@ export async function GET(request: Request) {
           courses_count: Number(row.courses_count ?? 0),
           week_iso: row.week_iso ?? getCurrentWeekISO(),
           last_updated: row.last_updated ?? new Date().toISOString(),
-          has_data: Boolean(row.has_data),
-          fallback_zone: row.fallback_zone ?? null,
+          has_data: aDesDonnees,
+          provenance: deduireProvenance({ aDesDonnees, zoneDeRepli }),
+          fallback_zone: zoneDeRepli,
         }
-        return NextResponse.json(stats)
+        return NextResponse.json(stats, { headers: { 'Cache-Control': 'no-store' } })
+      } else {
+        motifEchec = 'rpc_vide'
       }
-      // Si erreur RPC ou data vide → fallback mocks ci-dessous (resilience)
-    } catch {
-      // Exception réseau / config → fallback mocks
+    } catch (e) {
+      motifEchec = `exception:${(e as Error).message}`
     }
+  } else {
+    motifEchec = 'config_supabase_absente'
   }
 
-  // ─── Fallback mocks (sécurité) ────────────────────────────────────────────
-  const matchKey = fuzzyMatchMock(zoneInput)
-  if (matchKey) {
-    return NextResponse.json(ZONES_MOCK_FALLBACK[matchKey])
-  }
+  // ─── On ne sait pas. On le DIT. ───────────────────────────────────────────
+  //
+  // Ici se trouvaient NEUF ZONES DE CHIFFRES INVENTÉS (CDG 41,80 €/h,
+  // Orly 38,40 €/h, La Défense 36,20 €/h…), renvoyées avec `has_data: true`,
+  // un nombre de courses et une date « à l'instant » — donc présentées comme
+  // des données mesurées. Elles ne sortaient pas ce jour-là, mais elles étaient
+  // ARMÉES : le moindre hoquet de base y menait, et personne ne l'aurait vu,
+  // parce que la page aurait eu l'air MEILLEURE que d'habitude.
+  //
+  // Un repli qui fabrique une valeur crédible est pire qu'une panne visible :
+  // la panne se répare, le mensonge plausible s'installe.
+  console.warn('[zone-stats] pas de donnée pour', zoneInput, '·', motifEchec)
 
-  const fallback: ZoneStats = {
+  const sansDonnee: ZoneStats = {
     zone_match: zoneInput,
     avg_hourly: 0,
     demand_delta_pct: 0,
@@ -200,7 +146,13 @@ export async function GET(request: Request) {
     week_iso: getCurrentWeekISO(),
     last_updated: new Date().toISOString(),
     has_data: false,
-    fallback_zone: FALLBACK_DEFAULT,
+    provenance: 'indisponible',
+    // ⚠️ Ici vivait `FALLBACK_DEFAULT = { name: 'Aéroport CDG', avg_hourly: 41.8 }` :
+    // quand une zone n'avait pas de donnée, le site suggérait au chauffeur d'aller
+    // à CDG « où ça paie 41,80 €/h » — un chiffre inventé, comme les neuf autres.
+    // Suggérer une zone de repli n'a de sens que si son tarif est MESURÉ. Il ne
+    // l'est pas. Donc : rien. On ne comble pas un vide avec du plausible.
+    fallback_zone: null,
   }
-  return NextResponse.json(fallback)
+  return NextResponse.json(sansDonnee, { headers: { 'Cache-Control': 'no-store' } })
 }

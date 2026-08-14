@@ -28,6 +28,7 @@ interface ZoneStats {
   week_iso: string
   last_updated: string
   has_data: boolean
+  provenance?: 'mesuree' | 'estimation' | 'indisponible'
   fallback_zone?: { name: string; avg_hourly: number }
 }
 
@@ -115,6 +116,7 @@ export default function ZoneSearchBarHero() {
         window.fbq('trackCustom', 'HomeSearchResultViewed', {
           zone: data.zone_match,
           has_data: data.has_data,
+          provenance: data.provenance,
           avg_hourly: data.avg_hourly,
         })
       }
