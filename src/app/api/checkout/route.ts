@@ -179,26 +179,48 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
     const err = error as { message?: string; type?: string; code?: string; statusCode?: number }
-    console.error('Checkout error full:', JSON.stringify({
-      message: err.message,
-      type: err.type,
-      code: err.code,
-      statusCode: err.statusCode,
-      keyPrefix: (process.env.STRIPE_SECRET_KEY || '').substring(0, 14),
-    }))
-    return NextResponse.json({ error: err.message || 'Erreur serveur', type: err.type }, { status: 500 })
+    // Ni dans les journaux, ni dans la réponse : aucun morceau de clé.
+    // Un préfixe de clé écrit dans un journal reste lisible par quiconque accède
+    // aux journaux, et il n'aide à rien pour diagnostiquer — `type` et `code`
+    // Stripe suffisent. Et le message brut de Stripe, lui, contient parfois un
+    // fragment de la clé (« Invalid API Key provided: sk_live_***…»), donc il ne
+    // part jamais au navigateur.
+    console.error('[checkout] erreur Stripe:', err.type, err.code, err.statusCode, err.message)
+    return NextResponse.json(
+      { error: "Le paiement n'a pas pu être initialisé. Réessaie dans un instant." },
+      { status: 500 },
+    )
   }
 }
 
+/**
+ * Sonde publique de facturation : dit QUAND l'essai se termine, rien d'autre.
+ *
+ * ⚠️ 14/08/2026 — DEUXIÈME FUITE DE CLÉ TROUVÉE ICI. Cette route publiait
+ * `keyPrefix: (process.env.STRIPE_SECRET_KEY).substring(0, 14)` — soit, en
+ * production et sans aucun en-tête, les 14 premiers caractères de la clé Stripe
+ * **LIVE** (`sk_live_51Ju…`, mesuré). `hasKey` disait en plus qu'elle existe.
+ * C'est exactement le défaut fermé la veille sur `/api/diagnostic` ; il vivait
+ * ici aussi, dans une route qu'on ne regarde pas parce qu'elle sert au paiement.
+ *
+ * Ce qui reste est volontairement public : la date de fin d'essai est une
+ * information COMMERCIALE que le site affiche déjà à l'écran. Aucun secret,
+ * aucune présence de clé, aucun préfixe.
+ */
 export async function GET() {
   const trialEnd = getTrialEnd()
   const trialDate = new Date(trialEnd * 1000)
   const now = new Date()
   const trialDays = Math.round((trialEnd * 1000 - now.getTime()) / (24 * 60 * 60 * 1000))
-  return NextResponse.json({
-    status: 'ok',
-    hasKey: !!process.env.STRIPE_SECRET_KEY,
-    keyPrefix: (process.env.STRIPE_SECRET_KEY || '').substring(0, 14),
-    billing: { trialEndsAt: trialDate.toISOString(), trialDays, rule: `Essai glissant ${TRIAL_DAYS} jours — identique pour tous.` },
-  })
+  return NextResponse.json(
+    {
+      status: 'ok',
+      billing: {
+        trialEndsAt: trialDate.toISOString(),
+        trialDays,
+        rule: `Essai glissant ${TRIAL_DAYS} jours — identique pour tous.`,
+      },
+    },
+    { headers: { 'Cache-Control': 'no-store' } },
+  )
 }
