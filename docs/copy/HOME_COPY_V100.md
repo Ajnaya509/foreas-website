@@ -1,5 +1,44 @@
 # HOME FOREAS — COPY + DESIGN +100/100 (prêt à appliquer)
 
+> ## ⛔ CORRECTIF DU 14/08/2026 — À LIRE AVANT D'APPLIQUER QUOI QUE CE SOIT
+>
+> Cette fiche a été écrite le 21/06/2026. Trois de ses formulations « validées » se
+> sont révélées **fausses à la mesure**, et comme c'est la fiche qui fait autorité,
+> elle les réinjectait dans le site à chaque réécriture. Elles sont corrigées ci-dessous.
+> Le socle de vérité est `FOREAS-SHARED/VERITE_COMMERCIALE_2026-08-14.md`.
+>
+> **1. « 7 plateformes » → FAUX. Il y en a 4.**
+> `select distinct platform from rides` renvoie exactement : **Bolt, Heetch, Uber,
+> Private** (les courses directes). La fiche se contredisait d'ailleurs elle-même :
+> elle annonçait « 7 plateformes » puis listait « Uber, Bolt, Heetch, FreeNow » (4)
+> plus « le trafic, les vols, les événements, la météo » (des signaux, pas des
+> plateformes). **Écrire : « Uber, Bolt, Heetch — et tes courses directes ».**
+> Nommer les 4 est plus fort qu'un « 7 » : c'est vérifiable, donc crédible.
+>
+> **2. « Sans carte » → FAUX. La carte est obligatoire.**
+> `src/app/api/checkout/route.ts:150` contient `payment_method_collection: 'always'`.
+> Le chauffeur DOIT donner sa carte pour démarrer l'essai. Dire l'inverse sur une page
+> qui vend, c'est une pratique commerciale trompeuse (art. L.121-1 code de la conso —
+> la fiche cite déjà cet article pour « 23 places », c'est le même risque).
+> **Écrire : « Carte demandée · 0 € débité pendant 3 jours · annulable en 1 clic ».**
+>
+> **3. « Ajnaya lit 7 plateformes EN DIRECT » → FAUX à double titre.**
+> Non seulement le 7 est faux, mais il n'y a **0 course enregistrée depuis 30 jours**
+> (18 en tout) et l'API de zone répond `has_data:false` sur toutes les zones testées.
+> Rien n'est lu « en direct » aujourd'hui. **Ne pas promettre du direct.**
+>
+> **4. RÉSOLU — la question ouverte ligne « [À SOURCER : la vidéo dit-elle 30 % ?] ».**
+> **Oui.** Le transcript en base (`pieuvre_closer_testimonials`) contient ses mots
+> exacts : « Mes revenus sont montés de 30 % ». Donc le +30 % de Binaté est citable —
+> **comme SA parole, dans SA vidéo**, jamais comme une moyenne FOREAS. Sa ville est
+> **Disneyland / Marne-la-Vallée**, pas Paris.
+>
+> **5. « 51 zones » → VRAI, mais à ne pas confondre avec une capacité.**
+> `zone_centroids` contient bien 51 zones cartographiées. Mais **aucune ne porte de
+> données de courses**. « 51 zones couvertes » est défendable ; « 51 zones analysées
+> en direct » ne l'est pas.
+
+
 > Refonte chirurgicale du home `/`, sous la peau d'un chauffeur VTC (Karim).
 > Doctrines : `foreas-copy-atomic` + `foreas-design-system` + `AJNAYA_ADN.md §3`.
 > Produit par 8 agents (1 par section) + synthèse. 2026-06-21.
@@ -7,21 +46,21 @@
 ## 3 RÈGLES D'OR qui reviennent dans TOUTES les sections
 1. **TUTOIEMENT PROFESSIONNEL — l'entre-deux** (recalibré Chandler) : on tutoie (proximité) MAIS registre **crédible, adulte à adulte, sans esbroufe**. **Jamais argot ni « pote du quartier »** (pas de « balance ta zone », « carrément », « frère »). Réf ton : **incom-services.com** = pro-bienveillant, chiffré, opposition élégante (« La liberté d'un VTC, les avantages d'un CDI »). Le vouvoiement reste le tueur n°1 — mais l'argot aussi. → relire chaque ligne ci-dessous avec ce filtre.
 2. **ZÉRO chiffre faux** : "247 chauffeurs", "247 avis", "23 places" → SUPPRIMÉS (CNIL). Remplacés par une vérité mécanisme OU `[À BRANCHER]` un vrai compteur.
-3. **Loss aversion > gain** · **1 seul héros par section** · **risk reversal vrai** (0€ · sans carte · 1 clic).
+3. **Loss aversion > gain** · **1 seul héros par section** · **risk reversal vrai** (0 € débité · carte demandée · annulation 1 clic) ⚠️ « sans carte » est FAUX, cf. correctif en tête.
 
 ---
 
 ## 1. HERO (HomeHeroCream.tsx) — le réveil
-- **Eyebrow** : ~~"147 chauffeurs en ligne ce soir"~~ → **"Ajnaya lit 7 plateformes en direct"** *(ou compteur live [À BRANCHER /api/live-driver-count])*
+- **Eyebrow** : ~~"147 chauffeurs en ligne ce soir"~~ ~~"Ajnaya lit 7 plateformes en direct"~~ → **"Uber, Bolt, Heetch — et tes courses directes"** *(ou compteur live [À BRANCHER /api/live-driver-count])*
 - **Titre** : ~~"Gagnez plus, roulez moins."~~ → **"Gagne plus, roule moins."** (gradient sur *roule moins*). ✅ validé Chandler — « Gagne pareil » écarté. Punch sec, pro, opposition nette (style INCOM « Changez de modèle, pas de métier »).
-- **Sous-titre** : "Donne ta zone. Ajnaya lit **Uber, Bolt, Heetch** + 4 autres en direct et te dit combien ça paie ce soir — avant de démarrer."
+- **Sous-titre** : "Donne ta zone. Ajnaya lit **Uber, Bolt, Heetch** et tes courses directes, et te dit ce qu'elle voit." ⚠️ « + 4 autres » et « en direct » retirés : 4 plateformes au total, 0 course depuis 30 jours
 - **Placeholder** : "Ta zone…" · **CTA** : "Voir combien →" · **Quick zones** : "Essaie :"
-- **Trust strip** : "51 zones · 0€ · sans carte"
+- **Trust strip** : "51 zones couvertes · 0 € débité pendant 3 jours · annulation 1 clic" ⚠️ « sans carte » retiré (FAUX)
 - **Design** : 1 seul accent gradient (sur "Gagne pareil."), eyebrow en token 10/800/UPPERCASE, retirer le point vert "live" si pas de vrai compteur.
 
 ## 2. PROOF STRIP (HomeProofStrip.tsx) — réassurance
 6 micro-preuves, toutes VRAIES (zéro 247) :
-**Fait en France** · **7 plateformes lues** · **Données réelles (pas une promesse)** · **0€ pour tester** · **Tu pars quand tu veux (1 clic)** · **WhatsApp, sans inscription**
+**Fait en France** · **4 plateformes lues (Uber, Bolt, Heetch + tes courses directes)** · **Données réelles (pas une promesse)** · **0€ pour tester** · **Tu pars quand tu veux (1 clic)** · **WhatsApp, sans inscription**
 - **Design** : la bande chuchote (pas de 2e héros), `font-semibold` max, supprimer la div morte (l.104-109).
 
 ## 3. BIG DOMINO (HomeBigDomino.tsx) — le coup de massue
@@ -35,7 +74,7 @@
 ## 4. MÉCANISME (ZoneMechanismVisual.tsx) — crédibilité (COMMENT)
 - **Eyebrow** : ~~"LA MÉCANIQUE · BREVETÉE"~~ → **"COMMENT ELLE FAIT"** *(⚠️ "BREVETÉE" seulement si brevet réellement déposé/accordé — sinon trompeur. [À VÉRIFIER statut brevet])*
 - **Titre** : "Pas un dashboard de plus. / **L'IA qui te dit où aller — avant les autres.**"
-- **CAPTE** : "7 plateformes, en même temps" / "Uber, Bolt, Heetch, FreeNow + le trafic, les vols, les événements, la météo."
+- **CAPTE** : "Tes 4 sources de courses, en même temps" / "Uber, Bolt, Heetch + tes courses directes — avec le trafic, les vols, les événements et la météo par-dessus." ⚠️ le trafic/les vols/la météo sont des SIGNAUX, pas des plateformes : ne jamais les additionner pour gonfler un chiffre
 - **ANALYSE** : "Elle a un coup d'avance" / "Une zone se réveille à 800 m de toi ? Elle le sait avant que ton appli te le dise."
 - **PARLE** : "Elle parle, tu conduis" / "Vocal ou texte, comme tu veux. Pendant que tu roules, elle bosse pour toi."
 - **Sous-paragraphe** : "Pendant que tu conduis, Ajnaya regarde 7 applis en parallèle. Quand une zone se réveille près de toi, elle te le dit avant les autres. C'est tout. C'est ça qui change tout."
@@ -47,7 +86,7 @@
 - **Titre** : "Pas moi qui le dis. " + gradient **"Eux."**
 - **Cadrage** : "Des chauffeurs comme toi. Tu cliques, tu les écoutes. Personne ne lit un script."
 - **Design** : stopper l'auto-play (le méfiant veut le contrôle), card chiffrée (Binate +30%) = héros, KPI en success #10B981 tabular-nums. Badges qualitatifs en ivoire (jamais en vert = le vert = chiffre prouvé).
-- **Intégrité** : SEUL "+30% Binate" garde un chiffre **[À SOURCER : la vidéo dit-elle 30% ?]**. Les 5 autres = qualitatif, zéro chiffre inventé. Zéro "247 avis".
+- **Intégrité** : SEUL "+30% Binate" garde un chiffre **[SOURCÉ ✅ 14/08/2026 : oui — ses mots exacts en base, « Mes revenus sont montés de 30 % ». À citer comme SA parole, jamais comme une moyenne.]**. Les 5 autres = qualitatif, zéro chiffre inventé. Zéro "247 avis".
 
 ## 6. DOULEUR (ZonePainCalculator.tsx) — loss aversion incarnée
 - **Eyebrow** : "CE QUE TU VOIS PAS PASSER"
@@ -63,11 +102,11 @@
 - **1. 90 SECONDES** — "Tu envoies « go » sur WhatsApp" / "Pas de carte. Pas de formulaire. Un message, c'est tout."
 - **2. CHAQUE MATIN** — "Ajnaya t'envoie tes zones" / "Au réveil, dans WhatsApp. Tu conduis comme d'habitude."
 - **3. QUAND TU VEUX** *(héros)* — "Tu compares ton net" / "Mieux, tu restes. Pareil, tu pars — sans avoir payé un centime."
-- **Réassurance** (zéro emoji) : "0 € aujourd'hui · Sans carte · Annulation en 1 clic"
+- **Réassurance** (zéro emoji) : "0 € débité aujourd'hui · Carte demandée · Annulation en 1 clic" ⚠️ « sans carte » est FAUX
 - **Intégrité** : SUPPRIMER "Vendredi" / "DEMAIN" (promesses datées intenables). "CHAQUE MATIN / QUAND TU VEUX" = vrai.
 
 ## 8. FINAL CTA + PS (ZoneFinalCTAWithPS.tsx) — le close
-- **Eyebrow** : "0 € AUJOURD'HUI · SANS CARTE · TU COUPES EN 1 CLIC"
+- **Eyebrow** : "0 € DÉBITÉ AUJOURD'HUI · CARTE DEMANDÉE · TU COUPES EN 1 CLIC" ⚠️ « SANS CARTE » est FAUX
 - **Titre** : "Teste 7 jours. Tu verras vite."
 - **Sous-titre** : "Soit Ajnaya te sort **+28 €/jour** de plus. Soit tu coupes, et tu n'as rien lâché. Toi seul tranches." *(+28€ [À BRANCHER : moyenne réelle])*
 - **CTA** : "Lance Ajnaya — 0 € aujourd'hui" (gradient violet + glow, PAS vert)
@@ -81,4 +120,4 @@
 - "+30% Binate" → vérifier la vidéo. Autres témoignages → qualitatif only.
 - "+28 €/jour" → moyenne cohorte réelle documentée, sinon retirer le chiffre.
 - "BREVETÉE" (mécanisme) → statut brevet réel, sinon "brevet déposé" ou retirer.
-- "51 zones" / "7 plateformes" → vrais aujourd'hui ✅.
+- "51 zones" → vrai (51 zones cartographiées) ✅ · ~~"7 plateformes"~~ → **FAUX, il y en a 4** ❌ (Bolt, Heetch, Uber, Private — mesuré le 14/08/2026). Cette ligne affirmait le contraire : c'est elle qui a fait durer l'erreur.
