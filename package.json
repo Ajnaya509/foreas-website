@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/verifier-canon.mjs && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "canon": "node scripts/verifier-canon.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

@@ -112,7 +112,7 @@ export default function ZonePlanTimeline() {
             <ArrowRight className="w-5 h-5" />
           </a>
           <p className="text-white/45 t-caption mt-4 tabular-nums">
-            0 € aujourd&apos;hui · Sans carte · Annulation en 1 clic
+            0 € aujourd&apos;hui · Annulation en 1 clic
           </p>
         </motion.div>
       </div>

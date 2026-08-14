@@ -223,7 +223,7 @@ export default function FacturationElectroniqueVTC2026() {
                 },
                 {
                   icon: '🎯',
-                  title: 'Ta tirelire URSSAF déjà calculée',
+                  title: 'Ton URSSAF déjà calculée',
                   desc: 'Chaque course → calcul auto des 24,6% BNC à mettre de côté. Tu vois toujours exactement ce qui reste dans ta poche.',
                 },
                 {
@@ -233,7 +233,7 @@ export default function FacturationElectroniqueVTC2026() {
                 },
                 {
                   icon: '🗣️',
-                  title: 'Ajnaya, ton copilote compta IA',
+                  title: 'Ajnaya, ton copilote de gestion',
                   desc: 'Une question ? Tu lui parles en vocal ou en texte. Elle te répond en moins de 3 secondes, à ton niveau, sans jargon.',
                 },
                 {
@@ -297,7 +297,7 @@ export default function FacturationElectroniqueVTC2026() {
                 },
                 {
                   q: 'FOREAS est-il mon expert-comptable ?',
-                  a: "Non — FOREAS est un copilote compta IA, pas un expert-comptable. On t'aide à gérer au quotidien (tirelire URSSAF, scan tickets, bilan PDF, alertes échéances), et pour tout besoin de certification officielle on te met en contact avec un expert-comptable partenaire certifié Ordre.",
+                  a: "Non — FOREAS est un copilote de gestion, pas un expert-comptable. On t'aide à gérer au quotidien (URSSAF calculée, scan tickets, bilan PDF, alertes échéances), et pour tout besoin de certification officielle on te met en contact avec un expert-comptable partenaire certifié Ordre.",
                 },
                 {
                   q: "Combien coûte l'ajout du module E-Factures ?",

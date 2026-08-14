@@ -47,7 +47,7 @@ export default function ZoneFinalCTAWithPS() {
             className="text-[#00D4FF]/85 t-eyebrow mb-4"
             style={{ letterSpacing: '0.28em' }}
           >
-            0&nbsp;€ AUJOURD&apos;HUI · SANS CARTE · TU COUPES EN 1 CLIC
+            0&nbsp;€ AUJOURD&apos;HUI · TU COUPES EN 1 CLIC
           </p>
           <h2
             className="t-display-xl text-[#F8FAFC] mb-5 leading-[1.05]"
@@ -78,7 +78,7 @@ export default function ZoneFinalCTAWithPS() {
 
           <div className="flex items-center justify-center gap-x-5 gap-y-2 mt-6 text-white/45 t-caption flex-wrap tabular-nums">
             <span>🔒 Sans inscription</span>
-            <span>✓ Sans carte</span>
+            <span>✓ 0 € débité</span>
             <span>🛡️ Sans engagement</span>
           </div>
 

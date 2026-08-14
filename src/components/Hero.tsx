@@ -67,7 +67,7 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="font-body text-base md:text-lg text-white/50 max-w-md mx-auto lg:mx-0 mb-6 lg:mb-8"
             >
-              L'IA qui voit la demande avant qu'elle arrive.
+              Ajnaya voit la demande monter avant qu'elle arrive.
             </motion.p>
 
             {/* Stats pill - Preuve sociale chiffrée */}

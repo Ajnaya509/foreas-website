@@ -57,7 +57,7 @@ export const FEATURES: Feature[] = [
   {
     // Guardrail légal : « se calcule », JAMAIS « on fait ta compta ». URSSAF = stop-scroll à lui seul.
     eyebrow: 'Zéro saisie',
-    title: 'Ta tirelire URSSAF se calcule toute seule.',
+    title: 'Ton URSSAF se calcule toute seule.',
     sub: 'Course après course, tu vois exactement ce qu’il faudra sortir au trimestre — zéro saisie, zéro douche froide.',
     illus: 'compta',
   },

@@ -43,7 +43,7 @@ export default function TechnologiePage() {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full mb-6 md:mb-8">
               <span className="w-1.5 h-1.5 bg-accent-cyan rounded-full animate-pulse" />
-              Propulsé par l'IA
+              Propulsé par Ajnaya
             </span>
           </motion.div>
 
@@ -54,7 +54,7 @@ export default function TechnologiePage() {
             className="font-title text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.1] tracking-tight mb-4 md:mb-6"
           >
             <span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Ajnaya.</span>
-            <span className="block text-white/60">L'IA qui vous fait gagner.</span>
+            <span className="block text-white/60">Le copilote qui te fait gagner.</span>
           </motion.h1>
 
           <motion.p

@@ -33,7 +33,7 @@ export default function AProposPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-body text-base md:text-lg text-white/50 max-w-lg mx-auto"
           >
-            Donner aux chauffeurs le pouvoir de l'IA.
+            Donner aux chauffeurs ce que les plateformes gardent pour elles.
           </motion.p>
         </div>
       </section>
@@ -50,7 +50,7 @@ export default function AProposPage() {
             <h2 className="font-title text-xl md:text-2xl font-semibold text-white mb-3 md:mb-4">Pourquoi</h2>
             <p className="text-sm md:text-base text-white/50 leading-relaxed">
               Les chauffeurs perdent des heures chaque jour. Attentes, zones mal choisies, courses à vide.
-              L'IA peut changer ça.
+              Ajnaya peut changer ça.
             </p>
           </motion.div>
 
