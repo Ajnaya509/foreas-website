@@ -55,7 +55,7 @@ export default function ZoneMechanismVisual() {
           >
             Pas un dashboard de plus.<br />
             <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-              L&apos;IA qui te dit où aller — avant les autres.
+              Ajnaya te dit où aller — avant les autres.
             </span>
           </h2>
         </motion.div>

@@ -142,7 +142,7 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
               <td style="width:24px;vertical-align:top;padding-right:14px;">
                 <div style="width:24px;height:24px;border-radius:50%;background-color:#0e0e16;border:1px solid #2a2a3a;color:#6b6b80;font-family:'Genos',sans-serif;font-size:12px;font-weight:600;text-align:center;line-height:24px;">3</div>
               </td>
-              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;line-height:1.5;">Commence ta premi&egrave;re journ&eacute;e avec l&rsquo;IA</td>
+              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;line-height:1.5;">Commence ta premi&egrave;re journ&eacute;e avec Ajnaya</td>
             </tr>
           </table>
         </td></tr>

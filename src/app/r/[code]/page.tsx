@@ -66,7 +66,7 @@ export default async function ReferralLanding({
         </h1>
 
         <p className="t-bodylg mb-9 mx-auto max-w-sm" style={{ color: '#6e6e73' }}>
-          Ajnaya, l&apos;IA des chauffeurs VTC, te dit où aller pour gagner plus en roulant moins.
+          Ajnaya, le copilote des chauffeurs VTC, te dit où aller pour gagner plus en roulant moins.
           {hasDiscount
             ? ' Ta remise est déjà gardée — elle s’applique quand tu prends ton abonnement.'
             : ' Rejoins-nous et vois combien ça paie ce soir.'}

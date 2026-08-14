@@ -159,7 +159,15 @@ function texteAffiche(source) {
                                     //         (l'exclusion des quotes évite de
                                     //          couper une URL https://… dans une chaîne)
     .replace(/<[^>]+>/g, ' ') //              balises
-    .replace(/&nbsp;|&#160;/g, ' ') //        entités
+    // TOUTES les entités, pas une liste blanche. `&apos;` avait fait passer
+    // « L&apos;IA » sur un <h2> de l'accueil — troisième déguisement du même mot
+    // après l'apostrophe échappée en chaîne JS et le cache Vercel. Une liste
+    // blanche d'entités laisse forcément passer celle qu'on n'a pas prévue.
+    .replace(/&nbsp;|&#160;/g, ' ')
+    .replace(/&apos;|&#39;|&rsquo;|&#8217;/g, "'")
+    .replace(/&quot;|&#34;/g, '"')
+    .replace(/&amp;|&#38;/g, '&')
+    .replace(/&[a-zA-Z]+;|&#\d+;/g, ' ') //  toute autre entité → espace
     .replace(/\{'\s*'\}/g, ' ') //            {' '} de JSX
     .replace(/\s+/g, ' ')
 }
