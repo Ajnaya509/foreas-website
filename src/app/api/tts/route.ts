@@ -74,7 +74,17 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           text: spokenText,
-          model_id: 'eleven_v3',
+          // ⚠️ NE PAS REMETTRE `eleven_v3` — mesuré en production le 14/08/2026 :
+          // ElevenLabs répond `400 unsupported_model` sur ce compte, donc la voix de
+          // Koraly était MUETTE sur tout le site, et personne ne le savait parce que
+          // la route se contentait de dire « TTS error ». Ce modèle avait été posé en
+          // Site2026v73 « en sync avec le backend Railway » — le backend a le même
+          // défaut (3 endroits) et 4 workflows n8n actifs aussi.
+          // `eleven_flash_v2_5` est déjà utilisé ailleurs dans l'écosystème FOREAS,
+          // donc prouvé compatible avec ce compte, et c'est le plus rapide (la voix
+          // arrive juste après la réponse écrite : la latence s'entend).
+          // Surchargeable sans redéploiement via ELEVENLABS_MODEL_ID.
+          model_id: process.env.ELEVENLABS_MODEL_ID || 'eleven_flash_v2_5',
           voice_settings: {
             stability: 0.50,
             similarity_boost: 0.75,
