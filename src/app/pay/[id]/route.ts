@@ -16,12 +16,16 @@ import Stripe from 'stripe'
  *   beaucoup plus cher qu'un revenant qui obtiendrait l'essai par erreur).
  */
 
-const REACTIVATION_PRICE_CENTS = 2999 // 29,99€/mois — garder synchronisé avec pieuvre_pricing_plans
+import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES } from '@/lib/offre'
+
+// Le montant ne vit plus ici : « garder synchronisé » est une consigne que personne
+// ne tient. Il vient de src/lib/offre.ts, seul endroit où un prix FOREAS est écrit.
+const REACTIVATION_PRICE_CENTS = PRIX_MENSUEL_CENTIMES
 // 249,99€/an — abonnement unique (décision Chandler, brief BRIEF_PALIERS_ABONNEMENT_2026-07-22).
 // Avant : dérivé de REACTIVATION_PRICE_CENTS × 10 (= 299,90€, "2 mois offerts" sur l'ancien
 // mensuel). Constante dédiée : le prix annuel ne doit plus jamais se recalculer depuis le
 // mensuel — la même règle vit en miroir dans src/app/api/checkout/route.ts, à garder synchro.
-const REACTIVATION_ANNUAL_PRICE_CENTS = 24999
+const REACTIVATION_ANNUAL_PRICE_CENTS = PRIX_ANNUEL_CENTIMES
 
 function getSupabaseServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!

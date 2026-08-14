@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
+import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS } from '@/lib/offre'
 
 // ─── Prix : construits dynamiquement, PAS de Price ID Stripe pré-créé ────────
 // Le mapping PRICE_IDS (Pro 97€ / Elite 247€ / weekly grandfathering / alias vip_*) a été
@@ -48,7 +49,7 @@ async function ensureReferralCoupon(stripe: Stripe, pct: number): Promise<string
  * exactement 3 jours, quel que soit le moment de l'inscription.
  * Stripe exige trial_end >= 48h dans le futur : 3 jours passe largement.
  */
-const TRIAL_DAYS = 3
+const TRIAL_DAYS = ESSAI_JOURS // src/lib/offre.ts — seul endroit où la durée d'essai vit
 function getTrialEnd(): number {
   return Math.floor(Date.now() / 1000) + TRIAL_DAYS * 24 * 60 * 60
 }
@@ -105,8 +106,8 @@ export async function POST(request: NextRequest) {
     // BRIEF_PALIERS_ABONNEMENT_2026-07-22) — même constante en miroir dans
     // src/app/pay/[id]/route.ts, à garder synchro : deux points d'entrée (site direct et
     // lien WhatsApp) doivent facturer exactement le même montant annuel.
-    const PRICE_CENTS = 2999
-    const ANNUAL_PRICE_CENTS = 24999
+    const PRICE_CENTS = PRIX_MENSUEL_CENTIMES   // src/lib/offre.ts
+    const ANNUAL_PRICE_CENTS = PRIX_ANNUEL_CENTIMES // src/lib/offre.ts
     const isAnnual = typeof plan === 'string' && plan.endsWith('_annual')
 
     // ⚠️ Prix construit dynamiquement dans LES DEUX cas (essai ET paiement immédiat).

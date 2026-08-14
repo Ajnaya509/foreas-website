@@ -17,14 +17,37 @@ import { ShieldCheck, Check, Lock, Loader2 } from 'lucide-react'
 import { InkGradientButton } from '@/components/ui'
 import CheckoutProofToasts from '@/components/checkout/CheckoutProofToasts'
 import ExitIntentOffer from '@/components/checkout/ExitIntentOffer'
+import { FORMULES } from '@/lib/offre'
+
+/**
+ * Montant à la française : 29.99 → « 29,99 ». Sans ça, un prix décimal s'affichait
+ * « 29.99 € » avec un point — repéré en navigateur le 14/08/2026, l'ancien prix
+ * (97) étant un entier, le défaut n'existait pas avant le passage à 29,99 €.
+ */
+const eur = (n: number) => n.toFixed(2).replace('.', ',')
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
+/**
+ * Prix affichés — dérivés de la source unique `src/lib/offre.ts`.
+ *
+ * AVANT le 14/08/2026, cette table écrivait en dur « Pro 97 € » et « Elite 247 € »
+ * alors que le serveur facturait 29,99 €. Un prix affiché qui ne correspond pas au
+ * prix réellement débité n'est pas un détail d'affichage : c'est un prix trompeur.
+ * Les formules Elite ont disparu d'ici — elles ne sont plus au catalogue, et le
+ * serveur les refuse désormais (`resoudreFormule` → null → 400).
+ */
 const PLANS: Record<string, { name: string; price: number; perDay: string }> = {
-  pro_monthly:   { name: 'Pro', price: 97,  perDay: '3,23 €/jour — le prix d’un péage' },
-  pro_annual:    { name: 'Pro · annuel', price: 970, perDay: '2 mois offerts' },
-  elite_monthly: { name: 'Elite', price: 247, perDay: 'courses FOREAS prioritaires' },
-  elite_annual:  { name: 'Elite · annuel', price: 2470, perDay: '2 mois offerts' },
+  pro_monthly: {
+    name: 'mensuel',
+    price: FORMULES.mensuel.centimes / 100,
+    perDay: FORMULES.mensuel.sousTitre,
+  },
+  pro_annual: {
+    name: 'annuel',
+    price: FORMULES.annuel.centimes / 100,
+    perDay: FORMULES.annuel.sousTitre,
+  },
 }
 
 // Appearance API → Payment Element aux couleurs FOREAS (fond obsidian, accent violet/cyan).
@@ -245,24 +268,29 @@ function CheckoutInner() {
 
             <p className="text-[10px] font-extrabold uppercase text-white/40" style={{ letterSpacing: '0.2em' }}>Ton abonnement</p>
             <div className="mt-2.5 flex items-baseline gap-2">
-              {exitOffer && <span className="text-[20px] font-bold tabular-nums text-white/35 line-through">{plan.price}&nbsp;€</span>}
+              {exitOffer && <span className="text-[20px] font-bold tabular-nums text-white/35 line-through">{eur(plan.price)}&nbsp;€</span>}
               <span className="text-[40px] font-extrabold tabular-nums leading-none text-[#F8FAFC]" style={{ letterSpacing: '-0.04em' }}>
-                {exitOffer ? (plan.price * 0.8).toFixed(2).replace('.', ',') : plan.price}&nbsp;€
+                {exitOffer ? eur(plan.price * 0.8) : eur(plan.price)}&nbsp;€
               </span>
               <span className="text-[13px] text-white/45">{exitOffer ? '1er mois' : '/mois'} · FOREAS {plan.name}</span>
             </div>
             <p className="mt-1.5 text-[12px] text-[#00D4FF]/90 tabular-nums">
-              {exitOffer ? `−20% ce mois-ci · puis ${plan.price}€/mois` : `soit ${plan.perDay}`}
+              {exitOffer ? `−20% ce mois-ci · puis ${eur(plan.price)}€/mois` : `soit ${plan.perDay}`}
             </p>
 
             <div className="my-5 h-px bg-white/[0.07]" />
 
             <ul className="space-y-3">
               {[
-                ['Ajnaya IA illimitée', '+ voix Koraly'],
+                // « IA » banni du site : on dit Ajnaya, c'est son nom (règle cross-fil).
+                ['Ajnaya, sans limite', 'et sa voix, Koraly'],
                 ['Où ça paie, en temps réel', 'la bonne course, au bon moment'],
                 ['Coach courses', 'accepter / refuser en 0,3s'],
-                ['Compta IA + Tirelire URSSAF', 'mise de côté automatique'],
+                // ⚠️ Garde-fou légal M18 : FOREAS est un COPILOTE de gestion, jamais un
+                // expert-comptable (Ordonnance du 19 sept. 1945, art. 20). Et l'URSSAF
+                // SE CALCULE — elle ne « se met pas de côté automatiquement » : promettre
+                // une mise de côté, c'est promettre un service financier qu'on ne rend pas.
+                ['Copilote compta + URSSAF', 'ce que tu devras, calculé au fil des courses'],
               ].map(([t, sub]) => (
                 <li key={t} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#8C52FF]/20 ring-1 ring-[#8C52FF]/30">
