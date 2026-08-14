@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 
 export const runtime = 'nodejs'
 
+/** Plafond de caractères par appel. Chaque caractère envoyé consomme du quota ElevenLabs. */
+const MAX_SPOKEN_CHARS = 1000
+
 export async function POST(request: NextRequest) {
   try {
+    // GARDE — cette route dépense du quota ElevenLabs à chaque appel, et ce quota
+    // est le vrai plafond de FOREAS (~18-20 onboardings avant épuisement).
+    // Elle n'est appelée que par nos propres pages (AjnayaConversationModal + lib/tts.ts) :
+    // un appel qui ne vient pas d'une page FOREAS n'a aucune raison d'exister.
+    if (!isSameOriginRequest(request)) {
+      return forbiddenOrigin()
+    }
+
     const { text } = await request.json()
 
     const apiKey = process.env.ELEVENLABS_API_KEY
@@ -76,7 +88,21 @@ export async function POST(request: NextRequest) {
     if (!res.ok) {
       const errorText = await res.text().catch(() => 'no body')
       console.error('[TTS] ElevenLabs error:', res.status, errorText)
-      return NextResponse.json({ error: 'TTS error' }, { status: 503 })
+      // On renvoie une CAUSE, pas un « TTS error » muet. Avant ce correctif, la voix
+      // pouvait être morte en production sans que rien ne le dise : mesuré le
+      // 14/08/2026, /api/tts répondait 503 « TTS error » et il était impossible de
+      // savoir si c'était la clé, le quota ou la voix. Le code ci-dessous ne
+      // divulgue aucun secret — seulement la nature de la panne.
+      const reason =
+        res.status === 401 ? 'cle_elevenlabs_refusee'
+        : res.status === 429 ? 'quota_elevenlabs_epuise'
+        : res.status === 404 ? 'voix_koraly_introuvable'
+        : res.status >= 500 ? 'elevenlabs_indisponible'
+        : 'elevenlabs_erreur_' + res.status
+      return NextResponse.json(
+        { error: 'TTS indisponible', reason },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+      )
     }
 
     const audioBuffer = await res.arrayBuffer()

@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
@@ -476,6 +477,12 @@ function cleanForTTS(text: string): string {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function POST(request: NextRequest) {
+  // GARDE — route payante (Anthropic + cerveau Pieuvre). C'est le chat RÉELLEMENT
+  // vivant du site aujourd'hui, appelé uniquement par AjnayaConversationModal.
+  if (!isSameOriginRequest(request)) {
+    return forbiddenOrigin()
+  }
+
   try {
     const body = await request.json()
     const {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { isSameOriginRequest, hasValidBearer, forbiddenOrigin } from '@/lib/api-guard'
 
 export const runtime = 'nodejs'
 
@@ -331,6 +332,15 @@ function createSSEStream(text: string, model: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    // GARDE — cette route appelle Anthropic à chaque message. Sans contrôle, c'est
+    // un Claude gratuit ouvert sur Internet et facturé à FOREAS (constat 14/08/2026).
+    // Deux entrées légitimes, une seule autre : rien.
+    //   · le navigateur, depuis une page FOREAS (AjnayaWidget) → `Origin` présent ;
+    //   · un appel serveur-à-serveur porteur de `AJNAYA_LLM_TOKEN` (pont ElevenLabs).
+    if (!isSameOriginRequest(request) && !hasValidBearer(request, 'AJNAYA_LLM_TOKEN')) {
+      return forbiddenOrigin()
+    }
+
     const body = await request.json()
     const openaiMode = isOpenAIFormat(body)
     const llmModel = 'claude-haiku-4-5-20251001'

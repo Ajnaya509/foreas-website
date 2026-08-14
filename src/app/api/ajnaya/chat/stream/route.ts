@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import {
   loadClosingScript, loadProspect, saveMessage, writeCanalMemory, updateProspect,
   detectSentiment, detectObjection, estimateCost, buildSystemPrompt, DEFAULT_SYSTEM_PROMPT,
@@ -39,6 +40,12 @@ function sseError(code: string, message = 'stream indisponible') {
 }
 
 export async function POST(request: NextRequest) {
+  // GARDE — route payante (streaming Anthropic). Appelée uniquement par nos pages
+  // via `src/lib/ajnayaStream.ts` (téléphone vivant de /experience).
+  if (!isSameOriginRequest(request)) {
+    return forbiddenOrigin()
+  }
+
   let body: Record<string, unknown> = {}
   try { body = await request.json() } catch { /* handled below */ }
 
