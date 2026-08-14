@@ -9,6 +9,12 @@ import Footer from '@/components/Footer'
 import { Smartphone, Fuel, Brain, BarChart3, CloudRain, Target } from 'lucide-react'
 import { useIsMobile, useReducedMotion } from '@/hooks/useDevicePerf'
 import { authUrls } from '@/lib/auth-urls'
+// FAUX AVANT : la durée d'essai et le prix journalier étaient fabriqués dans ce
+// fichier. Mesure : ESSAI_JOURS = 3 (src/lib/offre.ts) et /api/checkout pose
+// trial_end = maintenant + 3 jours, pour tout le monde ; PRIX_MENSUEL_CENTIMES
+// = 2999. Les montants et la durée viennent de la source unique, ou de rien.
+import { ESSAI_JOURS, PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
+import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS /chauffeurs — BIG DOMINO CHAUFFEUR
@@ -26,7 +32,8 @@ const Testimonials = dynamic(() => import('@/components/Testimonials'))
 const PhoneMockup = dynamic(() => import('@/components/PhoneMockup'))
 const FloatingParticles = dynamic(() => import('@/components/FloatingParticles'))
 const AnimatedBar = dynamic(() => import('@/components/AnimatedBar'))
-const CircularGauge = dynamic(() => import('@/components/CircularGauge'))
+// CircularGauge retiré avec les deux jauges « 33 % / 40 % » : plus aucun appel
+// dans cette page (le composant reste disponible pour un chiffre mesuré).
 const PulsingRing = dynamic(() => import('@/components/PulsingRing'))
 const AjnayaNotification = dynamic(() => import('@/components/AjnayaNotification'))
 
@@ -38,36 +45,22 @@ const fadeInView = {
   transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
 } as const
 
-// ─── Dynamic Trial (mirrors /api/checkout) ───────────────────────────────────
-function getNextMonday18hParis(): Date {
-  const now = new Date()
-  const dayOfWeek = now.getUTCDay()
-  const daysMap: Record<number, number> = { 0: 1, 1: 7, 2: 6, 3: 5, 4: 4, 5: 3, 6: 2 }
-  let daysToAdd = daysMap[dayOfWeek]
-  if (daysToAdd < 2) daysToAdd += 7
-  const monday = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
-  const year = monday.getUTCFullYear()
-  const marchLast = new Date(Date.UTC(year, 2, 31))
-  const lastSundayMarch = 31 - (marchLast.getUTCDay() % 7)
-  const dstStart = new Date(Date.UTC(year, 2, lastSundayMarch, 1, 0, 0))
-  const octLast = new Date(Date.UTC(year, 9, 31))
-  const lastSundayOct = 31 - (octLast.getUTCDay() % 7)
-  const dstEnd = new Date(Date.UTC(year, 9, lastSundayOct, 1, 0, 0))
-  const isSummer = monday.getTime() >= dstStart.getTime() && monday.getTime() < dstEnd.getTime()
-  monday.setUTCHours(isSummer ? 16 : 17, 0, 0, 0)
-  return monday
-}
-
-function useTrialInfo() {
-  const [info, setInfo] = useState({ days: 0, dateLabel: '', ready: false })
-  useEffect(() => {
-    const monday = getNextMonday18hParis()
-    const days = Math.max(1, Math.round((monday.getTime() - Date.now()) / 86400000))
-    const dateLabel = monday.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-    setInfo({ days, dateLabel, ready: true })
-  }, [])
-  return info
-}
+// ─── Essai et prix : dérivés de la source unique, jamais recalculés ──────────
+// FAUX AVANT : `getNextMonday18hParis()` + `useTrialInfo()` calculaient la durée
+// d'essai sur le « prochain lundi 18h », modèle abandonné le 22/07 dans
+// /api/checkout justement parce qu'il donnait 1 à 7 jours selon le jour
+// d'inscription. Rejoué sur les 7 jours de la semaine : dimanche 8, lundi 7,
+// mardi 6, mercredi 5, jeudi 4, vendredi 3, samedi 2 — alors que /api/checkout
+// pose trial_end = maintenant + ESSAI_JOURS (3), pour tout le monde. Le badge
+// était donc faux 6 jours sur 7, date de fin comprise.
+//
+// FAUX AVANT : l'ancre « 1,42€ /jour » au-dessus du bouton. Aucune formule
+// vendable ne donne ce chiffre — 29,99 €/mois ÷ 30 = 1,00 €/jour, 249,99 €/an
+// ÷ 365 = 0,68 €/jour. 1,42 € × 7 = 9,94 €, c'est le reste de l'ancien plan
+// hebdomadaire à 9,97 €, retiré du catalogue : la page ancrait 42,60 €/mois,
+// soit 42 % au-dessus des 29,99 € réellement facturés.
+const PRIX_PAR_JOUR = formaterEuros(Math.round(PRIX_MENSUEL_CENTIMES / 30))
+const PRIX_PAR_MOIS = formaterEuros(PRIX_MENSUEL_CENTIMES)
 
 // ─── Sticky Mobile CTA ───────────────────────────────────────────────────────
 function StickyMobileCTA() {
@@ -455,7 +448,6 @@ function PriceRingSVG({ children }: { children: React.ReactNode }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function ChauffeursPage() {
-  const trial = useTrialInfo()
   const isMobile = useIsMobile()
   const reducedMotion = useReducedMotion()
 
@@ -552,7 +544,18 @@ export default function ChauffeursPage() {
               delay={0.2}
             />
 
-            {/* Visual intercalé 3 — Jauges circulaires CA vs km (whileInView) */}
+            {/* Visual intercalé 3 — preuve honnête (whileInView).
+                FAUX AVANT : deux jauges « 33 % CA/heure en hausse » et « 40 % km à
+                vide réduits », affichées comme des résultats constatés. Mesure du
+                14/08/2026 : driver_ride_features → 0 ligne ; rides → 18 lignes,
+                4 chauffeurs, 0 ligne géolocalisée ; collective_zone_stats_anon,
+                v_demand_h3_hourly, v_supply_h3_hourly, pieuvre_h3_demand_zones →
+                0 ligne ; zone_predictions vérifiées → 0 sur 295. Sans coordonnée,
+                le km à vide n'est même pas calculable, et il n'existe aucune cohorte
+                avant/après pour un CA/heure. S'y ajoute l'interdiction de promettre
+                un gain chiffré (CNIL/DGCCRF). À la place : l'intention, et la seule
+                preuve qui tienne — les 6 témoignages filmés et consentis
+                (COMMUNAUTE.temoignagesVideoReels, src/lib/verite-commerciale.ts). */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -560,8 +563,12 @@ export default function ChauffeursPage() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="flex justify-center gap-8 md:gap-12 py-6"
             >
-              <CircularGauge value={33} max={100} label="CA/heure en hausse" color="#00D4FF" suffix="%" />
-              <CircularGauge value={40} max={100} label="km à vide réduits" color="#8C52FF" suffix="%" />
+              <p className="max-w-md text-center font-body text-sm md:text-base text-white/50 leading-relaxed">
+                Moins de kilomètres à vide entre deux courses : c&apos;est ce qu&apos;Ajnaya
+                cherche à chaque repositionnement.{' '}
+                <span className="text-white/70">On ne te vend pas un pourcentage</span> — on te
+                montre {COMMUNAUTE_PHRASES.preuveHonnete}, plus bas sur cette page.
+              </p>
             </motion.div>
           </div>
         </div>
@@ -578,11 +585,21 @@ export default function ChauffeursPage() {
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative">
         <div className="max-w-5xl mx-auto px-6 lg:px-8 pt-16 md:pt-24">
+          {/* FAUX AVANT : le titre nommait la technologie (mot banni sur le site)
+              au lieu d'Ajnaya, qui a un nom et qui est employée partout ailleurs
+              sur cette même page — l'incohérence était locale à ce H2.
+              FAUX AVANT : sous-titre « les courses réellement enregistrées dans ta
+              zone, à ton heure ». Mesure : rides → 18 lignes, 4 chauffeurs, 0 ligne
+              géolocalisée, rien de nouveau depuis le 30/04 ; collective_zone_stats_anon,
+              v_demand_h3_hourly, v_supply_h3_hourly, driver_ride_features → 0 ligne.
+              Sans coordonnée, il n'existe pas de « ta zone ». Les trois sources
+              citées maintenant ont, elles, un adaptateur qui tourne (SNCFAdapter,
+              PredictHQAdapter, WeatherAdapter). */}
           <SectionTitle
             eyebrow="Comment ça marche"
-            title="L'IA qui voit"
+            title="Ajnaya voit"
             gradient="avant la demande."
-            subtitle="Pas de magie. Les courses réellement enregistrées dans ta zone, à ton heure."
+            subtitle="Pas de magie. Les arrivées de trains, les événements et la météo de ta zone, croisés en avance."
           />
         </div>
         <ScrollMapAnimation />
@@ -728,24 +745,24 @@ export default function ChauffeursPage() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="text-center"
           >
-            {/* Badge dynamique */}
-            {trial.ready && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full border border-accent-green/20 bg-accent-green/5 animate-gradient bg-gradient-to-r from-accent-green/5 via-accent-cyan/5 to-accent-green/5 bg-[length:200%_100%]"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
-                </span>
-                <span className="text-sm font-medium text-accent-green">
-                  {trial.days} jour{trial.days > 1 ? 's' : ''} d&apos;essai gratuit — jusqu&apos;au {trial.dateLabel}
-                </span>
-              </motion.div>
-            )}
+            {/* Badge essai — durée lue dans ESSAI_JOURS, identique pour tous.
+                FAUX AVANT : « {trial.days} jours — jusqu'au {lundi} », une durée
+                qui changeait chaque jour (2 à 8) alors que l'essai dure 3 jours. */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full border border-accent-green/20 bg-accent-green/5 animate-gradient bg-gradient-to-r from-accent-green/5 via-accent-cyan/5 to-accent-green/5 bg-[length:200%_100%]"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
+              </span>
+              <span className="text-sm font-medium text-accent-green">
+                {ESSAI_JOURS} jours d&apos;essai · 0 € débité — tu annules en 1 clic
+              </span>
+            </motion.div>
 
             {/* Headline */}
             <h2 className="font-title text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white mb-6">
@@ -759,11 +776,15 @@ export default function ChauffeursPage() {
               Pour le prix d&apos;un café par jour.
             </p>
 
-            {/* Price anchor — SVG ring */}
+            {/* Price anchor — SVG ring.
+                FAUX AVANT : « 1,42€ /jour », soit 42,60 €/mois ancrés pour un
+                abonnement facturé 29,99 €/mois par /api/checkout. Le prix affiché
+                se dérive maintenant de PRIX_MENSUEL_CENTIMES, et le vrai montant
+                mensuel est écrit juste dessous : rien à découvrir au paiement. */}
             <div className="flex items-center justify-center mb-10">
               <PriceRingSVG>
-                <span className="font-title text-5xl md:text-6xl font-bold text-accent-cyan">1,42€</span>
-                <span className="text-white/40 text-lg">/jour</span>
+                <span className="font-title text-5xl md:text-6xl font-bold text-accent-cyan">{PRIX_PAR_JOUR}</span>
+                <span className="text-white/40 text-lg">/jour · {PRIX_PAR_MOIS}/mois</span>
               </PriceRingSVG>
             </div>
 

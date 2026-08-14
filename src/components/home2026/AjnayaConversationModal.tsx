@@ -553,11 +553,18 @@ export default function AjnayaConversationModal({
   useEffect(() => {
     if (!isOpen || messages.length > 0) return
 
+    // 14/08/2026 — la phrase d'accueil promettait « je te dis combien ça paie ce
+    // soir », sur les zones-mêmes qu'elle cite. Mesuré en production le jour même :
+    // POST /api/ajnaya/home-modal → « Aéroport CDG » et « La Défense » répondent
+    // has_data:false, data_state:"NO_DATA_COLLECTED_YET", data_source:"none",
+    // avg_hourly:0 — et Ajnaya répond littéralement « pas de data live ici ».
+    // Elle promettait donc, en première ligne, ce qu'elle refusait en deuxième.
+    // En base : rides → 18 lignes, 0 depuis 30 jours, dernière le 2026-04-30.
     setMessages([{
       id: 'm-intro',
       role: 'ajnaya',
       type: 'text',
-      text: 'CDG, La Défense, Bercy... balance ta zone — je te dis combien ça paie ce soir.',
+      text: 'CDG, La Défense, Bercy... balance ta zone — je te dis ce que je vois, et ce que je ne vois pas encore.',
       timestamp: Date.now(),
     }])
 

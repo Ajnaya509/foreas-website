@@ -5,7 +5,13 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
 const values = [
-  { title: 'Précision', desc: 'Données réelles.' },
+  // APROPOS-05 — « Données réelles » : le substrat du moteur de zones est SEMÉ,
+  // pas réel. heatmap_zones : 30 lignes, source='seed_v1' sur les 30,
+  // weather_factor et event_factor constants à 1, last_updated figé au 30/04/2026.
+  // Les 295 prédictions portent à 100 % sur 9 zones semées (synth-local-0, bonus-*).
+  // rides = 18 lignes, aucune coordonnée, rien depuis le 30/04.
+  // Une promesse que n'importe qui peut recouper vaut mieux qu'un mot fort invérifiable.
+  { title: 'Précision', desc: 'Sources vérifiables.' },
   { title: 'Confiance', desc: 'Transparence totale.' },
   { title: 'Innovation', desc: 'Toujours en avance.' },
 ]
@@ -62,8 +68,22 @@ export default function AProposPage() {
             className="p-6 md:p-8 bg-white/[0.02] border border-white/[0.05] rounded-2xl"
           >
             <h2 className="font-title text-xl md:text-2xl font-semibold text-white mb-3 md:mb-4">Comment</h2>
+            {/*
+              APROPOS-01 — « Ajnaya lit ce que paient vraiment les courses, zone par
+              zone, heure par heure » : les trois dimensions sont démenties.
+              · « ce que paient les courses » : rides = 18 lignes, dernière le 30/04/2026,
+                0 sur les 30 derniers jours ;
+              · « zone par zone » : 0 des 18 courses n'a de pickup_lat → aucun prix réel
+                n'est rattachable à une zone, c'est structurellement impossible ;
+              · « heure par heure » : 9 heures distinctes dans tout l'historique, et
+                driver_ride_features (la table d'une lecture continue) = 0 ligne.
+              Ce que la production renvoie réellement (/api/zones/live, 14/08) :
+              sourcesUsed:["openweather","sncf","tomtom","idfm","bolt"] — d'où la phrase
+              ci-dessous, mesurée vraie. On revient aux prix réels le jour où `rides`
+              porte des coordonnées.
+            */}
             <p className="text-sm md:text-base text-white/50 leading-relaxed">
-              Ajnaya lit ce que paient vraiment les courses, zone par zone, heure par heure.
+              Ajnaya croise la météo, les transports et le trafic, zone par zone, heure par heure.
               Elle te dit où aller avant les autres. Résultat : tu arrêtes de rouler à vide.
             </p>
           </motion.div>

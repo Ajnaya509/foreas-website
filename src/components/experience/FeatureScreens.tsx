@@ -169,15 +169,24 @@ function ZoneScreen() {
         <polygon points="103,364 159,396 159,460 103,492 47,460 47,396" fill="rgba(245,200,66,.16)" stroke="rgba(245,200,66,.55)" strokeWidth="1.8" />
         <polygon points="327,364 383,396 383,460 327,492 271,460 271,396" fill="rgba(245,200,66,.11)" stroke="rgba(245,200,66,.42)" strokeWidth="1.6" />
       </svg>
-      <Head eyebrow="OÙ ÇA PAIE" title="Arrive avant la demande." />
-      {/* LA preuve, en géant : le créneau. Lisible même réduit. */}
+      <Head eyebrow="OÙ ÇA PAIE" title="Tu y seras avant la demande." />
+      {/* LA preuve géante ÉTAIT UNE PRÉVISION FABRIQUÉE (constat EXP-08, 14/08/2026) :
+          « OPÉRA · DANS / 15 min », lue comme l'écran réel du produit puisqu'elle est affichée
+          dans un cadre iPhone, sans mention « exemple ».
+          MESURE : aucune table ne porte un horizon temporel de demande — `pieuvre_h3_timeseries`
+          0 ligne, `pieuvre_surge_predictions` 0, `pieuvre_h3_demand_zones` 0,
+          `extracted_surge_data` 0, `bandit_top_zones` 0. Et sur la zone nommée précisément :
+          `curl '.../api/home/zone-stats?zone=Opéra'` → courses_count: 0, has_data: false.
+          Le produit ne peut pas produire cet écran. On garde le cadran, on dit la vérité :
+          la prévision arrive, elle n'est pas là. Même registre que le titre de la feature
+          (StickyFeatures : « La zone s'allumera avant que ton appli sonne. »). */}
       <div style={{ position: 'absolute', top: 540, left: 40, right: 40, zIndex: 2 }}>
-        <div style={{ fontFamily: INTER, fontSize: T.eyebrow, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,.5)' }}>OPÉRA · DANS</div>
+        <div style={{ fontFamily: INTER, fontSize: T.eyebrow, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,.5)' }}>PRÉVISION OPÉRA</div>
         <div style={{ fontFamily: GENOS, fontSize: T.proofHuge, fontWeight: 700, letterSpacing: '-0.03em', color: CYAN, lineHeight: 1, marginTop: 8, fontVariantNumeric: 'tabular-nums' }}>
-          15 min
+          Bientôt
         </div>
       </div>
-      <AjnayaLine text="Opéra monte dans 15 min. Bouge." />
+      <AjnayaLine text="Quand Opéra montera, je te le dirai." />
     </Screen>
   )
 }
@@ -261,7 +270,18 @@ function ComptaScreen() {
           </div>
         </div>
       </div>
-      <AjnayaLine text="Octobre est déjà provisionné." />
+      {/* « Octobre est déjà PROVISIONNÉ » ÉTAIT FAUX (constat EXP-07, 14/08/2026) : le participe
+          passé affirme que l'argent A ÉTÉ mis de côté — c'est la promesse de mise de côté
+          automatique interdite par verite-commerciale.ts §6, plus grave qu'un chiffre faux
+          puisqu'elle promet un service financier.
+          MESURE : `information_schema.columns` filtré sur %urssaf% | %provision% | %cotisation% |
+          %set_aside% | %tirelire% → 0 colonne dans les 295 tables du projet. Aucun portefeuille,
+          aucun cantonnement, aucun mouvement d'argent n'existe.
+          Un seul mot change, l'impact reste, et la promesse redevient celle d'un copilote de
+          gestion — exactement le libellé validé le 14/08 sur /tarifs2 : « C'est ton argent, il
+          reste sur ton compte — on calcule, on n'y touche pas. »
+          (L'étiquette voisine « provision calculée » était, elle, déjà conforme.) */}
+      <AjnayaLine text="Octobre est déjà calculé." />
     </Screen>
   )
 }

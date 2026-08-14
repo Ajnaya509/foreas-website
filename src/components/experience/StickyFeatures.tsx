@@ -34,10 +34,19 @@ interface Feature { eyebrow: string; title: string; sub: string; illus: ScreenKi
 // vue de la page. Restent les 4 features suivantes, dans l'ordre : zone → vocale → client direct → compta.
 export const FEATURES: Feature[] = [
   {
-    // Inversion temporelle : il passe devant la plateforme elle-même.
+    // FAUX AU PRÉSENT DE L'INDICATIF (constat EXP-05, 14/08/2026). Le titre affirmait une
+    // inversion temporelle (FOREAS sait AVANT la plateforme) et le sous-titre une prédiction de
+    // demande « à 800 m près » — deux capacités qu'aucune table n'alimente.
+    // MESURE : `pieuvre_h3_demand_zones` 0 · `pieuvre_surge_predictions` 0 ·
+    // `extracted_surge_data` 0 · `pieuvre_h3_timeseries` 0 · `bandit_top_zones` 0 ·
+    // `collective_zone_stats_anon` 0 · `driver_ride_features` 0 ; `heatmap_zones` = 30 lignes
+    // toutes figées au 30/04/2026 ; `zone_predictions` = 295 lignes dont
+    // `count(*) filter (where was_right is not null)` → 0, soit 100 % jamais confrontées au réel.
+    // verite-commerciale.ts §2 interdit déjà « surge multi-plateformes en temps réel » sur cette
+    // base exacte. Donc futur (§5), et on dit à quelle condition ça s'allumera.
     eyebrow: 'Où ça paie',
-    title: 'La zone s’allume. Ton appli sonne après.',
-    sub: 'La carte t’allume, à 800 m près, le coin qui va payer — quand les demandes tombent, tu y es déjà.',
+    title: 'La zone s’allumera avant que ton appli sonne.',
+    sub: 'On la construit sur les courses réelles, zone par zone. Rien ne s’allumera tant qu’on n’aura pas de quoi te le prouver.',
     illus: 'zone',
   },
   {

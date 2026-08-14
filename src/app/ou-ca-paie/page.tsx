@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
+import { PLATEFORMES_PHRASES } from '@/lib/verite-commerciale'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ZoneSearchBarHero from '@/components/zone/ZoneSearchBarHero'
@@ -9,13 +11,34 @@ import ZonePlanTimeline from '@/components/zone/ZonePlanTimeline'
 import ZoneCapPartnerCTA from '@/components/zone/ZoneCapPartnerCTA'
 import ZoneFinalCTAWithPS from '@/components/zone/ZoneFinalCTAWithPS'
 
+/*
+ * TITRE + DESCRIPTION — une seule source, lue par la <meta> ET par le JSON-LD.
+ *
+ * CE QUI ÉTAIT FAUX (mesuré le 14/08/2026) :
+ *  · Le titre disait « Tarifs RÉELS par zone ». Mesure : curl anonyme sur
+ *    https://www.foreas.xyz/api/home/zone-stats (Paris 8, Roissy, La Défense,
+ *    Marseille) → has_data:false, courses_count:0 sur les quatre. Le nombre servi
+ *    en repli sort d'une table de constantes par TYPE de zone écrite dans
+ *    get_zone_stats (28 / 29 / 33 / 34,50 / 41,80), pas d'une course.
+ *  · La description disait « ce qu'elle a vu passer là ». Mesure :
+ *    `select count(*) from pieuvre_rides where created_at >= now()-interval '7 days'`
+ *    → 0, et 0 zone sur 52 atteint le seuil de 5 courses certifiées sur 7 jours.
+ *    Il n'y a rien « vu passer », nulle part.
+ *
+ * Ce que la page fait VRAIMENT dans 100 % des cas mesurés : elle bascule le
+ * chauffeur vers Ajnaya sur WhatsApp. C'est ce qu'on promet — et c'est tenu.
+ *
+ * Les deux textes étaient dupliqués (meta + JSON-LD) et avaient déjà divergé :
+ * la meta avait été corrigée, le JSON-LD servait encore l'ancienne phrase à
+ * Google. Une constante unique rend cette divergence impossible.
+ */
+const TITRE_PAGE = 'Où ça paie ? — Tarif horaire par zone VTC · FOREAS'
+const DESCRIPTION_PAGE =
+  'Tape ta zone. Ajnaya te répond sur WhatsApp : le tarif horaire là où des courses sont mesurées — et quand elle ne sait pas encore, elle te le dit. Sans inscription.'
+
 export const metadata: Metadata = {
-  title: 'Où ça paie ? — Tarifs réels par zone VTC · FOREAS',
-  description:
-    // 14/08/2026 — était au vouvoiement (voix FOREAS = tutoiement pro) et parlait
-    // de « données réelles flotte FOREAS » : 30 chauffeurs inscrits, 9 marqués
-    // actifs, 0 sur 24 h. Le mot « flotte » promet une échelle qui n'existe pas.
-    'Tape ta zone. Ajnaya te dit ce qu’elle a vu passer là — tarif horaire, demande, meilleur point d’attente. Sans inscription.',
+  title: TITRE_PAGE,
+  description: DESCRIPTION_PAGE,
   openGraph: {
     title: 'Où ça paie ? — FOREAS',
     // 14/08/2026 — disait « L'IA Ajnaya vous dit où aller ». Trois défauts en une
@@ -27,7 +50,12 @@ export const metadata: Metadata = {
     // Il avait échappé au vérificateur du dépôt parce que l'apostrophe est
     // ÉCHAPPÉE dans le code (L\'IA) : c'est la porte de sortie, qui lit le
     // HTML servi, qui l'a vu. Les deux contrôles se complètent, d'où les deux.
-    description: 'Tape ta zone, Ajnaya te dit ce qu\'elle a vu passer là — Uber, Bolt, Heetch réunis.',
+    //
+    // 14/08/2026 (2ᵉ passe) — restait « ce qu'elle a vu passer là ». Mesure :
+    // 0 course sur 7 jours dans pieuvre_rides, dernière course de toute la base
+    // le 30/04/2026. Rien n'a été « vu passer ». Ce qui est vrai et vérifiable
+    // en un clic : les trois plateformes réunies, et la réponse sur WhatsApp.
+    description: `Tape ta zone, Ajnaya te répond sur WhatsApp. ${PLATEFORMES_PHRASES.honnete}.`,
     type: 'website',
     locale: 'fr_FR',
     url: 'https://foreas.xyz/ou-ca-paie',
@@ -59,9 +87,13 @@ const JSON_LD = {
       '@type': 'WebPage',
       '@id': 'https://foreas.xyz/ou-ca-paie',
       url: 'https://foreas.xyz/ou-ca-paie',
-      name: 'Où ça paie ? — Tarifs réels par zone VTC · FOREAS',
-      description:
-        'Tapez votre zone. Ajnaya vous dit où ça paie ce soir — tarif horaire moyen, demande relative, pool optimal. Données réelles flotte FOREAS, sans inscription.',
+      // 14/08/2026 — ce bloc servait encore à Google « Tapez votre zone. Ajnaya
+      // vous dit où ça paie ce soir […] Données réelles flotte FOREAS », alors
+      // que la <meta> avait déjà été corrigée : un chiffre faux dans un JSON-LD
+      // est un chiffre faux revendiqué comme donnée structurée. Les deux lisent
+      // maintenant la même constante et ne peuvent plus diverger.
+      name: TITRE_PAGE,
+      description: DESCRIPTION_PAGE,
       inLanguage: 'fr-FR',
       isPartOf: {
         '@type': 'WebSite',
@@ -74,14 +106,23 @@ const JSON_LD = {
       name: 'Ajnaya',
       operatingSystem: 'Web, iOS, Android, WhatsApp',
       applicationCategory: 'BusinessApplication',
-      description:
-        "Ajnaya, le copilote FOREAS qui dit aux chauffeurs VTC où aller — lit tes courses Uber, Bolt et Heetch, et te répond à la voix comme au clavier.",
+      // 14/08/2026 — disait « lit tes courses Uber, Bolt et Heetch » au présent,
+      // donc une lecture continue. Mesure : driver_ride_features → 0 ligne, et
+      // `select max(created_at) from rides` → 30/04/2026. Rien n'est lu en
+      // continu. La formulation autorisée est PLATEFORMES_PHRASES.honnete.
+      description: `Ajnaya, le copilote FOREAS des chauffeurs VTC. ${PLATEFORMES_PHRASES.honnete}, et elle te répond à la voix comme au clavier.`,
       offers: {
         '@type': 'Offer',
-        price: '0',
+        // CE QUI ÉTAIT FAUX — `price: '0'`, servi en production (grep sur le HTML
+        // de /ou-ca-paie → "price":"0"). Google pouvait donc présenter Ajnaya
+        // comme gratuite, alors que PRIX_MENSUEL_CENTIMES = 2999 et que
+        // verite-commerciale.ts ESSAI.abonnementCreeDesLInscription = true : un
+        // abonnement Stripe est créé dès l'inscription, carte enregistrée.
+        // Le prix vient maintenant de src/lib/offre.ts, jamais d'un littéral.
+        price: (PRIX_MENSUEL_CENTIMES / 100).toFixed(2),
         priceCurrency: 'EUR',
         // 14/08/2026 — « sans carte » était faux (payment_method_collection:'always').
-            description: 'Essai 3 jours à 0 € — carte demandée, rien débité, annulation en un clic.',
+        description: `Abonnement ${formaterEuros(PRIX_MENSUEL_CENTIMES)} par mois. Essai de ${ESSAI_JOURS} jours : carte demandée, 0 € débité, annulation en un clic.`,
       },
       // aggregateRating retiré : pas d'avis vérifiables. Un faux rich-snippet de notation
       // = risque pénalité Google + pratique commerciale trompeuse. À remettre quand de

@@ -172,13 +172,62 @@ function texteAffiche(source) {
     .replace(/\s+/g, ' ')
 }
 
+// ─── Règles STRUCTURELLES ───────────────────────────────────────────────────
+//
+// Un motif de texte ne peut pas attraper un calcul. Le 14/08/2026,
+// `src/app/chauffeurs/page.tsx` affichait une durée d'essai calculée par
+// `getNextMonday18hParis()` — le modèle « prochain lundi 18h », abandonné le
+// 22/07 précisément parce qu'il donnait une durée différente chaque jour.
+// Résultat mesuré en rejouant la fonction DÉPLOYÉE sur les 7 jours :
+//   dimanche 8 j (9 avant 3h) · lundi 7 · mardi 6 · mercredi 5 · jeudi 4 ·
+//   vendredi 3 · samedi 2 — pour un essai qui dure 3 jours, toujours.
+// Le badge n'était juste QUE le vendredi, par coïncidence de calendrier. Et un
+// commentaire au-dessus jurait « mirrors /api/checkout », ce qui était faux.
+//
+// Troisième fois que le piège « corrigé d'un côté, oublié dans le jumeau » se
+// referme sur ce dépôt. D'où ces règles : elles ne lisent pas le texte, elles
+// vérifient que les valeurs viennent de la source unique.
+
+const REGLES_STRUCTURELLES = [
+  {
+    // Un fichier qui parle de durée d'essai DOIT la lire dans offre.ts.
+    concerne: /jours?\s+d['’]essai|essai\s+(gratuit\s+)?de\s+\d|trialDays|trial\.days/i,
+    exige: /ESSAI_JOURS|TRIAL_DAYS/,
+    quoi: 'une durée d’essai calculée hors de la source unique',
+    pourquoi:
+      'La durée vient de ESSAI_JOURS (src/lib/offre.ts) ou de rien. Tout autre calcul — « prochain lundi », ancre hebdomadaire, constante locale — finit par diverger, et le visiteur lit un chiffre différent d’une page à l’autre dans le même tunnel.',
+  },
+  {
+    // Un prix « par jour » doit se dériver du prix, pas être écrit à la main.
+    concerne: /€\s*\/\s*jour|par\s+jour[^.]{0,20}€|\d,\d{2}\s*€\s*(par\s+)?jour/i,
+    exige: /PRIX_MENSUEL_CENTIMES|PRIX_ANNUEL_CENTIMES|FORMULES/,
+    quoi: 'un prix « par jour » écrit à la main',
+    pourquoi:
+      '29,99 €/mois = 1,00 €/jour ; 249,99 €/an = 0,68 €/jour. Tout autre chiffre (1,42 € a été mesuré en production) ne correspond à aucune formule vendable. Dérive-le de src/lib/offre.ts.',
+  },
+]
+
 // ─── Contrôle ───────────────────────────────────────────────────────────────
 
 const infractions = []
 
 for (const chemin of fichiers(RACINE)) {
   if (EXEMPTS.some((e) => chemin.includes(e))) continue
-  const affiche = texteAffiche(readFileSync(chemin, 'utf8'))
+  const source = readFileSync(chemin, 'utf8')
+  const affiche = texteAffiche(source)
+
+  // Structurel : la VALEUR vient-elle de la source unique ?
+  for (const regle of REGLES_STRUCTURELLES) {
+    if (regle.concerne.test(affiche) && !regle.exige.test(source)) {
+      infractions.push({
+        fichier: chemin,
+        quoi: regle.quoi,
+        pourquoi: regle.pourquoi,
+        extrait: (affiche.match(regle.concerne) || [''])[0],
+      })
+    }
+  }
+
   for (const regle of REGLES) {
     if (regle.exceptions?.some((ex) => ex.test(chemin))) continue
     const m = affiche.match(regle.motif)

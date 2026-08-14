@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import { COMMUNAUTE } from '@/lib/verite-commerciale'
 import TestimonialCarousel from './TestimonialCarousel'
 
 /**
@@ -43,7 +44,11 @@ export default function ZoneSocialProof() {
             className="text-[#00D4FF]/85 t-eyebrow mb-3"
             style={{ letterSpacing: '0.28em' }}
           >
-            6 CHAUFFEURS · LEUR VISAGE · LEUR VOIX
+            {/* 14/08/2026 — le « 6 » était écrit en dur ici et à deux autres
+                endroits de la page. Il vient maintenant du canon
+                (COMMUNAUTE.temoignagesVideoReels), pour qu'il ne puisse plus
+                diverger du nombre réel de vidéos consenties. */}
+            {COMMUNAUTE.temoignagesVideoReels} CHAUFFEURS · LEUR VISAGE · LEUR VOIX
           </p>
           <h2
             className="t-display-l text-[#F8FAFC] mb-3"
@@ -72,7 +77,7 @@ export default function ZoneSocialProof() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-center text-white/45 t-caption mb-6 max-w-xl mx-auto"
         >
-          Ces 6 chauffeurs ont accepté que leur visage et leur voix apparaissent. Tu peux leur écrire — l&apos;app FOREAS leur ouvre le DM si tu rejoins.
+          Ces {COMMUNAUTE.temoignagesVideoReels} chauffeurs ont accepté que leur visage et leur voix apparaissent. Tu peux leur écrire — l&apos;app FOREAS leur ouvre le DM si tu rejoins.
         </motion.p>
 
         {/* CTA */}
@@ -91,7 +96,16 @@ export default function ZoneSocialProof() {
             className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-2xl t-body-bold transition-all bg-white/[0.06] border border-white/[0.10] hover:bg-white/[0.10] hover:border-white/[0.18] text-[#F8FAFC]"
           >
             <MessageCircle className="w-4 h-4" />
-            Demander à Ajnaya 12 autres cas
+            {/* CE QUI ÉTAIT FAUX — « 12 autres cas » annonçait 12 témoignages en
+                plus des 6 vidéos, soit 18 au total. Mesure :
+                `select count(*) from pieuvre_closer_testimonials` → 3 lignes,
+                dont « Demo FOREAS » (fabriqué) et deux qui font DOUBLON avec des
+                vidéos déjà affichées ici (Binaté, Zefi Kitengue). Il n'existe
+                donc 0 cas supplémentaire — et la base ne compte que 30 chauffeurs
+                inscrits pour 4 abonnements actifs. Proposer une rencontre avec
+                l'un des six est vrai, vérifiable, et engage bien plus qu'un
+                catalogue de cas que personne ne pourrait montrer. */}
+            Demander à Ajnaya de te présenter l&apos;un d&apos;eux
             <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>

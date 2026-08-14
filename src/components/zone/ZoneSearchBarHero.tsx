@@ -121,7 +121,13 @@ export default function ZoneSearchBarHero() {
         })
       }
     } catch {
-      // Silencieux côté UX, fallback affiché
+      // CE QUI ÉTAIT FAUX — ce `catch` fabriquait un repli « Aéroport CDG,
+      // 41,80 €/h ». Mesure : ce 41,80 ne vient d'aucune course, c'est la
+      // constante `airport` écrite en dur dans get_zone_stats (28 / 29 / 33 /
+      // 34,50 / 41,80 selon le TYPE de zone) ; pieuvre_rides sur 7 jours → 0.
+      // Un repli qui fabrique une valeur crédible est pire qu'une panne visible
+      // (src/lib/provenance.ts) : il embellit la page au moment où elle casse.
+      // On dit qu'on ne sait pas, et la carte bascule sur WhatsApp.
       setStats({
         zone_match: zone,
         avg_hourly: 0,
@@ -131,7 +137,7 @@ export default function ZoneSearchBarHero() {
         week_iso: '',
         last_updated: new Date().toISOString(),
         has_data: false,
-        fallback_zone: { name: 'Aéroport CDG', avg_hourly: 41.8 },
+        provenance: 'indisponible',
       })
     } finally {
       setLoading(false)
@@ -180,7 +186,11 @@ export default function ZoneSearchBarHero() {
           className="text-[#00D4FF] text-[10px] font-extrabold uppercase mb-6"
           style={{ letterSpacing: '0.28em' }}
         >
-          FOREAS · IA · MOBILITÉ INTELLIGENTE
+          {/* 14/08/2026 — disait « FOREAS · IA · MOBILITÉ INTELLIGENTE ». Le mot
+              « IA » est banni du site (verite-commerciale.ts MOT_INTERDIT_IA) :
+              Ajnaya a un nom, on l'emploie. C'est la toute première ligne que
+              lit un chauffeur sur la page — autant qu'elle nomme le produit. */}
+          FOREAS · AJNAYA · MOBILITÉ INTELLIGENTE
         </motion.p>
 
         {/* H1 — Niveau L2 hero */}
@@ -191,9 +201,12 @@ export default function ZoneSearchBarHero() {
           className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] mb-3 text-[#F8FAFC]"
           style={{ letterSpacing: '-0.045em' }}
         >
-          Gagnez plus.{' '}
+          {/* 14/08/2026 — était au vouvoiement (« Gagnez plus. Roulez moins. »).
+              La voix FOREAS est le tutoiement pro : on vouvoie les clients, on
+              tutoie les chauffeurs. Cette page ne parle qu'à des chauffeurs. */}
+          Gagne plus.{' '}
           <span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">
-            Roulez moins.
+            Roule moins.
           </span>
         </motion.h1>
 
@@ -204,7 +217,15 @@ export default function ZoneSearchBarHero() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-white/70 text-base sm:text-lg mb-10 leading-relaxed max-w-xl mx-auto"
         >
-          Tapez votre zone. Ajnaya vous dit où ça paie ce soir.
+          {/* CE QUI ÉTAIT FAUX — « Ajnaya vous dit où ça paie ce soir ».
+              Mesuré EN PRODUCTION : curl /api/home/zone-stats sur CDG, La Défense,
+              Bercy, Lyon Part-Dieu, Marseille → les 5 renvoient has_data:false,
+              avg_hourly:0, courses_count:0. La RPC get_zone_stats agrège
+              pieuvre_rides sur 7 jours et exige ≥5 courses ; sur 7 jours il y en
+              a 0. Aucune zone ne peut produire le chiffre promis, et « ce soir »
+              est interdit par verite-commerciale.ts (jamais « en direct »).
+              Ce qui suit est ce que la page fait dans 100 % des cas mesurés. */}
+          Tape ta zone. Ajnaya te répond sur WhatsApp.
         </motion.p>
 
         {/* Search bar — glass card focus cyan glow */}
@@ -220,12 +241,14 @@ export default function ZoneSearchBarHero() {
             style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(0,212,255,0.20)' }}
           >
             <MapPin className="w-5 h-5 text-cyan-300 flex-shrink-0" />
+            {/* 14/08/2026 — le placeholder disait « Tapez votre zone… » :
+                vouvoiement, alors que la voix FOREAS est le tutoiement pro. */}
             <input
               ref={inputRef}
               type="text"
               value={zoneInput}
               onChange={(e) => setZoneInput(e.target.value)}
-              placeholder={hasInteracted ? 'Tapez votre zone…' : animatedPlaceholder}
+              placeholder={hasInteracted ? 'Tape ta zone…' : animatedPlaceholder}
               autoComplete="off"
               spellCheck={false}
               className="flex-1 bg-transparent border-none outline-none text-[#F8FAFC] placeholder-white/30 text-base sm:text-lg font-medium"

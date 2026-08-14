@@ -3,29 +3,89 @@
 import { motion } from 'framer-motion'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { Brain, Database, Zap, Shield, Globe, Cpu } from 'lucide-react'
+import { Layers, Database, Zap, Shield, Globe, Cpu } from 'lucide-react'
+import { PLATEFORMES } from '@/lib/verite-commerciale'
+
+/**
+ * TECH-04 + TECH-05 — « <100ms » était affiché DEUX FOIS sur cette page (tuile
+ * Architecture + bloc Stats). Mesure du 14/08/2026 : 8 appels sur l'endpoint que
+ * l'app appelle réellement (ZoneDecisionEngine → /api/zones/live) → 751, 206,
+ * 158, 153, 146, 151, 154, 159 ms. AUCUNE réponse sous 100 ms ; min 146 ms,
+ * médiane ~154 ms. Le client lui-même prévoit un budget de 4000 ms.
+ * Une seule constante pour les deux emplacements : un chiffre écrit deux fois
+ * finit toujours par n'être corrigé qu'une fois.
+ */
+const LATENCE_MESUREE = '~150 ms'
+
+/**
+ * Nombre de sources croisées à chaque calcul de zone. Mesuré le 14/08/2026 dans
+ * la réponse de production de /api/zones/live :
+ * sourcesUsed: ["openweather","sncf","tomtom","idfm","bolt"] → 5.
+ */
+const SOURCES_CROISEES = 5
+
+/** Prédictions posées depuis la création de la table. `select count(*) from zone_predictions` → 295 (14/08/2026). */
+const PREDICTIONS_POSEES = 295
 
 const techFeatures = [
-  { icon: Brain, title: 'Deep Learning', desc: '87% précision.' },
-  { icon: Database, title: 'Courses réelles', desc: 'Ce qui a vraiment été roulé.' },
-  { icon: Zap, title: '<100ms', desc: 'Latence recommandation.' },
-  { icon: Shield, title: 'RGPD natif', desc: 'Chiffrement E2E.' },
+  // TECH-02 — « Deep Learning · 87% précision » : aucun modèle entraîné n'existe
+  // (behavior_models : 30 lignes, sum(training_data_points) = 0 ; finder_ml_weights,
+  // bandit_top_zones, pieuvre_zone_intelligence : 0 ligne ; aucune dépendance
+  // d'inférence dans le package.json de l'app). Le moteur en ligne attribue chaque
+  // zone à sources:["pattern"] — des règles, pas un réseau de neurones.
+  { icon: Layers, title: 'Fusion de sources', desc: 'Météo, SNCF, IDFM, trafic — recoupés zone par zone.' },
+  // TECH-09 — « Courses réelles · ce qui a vraiment été roulé » : ce n'est pas ce
+  // que le moteur lit. rides = 18 lignes, dernière le 30/04/2026, et 0 ligne avec
+  // pickup_lat → aucune course n'est rattachable à une zone. Les 295 prédictions
+  // portent à 100 % sur 9 zones semées (heatmap_zones : source='seed_v1' sur 30/30).
+  { icon: Database, title: 'Sources publiques', desc: 'Rien d’opaque : chaque source est vérifiable.' },
+  // TECH-04 — voir LATENCE_MESUREE ci-dessus.
+  { icon: Zap, title: LATENCE_MESUREE, desc: 'Latence recommandation, mesurée.' },
+  // TECH-06 — « Chiffrement E2E » : le E2E signifie que le serveur ne peut PAS lire.
+  // Or au 14/08/2026 une simple regex SQL sur `drivers` sort 11 e-mails, 5 téléphones
+  // et 14 prénoms en clair (email text, phone varchar, first_name varchar — aucune
+  // colonne chiffrée). « Chiffré en transit et au repos » est vrai et défendable.
+  { icon: Shield, title: 'RGPD natif', desc: 'Chiffré en transit et au repos.' },
   { icon: Globe, title: 'Scalable', desc: 'Cloud-native.' },
-  { icon: Cpu, title: 'Edge AI', desc: 'Fonctionne offline.' },
+  // TECH-07 — « Edge AI · fonctionne offline » : aucune intelligence embarquée
+  // n'existe (0 dépendance d'inférence dans FOREAS-Clean/package.json) et
+  // ZoneDecisionEngine va chercher les zones sur le backend DISTANT puis renvoie
+  // null s'il est injoignable. Ce qui survit vraiment au réseau coupé, c'est une
+  // file d'attente (OFFLINE_QUEUE_KEY) et un mode dégradé d'initialisation.
+  { icon: Cpu, title: 'Mode dégradé', desc: 'L’app reste utilisable sans réseau, elle rattrape ensuite.' },
 ]
 
 const steps = [
   { num: '01', title: 'Collecte', desc: 'Terrain, météo, événements' },
-  { num: '02', title: 'Analyse', desc: 'ML temps réel' },
+  // TECH-08 — « ML temps réel » : aucun apprentissage ne tourne. behavior_models :
+  // 30 lignes, training_data_points = 0 sur les 30 ; finder_ml_weights = 0 ligne.
+  // La production renvoie sources:["pattern"] — une table de motifs horaires figés.
+  { num: '02', title: 'Recoupement', desc: 'Météo, transports, trafic croisés' },
   { num: '03', title: 'Prédiction', desc: 'Zone par zone' },
   { num: '04', title: 'Action', desc: 'Recommandation immédiate' },
 ]
 
 const stats = [
-  { value: '87%', label: 'Précision' },
-  { value: '<100ms', label: 'Latence' },
-  { value: '10M+', label: 'Prédictions/jour' },
-  { value: '99.9%', label: 'Uptime' },
+  // TECH-01 — « 87% Précision » : rien n'a jamais été vérifié. zone_predictions =
+  // 295 lignes, was_right NULL sur 100 % ; zone_reliability : 9 zones, sample_size=0
+  // et accuracy_pct NULL sur les 9 ; ai_predictions, prediction_monitoring,
+  // ajnaya_prediction_feedback, pieuvre_surge_predictions = 0 ligne.
+  // On affiche le seul chiffre qu'on sait compter : le volume posé.
+  // Aucun pourcentage de précision ne revient tant que zone_reliability.accuracy_pct
+  // est NULL. Vérification terrain en cours.
+  { value: String(PREDICTIONS_POSEES), label: 'Prédictions posées à ce jour' },
+  // TECH-05 — second emplacement du « <100ms ». Même constante que la tuile.
+  { value: LATENCE_MESUREE, label: 'Latence mesurée' },
+  // TECH-03 — « 10M+ Prédictions/jour » : le record absolu est de 38 prédictions
+  // en une journée (05/07/2026), et 295 en cumulé toutes époques confondues.
+  // 10 000 000/jour = 263 000 fois le record. Remplacé par une mesure vraie :
+  // sourcesUsed:["openweather","sncf","tomtom","idfm","bolt"] (production, 14/08).
+  { value: String(SOURCES_CROISEES), label: 'Sources croisées' },
+  // « 99.9% Uptime » : chiffre écrit en dur, relié à aucune mesure ni à aucune
+  // sonde. Règle du canon — un chiffre public vient d'une mesure ou ne s'affiche
+  // pas. Remplacé par une valeur qui, elle, sort de src/lib/verite-commerciale.ts
+  // (select distinct platform from rides → Uber, Bolt, Heetch).
+  { value: String(PLATEFORMES.nombre), label: 'Plateformes au même endroit' },
 ]
 
 export default function TechnologiePage() {

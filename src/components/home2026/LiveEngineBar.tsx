@@ -4,19 +4,26 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /**
- * LiveEngineBar — bandeau "moteur en direct" (Site2026v101)
+ * LiveEngineBar — bandeau "ce qu'Ajnaya croise" (Site2026v101)
  *
  * Remplace l'idée d'un faux "X chauffeurs en ligne" par la VRAIE force, dynamique
- * et crédible : le moteur temps réel d'Ajnaya. Aucun chiffre inventé, aucun compteur
- * d'utilisateur exposé — juste ce qu'Ajnaya lit, qui défile pour montrer que ça vit.
+ * et crédible : les signaux qu'Ajnaya croise. Aucun chiffre inventé, aucun compteur
+ * d'utilisateur exposé.
+ *
+ * ⚠️ Ce composant n'est monté par aucune page aujourd'hui. Avant de le remonter,
+ * relire les deux corrections du 14/08/2026 ci-dessous — elles sont la raison
+ * pour laquelle il ne doit pas revenir tel qu'il était.
  *
  * - foreas-copy-atomic : mécanisme vrai (Schwartz N3), preuve testable, 0 bluff.
  * - foreas-design-system : variant violet (Ajnaya "pulse"), échelle typo UNIQUE
  *   (eyebrow 10px / corps 14px), Inter (font-sans), tabular-nums sur les chiffres.
  */
 
-// Ce qu'Ajnaya croise réellement, en continu (rien d'inventé).
-const SIGNAUX = ['Uber', 'Bolt', 'Heetch', 'FreeNow', 'le trafic', 'les vols', 'la météo'] as const
+// 14/08/2026 — la liste contenait 'FreeNow' sous un commentaire qui jurait
+// « rien d'inventé ». Mesuré : select count(*) from rides where platform ilike
+// '%free%' → 0, et select distinct platform from rides → Bolt, Heetch, Private,
+// Uber. FreeNow n'existe nulle part dans la donnée. Retiré.
+const SIGNAUX = ['Uber', 'Bolt', 'Heetch', 'le trafic', 'les vols', 'la météo'] as const
 
 export default function LiveEngineBar() {
   const [i, setI] = useState(0)
@@ -28,7 +35,7 @@ export default function LiveEngineBar() {
 
   return (
     <section
-      aria-label="Moteur Ajnaya en direct"
+      aria-label="Ce qu'Ajnaya croise"
       className="flex justify-center px-5 pt-2 pb-8"
       style={{ backgroundColor: 'var(--bg-cream-warm)' }}
     >
@@ -39,7 +46,9 @@ export default function LiveEngineBar() {
           border: '1px solid rgba(140,82,255,0.14)',
         }}
       >
-        {/* Point qui respire + eyebrow "EN DIRECT" */}
+        {/* 14/08/2026 — l'eyebrow disait « EN DIRECT ». Rien ne tourne en continu :
+            driver_ride_features, pieuvre_h3_demand_zones, extracted_surge_data →
+            0 ligne chacune. Le nom de la marque, lui, se prouve tout seul. */}
         <span className="inline-flex items-center gap-2">
           <span className="relative flex w-2 h-2" aria-hidden="true">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8C52FF] opacity-60" />
@@ -49,7 +58,7 @@ export default function LiveEngineBar() {
             className="text-[10px] font-bold uppercase"
             style={{ color: '#6C3CE0', letterSpacing: '0.18em' }}
           >
-            En direct
+            Ajnaya
           </span>
         </span>
 

@@ -8,8 +8,8 @@ import { Layers, Database, Clock, LogOut, MessageSquare } from 'lucide-react'
  *
  * Spec :
  * - Fond crème edge (#EAE4D5) — transition douce vers le noir
- * - 6 micro-credentials VRAIS en horizontal : Fait en France · 7 plateformes lues ·
- *   Données réelles · 0€ pour tester · Tu pars quand tu veux · WhatsApp
+ * - 6 micro-credentials VRAIS en horizontal : Fait en France · tes 3 apps réunies ·
+ *   52 zones couvertes · ta zone en 10 sec · tu pars quand tu veux · WhatsApp
  * - Mobile : grid 2x3, scroll horizontal possible
  * - Desktop : ligne unique avec séparateurs subtils
  *
@@ -33,8 +33,16 @@ export default function HomeProofStrip() {
     },
     {
       icon: Database,
-      label: 'Données réelles',
-      detail: 'pas une promesse',
+      // 14/08/2026 — disait « Données réelles · pas une promesse ». Mesuré en
+      // production : POST /api/ajnaya/home-modal renvoie data_source:"none",
+      // data_state:"NO_DATA_COLLECTED_YET", has_data:false, real_courses:0 sur
+      // les deux zones testées ; en base rides → 18 lignes / 0 depuis 30 jours,
+      // collective_zone_stats_anon, pieuvre_zone_intelligence,
+      // pieuvre_h3_demand_zones, extracted_surge_data → 0 ligne chacune.
+      // Remplacé par le seul fait chiffré que cette bande peut prouver :
+      // select count(*) from zones_canonical → 52.
+      label: '52 zones couvertes',
+      detail: 'comptées, pas arrondies',
     },
     {
       icon: Clock,

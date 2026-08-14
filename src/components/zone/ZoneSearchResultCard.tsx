@@ -27,8 +27,16 @@ interface ZoneSearchResultCardProps {
 }
 
 // Réassurance sous chaque CTA WhatsApp (validée Chandler : ni "humain" ni "IA", juste ça).
+//
+// CE QUI ÉTAIT FAUX — « Réponse en moins d'1 min », écrit sans réserve.
+// Mesuré sur les vrais échanges WhatsApp (pieuvre_conversations, appariement
+// inbound → premier outbound du même prospect) : 63 paires mesurables, médiane
+// 30,9 s, mais seulement 47/63 = 74,6 % sous 60 s. Une réponse sur quatre
+// dépassait la minute promise. « Souvent » dit exactement ce que la mesure
+// montre — et une promesse tenue 3 fois sur 4 vaut mieux qu'une promesse
+// démentie 1 fois sur 4 par le premier chauffeur qui essaie.
 function WaReassurance() {
-  return <p className="mt-2 text-center text-[11px] text-white/45">Réponse en moins d&apos;1 min · gratuit</p>
+  return <p className="mt-2 text-center text-[11px] text-white/45">Souvent moins d&apos;une minute · gratuit</p>
 }
 
 /**
@@ -61,14 +69,27 @@ export default function ZoneSearchResultCard({
             className="text-cyan-300/85 text-[10px] font-extrabold uppercase"
             style={{ letterSpacing: '0.28em' }}
           >
-            {stats.zone_match} · EN DIRECT SUR WHATSAPP
+            {/* 14/08/2026 — disait « EN DIRECT ». Même mesure que la réassurance
+                ci-dessus : médiane 30,9 s mais 25 % des réponses au-delà d'une
+                minute, et verite-commerciale.ts interdit « en direct ». */}
+            {stats.zone_match} · RÉPONSE SUR WHATSAPP
           </p>
         </div>
+        {/* CE QUI ÉTAIT FAUX — ce bloc disait « je ne la donne pas en public,
+            elle bouge trop vite » puis « elle te répond avec ce qu'elle a vu
+            passer là, à cette heure-ci ». Deux affirmations démenties par la
+            même mesure : `select count(*) from pieuvre_rides where created_at
+            >= now()-interval '7 days'` → 0, dernière course de toute la base le
+            30/04/2026, et courses_count=0 sur les 5 zones testées en production.
+            Rien n'est retenu par prudence : il n'y a rien à retenir, et rien
+            n'a été « vu passer » à aucune heure. On le dit — c'est exactement
+            ce que prévoit src/lib/provenance.ts, et c'est ce qui rend le
+            chiffre croyable le jour où il arrive. */}
         <p className="text-[#F8FAFC] text-base sm:text-lg leading-relaxed mb-2">
-          <span className="font-semibold">{stats.zone_match}</span>, je ne la donne pas en public — elle bouge trop vite.
+          <span className="font-semibold">{stats.zone_match}</span> : pas encore assez de courses mesurées ici pour t&apos;annoncer un chiffre. On préfère te le dire.
         </p>
         <p className="text-white/65 text-sm leading-relaxed mb-5">
-          Mais Ajnaya la connaît. Demande-lui le chiffre de ta zone : elle te répond avec ce qu&apos;elle a vu passer là, à cette heure-ci.
+          Demande ta zone à Ajnaya : elle te dit ce qu&apos;elle sait, et ce qu&apos;elle ne sait pas encore.
         </p>
         <a
           href={waUrl}
@@ -79,7 +100,12 @@ export default function ZoneSearchResultCard({
           style={{ boxShadow: '0 0 28px rgba(16,185,129,0.40)' }}
         >
           <MessageCircle className="w-4 h-4" />
-          Demander le chiffre de {stats.zone_match} à Ajnaya
+          {/* 14/08/2026 — disait « Demander LE CHIFFRE de {zone} à Ajnaya ».
+              Ce bouton ne s'affiche QUE quand has_data=false, c'est-à-dire quand
+              il n'existe aucun chiffre mesuré (0 course sur 7 jours) : il
+              promettait précisément ce que le paragraphe juste au-dessus vient
+              de dire qu'on n'a pas. */}
+          Demander {stats.zone_match} à Ajnaya
           <ArrowRight className="w-4 h-4" />
         </a>
         <WaReassurance />
@@ -110,7 +136,15 @@ export default function ZoneSearchResultCard({
             className="text-[#00D4FF] text-[10px] font-extrabold uppercase"
             style={{ letterSpacing: '0.28em' }}
           >
-            {stats.zone_match} · CE SOIR
+            {/* CE QUI ÉTAIT FAUX — « CE SOIR ». Faux par construction : la RPC
+                get_zone_stats (source relue dans pg_proc.prosrc) agrège
+                `where r.created_at >= now() - interval '7 days'` — une semaine,
+                pas une soirée. La légende 40 lignes plus bas disait déjà
+                « semaine {week_iso} » : le même bloc annonçait « ce soir » ET
+                « semaine » pour le même chiffre. Branche dormante aujourd'hui
+                (has_data=false partout) mais déployée : elle s'affiche dès la
+                5ᵉ course dans une zone, donc elle se corrige maintenant. */}
+            {stats.zone_match} · 7 DERNIERS JOURS
           </p>
         </div>
         <p
@@ -152,9 +186,14 @@ export default function ZoneSearchResultCard({
           <p className="text-white/50 text-[10px] uppercase mb-1" style={{ letterSpacing: '0.2em' }}>
             Demande relative
           </p>
+          {/* CE QUI ÉTAIT FAUX — l'étiquette « vs lundi ». La RPC calcule
+              (courses des 24 dernières heures) / (moyenne quotidienne des 7
+              derniers jours) − 100 — source SQL relue dans pg_proc. Lundi
+              n'intervient nulle part dans le calcul : l'étiquette nommait une
+              référence que le chiffre n'utilise pas. */}
           <p className="text-2xl sm:text-3xl font-black tabular-nums text-green-400" style={{ letterSpacing: '-0.03em' }}>
             ▲ {stats.demand_delta_pct}%
-            <span className="text-white/40 text-xs font-medium ml-1">vs lundi</span>
+            <span className="text-white/40 text-xs font-medium ml-1">vs moyenne 7 jours</span>
           </p>
         </div>
         <div>
@@ -165,9 +204,14 @@ export default function ZoneSearchResultCard({
         </div>
       </div>
 
-      {/* Caption source honnête */}
+      {/* Caption source honnête.
+          14/08/2026 — disait « de la flotte FOREAS ». Mesure : drivers → 30
+          inscrits, 9 marqués actifs, 0 actif sur 24 h (verite-commerciale.ts
+          §1). Le mot « flotte » promet une échelle qui n'existe pas — et il
+          affaiblit le chiffre au lieu de le renforcer : ce qui rend une moyenne
+          crédible, c'est de dire où elle a été comptée, pas de qui. */}
       <p className="text-white/45 text-xs mb-5 tabular-nums">
-        Basé sur <span className="text-white/65 font-semibold">{stats.courses_count} courses</span> de la flotte FOREAS · semaine {stats.week_iso}
+        Basé sur <span className="text-white/65 font-semibold">{stats.courses_count} courses</span> enregistrées dans cette zone · semaine {stats.week_iso}
       </p>
 
       {/* Sarcastic guard intégré */}

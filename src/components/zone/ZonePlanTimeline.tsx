@@ -74,11 +74,22 @@ export default function ZonePlanTimeline() {
             desc="Pas de carte. Pas de formulaire. Un message, c'est tout."
             delay={0}
           />
+          {/* CE QUI ÉTAIT FAUX — « CHAQUE MATIN — Ajnaya t'envoie tes zones. Au
+              réveil, dans WhatsApp. » Une étape présentée au présent comme un
+              service déjà rendu. Mesures sur pieuvre_conversations : 312
+              messages WhatsApp sortants au total, dont 0 avec driver_id
+              renseigné — aucun message n'a jamais été envoyé à un chauffeur
+              inscrit. Sur le créneau 5h-11h (Europe/Paris) : 87 messages,
+              répartis sur 9 jours seulement, vers 2 destinataires distincts, le
+              maximum pour un même destinataire étant 5 matins. Ni quotidienneté,
+              ni destinataire chauffeur. L'étape 2 réelle, celle qui tourne
+              aujourd'hui et qu'on peut tenir devant n'importe qui : il écrit,
+              elle répond. */}
           <PlanStep
             n={2}
-            timestamp="CHAQUE MATIN"
-            title="Ajnaya t'envoie tes zones"
-            desc="Au réveil, dans WhatsApp. Tu conduis comme d'habitude."
+            timestamp="QUAND TU LUI ÉCRIS"
+            title="Tu demandes, elle répond"
+            desc="Avant de partir, tu lui écris. Elle te dit ce qu'elle sait — et ce qu'elle ne sait pas encore."
             delay={0.1}
           />
           <PlanStep

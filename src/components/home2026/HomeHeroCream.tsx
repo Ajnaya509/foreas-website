@@ -162,9 +162,14 @@ export default function HomeHeroCream() {
 
   return (
     <>
+      {/* 14/08/2026 — l'étiquette lue par les lecteurs d'écran annonçait un
+          « tarif horaire VTC en direct ». C'est du texte public, et c'est faux :
+          l'API zone renvoie is_estimate=true, data_source:"none",
+          data_state:"NO_DATA_COLLECTED_YET". On décrit ce que la section fait
+          vraiment. */}
       <section
         className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-cream-warm-textured"
-        aria-label="Tarif horaire VTC en direct"
+        aria-label="Donne ta zone, Ajnaya te répond"
       >
         {/* ─── Apple Vision Pro spatial halos ───────────────────────────────
            4 blobs colorés diffus qui drift lentement en background.
@@ -282,11 +287,19 @@ export default function HomeHeroCream() {
             className="t-bodylg leading-relaxed mb-10 sm:mb-12 max-w-2xl mx-auto"
             style={{ color: '#6e6e73' }}
           >
-            Donne ta zone. Ajnaya lit{' '}
+            {/* 14/08/2026 — disait « …et te dit ce que paie ta zone ce soir ».
+                Mesuré en production sur deux des zones proposées juste en dessous :
+                POST /api/ajnaya/home-modal → « Aéroport CDG » et « La Défense »
+                répondent has_data:false, data_state:"NO_DATA_COLLECTED_YET",
+                data_source:"none", avg_hourly:0. En base : rides → 18 lignes au
+                total, 0 depuis 30 jours, dernière le 2026-04-30. Aucune zone ne
+                peut dire ce qu'elle paie ce soir. Ce qui est vrai aujourd'hui :
+                tes courses réunies. Le reste s'écrit au futur (verite-commerciale §5). */}
+            Donne ta zone. Ajnaya rassemble tes courses{' '}
             <strong style={{ color: '#1d1d1f', fontWeight: 700 }}>
               Uber, Bolt, Heetch
             </strong>{' '}
-            et te dit ce que paie ta zone ce soir — avant de démarrer.
+            au même endroit — et te dira ce que paie ta zone dès que la donnée sera là.
           </motion.p>
 
           {/* Search bar — blanc pur Apple avec ombre précise */}
@@ -544,13 +557,14 @@ export default function HomeHeroCream() {
               >
                 52 zones
               </span>
-              <span style={{ color: '#d2d2d7' }} aria-hidden="true">·</span>
-              <span
-                className="text-[11px] font-medium"
-                style={{ color: '#86868b' }}
-              >
-                données réelles
-              </span>
+              {/* 14/08/2026 — le maillon du milieu disait « données réelles ».
+                  Mesuré : POST /api/ajnaya/home-modal en production renvoie
+                  data_source:"none", data_state:"NO_DATA_COLLECTED_YET",
+                  has_data:false sur les deux zones testées ; rides → 18 lignes,
+                  0 depuis 30 jours. Les deux voisines, elles, tiennent :
+                  « 52 zones » (select count(*) from zones_canonical → 52) et
+                  « sans inscription » (l'appel API n'exige aucune authentification).
+                  On garde les deux qui se prouvent, on retire celle qui ne se prouve pas. */}
               <span style={{ color: '#d2d2d7' }} aria-hidden="true">·</span>
               <span
                 className="text-[11px] font-medium"

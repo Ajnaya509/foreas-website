@@ -31,6 +31,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X, Sparkles, ArrowRight } from 'lucide-react'
 import { haptic } from '@/lib/haptic'
 import { useOverlayLock } from '@/lib/overlayStore'
+// 14/08/2026 — la durée d'essai était écrite « 3 » en dur dans le JSX. Un chiffre
+// qui vit à deux endroits finit toujours par diverger : il vient d'ici, ou de rien.
+import { ESSAI_JOURS } from '@/lib/offre'
 
 const SESSION_KEY = 'foreas_exit_intent_shown'
 const ENGAGEMENT_KEY = 'foreas_widget_opened'
@@ -235,7 +238,8 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
                   letterSpacing: '-0.022em',
                 }}
               >
-                On vous envoie votre audit zone{' '}
+                {/* 14/08/2026 — vouvoiement : la voix FOREAS tutoie (pro, direct). */}
+                On t&rsquo;envoie ton audit zone{' '}
                 <span
                   className="italic"
                   style={{
@@ -252,11 +256,19 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
                 sur WhatsApp.
               </h2>
 
+              {/* 14/08/2026 — promettait « Tarif moyen, créneaux qui paient, zones à
+                  éviter ce soir ». Rien ne peut tenir ça : POST /api/ajnaya/home-modal
+                  en production répond has_data:false, data_source:"none",
+                  data_state:"NO_DATA_COLLECTED_YET", avg_hourly:0 ; en base rides →
+                  18 lignes au total, 0 depuis 30 jours, dernière le 2026-04-30. Ce qui
+                  est vrai et tenable : Ajnaya répond, et dit ce qu'elle ne sait pas
+                  encore. Le vouvoiement partait avec. */}
               <p className="t-body leading-relaxed mb-6" style={{ color: '#6e6e73' }}>
-                Tarif moyen, créneaux qui paient, zones à éviter ce soir.
+                Tu donnes ta zone, Ajnaya te répond. Ce qu&rsquo;elle sait, elle le dit —
+                ce qu&rsquo;elle ne sait pas encore aussi.
                 <br />
-                <strong style={{ color: '#1d1d1f' }}>2 minutes</strong> · sans inscription · vous
-                gardez votre app habituelle.
+                <strong style={{ color: '#1d1d1f' }}>2 minutes</strong> · sans inscription · tu
+                gardes ton app habituelle.
               </p>
 
               <a
@@ -286,7 +298,7 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
 
               <div className="flex items-center justify-center gap-4 mt-5 text-[10px]" style={{ color: '#a1a1a6' }}>
                 <span>· Sans engagement ·</span>
-                <span>Essai 3 jours · 0€</span>
+                <span>Essai {ESSAI_JOURS} jours · 0€ débité</span>
               </div>
             </div>
           </motion.div>

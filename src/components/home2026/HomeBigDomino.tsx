@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
  * - Big Domino (identification stratégique + crédibilité)
  *   "Pendant que tu tournes à vide,
  *    l'appli sait déjà où sont les courses."
- * - Sub-line crédibilité : "Ajnaya lit la demande sur 52 zones.
+ * - Sub-line crédibilité : "Ajnaya couvre 52 zones.
  *    Toi, tu conduis. Elle, elle calcule."
  * - Fond dégradé crème (#F8F4ED) → noir Apple absolu (#000000)
  *
@@ -23,7 +23,8 @@ import { motion } from 'framer-motion'
  * Skill foreas-copy-atomic :
  * - Tutoiement professionnel, sobre
  * - Tension douleur (tourner à vide) → résolution (l'appli sait déjà)
- * - Crédibilité honnête (51 zones, pas de pastille "live" mensongère)
+ * - Crédibilité honnête (52 zones — select count(*) from zones_canonical,
+ *   mesuré le 14/08/2026 ; pas de pastille "live" mensongère)
  */
 export default function HomeBigDomino() {
   return (
@@ -87,7 +88,14 @@ export default function HomeBigDomino() {
           className="mx-auto max-w-2xl t-bodylg"
           style={{ color: 'rgba(248, 250, 252, 0.7)' }}
         >
-          Ajnaya lit la demande sur{' '}
+          {/* 14/08/2026 — disait « Ajnaya lit la demande sur 52 zones ». Le nombre
+              est juste (select count(*) from zones_canonical → 52) ; c'est « lit la
+              demande » qui ne tient pas : pieuvre_h3_demand_zones,
+              pieuvre_zone_intelligence, collective_zone_stats_anon,
+              extracted_surge_data, pieuvre_surge_predictions → 0 ligne chacune, et
+              l'API zone répond NO_DATA_COLLECTED_YET en production. « couvre » se
+              prouve par zones_canonical ; « lit la demande » ne se prouve par rien. */}
+          Ajnaya couvre{' '}
           <span className="tabular-nums" style={{ color: 'rgba(248, 250, 252, 0.92)' }}>
             52&nbsp;zones
           </span>

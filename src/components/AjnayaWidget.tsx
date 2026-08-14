@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
 import { X, Send, Mic, Volume2, VolumeX } from 'lucide-react'
@@ -24,7 +25,11 @@ const DEFAULT_WELCOME = "Salut, moi c'est Ajnaya. T'es sur quelle zone en ce mom
 // ─── Pre-scripted fallback responses ──────────────────────────────────────────
 const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
   { pattern: /^(salut|bonjour|bonsoir|yo|hey|coucou|hello|allo|allô|slt|bjr|cc|bj|bsr|wesh|oui|ok|d'accord|parfait|super|top|merci|svp|stp)[\s!.,?]*$/i, key: 'greeting', reply: "Salut ! Moi c'est Ajnaya, le copilote des chauffeurs VTC. T'es sur quelle zone en ce moment ?" },
-  { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: "L'abonnement commence à 1,42€/jour avec essai gratuit, 0€ débité. Tous les détails sont sur /tarifs2." },
+  // 14/08/2026 — répondait « L'abonnement commence à 1,42€/jour ». Ce chiffre,
+  // c'est 9,97 €/semaine ÷ 7 : L'ANCIEN TARIF HEBDOMADAIRE, survivant dans la
+  // bouche d'Ajnaya elle-même, sur LA question qui décide (« combien ça coûte »).
+  // 29,99 €/mois donne 1,00 €/jour. Le montant vient maintenant de offre.ts.
+  { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: `L'abonnement est à ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois — moins d'1 € par jour. ${ESSAI_JOURS} jours d'essai, 0 € débité, carte demandée. Tous les détails sur /tarifs2.` },
   { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit pendant 3 jours. 0 € prélevé. Annulation en 1 clic." },
   { pattern: /comment ça marche|fonctionnement|comment|fonctionne/i, key: 'how', reply: 'Je regarde ce que paient vraiment les courses de ta zone, à cette heure-ci, pour te dire où te positionner 15 min avant la demande.' },
   { pattern: /uber|bolt|heetch/i, key: 'platforms', reply: 'Compatible avec toutes les apps VTC. Je ne les remplace pas — je te dis où être pour avoir les meilleures courses.' },

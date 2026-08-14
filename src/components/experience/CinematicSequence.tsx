@@ -37,7 +37,13 @@ const T = {
     { in: 0.34, out: 0.56, lead: 'Lui,', punch: 'personne ne l’a prévenu.', emoji: '😏' },
     // out 0.96 (pas 1.10) : la progression plafonne à 1.0 — même correctif que VerdictSequence
     // (carton fantôme sous le header à la libération du sticky, vu dans le simulateur iOS).
-    { in: 0.66, out: 0.96, lead: 'Toi,', punch: 'ton téléphone a vibré.', emoji: '😌' },
+    // FAUX AU PASSÉ COMPOSÉ (constat EXP-09, 14/08/2026) : « ton téléphone a vibré » met en
+    // scène un événement qui n'a jamais eu lieu une seule fois.
+    // MESURE : `select sum(coalesce(sent_count,0)), count(*) from push_notifications` → 0 envoi
+    // réel sur 990 lignes, dont 989 en `target_type='proximity_alert'` — exactement le mécanisme
+    // mis en scène ici. Aucun téléphone de chauffeur n'a jamais vibré pour une alerte contrôle.
+    // Repasser au passé composé le jour où une ligne a `sent_count > 0`.
+    { in: 0.66, out: 0.96, lead: 'Toi,', punch: 'ton téléphone vibrera.', emoji: '😌' },
   ],
   conclusionAt: 0.84,
 } as const
@@ -92,10 +98,23 @@ function CinemaGrain() {
   )
 }
 
+/**
+ * FAUX DES DEUX CÔTÉS (constat EXP-02, 14/08/2026) : « Un chauffeur signale, tout le monde est
+ * prévenu » affirmait au présent deux choses qui ne se sont jamais produites.
+ * MESURE 1 — `select source, count(*), count(distinct created_by) from community_alerts group by
+ * source` → 1074 alertes, 100 % `source='telegram_scrape'`, `created_by` NULL sur la totalité :
+ * aucun chauffeur n'a jamais signalé quoi que ce soit, les alertes sont récupérées par scraping.
+ * MESURE 2 — `select sum(coalesce(tokens_sent,0)) from community_alerts` → 0, et
+ * `select sum(coalesce(sent_count,0)) from push_notifications` → 0 envoi réel sur 990 lignes ;
+ * `community_broadcasts` → 0 ligne, `community_members` → 0 ligne, `user_push_tokens` → 7.
+ * Donc futur, comme l'exige verite-commerciale.ts §5. Le présent revient quand
+ * `select sum(sent_count) from push_notifications` dépasse 0.
+ * La 2ᵉ ligne reste au présent : le chat Ajnaya, lui, répond vraiment (LivePhone, SSE en prod).
+ */
 const CONCLUSION = (
   <>
-    Un chauffeur signale, tout le monde est prévenu.<br />
-    Demande à Ajnaya ce qui bouge sur ta zone.
+    Un chauffeur signalera, tout le monde sera prévenu.<br />
+    On branche ça. En attendant, demande à Ajnaya ce qui bouge.
   </>
 )
 

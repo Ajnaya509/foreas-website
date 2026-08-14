@@ -45,7 +45,16 @@ const WELCOME_BASE = "Salut, moi c'est Ajnaya."
 // Fallback SSR (bucket réel appliqué après montage, cf. useEffect ci-dessous — calculer la
 // valeur au rendu serveur ferait diverger HTML serveur/client à chaque frontière d'heure,
 // donc un mismatch d'hydratation aléatoire sur la toute première bulle).
-const WELCOME = `${WELCOME_BASE} Ta zone ce soir — je te dis ce qui s'y passe, en vrai.`
+// « en vrai » ÉTAIT FAUX (constat EXP-04, 14/08/2026) — et c'était la toute première promesse
+// de la page, démentie par la source que ce composant interroge lui-même (lookupZone →
+// /api/home/zone-stats). MESURE en production sur les 3 zones proposées en chips :
+// `curl '.../api/home/zone-stats?zone=Opéra'` → {"avg_hourly":0,"courses_count":0,
+// "has_data":false,"fallback_zone":{"note":"type_fallback","avg_hourly":29}} — idem CDG (41,8)
+// et Strasbourg (34,5). Le seul chiffre renvoyé est déduit du TYPE de zone, jamais d'une course.
+// En base : `collective_zone_stats_anon` → 0 ligne ; `rides` → 18 lignes, la dernière du
+// 30/04/2026. On promet donc ce qu'on tient : dire ce qu'on sait ET ce qu'on ne sait pas encore
+// (provenance.ts, EXPLICATION_PROVENANCE.indisponible).
+const WELCOME = `${WELCOME_BASE} Ta zone ce soir — dis-moi laquelle : je te dis ce que je sais, et ce que je ne sais pas encore.`
 const WELCOME_MOMENT: Record<string, string> = { matin: 'ce matin', midi: 'ce midi', 'après-midi': 'cet après-midi', soir: 'ce soir', nuit: 'cette nuit' }
 const FLUSH_MS = 40
 
@@ -140,7 +149,11 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
     const m = WELCOME_MOMENT[buildNowContext().bucket] ?? 'ce soir'
     setMessages((prev) =>
       prev.length === 1 && prev[0].role === 'ajnaya'
-        ? [{ role: 'ajnaya', text: `${WELCOME_BASE} Ta zone ${m} — je te dis ce qui s'y passe, en vrai.` }]
+        // Même correction qu'à la constante WELCOME ci-dessus (constat EXP-04) : « en vrai »
+        // affirmait une mesure que /api/home/zone-stats ne renvoie pas (has_data:false, 0 course).
+        // Le texte DOIT rester identique aux deux endroits, sinon la première bulle change de
+        // promesse entre le HTML servi et l'écran monté.
+        ? [{ role: 'ajnaya', text: `${WELCOME_BASE} Ta zone ${m} — dis-moi laquelle : je te dis ce que je sais, et ce que je ne sais pas encore.` }]
         : prev)
   }, [])
 

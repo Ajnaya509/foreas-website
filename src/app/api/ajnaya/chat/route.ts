@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
 import Anthropic from '@anthropic-ai/sdk'
 import { isSameOriginRequest, hasValidBearer, forbiddenOrigin } from '@/lib/api-guard'
 
@@ -204,7 +205,7 @@ CE QUE TU SAIS :
 - Tu indiques où se positionner avant que la demande monte
 - Tes courses Uber, Bolt et Heetch réunies au même endroit
 - Paris et Île-de-France
-- Abonnement 29,99 €/mois avec essai gratuit de 3 jours (0 € débité, carte demandée). Plan annuel 249,99 € (−30 %). L'essai dure exactement 3 jours, pour tout le monde, quel que soit le jour d'inscription.
+- Abonnement ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois avec essai gratuit de ${ESSAI_JOURS} jours (0 € débité, carte demandée). Plan annuel ${formaterEuros(PRIX_ANNUEL_CENTIMES)}. L'essai dure exactement ${ESSAI_JOURS} jours, pour tout le monde, quel que soit le jour d'inscription.
 
 PROGRESSION ÉMOTIONNELLE (closing en 4 échanges MAX — c'est CRUCIAL) :
 - Message 1 : tu ÉCOUTES. Une question sur SA situation. "T'es sur quelle zone ?"

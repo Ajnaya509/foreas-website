@@ -16,24 +16,40 @@ const features = [
   },
   {
     icon: Clock,
+    // 14/08/2026 — disait « Arrivez avant la demande. » Deux défauts : le
+    // vouvoiement (la voix FOREAS tutoie) et une lecture de la demande qui
+    // n'existe pas — pieuvre_h3_demand_zones, pieuvre_zone_intelligence,
+    // extracted_surge_data → 0 ligne chacune. Ce qui EST mesuré, c'est le délai
+    // de réponse : POST /api/ajnaya/home-modal en production → 4,66 s (CDG) et
+    // 5,51 s (La Défense) le 14/08/2026.
     title: 'Zéro temps mort',
-    description: 'Arrivez avant la demande.',
+    description: 'Tu poses la question, tu as la réponse en secondes.',
     color: 'from-blue-500 to-cyan-500',
     iconBg: 'bg-blue-500/10',
     iconColor: 'text-blue-400',
   },
   {
     icon: MapPin,
+    // 14/08/2026 — « Temps réel. » : aucune source continue n'existe.
+    // extracted_surge_data → 0 ligne, pieuvre_surge_predictions → 0 ligne,
+    // pieuvre_h3_demand_zones → 0 ligne ; en production l'API zone renvoie
+    // is_estimate=true et data_state="NO_DATA_COLLECTED_YET". La modale affiche
+    // déjà le badge « ESTIMATION » dans ce cas — cette tuile s'aligne dessus.
     title: 'Zones chaudes',
-    description: 'Temps réel. Avant de démarrer.',
+    description: 'Ta zone, auditée avant de démarrer.',
     color: 'from-orange-500 to-amber-500',
     iconBg: 'bg-orange-500/10',
     iconColor: 'text-orange-400',
   },
   {
     icon: Brain,
-    title: 'IA prédictive',
-    description: 'Elle apprend. Elle anticipe.',
+    // 14/08/2026 — titre « IA prédictive » : mot banni (verite-commerciale
+    // MOT_INTERDIT_IA), mesuré 2 fois dans le HTML servi par /509. Et
+    // « Elle apprend. » n'est adossé à rien : zone_predictions → 295 lignes dont
+    // 0 vérifiée (was_right NULL partout), ajnaya_prediction_feedback → 0 ligne.
+    // Rien ne peut apprendre d'une prédiction jamais notée. Ajnaya a un nom.
+    title: 'Ajnaya',
+    description: 'Elle regarde tes courses, pas des moyennes.',
     color: 'from-purple-500 to-violet-500',
     iconBg: 'bg-purple-500/10',
     iconColor: 'text-purple-400',

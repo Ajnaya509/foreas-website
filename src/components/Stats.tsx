@@ -9,8 +9,12 @@ import { useRef } from 'react'
  *   « +35 % de CA visé · grâce à l'IA prédictive »
  *       Promesse de gain chiffré — interdite (CNIL/DGCCRF) — et le mot « IA » est banni.
  *   « 87 % de précision · IA temps réel »
- *       `zone_predictions` porte 169 lignes dont le champ « avait-elle raison ? » est
- *       NULL partout : la précision n'a JAMAIS été mesurée. On ne peut pas l'annoncer.
+ *       Recompté le 14/08/2026 : `zone_predictions` porte 295 lignes dont le champ
+ *       « avait-elle raison ? » (`was_right`) est NULL sur les 295 ; `ai_predictions`,
+ *       `prediction_monitoring` et `ajnaya_prediction_feedback` sont à 0 ligne.
+ *       Aucune table ne peut produire un taux de justesse — ni 87 %, ni un autre.
+ *       Et « temps réel » : `extracted_surge_data` et `pieuvre_surge_predictions`
+ *       à 0 ligne, l'API zone renvoie is_estimate=true. Rien ne tourne en continu.
  *   « –2 h de vide visées par jour »
  *       Aucune télémétrie de temps à vide n'existe côté site.
  *

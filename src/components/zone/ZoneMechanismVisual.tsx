@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Satellite, Brain, MessageSquare, ArrowRight, MessageCircle } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import { PLATEFORMES_PHRASES } from '@/lib/verite-commerciale'
 
 /**
  * ZoneMechanismVisual — Section 3 mécanisme Ajnaya
@@ -87,22 +88,35 @@ export default function ZoneMechanismVisual() {
           <MechanismCard
             icon={Satellite}
             label="CAPTE"
-            title="Uber, Bolt, Heetch, au même endroit"
+            title={PLATEFORMES_PHRASES.honnete}
             desc="Tes courses des trois apps, réunies. Ce qu'on en tire, c'est notre secret."
             delay={0}
           />
+          {/* CE QUI ÉTAIT FAUX — « Une zone se réveille à 800 m de toi ? Elle le
+              sait avant que ton appli te le dise. » : une capacité prédictive
+              affirmée au présent, avec une distance au mètre près. Mesure : les
+              trois tables qui porteraient cette détection sont VIDES —
+              extracted_surge_data → 0 ligne, pieuvre_surge_predictions → 0 ligne,
+              driver_ride_features → 0 ligne — et pieuvre_rides sur 7 jours → 0.
+              verite-commerciale.ts §5 : ce qui n'existe pas encore s'écrit au
+              futur. Dit au futur, c'est une feuille de route qu'on assume ;
+              dit au présent, c'est une promesse qu'aucun chauffeur ne verra. */}
           <MechanismCard
             icon={Brain}
             label="ANALYSE"
-            title="Elle a un coup d'avance"
-            desc="Une zone se réveille à 800 m de toi ? Elle le sait avant que ton appli te le dise."
+            title="Le coup d'avance qu'on construit"
+            desc="Quand une zone se réveillera près de toi, elle te le dira. C'est ce qu'on est en train de bâtir."
             delay={0.1}
           />
+          {/* 14/08/2026 — « Pendant que tu roules, elle bosse pour toi » affirmait
+              un travail de fond continu : même mesure, driver_ride_features → 0
+              ligne, aucune lecture continue ne tourne. Ce qui est vrai et
+              vérifiable tout de suite : tu peux lui parler sans lâcher le volant. */}
           <MechanismCard
             icon={MessageSquare}
             label="PARLE"
             title="Elle parle, tu conduis"
-            desc="Vocal ou texte, comme tu veux. Pendant que tu roules, elle bosse pour toi."
+            desc="Vocal ou texte, comme tu veux. Tu gardes les deux mains sur le volant."
             delay={0.2}
           />
         </div>
@@ -115,8 +129,18 @@ export default function ZoneMechanismVisual() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-[#F8FAFC]/80 t-bodylg leading-relaxed text-center max-w-2xl mx-auto mb-8"
         >
-          Pendant que tu conduis, Ajnaya suit tes courses Uber, Bolt et Heetch. Quand une zone se réveille à 800 m de toi, elle te le dit avant les autres.{' '}
-          <span className="text-[#F8FAFC] font-semibold">C&apos;est tout.</span>
+          {/* CE QUI ÉTAIT FAUX — « Pendant que tu conduis, Ajnaya suit tes
+              courses Uber, Bolt et Heetch » : le présent de l'indicatif = un
+              suivi en cours. Mesures : `select max(created_at) from rides` →
+              30/04/2026 (aucune course depuis trois mois et demi),
+              `count(*) where created_at > now()-interval '30 days'` → 0, et
+              driver_ride_features (la table qui porterait la lecture continue)
+              → 0 ligne. Rien n'est suivi pendant que qui que ce soit conduit.
+              Les 3 plateformes nommées, elles, sont exactes
+              (`select distinct platform from rides` → Uber, Bolt, Heetch) :
+              la phrase autorisée est PLATEFORMES_PHRASES.honnete. */}
+          {PLATEFORMES_PHRASES.honnete}. Et quand une zone se réveillera près de toi, elle te le dira avant les autres.{' '}
+          <span className="text-[#F8FAFC] font-semibold">C&apos;est ce qu&apos;on construit.</span>
         </motion.p>
 
         {/* CTA */}
@@ -136,7 +160,12 @@ export default function ZoneMechanismVisual() {
             style={{ boxShadow: '0 0 32px rgba(16,185,129,0.40)' }}
           >
             <MessageCircle className="w-4 h-4" />
-            Demander à Ajnaya une démo en 90 sec
+            {/* 14/08/2026 — « une démo en 90 sec » : aucun compteur n'alimente
+                ce délai, et la seule mesure disponible sur le canal WhatsApp
+                (pieuvre_conversations, 63 paires) donne 25 % de réponses
+                au-delà d'une minute. Un chiffre affiché au public vient de
+                src/lib/verite-commerciale.ts, ou il ne s'affiche pas. */}
+            Demander une démo à Ajnaya
             <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>

@@ -1,65 +1,80 @@
 'use client'
 
 /**
- * LiveSocialProofToasts — Notifications "live" en bas à gauche (Provely-style)
+ * LiveSocialProofToasts — bandeau de preuve en bas à gauche
  *
- * Mécanique persuasive :
+ * Mécanique :
  *  - Apparition cyclique de toasts en bas-à-gauche du viewport
- *  - Format : "[Avatar pulse] Bakary S. à Nantes vient de recevoir son plan
- *    sur WhatsApp · il y a 2 min"
+ *  - Format : "[Avatar] Haitham B. à Paris · a filmé son témoignage,
+ *    à visage découvert · 7 ans VTC"
  *  - Slide-in depuis la gauche, dwell ~5.5s, slide-out
- *  - Délai entre 2 toasts : 18-30s (random pour casser la prévisibilité)
+ *  - Délai entre 2 toasts : 18-30s
  *  - Premier toast après ~9s (laisser le user "se poser" sur la home)
  *  - Fermable (✕) → désactive pour la session courante (sessionStorage)
  *  - Désactivé totalement sur mobile très étroit (< 380px) pour ne pas
  *    cannibaliser la lecture
  *  - useReducedMotion respecté : un seul toast statique sans animation
  *
- * Conformité légale :
- *  - Les noms/villes sont issus de la base de témoignages documentés FOREAS
- *    (TESTIMONIALS.md). Pas de génération aléatoire depuis 0.
- *  - Le délai "il y a X min" est généré dynamiquement (1-12 min) — c'est
- *    une approximation acceptable pour le social proof, pas un compteur live
- *    précis (qui exigerait une vraie source temps réel).
- *  - Le toast n'affirme rien de chiffré spécifique : juste "a reçu son plan",
- *    qui est vrai pour tout chauffeur ayant cliqué WA depuis le widget.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 14/08/2026 — CE COMPOSANT FABRIQUAIT TROIS CHOSES À LA FOIS.
+ *
+ * 1) L'HORODATAGE. « il y a 2 min » était un Math.random() entre 1 et 12,
+ *    rejoué toutes les 18-30 s. Rythme réel mesuré en base : 6 comptes chauffeur
+ *    créés en 30 jours (1 tous les 5 jours, dernier le 10/08), 4 prospects,
+ *    5 personnes distinctes sur WhatsApp. Un événement nominatif toutes les
+ *    ~25 s était donc ~1 700 fois trop rapide. Supprimé : plus aucune heure
+ *    n'est affichée, parce qu'aucune heure n'est connue.
+ *
+ * 2) L'ESSAI. « a démarré son essai gratuit » : subscriptions → 0 ligne créée
+ *    en 30 jours, max(created_at) = 2026-07-01, 0 ligne en status 'trialing',
+ *    seul statut existant = 'active' (4 lignes). Aucun essai n'a démarré.
+ *    Un compteur qui n'a rien à compter ne doit rien afficher. Supprimé.
+ *
+ * 3) LES NOMS. Le commentaire jurait qu'ils venaient de TESTIMONIALS.md.
+ *    Mesure : la source de consentement (src/components/zone/testimonials.data.ts)
+ *    contient 6 noms ; 8 des 12 affichés — Bakary S., Driss T., Karim B.,
+ *    Soufiane M., Théodore R., Pavel N., Marc L., Ahmed F. — n'y figurent
+ *    NULLE PART. Un nom de chauffeur affiché au public est une donnée
+ *    personnelle : soit il est dans la base de consentement, soit il ne
+ *    s'affiche pas. Ne restent que les 6 filmés, à visage découvert, avec leur
+ *    ville et leur ancienneté telles qu'elles figurent dans la source
+ *    (verite-commerciale COMMUNAUTE.temoignagesVideoReels = 6).
+ *
+ * Le tirage au sort a suivi le même sort : une rotation dans l'ordre ne
+ * prétend rien. Ce qui reste est plus court, et vrai — donc opposable.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, X } from 'lucide-react'
+import { Video, X } from 'lucide-react'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
 
 interface ProofEntry {
-  driver: string  // "Bakary S."
-  city: string    // "Nantes"
-  initial: string // "B"
+  driver: string  // "Haitham B."
+  city: string    // "Paris"
+  initial: string // "H"
   accent: 'violet' | 'cyan' | 'rose' | 'gold'
-  /** Action qu'a faite le driver — phrase courte */
-  action: 'wa_plan' | 'wa_audit' | 'wa_brief' | 'trial_started'
+  /** Ancienneté / profil, repris tel quel de testimonials.data.ts */
+  tenure: string
 }
 
+/**
+ * Les 6 chauffeurs filmés, consentis, vérifiables. Nom, ville et ancienneté
+ * copiés depuis src/components/zone/testimonials.data.ts — la seule base de
+ * consentement. N'ajoute JAMAIS un nom ici sans l'y ajouter d'abord.
+ */
 const ENTRIES: ProofEntry[] = [
-  { driver: 'Bakary S.',   city: 'Nantes',     initial: 'B', accent: 'violet', action: 'wa_plan' },
-  { driver: 'Driss T.',    city: 'Lyon',       initial: 'D', accent: 'cyan',   action: 'wa_brief' },
-  { driver: 'Karim B.',    city: 'CDG',        initial: 'K', accent: 'violet', action: 'wa_plan' },
-  { driver: 'Soufiane M.', city: 'Paris 11ᵉ',  initial: 'S', accent: 'rose',   action: 'trial_started' },
-  { driver: 'Binate A.',   city: 'Disney',     initial: 'B', accent: 'gold',   action: 'wa_plan' },
-  { driver: 'Théodore R.', city: 'Marseille',  initial: 'T', accent: 'cyan',   action: 'wa_audit' },
-  { driver: 'Pavel N.',    city: 'Lille',      initial: 'P', accent: 'violet', action: 'wa_plan' },
-  { driver: 'Hadietou D.', city: 'Bercy',      initial: 'H', accent: 'rose',   action: 'wa_brief' },
-  { driver: 'Marc L.',     city: 'Toulouse',   initial: 'M', accent: 'cyan',   action: 'trial_started' },
-  { driver: 'Ahmed F.',    city: 'Orly',       initial: 'A', accent: 'violet', action: 'wa_plan' },
-  { driver: 'Dragan P.',   city: 'Paris',      initial: 'D', accent: 'rose',   action: 'wa_audit' },
-  { driver: 'Haitham B.',  city: 'CDG',        initial: 'H', accent: 'cyan',   action: 'wa_brief' },
+  { driver: 'Haitham B.', city: 'Paris',                initial: 'H', accent: 'violet', tenure: '7 ans VTC' },
+  { driver: 'Binate A.',  city: 'Marne-la-Vallée',      initial: 'B', accent: 'gold',   tenure: '5 ans · Tesla' },
+  { driver: 'Zephy K.',   city: 'Marne-la-Vallée',      initial: 'Z', accent: 'cyan',   tenure: 'ex-cadre, reconverti' },
+  { driver: 'Dragan P.',  city: 'Paris',                initial: 'D', accent: 'rose',   tenure: '9 ans VTC' },
+  { driver: 'Hadietou',   city: 'Paris (banlieue)',     initial: 'H', accent: 'violet', tenure: '9 ans VTC' },
+  { driver: 'Nikolic N.', city: 'Paris',                initial: 'N', accent: 'cyan',   tenure: '10 ans VTC' },
 ]
 
-const ACTION_COPY: Record<ProofEntry['action'], string> = {
-  wa_plan:        'a reçu son plan sur WhatsApp',
-  wa_audit:       'a reçu son audit zone sur WhatsApp',
-  wa_brief:       'a reçu son brief 2 min sur WhatsApp',
-  trial_started:  'a démarré son essai gratuit',
-}
+/** La seule chose qu'on sache d'eux, et qu'ils ont accepté qu'on dise. */
+const PREUVE_COPY = 'a filmé son témoignage, à visage découvert'
 
 const ACCENT_STYLES: Record<ProofEntry['accent'], { ring: string; bg: string }> = {
   violet: { ring: 'rgba(140, 82, 255, 0.30)', bg: 'linear-gradient(135deg, #8C52FF, #6C3CE0)' },
@@ -71,26 +86,18 @@ const ACCENT_STYLES: Record<ProofEntry['accent'], { ring: string; bg: string }> 
 const SESSION_KEY = 'foreas_live_proof_dismissed'
 
 // ─── Cycle helpers ────────────────────────────────────────────────────────────
-function pickNextIndex(prev: number | null, len: number): number {
-  if (prev === null) return Math.floor(Math.random() * len)
-  // Évite la répétition immédiate
-  let next = Math.floor(Math.random() * (len - 1))
-  if (next >= prev) next += 1
-  return next
-}
-
-function makeAgoLabel(): string {
-  // Génère un délai entre 1 et 12 min — variétal, plausible.
-  const minutes = 1 + Math.floor(Math.random() * 12)
-  if (minutes === 1) return 'il y a 1 min'
-  return `il y a ${minutes} min`
+// 14/08/2026 — le tirage au sort faisait passer les 6 chauffeurs pour un flux
+// d'événements. Rotation dans l'ordre : on montre les mêmes 6 témoignages, dans
+// le même ordre, à tout le monde. Ça ne prétend rien.
+function nextIndex(prev: number | null, len: number): number {
+  if (prev === null) return 0
+  return (prev + 1) % len
 }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 export default function LiveSocialProofToasts() {
   const reducedMotion = useReducedMotion()
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
-  const [agoLabel, setAgoLabel] = useState<string>('il y a 2 min')
   const [dismissed, setDismissed] = useState<boolean>(false)
   const idxRef = useRef<number | null>(null)
   const timersRef = useRef<{ show?: ReturnType<typeof setTimeout>; hide?: ReturnType<typeof setTimeout> }>({})
@@ -128,9 +135,8 @@ export default function LiveSocialProofToasts() {
     const nextDelay = () => 18000 + Math.random() * 12000
 
     const showOne = () => {
-      const next = pickNextIndex(idxRef.current, ENTRIES.length)
+      const next = nextIndex(idxRef.current, ENTRIES.length)
       idxRef.current = next
-      setAgoLabel(makeAgoLabel())
       setActiveIdx(next)
 
       timersRef.current.hide = setTimeout(() => {
@@ -176,7 +182,7 @@ export default function LiveSocialProofToasts() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="pointer-events-auto"
           >
-            <ProofToast entry={entry} agoLabel={agoLabel} onDismiss={handleDismiss} />
+            <ProofToast entry={entry} onDismiss={handleDismiss} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -187,11 +193,9 @@ export default function LiveSocialProofToasts() {
 // ─── Toast UI ─────────────────────────────────────────────────────────────────
 function ProofToast({
   entry,
-  agoLabel,
   onDismiss,
 }: {
   entry: ProofEntry
-  agoLabel: string
   onDismiss: () => void
 }) {
   const accent = ACCENT_STYLES[entry.accent]
@@ -218,17 +222,18 @@ function ProofToast({
           animate={{ scale: [1, 1.5], opacity: [0.85, 0] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
         />
-        {/* Petite pastille verte WhatsApp si action WA */}
-        {entry.action !== 'trial_started' && (
-          <span
-            className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-            // Design System §16 : borderWidth toujours 1px (jamais 2+)
-            style={{ backgroundColor: '#25D366', border: '1px solid #fff' }}
-            aria-hidden
-          >
-            <MessageCircle className="w-2 h-2 text-white" strokeWidth={3} />
-          </span>
-        )}
+        {/* 14/08/2026 — la pastille verte WhatsApp affirmait que ce chauffeur-là
+            avait écrit sur WhatsApp. Rien ne le dit : 5 personnes distinctes en
+            30 jours, et aucun lien entre elles et ces 6 noms. Ce qui EST vrai et
+            vérifiable, c'est la vidéo — elle est publique sur le site. */}
+        <span
+          className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+          // Design System §16 : borderWidth toujours 1px (jamais 2+)
+          style={{ backgroundColor: '#8C52FF', border: '1px solid #fff' }}
+          aria-hidden
+        >
+          <Video className="w-2 h-2 text-white" strokeWidth={3} />
+        </span>
       </motion.div>
 
       {/* Contenu */}
@@ -238,10 +243,12 @@ function ProofToast({
           <span className="text-[#6e6e73]"> à {entry.city}</span>
         </p>
         <p className="text-[12px] leading-tight text-[#6e6e73] mt-0.5">
-          {ACTION_COPY[entry.action]}
+          {PREUVE_COPY}
         </p>
+        {/* Ancienne ligne : « il y a X min », un Math.random(). Remplacée par une
+            donnée qui existe vraiment — l'ancienneté déclarée dans le témoignage. */}
         <p className="text-[10px] leading-tight text-[#a1a1a6] mt-0.5 tabular-nums">
-          {agoLabel}
+          {entry.tenure}
         </p>
       </div>
 
