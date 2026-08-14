@@ -3,24 +3,41 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 
+/**
+ * ⚠️ 14/08/2026 — CE BLOC PROMETTAIT QUATRE CHIFFRES, TROIS N'ÉTAIENT MESURÉS PAR RIEN.
+ *
+ *   « +35 % de CA visé · grâce à l'IA prédictive »
+ *       Promesse de gain chiffré — interdite (CNIL/DGCCRF) — et le mot « IA » est banni.
+ *   « 87 % de précision · IA temps réel »
+ *       `zone_predictions` porte 169 lignes dont le champ « avait-elle raison ? » est
+ *       NULL partout : la précision n'a JAMAIS été mesurée. On ne peut pas l'annoncer.
+ *   « –2 h de vide visées par jour »
+ *       Aucune télémétrie de temps à vide n'existe côté site.
+ *
+ * Remplacés par des faits qu'on peut montrer du doigt. Le seul conservé tel quel est
+ * « 24/7 », qui décrit une disponibilité, pas un résultat promis.
+ */
 const stats = [
   {
-    value: '+35',
-    suffix: '%',
-    label: 'de CA visé',
-    sublabel: 'grâce à l\'IA prédictive',
+    // 6 témoignages filmés, consentis : src/components/zone/testimonials.data.ts
+    value: '6',
+    suffix: '',
+    label: 'chauffeurs filmés',
+    sublabel: 'à visage découvert, sur leur vraie journée',
   },
   {
-    value: '–2',
-    suffix: 'h',
-    label: 'de vide visées',
-    sublabel: 'par jour en moins',
+    // select count(*) from zones_canonical → 52
+    value: '52',
+    suffix: '',
+    label: 'zones couvertes',
+    sublabel: 'Paris et Île-de-France',
   },
   {
-    value: '87',
-    suffix: '%',
-    label: 'de précision',
-    sublabel: 'IA temps réel',
+    // select distinct platform from rides → Uber, Bolt, Heetch (3 réelles)
+    value: '3',
+    suffix: '',
+    label: 'apps réunies',
+    sublabel: 'Uber, Bolt, Heetch',
   },
   {
     value: '24',

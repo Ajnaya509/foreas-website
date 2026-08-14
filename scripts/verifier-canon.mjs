@@ -100,7 +100,11 @@ const REGLES = [
     // Drapeau `i` OBLIGATOIRE : sans lui, « copilote compta IA » passait à travers
     // alors que « Compta IA » était bloqué. Une règle sensible à la casse est une
     // règle à moitié appliquée — et personne ne s'en aperçoit.
-    motif: /\bl['’]IA\b|\bDG IA\b|\bnotre IA\b|\bIA FOREAS\b|\bcompta IA\b/i,
+    // `\\?` : dans une chaîne JS entre quotes simples, l'apostrophe est ÉCHAPPÉE
+    // (`L\\'IA`). Sans ce caractère optionnel, la règle ne voyait pas les métadonnées
+    // Open Graph — celles que voient WhatsApp, LinkedIn et Google. C'est la porte
+    // de sortie, qui lit le HTML servi, qui a trouvé le trou.
+    motif: /\bl\\?['’]IA\b|\bDG IA\b|\bnotre IA\b|\bIA FOREAS\b|\bcompta IA\b/i,
     // ⚠️ NE PAS ajouter « une IA » ici : les prompts d'Ajnaya contiennent
     // « Tu ne dis JAMAIS "je suis une IA" » — c'est l'INTERDICTION elle-même.
     // Une règle qui punit sa propre application est une règle qu'on désactive.

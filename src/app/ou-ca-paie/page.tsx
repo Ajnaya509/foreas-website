@@ -12,10 +12,22 @@ import ZoneFinalCTAWithPS from '@/components/zone/ZoneFinalCTAWithPS'
 export const metadata: Metadata = {
   title: 'Où ça paie ? — Tarifs réels par zone VTC · FOREAS',
   description:
-    'Tapez votre zone. Ajnaya vous dit où ça paie ce soir — tarif horaire moyen, demande relative, pool optimal. Données réelles flotte FOREAS, sans inscription.',
+    // 14/08/2026 — était au vouvoiement (voix FOREAS = tutoiement pro) et parlait
+    // de « données réelles flotte FOREAS » : 30 chauffeurs inscrits, 9 marqués
+    // actifs, 0 sur 24 h. Le mot « flotte » promet une échelle qui n'existe pas.
+    'Tape ta zone. Ajnaya te dit ce qu’elle a vu passer là — tarif horaire, demande, meilleur point d’attente. Sans inscription.',
   openGraph: {
     title: 'Où ça paie ? — FOREAS',
-    description: 'Gagnez plus. Roulez moins. L\'IA Ajnaya vous dit où aller — basé sur la flotte FOREAS réelle.',
+    // 14/08/2026 — disait « L'IA Ajnaya vous dit où aller ». Trois défauts en une
+    // ligne, et c'est le texte que voient WhatsApp, LinkedIn et Google :
+    //   · le mot « IA », banni (Ajnaya a un nom) ;
+    //   · le vouvoiement, alors que la voix FOREAS est le tutoiement pro ;
+    //   · « la flotte FOREAS réelle » — 30 chauffeurs inscrits, 9 marqués
+    //     actifs, 0 actif sur 24 h : le mot « flotte » promet plus que ça.
+    // Il avait échappé au vérificateur du dépôt parce que l'apostrophe est
+    // ÉCHAPPÉE dans le code (L\'IA) : c'est la porte de sortie, qui lit le
+    // HTML servi, qui l'a vu. Les deux contrôles se complètent, d'où les deux.
+    description: 'Tape ta zone, Ajnaya te dit ce qu\'elle a vu passer là — Uber, Bolt, Heetch réunis.',
     type: 'website',
     locale: 'fr_FR',
     url: 'https://foreas.xyz/ou-ca-paie',
