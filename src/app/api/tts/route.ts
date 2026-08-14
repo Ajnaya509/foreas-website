@@ -93,12 +93,23 @@ export async function POST(request: NextRequest) {
       // 14/08/2026, /api/tts répondait 503 « TTS error » et il était impossible de
       // savoir si c'était la clé, le quota ou la voix. Le code ci-dessous ne
       // divulgue aucun secret — seulement la nature de la panne.
+      // Sur un 400, ElevenLabs range la vraie cause dans `detail.status` : un mot-clé
+      // du genre `model_not_found`, `voice_not_found`, `invalid_api_key`. Ce n'est pas
+      // un secret, c'est un code d'état — et sans lui on reste devant un « 400 » muet.
+      // Mesuré en production le 14/08/2026 : la voix du site répondait 503 avec un 400
+      // d'ElevenLabs, donc ni la clé (401) ni le quota (429), mais une requête refusée.
+      let detail = ''
+      try {
+        const j = JSON.parse(errorText)
+        detail = String(j?.detail?.status || j?.detail?.message || j?.status || '').slice(0, 60)
+      } catch { /* corps non JSON : on garde le code HTTP seul */ }
+
       const reason =
         res.status === 401 ? 'cle_elevenlabs_refusee'
         : res.status === 429 ? 'quota_elevenlabs_epuise'
         : res.status === 404 ? 'voix_koraly_introuvable'
         : res.status >= 500 ? 'elevenlabs_indisponible'
-        : 'elevenlabs_erreur_' + res.status
+        : 'elevenlabs_erreur_' + res.status + (detail ? '_' + detail : '')
       return NextResponse.json(
         { error: 'TTS indisponible', reason },
         { status: 503, headers: { 'Cache-Control': 'no-store' } },
