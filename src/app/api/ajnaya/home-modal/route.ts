@@ -81,7 +81,11 @@ const TESTIMONIAL_BINATE: Testimonial = {
 const TESTIMONIAL_DRAGAN: Testimonial = {
   name: 'Dragan P.',
   zone: 'Paris',
-  quote: '2 ans sans problème de paiement. J\'y suis, j\'y reste.',
+  // 14/08/2026 — disait « 2 ans sans problème de PAIEMENT ». Dragan a dit
+  // « aucun souci », pas « aucun souci de paiement » : l'ajout lui prête une
+  // affirmation qu'il n'a pas faite, sur un sujet sensible, à visage découvert.
+  // Mots exacts : src/components/zone/testimonials.data.ts (quoteShort).
+  quote: 'Plus de deux ans avec FOREAS, aucun souci. J\'y suis, j\'y reste.',
 }
 const TESTIMONIAL_HAITHAM: Testimonial = {
   name: 'Haitham B.',
@@ -384,7 +388,10 @@ Max 22 mots.`
 Ex : "Je t'envoie WhatsApp · 2 minutes, sans inscription · avant 22h c'est plein."
 Max 15 mots.`
 
-  return `Tu es Ajnaya, DG IA de FOREAS. Tu guides un chauffeur VTC depuis le modal de foreas.xyz.
+  // 14/08/2026 — disait « DG IA de FOREAS ». Le mot « IA » est banni du site :
+  // Ajnaya a un nom, on l'emploie. Un prompt qui contient le mot interdit finit
+  // par le faire dire au modèle.
+  return `Tu es Ajnaya, le cerveau de FOREAS. Tu guides un chauffeur VTC depuis le modal de foreas.xyz.
 RÈGLE ABSOLUE : tutoiement strict — "tu/te/ton/ta". Jamais "vous/votre/vos". Tu parles à un frère du métier, pas à un client de banque.
 Pas une assistante. Pas un chatbot. Tu sais ce que les autres chauffeurs ne savent pas encore.
 Ton seul KPI : le chauffeur clique "Continuer sur WhatsApp". Pas la conversation. La conversion.

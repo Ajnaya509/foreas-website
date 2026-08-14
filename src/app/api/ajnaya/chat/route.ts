@@ -14,19 +14,70 @@ async function getSupabase() {
 }
 
 // ─── Load active closing script ──────────────────────────────────────────────
+/**
+ * Charge le prompt d'Ajnaya depuis la base — jamais depuis le code.
+ *
+ * ⚠️ CORRIGÉ LE 14/08/2026 — LE PROMPT ÉTAIT TIRÉ AU SORT.
+ * L'ancienne version prenait `.eq('tentacle','widget_site').eq('is_active',true)`
+ * puis `.order('conversion_rate', desc).limit(1)`. Or le tentacule `widget_site`
+ * porte DEUX scripts actifs, et les deux ont `conversion_rate = 0` :
+ *   · `Ajnaya Site Closer V2`  — 4 712 car., le closer du widget (07/04/2026)
+ *   · `home_modal_v1_3turn`    — 15 177 car., écrit pour le MODAL d'accueil,
+ *                                 qui ne passe même pas par ici (il va au cerveau
+ *                                 Pieuvre via callPieuvreBrain).
+ * Égalité sur la clé de tri = PostgreSQL renvoie une ligne ARBITRAIRE. Ajnaya
+ * changeait donc de personnalité d'une requête à l'autre, et pouvait tourner sur
+ * un prompt trois fois plus gros — plus cher à chaque message — écrit pour un
+ * autre écran. Personne ne pouvait le voir : les deux réponses semblent plausibles.
+ *
+ * Le choix est maintenant EXPLICITE, avec un ordre de préférence documenté, et
+ * l'ambiguïté est journalisée au lieu d'être silencieuse.
+ *
+ * 🔗 CROSS-FIL : si `home_modal_v1_3turn` ne doit plus être actif sous
+ * `widget_site`, c'est au fil Pieuvre de le désactiver — le site ne touche pas
+ * à `pieuvre_scripts`, il le lit.
+ */
+const PREFERENCE_SCRIPT_WIDGET = ['Ajnaya Site Closer V2', 'Ajnaya Site Closer V1']
+
 async function loadClosingScript(): Promise<string | null> {
   try {
     const sb = await getSupabase()
     if (!sb) return null
-    const { data } = await sb
+    const { data, error } = await sb
       .from('pieuvre_scripts')
-      .select('prompt_system, conversion_rate')
+      .select('script_name, prompt_system, conversion_rate, updated_at')
       .eq('tentacle', 'widget_site')
       .eq('is_active', true)
-      .order('conversion_rate', { ascending: false })
-      .limit(1)
-    return data?.[0]?.prompt_system || null
-  } catch {
+
+    if (error) {
+      console.warn('[ajnaya/chat] lecture pieuvre_scripts impossible:', error.code, error.message)
+      return null
+    }
+    if (!data || data.length === 0) return null
+
+    if (data.length > 1) {
+      console.warn(
+        '[ajnaya/chat] AMBIGU :', data.length, 'scripts actifs pour widget_site —',
+        data.map((d) => d.script_name).join(', '),
+        '· choix par préférence explicite',
+      )
+    }
+
+    // 1) le script explicitement prévu pour cette surface
+    for (const nom of PREFERENCE_SCRIPT_WIDGET) {
+      const trouve = data.find((d) => d.script_name === nom)
+      if (trouve?.prompt_system) return trouve.prompt_system
+    }
+    // 2) sinon, le meilleur taux de conversion, puis le plus récent — départage
+    //    STABLE, pour ne jamais retomber sur un tirage au sort.
+    const trie = [...data].sort((a, b) => {
+      const c = Number(b.conversion_rate ?? 0) - Number(a.conversion_rate ?? 0)
+      if (c !== 0) return c
+      return String(b.updated_at ?? '').localeCompare(String(a.updated_at ?? ''))
+    })
+    return trie[0]?.prompt_system || null
+  } catch (e) {
+    console.warn('[ajnaya/chat] exception lecture prompt:', (e as Error).message)
     return null
   }
 }
