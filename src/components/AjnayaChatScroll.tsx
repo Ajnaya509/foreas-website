@@ -27,7 +27,7 @@ const messages: ChatMessage[] = [
   { sender: 'ajnaya', text: 'Navigation vers Gare de Lyon ?', time: '20:04', visualBlock: { type: 'voiceConfirm', destination: 'Gare de Lyon', countdown: 10 } },
   { sender: 'voice', text: '🎙 "Oui"', time: '20:04' },
   { sender: 'ajnaya', text: 'C\'est parti. Navigation lancée — arrivée 20:08.', time: '20:04' },
-  { sender: 'ajnaya', text: 'Course assignée.', time: '20:16', visualBlock: { type: 'courseCard', from: 'Gare de Lyon', to: 'Neuilly-sur-Seine', amount: '34€', badge: 'Ajnaya • 87%' }, watermark: 'SAFE' },
+  { sender: 'ajnaya', text: 'Course assignée.', time: '20:16', visualBlock: { type: 'courseCard', from: 'Gare de Lyon', to: 'Neuilly-sur-Seine', amount: '34€', badge: 'Ajnaya' }, watermark: 'SAFE' },
   { sender: 'ajnaya', text: 'Neuilly : concert au Théâtre des Sablons à 21h. Enchaînement estimé dans 8 min. On y va ?', time: '20:42', watermark: 'SAFE' },
 ]
 

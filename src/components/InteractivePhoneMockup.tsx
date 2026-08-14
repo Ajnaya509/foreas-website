@@ -158,7 +158,7 @@ function AjnayaScreen() {
       exit={{ opacity: 0, x: -20 }}
       className="h-full pb-20 px-4 pt-4"
     >
-      <h3 className="text-white font-semibold mb-4">Ajnaya IA</h3>
+      <h3 className="text-white font-semibold mb-4">Ajnaya</h3>
 
       <div className="space-y-3">
         <div className="bg-accent-purple/10 rounded-xl p-4 border border-accent-purple/20">

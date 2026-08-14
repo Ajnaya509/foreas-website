@@ -104,7 +104,34 @@ const REGLES = [
     // (`L\\'IA`). Sans ce caractère optionnel, la règle ne voyait pas les métadonnées
     // Open Graph — celles que voient WhatsApp, LinkedIn et Google. C'est la porte
     // de sortie, qui lit le HTML servi, qui a trouvé le trou.
-    motif: /\bl\\?['’]IA\b|\bDG IA\b|\bnotre IA\b|\bIA FOREAS\b|\bcompta IA\b/i,
+    // ⚠️ 14/08/2026 — CETTE RÈGLE NE TESTAIT QUE DES TOURNURES (« l'IA », « DG IA »,
+    // « notre IA »…). Elle laissait donc passer le mot NU. Or il était affiché en
+    // badge dans l'en-tête du widget Ajnaya — monté dans layout.tsx, donc sur TOUTES
+    // les pages — coupé en deux balises collées : <span>Ajnaya</span><span>IA</span>.
+    // Quatrième déguisement du même mot, après l'apostrophe échappée, l'entité HTML
+    // et le cache. La tâche « retirer toute mention IA » était marquée FAITE pendant
+    // que la mention la plus visible du site n'avait jamais été retirée.
+    // On teste maintenant le mot nu, en majuscules, isolé — la seule forme qui ne
+    // peut pas se cacher. (`I` et `A` collés en minuscules n'existent pas en français
+    // comme mot autonome, donc pas de faux positif à craindre de ce côté.)
+    motif: /\bIA\b/,
+    // Exemptions RAISONNÉES, chacune justifiée — pas des trous de confort :
+    //  · CGU / confidentialité / mentions légales / suppression-compte : décrire
+    //    un traitement par IA est une OBLIGATION de transparence (RGPD art. 13).
+    //    Interdire le mot là reviendrait à cacher au visiteur ce qu'on fait de
+    //    ses données. C'est le seul endroit où le mot est un devoir, pas un défaut.
+    //  · les deux prompts : ils contiennent « Tu ne dis JAMAIS "je suis une IA" »,
+    //    c'est-à-dire l'INTERDICTION elle-même.
+    //  · design/tokens.ts : c'est la LISTE des mots bannis.
+    exceptions: [
+      /app\/cgu\//,
+      /app\/confidentialite\//,
+      /app\/mentions-legales\//,
+      /app\/suppression-compte\//,
+      /api\/ajnaya\/chat\/route\.ts/,
+      /lib\/ajnayaChatCore\.ts/,
+      /design\/tokens\.ts/,
+    ],
     // ⚠️ NE PAS ajouter « une IA » ici : les prompts d'Ajnaya contiennent
     // « Tu ne dis JAMAIS "je suis une IA" » — c'est l'INTERDICTION elle-même.
     // Une règle qui punit sa propre application est une règle qu'on désactive.

@@ -53,8 +53,8 @@ export default function AppDemo() {
                 },
                 {
                   icon: '🤖',
-                  title: 'Ajnaya IA',
-                  description: 'Prédictions IA temps réel multi-sources'
+                  title: 'Ajnaya',
+                  description: 'Ce que paient tes courses, zone par zone multi-sources'
                 },
                 {
                   icon: '👥',

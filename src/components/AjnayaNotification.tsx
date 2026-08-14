@@ -18,7 +18,7 @@ export default function AjnayaNotification({ text = '3 Intercités arrivent Gare
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <span className="font-title text-xs font-semibold text-white">Ajnaya</span>
-            <span className="px-1 py-0.5 text-[7px] font-mono uppercase text-accent-cyan/70 bg-accent-cyan/10 rounded">IA</span>
+            <span className="px-1 py-0.5 text-[7px] font-mono uppercase text-accent-cyan/70 bg-accent-cyan/10 rounded">copilote</span>
           </div>
           <p className="text-sm text-white/70 leading-snug">{text}</p>
           <span className="text-[10px] text-white/30 mt-1 block">il y a 2 min</span>

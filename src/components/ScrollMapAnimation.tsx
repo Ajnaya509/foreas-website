@@ -27,7 +27,7 @@ export default function ScrollMapAnimation() {
   // 0.15-0.30  ▶ CARD 1 "Détection" — car stationary at zone vide
   // 0.28-0.62  Car moves from zone vide → zone chaude
   // 0.30-0.45  Hot zone starts glowing
-  // 0.33-0.55  ▶ CARD 2 "Analyse IA" — car in transit, hot zone glowing
+  // 0.33-0.55  ▶ CARD 2 "Ajnaya analyse" — car in transit, hot zone glowing
   // 0.60-0.62  Car arrives at hot zone
   // 0.60-0.82  ▶ CARD 3 "Repositionné" — car at destination
   // 0.85-0.95  Section fade out
@@ -68,7 +68,7 @@ export default function ScrollMapAnimation() {
   )
   const card1Opacity = useTransform(scrollYProgress, [0.13, 0.18, 0.28, 0.32], [0, 1, 1, 0])
 
-  // CARD 2: "Analyse IA" — appears as hot zone starts glowing, car in transit
+  // CARD 2: "Ajnaya analyse" — appears as hot zone starts glowing, car in transit
   const card2Slide = useTransform(scrollYProgress,
     [0.33, 0.38, 0.52, 0.56],
     isMobile ? [-60, 0, 0, 60] : [120, 0, 0, -120]
@@ -306,7 +306,7 @@ export default function ScrollMapAnimation() {
             </div>
           </motion.div>
 
-          {/* CARD 2: Analyse IA */}
+          {/* CARD 2: Ajnaya analyse */}
           <motion.div
             style={{
               x: card2Slide,
@@ -327,7 +327,7 @@ export default function ScrollMapAnimation() {
                   <span className={`text-accent-purple font-bold ${isMobile ? 'text-xs' : 'text-base'}`}>2</span>
                 </div>
                 <div className="min-w-0">
-                  <p className={`text-white font-semibold ${isMobile ? 'text-[11px]' : 'text-sm'}`}>Analyse IA</p>
+                  <p className={`text-white font-semibold ${isMobile ? 'text-[11px]' : 'text-sm'}`}>Ajnaya analyse</p>
                   <p className={`text-white/50 ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>Zone chaude détectée à 12 min — <span className="text-green-400 font-semibold">forte demande</span>.</p>
                 </div>
               </div>

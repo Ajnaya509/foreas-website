@@ -824,7 +824,7 @@ export default function AjnayaWidget() {
               <div className="flex items-center gap-2.5">
                 <MiniHologram />
                 <span className="font-title text-base font-semibold text-white ml-0.5">Ajnaya</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-purple/[0.10] text-accent-purple/70 border border-accent-purple/20 font-mono">IA</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-purple/[0.10] text-accent-purple/70 border border-accent-purple/20 font-mono">copilote</span>
               </div>
               <div className="flex items-center">
                 <button onClick={toggleVoice} className="p-1.5" title={voiceEnabled ? 'Désactiver la voix' : 'Activer la voix'}>

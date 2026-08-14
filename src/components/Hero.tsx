@@ -84,7 +84,7 @@ export default function Hero() {
               <div className="h-8 md:h-10 w-px bg-white/10" />
               <p className="text-xs md:text-sm text-white/60 text-left">
                 de CA visé<br />
-                <span className="text-white/60">IA prédictive</span>
+                <span className="text-white/60">Ajnaya</span>
               </p>
             </motion.div>
 

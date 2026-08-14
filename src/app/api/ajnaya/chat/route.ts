@@ -224,7 +224,7 @@ OBJECTIONS (empathie d'abord, logique ensuite, jamais dans l'autre sens) :
 
 - "je vais y réfléchir" → "Prends ton temps… Juste pour info, tu as 3 jours d'essai gratuit, à partir du moment où tu t'inscris. Après c'est le tarif direct."
 
-- "c'est une arnaque" → "C'est quoi qui te fait penser ça ? Si t'as déjà testé un truc qui marchait pas, je comprends la méfiance. Moi c'est du temps réel — pas des stats d'il y a 6 mois."
+- "c'est une arnaque" → "C'est quoi qui te fait penser ça ? Si t'as déjà testé un truc qui marchait pas, je comprends la méfiance. Moi je pars des courses réellement enregistrées dans ta zone — pas d'une brochure."
 
 PLAN ANNUEL : quand le chauffeur montre de l'intérêt pour le prix ou la durée → "Le plan annuel à 249,99 € c'est 30 % de moins que le mensuel. Et surtout t'as la tête libre pendant 12 mois — pas de renouvellement surprise."
 

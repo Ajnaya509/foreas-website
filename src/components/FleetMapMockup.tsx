@@ -7,14 +7,14 @@ const vehicles = [
   { cx: 82, cy: 55, color: '#10B981', status: 'en course', delay: 0 },
   { cx: 125, cy: 38, color: '#10B981', status: 'en course', delay: 0.3 },
   { cx: 155, cy: 72, color: '#10B981', status: 'en course', delay: 0.6 },
-  { cx: 60, cy: 35, color: '#00D4FF', status: 'repositionnement IA', delay: 0.8 },
-  { cx: 170, cy: 48, color: '#00D4FF', status: 'repositionnement IA', delay: 1.1 },
+  { cx: 60, cy: 35, color: '#00D4FF', status: 'repositionnement conseillé', delay: 0.8 },
+  { cx: 170, cy: 48, color: '#00D4FF', status: 'repositionnement conseillé', delay: 1.1 },
   { cx: 105, cy: 78, color: '#F59E0B', status: 'en attente', delay: 1.4 },
 ]
 
 const legend = [
   { color: '#10B981', label: 'En course' },
-  { color: '#00D4FF', label: 'Repositionnement IA' },
+  { color: '#00D4FF', label: 'Repositionnement conseillé' },
   { color: '#F59E0B', label: 'En attente' },
 ]
 

@@ -216,7 +216,13 @@ const FEATURES: Feature[] = [
   },
   {
     punch: 'La ville qui paie, en couleurs.',
-    detail: 'La carte s\'allume là où la demande monte, à 800 m près. Tu te places avant que ça sonne.',
+    // 14/08/2026 — disait « La carte s'allume là où la demande monte, à 800 m près ».
+    // La même promesse a été passée au futur dans StickyFeatures.tsx et
+    // ZoneMechanismVisual.tsx sur cette mesure exacte : pieuvre_h3_demand_zones → 0,
+    // pieuvre_surge_predictions → 0, extracted_surge_data → 0, bandit_top_zones → 0.
+    // Elle avait survécu ICI, au présent, avec la distance au mètre près — sur la page
+    // qui demande la carte. Corriger la vitrine et laisser la caisse est le pire des deux.
+    detail: 'La carte te montre les zones où tes courses ont vraiment payé, à cette heure-ci. Tu choisis où te poser.',
   },
   {
     punch: 'Un collègue qui connaît la ville. Dans ta poche.',
@@ -224,7 +230,14 @@ const FEATURES: Feature[] = [
   },
   {
     punch: 'Le contrôle, tu le sais avant de le voir.',
-    detail: 'Les chauffeurs se signalent les contrôles, accidents et bouchons, avec la distance. Tu n\'es plus seul sur la route.',
+    // 14/08/2026 — disait « Les chauffeurs se signalent les contrôles, accidents et
+    // bouchons ». Mesure : community_alerts → 1 074 lignes, source='telegram_scrape'
+    // à 100 %, created_by NULL sur la TOTALITÉ — aucun chauffeur n'a jamais signalé
+    // quoi que ce soit. tokens_sent → 0, push_notifications sum(sent_count) → 0 sur
+    // 990 lignes, community_members → 0. CinematicSequence.tsx a été passé au futur
+    // sur cette mesure dans la même passe ; cette phrase-ci était restée au présent,
+    // sur la page de paiement.
+    detail: 'Les alertes route de ta zone — contrôles, accidents, bouchons — remontées au fil de l\'eau. Et bientôt, celles que les chauffeurs FOREAS se passeront entre eux.',
   },
   {
     punch: 'Une course à 25 € ? 25 € pour toi.',
