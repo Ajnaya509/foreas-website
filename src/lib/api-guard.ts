@@ -26,8 +26,15 @@
  * Ce garde ne journalise jamais la valeur d'un secret, seulement le verdict.
  */
 
-import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+
+/**
+ * Le garde n'a besoin que des EN-TÊTES. On accepte donc aussi bien un `NextRequest`
+ * qu'un `Request` standard : certaines routes utilisent l'un, d'autres l'autre, et
+ * une signature trop étroite obligerait à tordre les routes pour satisfaire le garde
+ * — c'est au garde de s'adapter, pas l'inverse.
+ */
+type RequeteAvecEntetes = { headers: Headers }
 
 /** Hôtes considérés comme « nous ». Les previews Vercel sont incluses par suffixe. */
 const FOREAS_HOSTS = new Set([
@@ -62,7 +69,7 @@ function isForeasHost(host: string | null): boolean {
  * `strict-origin-when-cross-origin`, donc le Referer même-origine est complet).
  * Absence des deux = appel serveur-à-serveur ou outil en ligne de commande → refusé.
  */
-export function isSameOriginRequest(request: NextRequest): boolean {
+export function isSameOriginRequest(request: RequeteAvecEntetes): boolean {
   // L'hôte servi par cette requête même. C'est la référence la plus fiable :
   // elle suit automatiquement le domaine (foreas.xyz, une preview Vercel, un
   // port local quelconque) sans liste à maintenir. La liste figée en dur
@@ -84,7 +91,7 @@ export function isSameOriginRequest(request: NextRequest): boolean {
  * FAIL CLOSED : variable absente ou vide → toujours faux.
  * Comparaison à temps constant pour ne pas fuiter le secret octet par octet.
  */
-export function hasValidBearer(request: NextRequest, envVar: string): boolean {
+export function hasValidBearer(request: RequeteAvecEntetes, envVar: string): boolean {
   const expected = process.env[envVar]
   if (!expected || expected.length < 16) return false // fail closed
 

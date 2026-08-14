@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { sendCAPIEvent, type CAPIEventName, type CAPIUserData, type CAPICustomData } from '@/lib/meta-capi'
 
 export const runtime = 'nodejs'
@@ -22,6 +23,16 @@ export const runtime = 'nodejs'
  */
 
 export async function POST(request: NextRequest) {
+  // GARDE 14/08/2026 — Route de conversion serveur (Meta). Sans garde, n'importe qui peut injecter de
+  // fausses conversions dans le compte publicitaire de FOREAS — donnée d'audience
+  // empoisonnée, budget mal optimisé, et un canal pour faire transiter des données
+  // personnelles à travers NOTRE jeton.
+  // Appelée uniquement par nos propres pages : un appel sans origine FOREAS
+  // n'a aucune raison d'exister.
+  if (!isSameOriginRequest(request)) {
+    return forbiddenOrigin()
+  }
+
   try {
     const body = (await request.json()) as {
       eventName?: CAPIEventName

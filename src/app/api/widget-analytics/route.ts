@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 
 export async function POST(request: Request) {
+  // GARDE 14/08/2026 — Écriture de télémétrie. Une mesure qu'un inconnu peut alimenter ne mesure rien.
+  // Appelée uniquement par nos propres pages : un appel sans origine FOREAS
+  // n'a aucune raison d'exister.
+  if (!isSameOriginRequest(request)) {
+    return forbiddenOrigin()
+  }
+
   try {
     const data = await request.json()
 

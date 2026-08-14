@@ -1,9 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
+  // GARDE 14/08/2026 — Compteurs de pages d'atterrissage : ouverts, ils se gonflent depuis l'extérieur
+  // et toute décision prise sur ces chiffres devient fausse.
+  // Appelée uniquement par nos propres pages : un appel sans origine FOREAS
+  // n'a aucune raison d'exister.
+  if (!isSameOriginRequest(req)) {
+    return forbiddenOrigin()
+  }
+
   try {
     const body = await req.json()
     const {

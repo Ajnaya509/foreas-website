@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { createClient } from '@supabase/supabase-js'
 import { sendCAPIEvent } from '@/lib/meta-capi'
 import { resolveIdentity, normalizePhoneE164, type IdentityCanal } from '@/lib/identityGate'
@@ -26,6 +27,14 @@ export const runtime = 'nodejs'
  */
 
 export async function POST(request: NextRequest) {
+  // GARDE 14/08/2026 — Écrit dans `identity_bridge`, le répertoire d'identité de tout l'écosystème.
+  // Ouverte, elle laisse n'importe qui y créer des lignes.
+  // Appelée uniquement par nos propres pages : un appel sans origine FOREAS
+  // n'a aucune raison d'exister.
+  if (!isSameOriginRequest(request)) {
+    return forbiddenOrigin()
+  }
+
   try {
     const {
       phone_raw,

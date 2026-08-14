@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { sendTikTokEvent, type TikTokEventName, type TikTokUserData, type TikTokCustomData } from '@/lib/tiktok-events-api'
 
 export const runtime = 'nodejs'
@@ -21,6 +22,14 @@ export const runtime = 'nodejs'
  */
 
 export async function POST(request: NextRequest) {
+  // GARDE 14/08/2026 — Même raison que /api/pixel/capi : une route de conversion ouverte est un canal
+  // d'injection dans le compte publicitaire.
+  // Appelée uniquement par nos propres pages : un appel sans origine FOREAS
+  // n'a aucune raison d'exister.
+  if (!isSameOriginRequest(request)) {
+    return forbiddenOrigin()
+  }
+
   try {
     const body = (await request.json()) as {
       eventName?: TikTokEventName

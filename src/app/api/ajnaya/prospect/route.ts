@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { readAcquisitionFromRequest } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
@@ -33,6 +34,13 @@ function toAllowedSource(raw: string, ctwaClid?: string): string {
 
 // POST — Create or find a prospect
 export async function POST(request: NextRequest) {
+  // GARDE 14/08/2026 — Crée des prospects en base. Ouverte, elle laisse polluer le fichier commercial.
+  // Appelée uniquement par nos propres pages : un appel sans origine FOREAS
+  // n'a aucune raison d'exister.
+  if (!isSameOriginRequest(request)) {
+    return forbiddenOrigin()
+  }
+
   try {
     const body = await request.json()
     const { phone, email, firstName, source = 'widget_site', pageSource, utm_source, utm_campaign } = body
