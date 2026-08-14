@@ -88,7 +88,7 @@ export default function ZoneMechanismVisual() {
             icon={Satellite}
             label="CAPTE"
             title="Uber, Bolt, Heetch, au même endroit"
-            desc="Bien plus que tes apps VTC. Des dizaines de signaux temps réel — comment, c'est notre secret."
+            desc="Tes courses des trois apps, réunies. Ce qu'on en tire, c'est notre secret."
             delay={0}
           />
           <MechanismCard

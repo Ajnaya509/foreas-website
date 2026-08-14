@@ -155,6 +155,8 @@ function CheckoutInner() {
   const ref = params.get('ref')
   const testToken = params.get('t') // lien secret de test → 1re facture à 0,50€
   const plan = PLANS[planKey] ?? PLANS.pro_monthly
+  // La période affichée doit suivre la formule choisie, pas être écrite en dur.
+  const annuel = planKey === 'pro_annual' || planKey === 'annuel' || planKey === 'annual'
 
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [subId, setSubId] = useState<string | null>(null)
@@ -272,10 +274,18 @@ function CheckoutInner() {
               <span className="text-[40px] font-extrabold tabular-nums leading-none text-[#F8FAFC]" style={{ letterSpacing: '-0.04em' }}>
                 {exitOffer ? eur(plan.price * 0.8) : eur(plan.price)}&nbsp;€
               </span>
-              <span className="text-[13px] text-white/45">{exitOffer ? '1er mois' : '/mois'} · FOREAS {plan.name}</span>
+              {/* 14/08/2026 — ce récapitulatif écrivait « /mois » et « ce mois-ci » QUEL QUE SOIT
+                  le plan : un chauffeur arrivé par ?plan=pro_annual lisait « 249,99 € /mois » et
+                  « −20% ce mois-ci · puis 249,99€/mois ». Le montant était juste, la période
+                  fausse — sur la page où il sort sa carte. La période suit maintenant la formule. */}
+              <span className="text-[13px] text-white/45">
+                {exitOffer ? (annuel ? '1re année' : '1er mois') : (annuel ? '/an' : '/mois')} · FOREAS {plan.name}
+              </span>
             </div>
             <p className="mt-1.5 text-[12px] text-[#00D4FF]/90 tabular-nums">
-              {exitOffer ? `−20% ce mois-ci · puis ${eur(plan.price)}€/mois` : `soit ${plan.perDay}`}
+              {exitOffer
+                ? `−20% ${annuel ? 'la 1re année' : 'ce mois-ci'} · puis ${eur(plan.price)} €${annuel ? '/an' : '/mois'}`
+                : `soit ${plan.perDay}`}
             </p>
 
             <div className="my-5 h-px bg-white/[0.07]" />

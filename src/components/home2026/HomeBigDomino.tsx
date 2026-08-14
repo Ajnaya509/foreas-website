@@ -87,9 +87,9 @@ export default function HomeBigDomino() {
           className="mx-auto max-w-2xl t-bodylg"
           style={{ color: 'rgba(248, 250, 252, 0.7)' }}
         >
-          Ajnaya lit la demande en temps réel sur{' '}
+          Ajnaya lit la demande sur{' '}
           <span className="tabular-nums" style={{ color: 'rgba(248, 250, 252, 0.92)' }}>
-            51&nbsp;zones
+            52&nbsp;zones
           </span>
           . Toi, tu conduis. Elle, elle calcule.
         </motion.p>
