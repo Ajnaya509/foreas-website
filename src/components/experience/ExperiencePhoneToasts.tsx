@@ -28,15 +28,37 @@ import { useReducedMotion } from '@/hooks/useDevicePerf'
 
 interface Entry { driver: string; city: string; initial: string; accent: 'violet' | 'cyan' | 'rose' | 'gold' }
 
+/**
+ * LES SIX CHAUFFEURS QUI ONT ACCEPTÉ D'ÊTRE FILMÉS, À VISAGE DÉCOUVERT.
+ *
+ * ⚠️ CE QU'IL Y AVAIT ICI AVANT LE 14/08/2026, ET POURQUOI C'ÉTAIT GRAVE :
+ * huit entrées inventées de toutes pièces — « Bakary S. · Nantes », « Driss T. ·
+ * Lyon », « Pavel N. · Lille »… tirées au sort et affichées au PRÉSENT
+ * (« X parle à Ajnaya »), c'est-à-dire présentées comme une activité en cours.
+ * Mesure : `select count(*) from widget_conversations where created_at > now() -
+ * interval '45 days'` → **0**. Personne ne parlait à Ajnaya. La table entière
+ * compte 36 lignes, la dernière datée du 18/05/2026.
+ *
+ * Et deux de ces huit noms n'étaient PAS inventés : « Binate A. » et
+ * « Hadietou D. » sont de vraies personnes, filmées pour le site. Les faire
+ * apparaître dans une fausse notification d'activité en direct, c'est leur
+ * attribuer une action qu'elles n'ont pas faite — le cas le plus exposé
+ * (personne identifiable, RGPD, droit à l'image).
+ *
+ * CE QU'IL Y A MAINTENANT : les six personnes réellement filmées, avec une
+ * phrase qui décrit un fait accompli et vérifiable (« a filmé son témoignage »),
+ * pas une activité imaginaire au présent. Le visiteur peut cliquer et voir la
+ * vidéo : la preuve se vérifie en trois secondes.
+ * Source : src/components/zone/testimonials.data.ts · socle de vérité :
+ * FOREAS-SHARED/VERITE_COMMERCIALE_2026-08-14.md
+ */
 const ENTRIES: Entry[] = [
-  { driver: 'Bakary S.', city: 'Nantes', initial: 'B', accent: 'violet' },
-  { driver: 'Driss T.', city: 'Lyon', initial: 'D', accent: 'cyan' },
-  { driver: 'Karim B.', city: 'CDG', initial: 'K', accent: 'violet' },
-  { driver: 'Soufiane M.', city: 'Paris 11ᵉ', initial: 'S', accent: 'rose' },
-  { driver: 'Binate A.', city: 'Disney', initial: 'B', accent: 'gold' },
-  { driver: 'Théodore R.', city: 'Marseille', initial: 'T', accent: 'cyan' },
-  { driver: 'Pavel N.', city: 'Lille', initial: 'P', accent: 'violet' },
-  { driver: 'Hadietou D.', city: 'Bercy', initial: 'H', accent: 'rose' },
+  { driver: 'Haitham B.', city: 'Paris', initial: 'H', accent: 'violet' },
+  { driver: 'Binate A.', city: 'Marne-la-Vallée', initial: 'B', accent: 'gold' },
+  { driver: 'Zephy K.', city: 'Marne-la-Vallée', initial: 'Z', accent: 'cyan' },
+  { driver: 'Dragan P.', city: 'Paris', initial: 'D', accent: 'violet' },
+  { driver: 'Hadietou', city: 'banlieue parisienne', initial: 'H', accent: 'rose' },
+  { driver: 'Nikolic N.', city: 'Paris', initial: 'N', accent: 'cyan' },
 ]
 
 const ACCENT: Record<Entry['accent'], { ring: string; bg: string }> = {
@@ -145,7 +167,7 @@ export default function ExperiencePhoneToasts() {
                   ligne la maintient dans le dégradé d'ancrage du CTA, où le contenu qui défile
                   est déjà atténué : elle ne cache plus rien de lisible. */}
               <p className="min-w-0 flex-1 text-[12.5px] leading-tight text-white/60">
-                <span className="font-bold text-[#F8FAFC]">{e.driver}</span> parle à Ajnaya
+                <span className="font-bold text-[#F8FAFC]">{e.driver}</span> a filmé son témoignage
               </p>
               <button type="button" onClick={dismiss} aria-label="Fermer" className="self-start -mr-1 -mt-1 w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
                 <X className="w-3.5 h-3.5" />

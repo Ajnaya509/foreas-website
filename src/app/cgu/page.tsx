@@ -119,8 +119,24 @@ export default function CGUPage() {
 
             <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
               <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">8. Résiliation</h2>
+                {/*
+                  ⚠️ AJOUTÉ LE 14/08/2026 — LE CONTRAT CONTREDISAIT LA PAGE DE VENTE.
+                  Mesuré en production : « 30 jours » apparaissait 0 fois dans ces CGU, et la
+                  seule clause de remboursement disait « aucun remboursement au prorata » —
+                  soit l'INVERSE de ce que /checkout et /experience promettaient au chauffeur
+                  (« 30 jours satisfait ou remboursé, sans discuter »).
+                  Or la garantie EST la vraie politique : le code le dit lui-même dans
+                  src/app/api/subscription/create/route.ts — « Garantie 30j = gérée hors-Stripe
+                  (remboursement manuel) ». Le contrat est donc aligné sur la pratique et sur la
+                  promesse, plutôt que l'inverse : c'est le sens qui protège l'Utilisateur et qui
+                  supprime la contradiction, au lieu de retirer une garantie déjà annoncée.
+                  ⚖️ À faire relire par un juriste avant de considérer le point clos.
+                */}
+                <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
+                  <span className="text-white/85 font-medium">Garantie 30 jours.</span> Tout nouvel abonné peut demander le remboursement intégral de sa première période d&apos;abonnement, sans avoir à se justifier, dans les 30 jours suivant son premier paiement. La demande se fait par simple message à <span className="text-white/80">contact@foreas.xyz</span> ; le remboursement est effectué sur le moyen de paiement d&apos;origine.
+                </p>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed">
-                L&apos;Utilisateur peut résilier son abonnement à tout moment depuis son espace personnel ou en contactant FOREAS à <span className="text-white/80">contact@foreas.xyz</span>. La résiliation prend effet à l&apos;issue de la période d&apos;abonnement en cours ; aucun remboursement au prorata n&apos;est effectué sauf disposition légale contraire.
+                L&apos;Utilisateur peut résilier son abonnement à tout moment depuis son espace personnel ou en contactant FOREAS à <span className="text-white/80">contact@foreas.xyz</span>. La résiliation prend effet à l&apos;issue de la période d&apos;abonnement en cours ; en dehors de la garantie 30 jours ci-dessus, aucun remboursement au prorata n&apos;est effectué sauf disposition légale contraire.
               </p>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed mt-3">
                 FOREAS se réserve le droit de résilier ou de suspendre l&apos;accès d&apos;un Utilisateur sans préavis en cas de violation des présentes CGU, d&apos;utilisation frauduleuse ou de comportement préjudiciable aux intérêts de FOREAS ou des autres utilisateurs.

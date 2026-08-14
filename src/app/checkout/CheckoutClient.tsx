@@ -15,7 +15,7 @@ import { loadStripe, type Appearance } from '@stripe/stripe-js'
 import { Elements, PaymentElement, LinkAuthenticationElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { ShieldCheck, Check, Lock, Loader2 } from 'lucide-react'
 import { InkGradientButton } from '@/components/ui'
-import CheckoutProofToasts from '@/components/checkout/CheckoutProofToasts'
+// CheckoutProofToasts RETIRÉ le 14/08/2026 — voir le commentaire au point de montage.
 import ExitIntentOffer from '@/components/checkout/ExitIntentOffer'
 import { FORMULES } from '@/lib/offre'
 
@@ -131,7 +131,7 @@ function PaymentForm({ planKey, isTest, subscriptionId }: { planKey: string; isT
       <InkGradientButton as="button" type="submit" variant="violet" size="lg" disabled={!stripe || submitting} className="w-full">
         <span className="inline-flex items-center justify-center gap-2">
           {submitting ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
-          {submitting ? 'Paiement en cours…' : isTest ? 'Payer 0,50 € · test' : `Payer ${plan.price} € · démarrer maintenant`}
+          {submitting ? 'Paiement en cours…' : isTest ? 'Payer 0,50 € · test' : `Payer ${eur(plan.price)} € · démarrer maintenant`}
         </span>
       </InkGradientButton>
 
@@ -315,7 +315,29 @@ function CheckoutInner() {
       </main>
 
       {/* Bulles "vient de s'abonner" — preuve sociale, comme la home */}
-      <CheckoutProofToasts />
+      {/*
+        ⛔ RETIRÉ LE 14/08/2026 — FAUSSE PREUVE SOCIALE SUR LA PAGE QUI ENCAISSE.
+
+        Le composant affichait, en boucle, dix chauffeurs INVENTÉS annonçant
+        « X vient de s'abonner à FOREAS Pro · il y a 3 min » : Bakary S. (Nantes),
+        Driss T. (Lyon), Karim B. (CDG), Soufiane M. (Paris 11ᵉ), Pavel N. (Lille),
+        Ahmed F. (Orly), Théodore R. (Marseille)… avec un horodatage tiré au sort.
+
+        Mesure qui tranche :
+          select count(*) from drivers where stripe_subscription_id is not null;  -- 0
+          select count(*) from subscribers;                                       -- 0
+        **Personne ne s'est jamais abonné.** Ce n'était pas une exagération, c'était
+        une invention intégrale, affichée à l'endroit exact où le chauffeur sort sa
+        carte. C'est le cas d'école de la pratique commerciale trompeuse
+        (art. L.121-1 du code de la consommation), et « FOREAS Pro » désigne en plus
+        une offre qui n'existe plus.
+
+        Il n'existe aucune version honnête de « vient de s'abonner » quand le compteur
+        est à zéro : le composant est retiré, pas réécrit. On le rebranchera le jour
+        où de vrais abonnements existeront, alimenté par la base et non par une liste.
+
+        Socle : FOREAS-SHARED/VERITE_COMMERCIALE_2026-08-14.md
+      */}
       <ExitIntentOffer onAccept={() => setExitOffer(true)} />
     </div>
   )

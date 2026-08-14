@@ -365,10 +365,26 @@ export default function HomePage() {
 
 
       {/* ═══════════════════════════════════════════════════════════════
-          1.5 BAND "Vu dans / Partenaires" — Cialdini autorité (Site2026v57)
-          Pattern Stripe.com /customers : bande logos monochromes après hero,
-          signal "ils nous font confiance". Placeholders pour l'instant —
-          remplir avec vrais logos quand partenariats annoncés.
+          1.5 BANDE DE PREUVE — RETIRÉE ET REMPLACÉE LE 14/08/2026
+
+          Ce qu'il y avait ici : une bande « Soutenu par les acteurs du transport
+          & de l'hospitalité » affichant FRENCH TECH 120, Bpifrance, Sista Network,
+          TechCrunch et Les Échos, suivie de la mention « Logos sous accord —
+          communiqués officiels disponibles sur demande ».
+
+          Aucun de ces cinq organismes n'apparaît NULLE PART ailleurs dans le dépôt :
+          aucun accord, aucun communiqué, aucune trace. Le commentaire du code disait
+          lui-même « Placeholders pour l'instant — remplir avec vrais logos quand
+          partenariats annoncés » : des bouchons partis en production.
+
+          Ce n'est pas un oubli cosmétique. Faire croire qu'on est agréé ou soutenu
+          par un organisme public (Bpifrance est une banque publique, French Tech 120
+          un programme d'État) est une pratique commerciale trompeuse EXPLICITEMENT
+          listée par le code de la consommation. Et « communiqués disponibles sur
+          demande » transforme un bouchon en affirmation active.
+
+          Remplacé par ce qui est VRAI et vérifiable en trente secondes par le lecteur.
+          Socle : FOREAS-SHARED/VERITE_COMMERCIALE_2026-08-14.md
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative py-12 md:py-16 border-t border-b border-white/[0.04]">
         <Container>
@@ -379,30 +395,26 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
             className="text-center text-eyebrow text-text-muted mb-8"
           >
-            Soutenu par les acteurs du transport &amp; de l&apos;hospitalité
+            Ce que vous pouvez vérifier vous-même
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 md:gap-x-16 opacity-60"
-            aria-label="Partenaires et reconnaissances"
+            className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 md:gap-x-14"
           >
-            {/* Logos placeholders — typographiques en attendant SVG officiels */}
             {[
-              { name: 'French Tech', label: 'FRENCH TECH 120' },
-              { name: 'Bpifrance', label: 'Bpifrance' },
-              { name: 'Sista', label: 'Sista Network' },
-              { name: 'TechCrunch', label: 'TechCrunch' },
-              { name: 'Les Echos', label: 'Les Échos' },
-            ].map((partner) => (
-              <span
-                key={partner.name}
-                className="font-title text-base md:text-lg text-text-tertiary tracking-wide select-none"
-                aria-label={partner.name}
-              >
-                {partner.label}
+              { chiffre: 'App Store', detail: 'application publiée' },
+              { chiffre: 'Google Play', detail: 'application publiée' },
+              { chiffre: '6', detail: 'chauffeurs filmés, à visage découvert' },
+              { chiffre: 'France', detail: 'conçu et hébergé en Europe' },
+            ].map((item) => (
+              <span key={item.chiffre} className="text-center select-none">
+                <span className="block font-title text-lg md:text-xl text-text-secondary tracking-wide tabular-nums">
+                  {item.chiffre}
+                </span>
+                <span className="block text-[11px] text-text-muted mt-1">{item.detail}</span>
               </span>
             ))}
           </motion.div>
@@ -413,7 +425,7 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="text-center text-[11px] text-text-muted mt-6"
           >
-            Logos sous accord — communiqués officiels disponibles sur demande
+            Nous ne revendiquons aucun label ni soutien institutionnel.
           </motion.p>
         </Container>
       </section>
