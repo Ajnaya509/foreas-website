@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import LandingPageTemplate, { type LandingContent } from '@/components/landing/LandingPageTemplate'
+import { canonique } from '@/lib/site'
 
 export const revalidate = 3600 // ISR — revalide toutes les heures
 
@@ -77,9 +78,20 @@ export async function generateMetadata(
   return {
     title: data.meta_title || `${topic.charAt(0).toUpperCase() + topic.slice(1)} — Stratégie VTC par FOREAS Driver`,
     description: data.meta_description || 'Optimise tes revenus de chauffeur VTC avec FOREAS.',
+    // ── ADRESSE DE RÉFÉRENCE — 20/08/2026, seconde passe ──────────────────
+    //
+    // Neuf pages écrites à la main avaient été canonisées le matin. Ces dix-là,
+    // fabriquées en série depuis la base, n'avaient RIEN — alors qu'elles sont
+    // dans le plan du site, indexables, et que ce sont précisément les pages
+    // générées à la chaîne : celles qui se ressemblent le plus entre elles, et
+    // qui souffrent le plus d'être servies sous deux adresses (avec et sans
+    // « www »). Corriger neuf pages soignées et laisser dix pages fabriquées
+    // sans rien, c'était traiter le symptôme visible.
+    alternates: { canonical: canonique(`/${topic}`) },
     openGraph: {
       title: data.meta_title,
       description: data.meta_description,
+      url: canonique(`/${topic}`),
     },
   }
 }

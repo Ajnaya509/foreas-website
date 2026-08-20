@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { canonique } from '@/lib/site'
+import { URL_SITE, canonique } from '@/lib/site'
 import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
 import { PLATEFORMES_PHRASES } from '@/lib/verite-commerciale'
 import Header from '@/components/Header'
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     description: `Tape ta zone, Ajnaya te répond sur WhatsApp. ${PLATEFORMES_PHRASES.honnete}.`,
     type: 'website',
     locale: 'fr_FR',
-    url: 'https://foreas.xyz/ou-ca-paie',
+    url: canonique('/ou-ca-paie'),
   },
   alternates: {
     canonical: canonique('/ou-ca-paie'),
@@ -86,8 +86,13 @@ const JSON_LD = {
   '@graph': [
     {
       '@type': 'WebPage',
-      '@id': 'https://foreas.xyz/ou-ca-paie',
-      url: 'https://foreas.xyz/ou-ca-paie',
+      // ── 20/08/2026 — L'IDENTIFIANT STRUCTURÉ SUIT LA MÊME RÈGLE QUE LA CANONIQUE ──
+      // La balise de référence de cette page dit « www ». Ces lignes-ci disaient
+      // l'adresse sans « www », qui redirige. Deux signaux qui se contredisent sur la
+      // même page valent moins qu'un seul signal clair — et c'est exactement le
+      // raisonnement déjà écrit dans src/lib/site.ts, simplement non appliqué ici.
+      '@id': canonique('/ou-ca-paie'),
+      url: canonique('/ou-ca-paie'),
       // 14/08/2026 — ce bloc servait encore à Google « Tapez votre zone. Ajnaya
       // vous dit où ça paie ce soir […] Données réelles flotte FOREAS », alors
       // que la <meta> avait déjà été corrigée : un chiffre faux dans un JSON-LD
@@ -99,7 +104,7 @@ const JSON_LD = {
       isPartOf: {
         '@type': 'WebSite',
         name: 'FOREAS',
-        url: 'https://foreas.xyz',
+        url: URL_SITE,
       },
     },
     {

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { canonique } from '@/lib/site'
+import { URL_SITE, canonique } from '@/lib/site'
 import dynamic from 'next/dynamic'
 // ─── Above-the-fold (critique pour le 1er rendu) : statique ───
 import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
@@ -43,8 +43,13 @@ const JSON_LD = {
   '@graph': [
     {
       '@type': 'WebPage',
-      '@id': 'https://foreas.xyz/',
-      url: 'https://foreas.xyz/',
+      // ── 20/08/2026 — L'IDENTIFIANT STRUCTURÉ SUIT LA MÊME RÈGLE QUE LA CANONIQUE ──
+      // La balise de référence de cette page dit « www ». Ces lignes-ci disaient
+      // l'adresse sans « www », qui redirige. Deux signaux qui se contredisent sur la
+      // même page valent moins qu'un seul signal clair — et c'est exactement le
+      // raisonnement déjà écrit dans src/lib/site.ts, simplement non appliqué ici.
+      '@id': canonique('/'),
+      url: canonique('/'),
       name: 'FOREAS — Gagne plus, roule moins',
       description:
         'FOREAS pour chauffeurs VTC : ton net réel avant d\'accepter, où aller, quand, et combien tu gardes vraiment.',
@@ -52,7 +57,7 @@ const JSON_LD = {
       isPartOf: {
         '@type': 'WebSite',
         name: 'FOREAS',
-        url: 'https://foreas.xyz',
+        url: URL_SITE,
       },
     },
     {
