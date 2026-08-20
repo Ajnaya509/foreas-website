@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { canonique } from '@/lib/site'
 import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
 import { PLATEFORMES_PHRASES } from '@/lib/verite-commerciale'
 import Header from '@/components/Header'
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
     url: 'https://foreas.xyz/ou-ca-paie',
   },
   alternates: {
-    canonical: 'https://foreas.xyz/ou-ca-paie',
+    canonical: canonique('/ou-ca-paie'),
   },
 }
 

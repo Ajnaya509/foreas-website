@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { canonique } from '@/lib/site'
 import dynamic from 'next/dynamic'
 // ─── Above-the-fold (critique pour le 1er rendu) : statique ───
 import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
     url: 'https://www.foreas.xyz/',
   },
   alternates: {
-    canonical: 'https://www.foreas.xyz/',
+    canonical: canonique('/'),
   },
 }
 

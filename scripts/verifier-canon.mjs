@@ -217,6 +217,24 @@ function texteAffiche(source) {
 
 const REGLES_STRUCTURELLES = [
   {
+    // ── L'ADRESSE PUBLIQUE VIENT D'UN SEUL ENDROIT ──────────────────────────
+    //
+    // Mesuré le 20/08/2026 : le sitemap listait 18 URL en `foreas.xyz` (apex)
+    // alors que la production sert `www` et redirige l'apex en 307. Google était
+    // donc envoyé sur 18 redirections. Et les canoniques se contredisaient d'une
+    // page à l'autre — `/` sur www, `/ou-ca-paie` sur l'apex, `/tarifs2` aucune.
+    // Une canonique qui désigne une URL qui redirige s'annule elle-même.
+    //
+    // Un fichier qui écrit une adresse publique du site doit la lire dans
+    // src/lib/site.ts. Une URL d'infrastructure (railway.app, vercel.app) n'est
+    // JAMAIS une adresse publique — d'où l'interdiction de la mettre en canonique.
+    concerne: /canonical:\s*['"`]https:\/\/|sitemap:\s*['"`]https:\/\/|host:\s*['"`]https:\/\//,
+    exige: /URL_SITE|canonique\(/,
+    quoi: 'une adresse publique écrite en dur (canonique, sitemap ou host)',
+    pourquoi:
+      "L'adresse du site vient de src/lib/site.ts (URL_SITE / canonique()). Écrite en dur, elle finit par diverger d'une page à l'autre — c'est déjà arrivé : le sitemap sur l'apex, les canoniques moitié www moitié apex, et Google envoyé sur des redirections.",
+  },
+  {
     // ── UNE PAROLE NE SE RÉÉCRIT PAS AILLEURS QUE DANS SA SOURCE ────────────
     //
     // Le 14/08/2026, le prompt du modal d'accueil faisait dire à Dragan P.

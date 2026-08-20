@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { URL_SITE } from '@/lib/site'
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -15,7 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://foreas.xyz/sitemap.xml',
-    host: 'https://foreas.xyz',
+    sitemap: `${URL_SITE}/sitemap.xml`,
+    host: `${URL_SITE}`,
   }
 }

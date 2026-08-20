@@ -18,6 +18,7 @@
  */
 
 import type { Metadata } from 'next'
+import { canonique } from '@/lib/site'
 import Link from 'next/link'
 import { ESSAI_JOURS, PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
 
@@ -78,7 +79,7 @@ export const metadata: Metadata = {
     'réforme DGFiP 2026 VTC',
   ],
   alternates: {
-    canonical: 'https://foreas.xyz/facturation-electronique-vtc-2026',
+    canonical: canonique('/facturation-electronique-vtc-2026'),
   },
   openGraph: {
     title: 'Facturation électronique VTC — Sept 2026 | FOREAS',

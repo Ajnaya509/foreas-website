@@ -1,7 +1,15 @@
 import type { MetadataRoute } from 'next'
+import { URL_SITE } from '@/lib/site'
+
+// ⚠️ 20/08/2026 — CE SITEMAP ENVOYAIT GOOGLE SUR 18 URL QUI REDIRIGENT.
+// Il listait `https://foreas.xyz/...` (sans www) alors que la production sert
+// `www` et redirige l'apex en 307. Un sitemap qui pointe sur des redirections
+// gaspille le budget d'exploration et brouille le choix de la version de
+// référence : Google finit par trancher seul, et pas toujours bien.
+// L'adresse vient maintenant de src/lib/site.ts, seul endroit où elle est écrite.
 import { createClient } from '@supabase/supabase-js'
 
-const BASE = 'https://foreas.xyz'
+const BASE = URL_SITE
 
 // Repli si la base est injoignable — JAMAIS un sitemap vide (ce serait pire que
 // quelques URLs de trop : Google interpréterait une disparition du site).
