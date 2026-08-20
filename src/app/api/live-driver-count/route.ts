@@ -35,27 +35,25 @@ async function getSupabase() {
 }
 
 /**
- * Fallback déterministe : varie la valeur dans une plage crédible (140-160)
- * en fonction de l'heure courante. Évite "147" figé éternellement.
+ * ⚠️ 20/08/2026 — LA FABRIQUE DE FAUX COMPTEUR A ÉTÉ RETIRÉE.
  *
- * Plage horaire :
- *  - 18h-23h (rush soir)    : 152-160 (peak)
- *  - 0h-6h    (creux nuit)  : 140-148 (low)
- *  - 7h-17h  (jour standard) : 145-155
+ * Cette route contenait une fonction `deterministicFallback()` qui INVENTAIT un
+ * nombre de chauffeurs « crédible » entre 140 et 160, variant selon l'heure —
+ * son propre commentaire disait « évite que 147 reste figé éternellement ».
+ *
+ * C'est la machine qui produisait le « 147 chauffeurs actifs ce soir » retiré du
+ * site le 14/08 pour la raison exacte qu'il était inventé. La phrase avait été
+ * retirée ; la fabrique, elle, tournait encore.
+ *
+ * Vérifié avant de la retirer : AUCUNE page n'affiche cette route. Personne ne
+ * ment aujourd'hui à cause d'elle. Mais un nombre plausible disponible à l'appel
+ * finit toujours par être branché quelque part, et personne ne se souviendra
+ * qu'il était fabriqué.
+ *
+ * Ce qu'elle rend maintenant : la vérité. `indisponible` quand la mesure
+ * n'existe pas — c'est un des trois états de src/lib/provenance.ts, et le seul
+ * honnête ici. La fonction `count_active_drivers_24h` n'existe pas en base.
  */
-function deterministicFallback(): number {
-  const now = new Date()
-  const hour = now.getUTCHours() + 1 // +1 = Paris approximatif (été UTC+2 sera +1 sur l'écart)
-  const minute = now.getMinutes()
-  const seedNoise = ((hour * 60 + minute) % 11) - 5 // -5..+5 jitter
-
-  let base: number
-  if (hour >= 18 && hour <= 23) base = 156      // rush soir
-  else if (hour >= 0 && hour <= 6) base = 144   // creux nuit
-  else base = 150                               // jour
-
-  return Math.max(140, Math.min(160, base + seedNoise))
-}
 
 export async function GET() {
   try {
@@ -78,14 +76,11 @@ export async function GET() {
     /* Fall through to fallback */
   }
 
-  // Fallback déterministe
+  // Aucune mesure : on le DIT. On n'invente pas un nombre plausible.
+  // `indisponible` est l'un des trois états de src/lib/provenance.ts, et le
+  // seul honnête ici : la fonction count_active_drivers_24h n'existe pas en base.
   return NextResponse.json(
-    { count: deterministicFallback(), source: 'fallback' },
-    {
-      headers: {
-        // Plus court sur le fallback pour que ça bouge entre les heures
-        'Cache-Control': 's-maxage=300, stale-while-revalidate=300',
-      },
-    }
+    { count: null, source: 'indisponible' },
+    { headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=300' } },
   )
 }
