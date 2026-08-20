@@ -389,6 +389,46 @@ try {
   dire(false, `plan du site → ${e.message}`)
 }
 
+// ─── OÙ EN EST LA BASCULE DE CLÉ, COMPOSANT PAR COMPOSANT ───────────────────
+//
+// Pendant une bascule, « ce composant est-il migré ? » ne doit pas se répondre
+// en devinant. Sans ces voyants, un composant déjà basculé et un composant qui
+// ne l'est pas se ressemblent exactement — jusqu'au jour où on désactive
+// l'ancienne clé et où l'un des deux tombe.
+//
+// Ces contrôles n'ÉCHOUENT PAS tant que la bascule n'est pas lancée : `ancienne`
+// est l'état normal aujourd'hui. Ils AFFICHENT. Ce qui est refusé, c'est
+// `absente` — un composant serveur sans clé ne travaille pas.
+console.log('\n── Bascule des clés Supabase (état, pas jugement) ──')
+{
+  const composants = [
+    { nom: 'site', url: `${BASE}/api/etat-migration`, champ: (j) => j.cle_serveur },
+    {
+      nom: 'serveur IA',
+      url: 'https://foreas-ai-backend-production.up.railway.app/api/ajnaya/pieuvre-health',
+      champ: (j) => j.migration_cle_supabase,
+    },
+    {
+      nom: 'serveur Stripe',
+      url: 'https://foreas-stripe-backend-production.up.railway.app/api/ajnaya/pieuvre-health',
+      champ: (j) => j.migration_cle_supabase,
+    },
+  ]
+  for (const c of composants) {
+    try {
+      const r = await fetch(c.url, { headers: { 'Cache-Control': 'no-cache' } })
+      const j = await r.json()
+      const etat = c.champ(j)
+      dire(etat === 'nouvelle' || etat === 'ancienne', `${c.nom} → clé « ${etat} »`)
+      if (etat === 'ancienne') {
+        console.log(`     ℹ️  normal aujourd'hui. Deviendra « nouvelle » quand la clé dédiée sera posée.`)
+      }
+    } catch (e) {
+      dire(false, `${c.nom} → voyant injoignable : ${e.message}`)
+    }
+  }
+}
+
 // ─── FRAÎCHEUR DE CE QU'ON VIENT DE LIRE ────────────────────────────────────
 //
 // Ne fait PAS échouer la porte : un cache tiède est normal et sain. Mais le
