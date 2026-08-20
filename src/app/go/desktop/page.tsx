@@ -3,6 +3,10 @@
 import { QRCodeSVG } from 'qrcode.react'
 import Link from 'next/link'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
+// 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
+// une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
+// elle ne correspond pas à l'adresse canonique de la page.
+import { URL_SITE } from '@/lib/site'
 
 export default function GoDesktopPage() {
   return (
@@ -25,7 +29,7 @@ export default function GoDesktopPage() {
         {/* QR Code */}
         <div className="bg-white p-4 rounded-xl inline-block mb-8 shadow-[0_0_40px_rgba(0,212,255,0.15)]">
           <QRCodeSVG
-            value="https://foreas.xyz/go"
+            value={`${URL_SITE}/go`}
             size={180}
             level="H"
             includeMargin={false}

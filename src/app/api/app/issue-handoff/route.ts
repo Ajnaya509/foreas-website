@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+// 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
+// une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
+// elle ne correspond pas à l'adresse canonique de la page.
+import { URL_SITE } from '@/lib/site'
 
 export const runtime = 'nodejs'
 
@@ -93,7 +97,7 @@ export async function POST(req: NextRequest) {
         ? `https://wa.me/33780732216?text=${encodeURIComponent(token)}`
         : `foreas://handoff?token=${token}`
 
-    const webFallback = `https://foreas.xyz/go?deeplink=${token}`
+    const webFallback = `${URL_SITE}/go?deeplink=${token}`
 
     // Emit analytics event (v1.1 columns) — fire-and-forget, never block response
     try {

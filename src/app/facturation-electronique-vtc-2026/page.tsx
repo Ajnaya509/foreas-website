@@ -18,7 +18,7 @@
  */
 
 import type { Metadata } from 'next'
-import { canonique } from '@/lib/site'
+import { canonique, URL_SITE } from '@/lib/site'
 import Link from 'next/link'
 import { ESSAI_JOURS, PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
 
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     // corrigé d'un côté et oublié dans le jumeau, le mensonge survit.
     description:
       'Guide clair pour les chauffeurs VTC : réception obligatoire dès sept 2026, émission B2B sept 2027, et ce que FOREAS prépare pour toi.',
-    url: 'https://foreas.xyz/facturation-electronique-vtc-2026',
+    url: `${URL_SITE}/facturation-electronique-vtc-2026`,
     siteName: 'FOREAS',
     locale: 'fr_FR',
     type: 'article',
@@ -114,8 +114,8 @@ const jsonLd = {
       // plus de 3 mois. Voir DERNIERE_REVISION ci-dessus.
       dateModified: DERNIERE_REVISION,
       author: { '@type': 'Organization', name: 'FOREAS Labs' },
-      publisher: { '@type': 'Organization', name: 'FOREAS', url: 'https://foreas.xyz' },
-      mainEntityOfPage: 'https://foreas.xyz/facturation-electronique-vtc-2026',
+      publisher: { '@type': 'Organization', name: 'FOREAS', url: URL_SITE },
+      mainEntityOfPage: `${URL_SITE}/facturation-electronique-vtc-2026`,
     },
     {
       '@type': 'FAQPage',

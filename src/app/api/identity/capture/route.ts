@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js'
 import { sendCAPIEvent } from '@/lib/meta-capi'
 import { resolveIdentity, normalizePhoneE164, type IdentityCanal } from '@/lib/identityGate'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
+// 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
+// une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
+// elle ne correspond pas à l'adresse canonique de la page.
+import { URL_SITE } from '@/lib/site'
 
 export const runtime = 'nodejs'
 
@@ -187,7 +191,7 @@ export async function POST(request: NextRequest) {
     const clientUa = request.headers.get('user-agent') || undefined
     sendCAPIEvent({
       eventName: 'Lead',
-      eventSourceUrl: page_source ? `https://foreas.xyz${page_source}` : 'https://foreas.xyz',
+      eventSourceUrl: page_source ? `${URL_SITE}${page_source}` : URL_SITE,
       userData: {
         phone: phone_e164,
         externalId: identity_id,

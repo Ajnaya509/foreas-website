@@ -340,6 +340,55 @@ try {
   dire(false, `point de santé → ${e.message}`)
 }
 
+// ─── LE RÉFÉRENCEMENT AUSSI SE REJOUE ───────────────────────────────────────
+//
+// Trois commits du 20/08 ont refait les adresses de référence, le plan du site et
+// les données structurées. Aucun n'avait laissé la moindre ligne ici : le travail
+// reposait sur une mesure faite à la main, qui périme en silence — exactement ce
+// que cette porte existe pour empêcher.
+//
+// Ce qui est vérifié, et pourquoi :
+//   · chaque page du plan du site répond, et porte UNE adresse de référence
+//   · toutes ces adresses sont en « www » (l'apex redirige : une adresse de
+//     référence qui pointe une redirection s'annule elle-même)
+//   · sur les pages qui portent des données structurées, l'identifiant déclaré
+//     dit la MÊME chose que la balise. Deux signaux qui se contredisent valent
+//     moins qu'un seul signal clair.
+console.log('\n── Le plan du site et les adresses de référence ──')
+try {
+  const rSitemap = await fetch(`${BASE}/sitemap.xml`)
+  const xml = await rSitemap.text()
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
+  dire(urls.length > 0, `le plan du site liste ${urls.length} page(s)`)
+  dire(
+    urls.every((u) => u.startsWith('https://www.')),
+    `les ${urls.length} adresses du plan sont en www — ${urls.filter((u) => !u.startsWith('https://www.')).slice(0, 3).join(', ') || 'toutes'}`,
+  )
+
+  let sansCanonique = []
+  let contradictions = []
+  for (const u of urls) {
+    const r = await fetch(u, { headers: { 'Cache-Control': 'no-cache' } })
+    const html = await r.text()
+    const can = html.match(/rel="canonical"\s+href="([^"]+)"/)?.[1]
+    if (!can) { sansCanonique.push(u); continue }
+    if (!can.startsWith('https://www.')) contradictions.push(`${u} → canonique ${can}`)
+    // Données structurées : @id, url et mainEntityOfPage doivent rester en www.
+    for (const m of html.matchAll(/"(?:@id|url|mainEntityOfPage)":"(https:\/\/foreas\.xyz[^"]*)"/g)) {
+      contradictions.push(`${u} → données structurées ${m[1]}`)
+    }
+    const og = html.match(/property="og:url"\s+content="([^"]+)"/)?.[1]
+    if (og && !og.startsWith('https://www.')) contradictions.push(`${u} → og:url ${og}`)
+  }
+  dire(sansCanonique.length === 0, `toutes les pages ont une adresse de référence — ${sansCanonique.slice(0, 3).join(', ') || 'aucune manquante'}`)
+  dire(
+    contradictions.length === 0,
+    `aucun signal ne contredit l'adresse de référence — ${contradictions.slice(0, 3).join(' · ') || 'aucune contradiction'}`,
+  )
+} catch (e) {
+  dire(false, `plan du site → ${e.message}`)
+}
+
 // ─── FRAÎCHEUR DE CE QU'ON VIENT DE LIRE ────────────────────────────────────
 //
 // Ne fait PAS échouer la porte : un cache tiède est normal et sain. Mais le

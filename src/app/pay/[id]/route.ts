@@ -17,6 +17,10 @@ import Stripe from 'stripe'
  */
 
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES } from '@/lib/offre'
+// 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
+// une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
+// elle ne correspond pas à l'adresse canonique de la page.
+import { URL_SITE } from '@/lib/site'
 
 // Le montant ne vit plus ici : « garder synchronisé » est une consigne que personne
 // ne tient. Il vient de src/lib/offre.ts, seul endroit où un prix FOREAS est écrit.
@@ -68,7 +72,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const link = Array.isArray(links) ? links[0] : links
   if (!link) return fallback() // id introuvable = doute → nouveau (page tarifs générique)
   if (link.status === 'paid') {
-    return NextResponse.redirect('https://foreas.xyz/go', 307) // déjà payé → renvoie vers l'app
+    return NextResponse.redirect(`${URL_SITE}/go`, 307) // déjà payé → renvoie vers l'app
   }
 
   const phone: string | undefined = link.to_phone_e164
@@ -92,7 +96,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const isReturning = !alreadyActive && hasHistory
 
   if (alreadyActive) {
-    return NextResponse.redirect('https://foreas.xyz/go', 307) // a déjà accès, direction l'app
+    return NextResponse.redirect(`${URL_SITE}/go`, 307) // a déjà accès, direction l'app
   }
 
   if (isReturning) {

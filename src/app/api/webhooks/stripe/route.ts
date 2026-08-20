@@ -4,6 +4,10 @@ import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
 import { sendCAPIEvent } from '@/lib/meta-capi'
 import { sendTikTokEvent } from '@/lib/tiktok-events-api'
+// 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
+// une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
+// elle ne correspond pas à l'adresse canonique de la page.
+import { URL_SITE } from '@/lib/site'
 
 export const runtime = 'nodejs'
 
@@ -197,7 +201,7 @@ export async function POST(request: Request) {
             contentName: planInfo.name,
             orderId: session.subscription as string,
           },
-          eventSourceUrl: session.url || 'https://foreas.xyz/tarifs2',
+          eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
           actionSource: 'website',
         }),
         sendCAPIEvent({
@@ -209,7 +213,7 @@ export async function POST(request: Request) {
             contentName: planInfo.name,
             orderId: session.subscription as string,
           },
-          eventSourceUrl: session.url || 'https://foreas.xyz/tarifs2',
+          eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
           actionSource: 'website',
         }),
         // TikTok n'a pas d'équivalent standard "StartTrial" — Subscribe seul suffit
@@ -223,7 +227,7 @@ export async function POST(request: Request) {
             contentName: planInfo.name,
             orderId: session.subscription as string,
           },
-          eventSourceUrl: session.url || 'https://foreas.xyz/tarifs2',
+          eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
         }),
       ]).catch(() => {})
 
