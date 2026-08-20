@@ -8,6 +8,14 @@ import { sendTikTokEvent } from '@/lib/tiktok-events-api'
 // une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
 // elle ne correspond pas à l'adresse canonique de la page.
 import { URL_SITE } from '@/lib/site'
+// ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
+// Cette route retombait sur la clé publique quand la clé serveur manquait.
+// Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
+// met à lire avec les droits d'un visiteur anonyme, en silence. Une panne
+// bruyante se répare ; une dégradation silencieuse s'installe.
+// Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
+// que de dégrader.
+import { cleServeurOuVide } from '@/lib/supabaseServeur'
 
 export const runtime = 'nodejs'
 
@@ -28,7 +36,7 @@ const PLAN_MAP: Record<string, { name: string; cycle: string }> = {
 
 async function upsertSubscriber(data: Record<string, unknown>) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey = cleServeurOuVide()
   if (!supabaseUrl || !supabaseKey) {
     console.log('[webhook] Supabase non configuré — subscriber non sauvegardé:', data.email)
     return
@@ -45,7 +53,7 @@ async function upsertSubscriber(data: Record<string, unknown>) {
 
 async function updateSubscriberStatus(stripeSubId: string, status: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey = cleServeurOuVide()
   if (!supabaseUrl || !supabaseKey) return
   try {
     const { createClient } = await import('@supabase/supabase-js')

@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server'
 import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
+// ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
+// Cette route retombait sur la clé publique quand la clé serveur manquait.
+// Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
+// met à lire avec les droits d'un visiteur anonyme, en silence. Une panne
+// bruyante se répare ; une dégradation silencieuse s'installe.
+// Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
+// que de dégrader.
+import { cleServeurOuVide } from '@/lib/supabaseServeur'
 
 export async function POST(request: Request) {
   // GARDE 14/08/2026 — Écriture de télémétrie. Une mesure qu'un inconnu peut alimenter ne mesure rien.
@@ -19,7 +27,7 @@ export async function POST(request: Request) {
 
     // Try Supabase insert if configured
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseKey = cleServeurOuVide()
 
     if (supabaseUrl && supabaseKey) {
       try {

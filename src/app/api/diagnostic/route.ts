@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { hasValidBearer, notFound } from '@/lib/api-guard'
+// ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
+// Cette route retombait sur la clé publique quand la clé serveur manquait.
+// Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
+// met à lire avec les droits d'un visiteur anonyme, en silence. Une panne
+// bruyante se répare ; une dégradation silencieuse s'installe.
+// Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
+// que de dégrader.
+import { cleServeurOuVide } from '@/lib/supabaseServeur'
 
 export const runtime = 'nodejs'
 
@@ -76,7 +84,7 @@ export async function GET(request: NextRequest) {
   // seulement le fait qu'un script de closing actif existe ou non.
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const key = cleServeurOuVide()
     if (url && key) {
       const { createClient } = await import('@supabase/supabase-js')
       const sb = createClient(url, key)

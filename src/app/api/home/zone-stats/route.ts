@@ -76,7 +76,13 @@ export async function GET(request: Request) {
 
   // ─── Lecture réelle en base ───────────────────────────────────────────────
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  // ── 20/08/2026 — MOINDRE PRIVILÈGE, ASSUMÉ ────────────────────────────
+  // Cette route lit des données de ZONE : publiques par nature, aucune donnée
+  // personnelle. Elle n'a donc besoin que de la clé publique. La porte de
+  // sortie vers la clé serveur a été RETIRÉE : une route qui peut monter en
+  // droits finit toujours par le faire, et personne ne s'en aperçoit.
+  // Si elle échoue, c'est que la clé publique manque — et c'est visible.
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   /** Pourquoi on n'a pas pu répondre — journalisé, jamais renvoyé au visiteur. */
   let motifEchec: string | null = null

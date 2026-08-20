@@ -21,6 +21,14 @@ import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES } from '@/lib/offre'
 // une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
 // elle ne correspond pas à l'adresse canonique de la page.
 import { URL_SITE } from '@/lib/site'
+// ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
+// Cette route retombait sur la clé publique quand la clé serveur manquait.
+// Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
+// met à lire avec les droits d'un visiteur anonyme, en silence. Une panne
+// bruyante se répare ; une dégradation silencieuse s'installe.
+// Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
+// que de dégrader.
+import { cleServeurOuVide } from '@/lib/supabaseServeur'
 
 // Le montant ne vit plus ici : « garder synchronisé » est une consigne que personne
 // ne tient. Il vient de src/lib/offre.ts, seul endroit où un prix FOREAS est écrit.
@@ -33,7 +41,7 @@ const REACTIVATION_ANNUAL_PRICE_CENTS = PRIX_ANNUEL_CENTIMES
 
 function getSupabaseServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const key = cleServeurOuVide()
   return { url, key }
 }
 

@@ -26,6 +26,14 @@ import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitio
 // Une citation raccourcie reste une citation modifiée. Le texte vient désormais
 // de src/lib/consentements.ts, et `npm run canon` refuse toute nouvelle copie.
 import { citationDe } from '@/lib/consentements'
+// ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
+// Cette route retombait sur la clé publique quand la clé serveur manquait.
+// Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
+// met à lire avec les droits d'un visiteur anonyme, en silence. Une panne
+// bruyante se répare ; une dégradation silencieuse s'installe.
+// Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
+// que de dégrader.
+import { clientServeurOuNull, cleServeurOuVide } from '@/lib/supabaseServeur'
 
 export const runtime = 'nodejs'
 
@@ -181,11 +189,7 @@ function sanitizeZoneData(z: ZoneData | null): ZoneData | null {
 
 // ─── Supabase helper ──────────────────────────────────────────────────────────
 async function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  const { createClient } = await import('@supabase/supabase-js')
-  return createClient(url, key)
+  return clientServeurOuNull()
 }
 
 // ─── Fetch zone intelligence + landmarks en parallèle ────────────────────────
@@ -203,7 +207,7 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
     // (le client JS avait un quirk avec v2 — fallback hardcoded déclenché à tort).
     const fetchLandmarks = async (): Promise<ZoneLandmark[] | null> => {
       const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const supaKey = cleServeurOuVide()
       if (!supaUrl || !supaKey) return null
       try {
         const res = await fetch(`${supaUrl}/rest/v1/rpc/get_zone_landmarks_v2`, {

@@ -1,4 +1,12 @@
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
+// ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
+// Cette route retombait sur la clé publique quand la clé serveur manquait.
+// Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
+// met à lire avec les droits d'un visiteur anonyme, en silence. Une panne
+// bruyante se répare ; une dégradation silencieuse s'installe.
+// Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
+// que de dégrader.
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
 /**
  * ajnayaChatCore — helpers du chat Ajnaya site, pour le mode Haiku de `/api/ajnaya/chat/stream`.
  * ⚠️ COPIE MIROIR des helpers de `/api/ajnaya/chat` (Next.js interdit d'exporter d'un route.ts).
@@ -11,11 +19,7 @@ import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros
 
 // ─── Supabase helper (lazy, never crashes) ───────────────────────────────────
 async function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  const { createClient } = await import('@supabase/supabase-js')
-  return createClient(url, key)
+  return clientServeurOuNull()
 }
 
 // ─── Load active closing script ──────────────────────────────────────────────

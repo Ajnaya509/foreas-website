@@ -22,6 +22,11 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+// ── 20/08/2026 — DOUZIÈME REPLI, TROUVÉ PAR LA RÈGLE ELLE-MÊME ─────────────
+// Les onze premiers utilisaient `||`. Celui-ci utilisait `??` : mon balayage
+// initial l'avait manqué. C'est la règle de canon, écrite juste après, qui l'a
+// trouvé à son premier passage — la preuve qu'une règle vaut mieux qu'un balayage.
+import { cleServeurOuVide } from '@/lib/supabaseServeur'
 
 export const runtime = 'nodejs'
 export const revalidate = 300
@@ -69,7 +74,7 @@ export async function GET(request: Request) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    cleServeurOuVide()
   if (!url || !key) {
     // Fallback hardcoded local (basique) si Supabase pas configuré
     return NextResponse.json({ suggestions: [] }, { status: 503 })

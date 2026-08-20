@@ -404,6 +404,34 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── AUCUN REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ────────────────────────────
+//
+// Mesuré le 20/08/2026 : ONZE routes écrivaient
+// `SUPABASE_SERVICE_ROLE_KEY || NEXT_PUBLIC_SUPABASE_ANON_KEY`. Le jour d'une
+// rotation de clé, ce `||` ne produit AUCUNE erreur : la route se met à lire
+// avec les droits d'un visiteur anonyme, en silence. C'est le pire mode de
+// panne possible — invisible.
+//
+// Le client à droits serveur vient de src/lib/supabaseServeur.ts, et de lui
+// seul. Ce fichier est la seule exception à la règle : c'est lui qui arbitre
+// entre la nouvelle clé et l'ancienne, et il refuse plutôt que de dégrader.
+{
+  const motif = /SERVICE_ROLE_KEY\s*(\|\||\?\?)|ANON_KEY\s*(\|\||\?\?)\s*process\.env\.SUPABASE_SERVICE_ROLE/
+  for (const chemin of fichiers(RACINE)) {
+    if (chemin.endsWith('src/lib/supabaseServeur.ts')) continue
+    const source = readFileSync(chemin, 'utf8')
+    const m = source.match(motif)
+    if (!m) continue
+    infractions.push({
+      fichier: chemin,
+      quoi: 'un repli silencieux entre la clé serveur et la clé publique',
+      extrait: m[0],
+      pourquoi:
+        "Une route qui a besoin des droits serveur doit les avoir ou échouer franchement. Ce `||` la fait basculer sans bruit sur les droits d'un visiteur anonyme le jour d'une rotation de clé : pas de 500, pas d'alerte, juste des réponses incomplètes et des écritures refusées en silence. Utilise clientServeur() ou clientServeurOuNull() depuis src/lib/supabaseServeur.ts.",
+    })
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {

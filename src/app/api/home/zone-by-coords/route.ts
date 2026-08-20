@@ -86,9 +86,12 @@ export async function GET(request: Request) {
 
   // ─── 2. Appel RPC Supabase pour les stats ─────────────────────────────────
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+  // ── 20/08/2026 — MOINDRE PRIVILÈGE, ASSUMÉ ────────────────────────────
+  // Cette route lit des données de ZONE : publiques par nature, aucune donnée
+  // personnelle. Elle n'a besoin que de la clé publique. La porte de sortie
+  // vers la clé serveur a été RETIRÉE : une route qui PEUT monter en droits
+  // finit toujours par le faire, et personne ne s'en aperçoit.
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   let stats: ZoneStats = {
     zone_match: zone.name,
