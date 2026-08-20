@@ -149,6 +149,43 @@ for (const base of BACKENDS) {
   }
 }
 
+console.log('\n── Les routes qui DÉPENSENT refusent un inconnu ──')
+//
+// 20/08/2026 — ajouté après un audit adverse. Trois routes Claude Vision du
+// backend Stripe (`moderate-media`, `vehicle/verify-photo`,
+// `vehicle/documents/verify`) répondaient 400 sans le moindre en-tête : « ton
+// corps est mal formé », pas « je ne te connais pas ». Elles ne demandaient
+// RIEN. Et les cinq routes payantes du backend AI n'acceptaient qu'une clé
+// écrite en dur dans le bundle de l'app, donc extractible de n'importe quel
+// téléphone. Un 401 mesuré vaut mieux qu'un garde qu'on croit posé.
+const ROUTES_PAYANTES = [
+  ['https://foreas-stripe-backend-production.up.railway.app', '/api/communaute/moderate-media', 'Claude Vision'],
+  ['https://foreas-stripe-backend-production.up.railway.app', '/api/vehicle/verify-photo', 'Claude Vision'],
+  ['https://foreas-stripe-backend-production.up.railway.app', '/api/vehicle/documents/verify', 'Vision + écriture en base'],
+  ['https://foreas-ai-backend-production.up.railway.app', '/api/ajnaya/chat', 'cerveau (et données personnelles)'],
+  ['https://foreas-ai-backend-production.up.railway.app', '/api/ajnaya/transcribe', 'Whisper'],
+  ['https://foreas-ai-backend-production.up.railway.app', '/api/ajnaya/synthesize', 'ElevenLabs'],
+  ['https://foreas-ai-backend-production.up.railway.app', '/api/ajnaya/llm', 'Claude'],
+  ['https://foreas-ai-backend-production.up.railway.app', '/api/ajnaya/process', 'Whisper + Claude + ElevenLabs'],
+]
+
+for (const [base, route, quoi] of ROUTES_PAYANTES) {
+  const nom = base.replace('https://', '').split('-production')[0]
+  try {
+    const r = await fetch(`${base}${route}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    dire(
+      r.status === 401 || r.status === 403 || r.status === 404,
+      `${nom}${route} (${quoi}) → ${r.status}, attendu 401/403/404`,
+    )
+  } catch (e) {
+    dire(false, `${nom}${route} → ${e.message}`)
+  }
+}
+
 console.log('\n── Aucun secret n’est publié ──')
 try {
   const { corps: c } = await lire('/api/checkout')
