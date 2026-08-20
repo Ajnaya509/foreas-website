@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "canon": "node scripts/verifier-canon.mjs",
-    "porte": "node scripts/porte-de-sortie.mjs"
+    "porte": "node scripts/porte-de-sortie.mjs",
+    "test:routage": "node scripts/tests-routage-boutique.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

@@ -195,6 +195,43 @@ try {
   dire(false, `GET /api/checkout → ${e.message}`)
 }
 
+console.log('\n── Le saut vers l\'app marche sur les trois appareils ──')
+//
+// Une route de redirection s'écrit une fois et ne se revérifie jamais. La
+// version d'origine de /go était cassée sur les TROIS appareils pendant des
+// mois : identifiant App Store resté à l'état de gabarit (404), deux « ? » dans
+// l'URL Google Play (le paramètre devenait une partie du nom de paquet), et une
+// boucle sur ordinateur. Personne ne l'avait vu.
+const AGENTS_TEST = {
+  iPhone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)',
+  Android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8)',
+  ordinateur: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+}
+const ATTENDU = { iPhone: 'apps.apple.com', Android: 'play.google.com', ordinateur: '/tarifs2' }
+
+for (const [appareil, agent] of Object.entries(AGENTS_TEST)) {
+  try {
+    const r = await fetch(`${BASE}/go/zones`, { redirect: 'manual', headers: { 'User-Agent': agent } })
+    const vers = r.headers.get('location') ?? ''
+    dire(vers.includes(ATTENDU[appareil]), `${appareil} → ${vers.slice(0, 52)}`)
+  } catch (e) {
+    dire(false, `${appareil} → ${e.message}`)
+  }
+}
+
+// Le test qui compte : personne ne doit pouvoir fabriquer un lien en foreas.xyz
+// qui emmène ailleurs.
+try {
+  const r = await fetch(`${BASE}/go/zones?url=https://exemple-malveillant.test`, {
+    redirect: 'manual',
+    headers: { 'User-Agent': AGENTS_TEST.ordinateur },
+  })
+  const vers = r.headers.get('location') ?? ''
+  dire(!vers.includes('exemple-malveillant'), `aucune redirection ouverte → ${vers.slice(0, 46)}`)
+} catch (e) {
+  dire(false, `redirection ouverte → ${e.message}`)
+}
+
 console.log('\n── Le prix facturé est le prix affiché ──')
 try {
   const r = await fetch(`${BASE}/api/subscription/create`, {
