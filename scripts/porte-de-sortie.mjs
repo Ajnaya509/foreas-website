@@ -248,6 +248,77 @@ try {
   dire(false, `/api/subscription/create → ${e.message}`)
 }
 
+// ─── LES QUATRE ROUTES FERMÉES LE 20/08 AU SOIR ─────────────────────────────
+//
+// Trouvées par relecture adverse, APRÈS une première passe qui les avait
+// manquées. Trois d'entre elles répondaient 400 ou 200 — jamais 401 — et
+// ressemblaient donc à des portes fermées sans en être.
+//
+// Elles sont ici pour la même raison que les routes Bolt : le 14/08, un
+// caviardage déployé une heure après un rapport avait rendu ce rapport faux sans
+// que personne ne le sache. Une affirmation de sécurité qui n'est pas rejouée
+// par une machine périme en silence.
+console.log('\n── Les routes fermées par la relecture adverse ──')
+const UUID_INVENTE = '00000000-0000-4000-8000-000000000000'
+const ROUTES_FERMEES = [
+  { chemin: '/api/coach/instant-decision', methode: 'POST', quoi: 'décision de course' },
+  { chemin: '/api/coach/record-outcome', methode: 'POST', quoi: 'résultat de course' },
+  { chemin: `/api/voice/calls/${UUID_INVENTE}`, methode: 'GET', quoi: 'comptes rendus d’appel' },
+]
+for (const base of BACKENDS) {
+  const nom = base.includes('stripe') ? 'stripe' : 'ia'
+  for (const { chemin, methode, quoi } of ROUTES_FERMEES) {
+    try {
+      const r = await fetch(base + chemin, {
+        method: methode,
+        headers: { 'Content-Type': 'application/json' },
+        ...(methode === 'POST' ? { body: '{}' } : {}),
+      })
+      dire(r.status === 401 || r.status === 404, `${nom}${chemin.slice(0, 34)} (${quoi}) → ${r.status}, attendu 401/404`)
+    } catch (e) {
+      dire(false, `${nom}${chemin} → ${e.message}`)
+    }
+  }
+}
+
+// ─── LE FRIGO RESTE OUVERT, MAIS SANS PRÉNOM ────────────────────────────────
+//
+// /api/coach/decision-context ne peut PAS être fermé : tous les téléphones déjà
+// installés l'appellent toutes les trois minutes sans aucun en-tête. Deux choses
+// à vérifier, et elles tirent en sens opposés — c'est voulu :
+//   · il répond toujours (le fermer casserait le Coach partout)
+//   · il ne renvoie plus de prénom à qui ne prouve rien
+console.log('\n── Le frigo du Coach : vivant, mais sans donnée nominative ──')
+for (const base of BACKENDS) {
+  const nom = base.includes('stripe') ? 'stripe' : 'ia'
+  try {
+    const r = await fetch(`${base}/api/coach/decision-context?driver_id=${UUID_INVENTE}`)
+    const j = await r.json().catch(() => ({}))
+    dire(r.status === 200, `${nom} frigo répond → ${r.status}, attendu 200 (le fermer casserait le Coach)`)
+    dire(j.first_name === '' || j.first_name === undefined, `${nom} frigo sans jeton → aucun prénom renvoyé`)
+  } catch (e) {
+    dire(false, `${nom} frigo → ${e.message}`)
+  }
+}
+
+// ─── LES PORTES DÉDIÉES SONT-ELLES POSÉES, OU SEULEMENT FERMÉES ? ───────────
+//
+// Une porte close et une clé jamais configurée donnent le même 404 vu du dehors.
+// Le point de santé publie des booléens (jamais des valeurs) pour les
+// distinguer. `cle_bolt_posee: false` est ACCEPTABLE et attendu aujourd'hui —
+// on ne le fait pas échouer, on l'AFFICHE, pour que l'état soit su.
+console.log('\n── État des portes dédiées (lisible, sans aucun secret) ──')
+try {
+  const r = await fetch('https://foreas-ai-backend-production.up.railway.app/api/ajnaya/pieuvre-health')
+  const j = await r.json()
+  const p = j.portes_dediees || {}
+  dire(typeof p.cle_bolt_posee === 'boolean', `le voyant existe (clé Bolt posée : ${p.cle_bolt_posee})`)
+  dire(p.sel_analytics_pose === true, `sel d’anonymisation des IP posé → ${p.sel_analytics_pose}`)
+  dire(p.secret_webhook_voix_pose === true, `secret des webhooks voix posé → ${p.secret_webhook_voix_pose}`)
+} catch (e) {
+  dire(false, `point de santé → ${e.message}`)
+}
+
 console.log(
   echecs === 0
     ? '\n✅ Porte franchie — la production dit la vérité et ses portes sont fermées.\n'
