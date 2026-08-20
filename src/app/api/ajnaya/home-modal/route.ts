@@ -19,6 +19,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
+// ── 20/08/2026 — LES PAROLES VIENNENT DU REGISTRE ──────────────────────────
+// Le correctif du 14/08 avait retiré le « de PAIEMENT » ajouté à Dragan, mais
+// laissait trois PARAPHRASES : « Travaille moins pour avoir plus » au lieu de sa
+// phrase entière, et « On a une réponse instantanément » amputé de son début.
+// Une citation raccourcie reste une citation modifiée. Le texte vient désormais
+// de src/lib/consentements.ts, et `npm run canon` refuse toute nouvelle copie.
+import { citationDe } from '@/lib/consentements'
 
 export const runtime = 'nodejs'
 
@@ -73,7 +80,7 @@ export interface Testimonial {
 const TESTIMONIAL_BINATE: Testimonial = {
   name: 'Binate A.',
   zone: 'Disneyland',
-  quote: 'Travaille moins pour avoir plus. C\'est ça la différence.',
+  quote: citationDe('binate'),
   kpi: '+30% revenus',
   vehicle: 'Tesla',
   mux_id: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
@@ -85,12 +92,12 @@ const TESTIMONIAL_DRAGAN: Testimonial = {
   // « aucun souci », pas « aucun souci de paiement » : l'ajout lui prête une
   // affirmation qu'il n'a pas faite, sur un sujet sensible, à visage découvert.
   // Mots exacts : src/components/zone/testimonials.data.ts (quoteShort).
-  quote: 'Plus de deux ans avec FOREAS, aucun souci. J\'y suis, j\'y reste.',
+  quote: citationDe('dragan'),
 }
 const TESTIMONIAL_HAITHAM: Testimonial = {
   name: 'Haitham B.',
   zone: 'Paris',
-  quote: 'On a une réponse instantanément.',
+  quote: citationDe('haitham'),
 }
 
 /**

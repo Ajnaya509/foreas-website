@@ -1,3 +1,7 @@
+// ── 20/08/2026 — LE TEXTE VIENT DU REGISTRE, PLUS D'ICI ────────────────────
+// La parole de la même personne existait en quatre versions dans trois
+// fichiers. Elle vit maintenant dans src/lib/consentements.ts, et là seulement.
+import { citationDe } from '@/lib/consentements'
 /**
  * TESTIMONIALS DATA — FOREAS
  *
@@ -51,8 +55,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Haitham B.',
     context: 'Paris · 7 ans VTC',
     profile: 'Chauffeur indépendant maghrébin · pivot identification persona',
-    quoteShort:
-      "« Foreas m'aide à me concentrer à 100 % sur mon boulot. Quand on a besoin de quoi que ce soit, on a une réponse instantanément. »",
+    quoteShort: `« ${citationDe('haitham')} »`,
     gainBadge: 'Liberté + lien',
     detail: '7 ans · Paris',
     posterTimeSec: 3,
@@ -69,8 +72,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Binate A.',
     context: 'Marne-la-Vallée · 5 ans · Tesla',
     profile: 'Chauffeur Tesla · clientèle privée Disneyland · profil aspirationnel',
-    quoteShort:
-      "« Mes revenus sont montés de 30 %. Je ne travaille plus des heures infinies comme dans le temps. Travailler moins pour avoir plus, c'est ça la différence. »",
+    quoteShort: `« ${citationDe('binate')} »`,
     gainBadge: '+30 % revenus',
     detail: 'Tesla · Disneyland',
     posterTimeSec: 4,
@@ -84,11 +86,11 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     order: 3,
     playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
     assetId: 'X64eWdtN87Nv6kw01YnsOMJIEy00jjG02FhjcXRk9v01yZ4',
-    name: 'Zephy K.',
+    // 20/08 — base : « Zefi Kitengue ». « Zephy » était une faute.
+    name: 'Zefi K.',
     context: 'Marne-la-Vallée · ex-cadre Paris',
     profile: 'Reconversion cadre → chauffeur · Disneyland · service haut de gamme',
-    quoteShort:
-      "« Avant j'étais cadre dans une grosse boîte. Je n'en pouvais plus. Aujourd'hui, je suis l'un des chauffeurs les plus heureux. »",
+    quoteShort: `« ${citationDe('zefi')} »`,
     gainBadge: 'Indépendance',
     detail: 'Reconversion · Disneyland',
     posterTimeSec: 3,
@@ -104,8 +106,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Dragan P.',
     context: 'Paris · 9 ans VTC',
     profile: 'Europe de l\'Est · 49 ans · costume · 2 ans FOREAS',
-    quoteShort:
-      "« Plus de deux ans avec FOREAS, aucun souci. Tout se passe pour le mieux. J'y suis, j'y reste. »",
+    quoteShort: `« ${citationDe('dragan')} »`,
     gainBadge: '2 ans, il reste',
     detail: '9 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,
@@ -125,8 +126,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Hadietou',
     context: 'Banlieue parisienne · 9 ans VTC',
     profile: 'Banlieue parisienne · 35 ans · indépendant',
-    quoteShort:
-      "« FOREAS représente un confort et un futur. Quand j'envoie un mail, on me répond dans les 24 heures. Je le recommanderais à mes amis proches. »",
+    quoteShort: `« ${citationDe('hadietou')} »`,
     gainBadge: 'Il recommande',
     detail: 'Indépendant · 9 ans VTC',
     posterTimeSec: 3,
@@ -145,8 +145,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Nikolic N.',
     context: 'Paris · 10 ans VTC',
     profile: 'Europe de l\'Est · 52 ans · costume · 2 ans FOREAS',
-    quoteShort:
-      "« Société sérieuse. Quand on a besoin d'une explication, ils sont là, à notre écoute. Ça fait deux ans, je reste. »",
+    quoteShort: `« ${citationDe('nikolic')} »`,
     gainBadge: '2 ans, il reste',
     detail: '10 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,

@@ -55,7 +55,7 @@ interface Entry { driver: string; city: string; initial: string; accent: 'violet
 const ENTRIES: Entry[] = [
   { driver: 'Haitham B.', city: 'Paris', initial: 'H', accent: 'violet' },
   { driver: 'Binate A.', city: 'Marne-la-Vallée', initial: 'B', accent: 'gold' },
-  { driver: 'Zephy K.', city: 'Marne-la-Vallée', initial: 'Z', accent: 'cyan' },
+  { driver: 'Zefi K.', city: 'Marne-la-Vallée', initial: 'Z', accent: 'cyan' },
   { driver: 'Dragan P.', city: 'Paris', initial: 'D', accent: 'violet' },
   { driver: 'Hadietou', city: 'banlieue parisienne', initial: 'H', accent: 'rose' },
   { driver: 'Nikolic N.', city: 'Paris', initial: 'N', accent: 'cyan' },

@@ -6,6 +6,13 @@ import { useIsMobile } from '@/hooks/useDevicePerf'
 import dynamic from 'next/dynamic'
 // Le nombre de témoignages affiché vient du canon, pas d'un chiffre écrit à la main.
 import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
+// ── 20/08/2026 — LES CITATIONS VIENNENT DU REGISTRE, PLUS DU FICHIER ────────
+// Mesuré : la parole de la même personne existait en quatre versions dans trois
+// fichiers. Chacune était un raccourci « pour que ça tienne » — et chacune faisait
+// dire à quelqu'un ce qu'il n'a pas dit. Le texte vit maintenant dans
+// src/lib/consentements.ts, et lui seul. Réécrire une citation ici est refusé par
+// `npm run canon`.
+import { citationDe } from '@/lib/consentements'
 
 // Lazy load Mux Player — only loaded when user clicks play (saves ~200KB from critical path)
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
@@ -71,7 +78,7 @@ const TESTIMONIALS: Testimonial[] = [
     // FAUX : « FOREAS a changé ma manière de travailler. Je sais exactement où
     // aller. » n'apparaît dans AUCUN de ses propos enregistrés. Remplacé par deux
     // de ses key_quotes, mot pour mot.
-    quote: "Mes revenus sont montés de 30 %. Je travaille moins pour avoir plus. C'est ça la différence.",
+    quote: citationDe('binate'),
     playbackId: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
     accentColor: '#00d4ff',
   },
@@ -89,7 +96,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Sa zone', label: 'connue par cœur' },
     // FAUX : « FOREAS a transformé ma vision du métier… » n'existe dans aucun de
     // ses propos. Remplacé par sa key_quote — son terrain, pas le produit.
-    quote: "Je connais presque tous les hôtels autour de Disney. C'est plus facile pour moi de me rendre rapidement.",
+    quote: citationDe('zefi'),
     playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
     accentColor: '#a855f7',
   },
@@ -105,7 +112,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Réponse', label: 'quand il en a besoin' },
     // FAUX : « Moins de temps à attendre, plus de temps à rouler » était du
     // copywriting posé sur un visage réel. Remplacé par ses propos filmés.
-    quote: "FOREAS m'aide à me concentrer à 100 % sur mon boulot. Quand on a besoin de quoi que ce soit, on a une réponse.",
+    quote: citationDe('haitham'),
     playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
     accentColor: '#22c55e',
   },
@@ -120,7 +127,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Sérieux', label: "et à l'écoute" },
     // FAUX : « FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui
     // comprennent le terrain. » n'est pas de lui. Remplacé par ses propos filmés.
-    quote: "Société sérieuse. Quand on a besoin d'une explication, ils sont là, à notre écoute.",
+    quote: citationDe('nikolic'),
     playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
     accentColor: '#f59e0b',
   },
@@ -138,7 +145,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Confort', label: 'et un futur' },
     // FAUX : « Je recommande FOREAS à tous les chauffeurs… » n'est pas de lui.
     // Remplacé par ses propos filmés (au conditionnel, comme il le dit).
-    quote: "FOREAS représente un confort et un futur. Je le recommanderais à mes amis proches.",
+    quote: citationDe('hadietou'),
     playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
     accentColor: '#ef4444',
   },

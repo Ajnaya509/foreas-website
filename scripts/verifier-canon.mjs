@@ -356,6 +356,54 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── UNE PAROLE N'EXISTE QU'À UN SEUL ENDROIT ───────────────────────────────
+//
+// Mesuré le 20/08/2026 : la parole de la MÊME personne existait en QUATRE
+// versions, dans trois fichiers. Binaté avait deux raccourcis différents, aucun
+// n'étant ce qu'il a dit. Haitham perdait le mot « instantanément ». La première
+// phrase de Dragan était réécrite.
+//
+// Personne n'a triché. Chacun a raccourci « pour que ça tienne dans la carte ».
+// C'est exactement comme ça qu'une parole se déforme : par petites retouches
+// raisonnables, dans des fichiers qui ne se parlent pas.
+//
+// Cette règle interdit qu'un fragment reconnaissable d'une citation enregistrée
+// réapparaisse EN DUR ailleurs que dans le registre. Les composants doivent
+// appeler `citationDe(id)`.
+{
+  let reg = null
+  try {
+    reg = readFileSync('src/lib/consentements.ts', 'utf8')
+  } catch {
+    /* l'absence du registre est déjà signalée par la règle précédente */
+  }
+  if (reg) {
+    // On prend un fragment long et distinctif de chaque verbatim : assez long
+    // pour ne jamais coïncider par hasard, assez court pour survivre à une
+    // reformulation partielle — c'est précisément ce qu'on veut attraper.
+    const fragments = []
+    for (const m of reg.matchAll(/citationAutorisee:\s*\n?\s*["']((?:[^"'\\]|\\.)*)["']/g)) {
+      const texte = m[1].replace(/\\'/g, "'").trim()
+      if (texte.length < 30) continue
+      fragments.push({ court: texte.slice(0, 28), complet: texte })
+    }
+    for (const chemin of fichiers(RACINE)) {
+      if (chemin.endsWith('src/lib/consentements.ts')) continue
+      const source = readFileSync(chemin, 'utf8')
+      for (const f of fragments) {
+        if (!source.includes(f.court)) continue
+        infractions.push({
+          fichier: chemin,
+          quoi: 'une citation de chauffeur écrite en dur hors du registre',
+          extrait: f.court + '…',
+          pourquoi:
+            "Cette phrase est la parole d'une personne réelle, filmée à visage découvert. Elle n'existe qu'à un endroit : src/lib/consentements.ts. Appelle citationDe('<id>') au lieu de la recopier — une copie finit toujours par être raccourcie « pour que ça tienne », et la personne se retrouve à dire ce qu'elle n'a pas dit.",
+        })
+      }
+    }
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {

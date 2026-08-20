@@ -103,10 +103,20 @@ export const REGISTRE_CONSENTEMENTS: readonly Consentement[] = [
     preuve: null,
   },
   {
-    id: 'zephy',
-    personne: 'Zephy K.',
+    // 20/08/2026 — PRÉNOM CORRIGÉ. La base dit « Zefi Kitengue » ; la carte vidéo
+    // et ce registre écrivaient « Zephy ». Un prénom mal orthographié sous le
+    // visage de quelqu'un est un tort à part entière, et il rendait la clé du
+    // registre introuvable pour la garde d'affichage.
+    id: 'zefi',
+    personne: 'Zefi K.',
     media: 'video+citation',
-    citationAutorisee: '',
+    // ⚠️ TRANSCRIPTION NON VALIDÉE PAR LA PERSONNE — enregistrée le 20/08/2026.
+    // Ce texte n'a pas été relu par l'intéressé : il est repris du site, où il
+    // existait en plusieurs versions divergentes. L'enregistrer ici ne le rend
+    // pas approuvé — ça empêche seulement qu'il continue de dériver d'une page
+    // à l'autre. Le statut reste « en_attente ».
+    citationAutorisee:
+      "Je connais presque tous les hôtels autour de Disney. C'est plus facile pour moi de me rendre rapidement.",
     chiffreAutorise: null,
     villeAffichee: null,
     portee: ['site'],
@@ -133,7 +143,13 @@ export const REGISTRE_CONSENTEMENTS: readonly Consentement[] = [
     id: 'hadietou',
     personne: 'Hadietou',
     media: 'video+citation',
-    citationAutorisee: '',
+    // ⚠️ TRANSCRIPTION NON VALIDÉE PAR LA PERSONNE — enregistrée le 20/08/2026.
+    // Ce texte n'a pas été relu par l'intéressé : il est repris du site, où il
+    // existait en plusieurs versions divergentes. L'enregistrer ici ne le rend
+    // pas approuvé — ça empêche seulement qu'il continue de dériver d'une page
+    // à l'autre. Le statut reste « en_attente ».
+    citationAutorisee:
+      "FOREAS représente un confort et un futur. Quand j'envoie un mail, on me répond dans les 24 heures. Je le recommanderais à mes amis proches.",
     chiffreAutorise: null,
     villeAffichee: null,
     portee: ['site'],
@@ -146,7 +162,13 @@ export const REGISTRE_CONSENTEMENTS: readonly Consentement[] = [
     id: 'nikolic',
     personne: 'Nikolic N.',
     media: 'video+citation',
-    citationAutorisee: '',
+    // ⚠️ TRANSCRIPTION NON VALIDÉE PAR LA PERSONNE — enregistrée le 20/08/2026.
+    // Ce texte n'a pas été relu par l'intéressé : il est repris du site, où il
+    // existait en plusieurs versions divergentes. L'enregistrer ici ne le rend
+    // pas approuvé — ça empêche seulement qu'il continue de dériver d'une page
+    // à l'autre. Le statut reste « en_attente ».
+    citationAutorisee:
+      "Société sérieuse. Quand on a besoin d'une explication, ils sont là, à notre écoute.",
     chiffreAutorise: null,
     villeAffichee: null,
     portee: ['site'],
@@ -225,4 +247,32 @@ export function consentementsApprouves(): readonly Consentement[] {
 /** Ce qu'il reste à obtenir — sert au rapport, jamais à l'affichage. */
 export function consentementsManquants(): readonly Consentement[] {
   return REGISTRE_CONSENTEMENTS.filter((c) => c.statut !== 'approuve')
+}
+
+/**
+ * LE TEXTE EXACT, ET UN SEUL ENDROIT OÙ IL VIT.
+ *
+ * 20/08/2026 — mesuré : la parole de la même personne existait en QUATRE versions
+ * différentes, dans trois fichiers. Binaté avait deux raccourcis distincts, aucun
+ * n'étant ce qu'il a dit. Haitham perdait le mot « instantanément ». Dragan voyait
+ * sa première phrase réécrite.
+ *
+ * Personne n'a triché : chacun a raccourci « pour que ça tienne dans la carte ».
+ * C'est précisément comme ça qu'une parole se déforme — par petites retouches
+ * raisonnables, dans des fichiers qui ne se parlent pas.
+ *
+ * Toute surface qui affiche une citation lit MAINTENANT cette fonction. Une copie
+ * littérale dans un composant est un futur écart : le canon la refuse.
+ */
+export function citationDe(id: string): string {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) throw new Error(`[consentements] personne inconnue : ${id}`)
+  return c.citationAutorisee
+}
+
+/** Le prénom affiché, lui aussi depuis le registre — même raison. */
+export function personneDe(id: string): string {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) throw new Error(`[consentements] personne inconnue : ${id}`)
+  return c.personne
 }

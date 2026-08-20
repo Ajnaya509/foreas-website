@@ -68,13 +68,34 @@ const dire = (ok, texte) => {
   if (!ok) echecs++
 }
 
+/**
+ * ⚠️ 20/08/2026 — CE COMMENTAIRE DISAIT UNE CHOSE FAUSSE, ET C'EST INSTRUCTIF.
+ *
+ * Il affirmait : « le paramètre aléatoire contourne le cache ». MESURÉ : il ne le
+ * contourne pas. Deux appels avec deux valeurs différentes de `_pds`, plus
+ * l'en-tête `Cache-Control: no-cache`, rendent la MÊME empreinte, `x-vercel-cache:
+ * HIT`, âge 440 secondes. Ces pages sont pré-calculées (`x-nextjs-prerender: 1`) :
+ * la chaîne de requête n'entre pas dans la clé de cache, et un en-tête de requête
+ * ne force pas la revalidation au bord du réseau.
+ *
+ * C'est exactement la faute que cette porte est censée attraper : une protection
+ * qu'on croit avoir. Le paramètre reste (il ne coûte rien et sert sur les routes
+ * dynamiques), mais on ne prétend plus qu'il suffit.
+ *
+ * CE QU'ON FAIT À LA PLACE : on relève l'ÂGE de la réponse et on le rend visible.
+ * Un contrôle ne peut pas rendre le cache plus frais ; il peut dire honnêtement
+ * qu'il lit peut-être une photo du passé. Sans ça, un contrôle vert juste après
+ * une mise en ligne ne prouve rien — il valide l'ancienne version.
+ */
+let ageMaxObserve = 0
+
 async function lire(chemin) {
-  // Le paramètre aléatoire contourne le cache : sans lui, on contrôle une photo
-  // du passé et on conclut faux dans les deux sens.
   const r = await fetch(`${BASE}${chemin}${chemin.includes('?') ? '&' : '?'}_pds=${Date.now()}`, {
     headers: { 'Cache-Control': 'no-cache' },
   })
-  return { statut: r.status, corps: await r.text() }
+  const age = Number(r.headers.get('age') || 0)
+  if (Number.isFinite(age) && age > ageMaxObserve) ageMaxObserve = age
+  return { statut: r.status, corps: await r.text(), age }
 }
 
 console.log(`\n🚪 Porte de sortie — ${BASE}\n`)
@@ -317,6 +338,22 @@ try {
   dire(p.secret_webhook_voix_pose === true, `secret des webhooks voix posé → ${p.secret_webhook_voix_pose}`)
 } catch (e) {
   dire(false, `point de santé → ${e.message}`)
+}
+
+// ─── FRAÎCHEUR DE CE QU'ON VIENT DE LIRE ────────────────────────────────────
+//
+// Ne fait PAS échouer la porte : un cache tiède est normal et sain. Mais le
+// chiffre doit être SU. S'il est élevé juste après une mise en ligne, les
+// contrôles ci-dessus ont validé la version PRÉCÉDENTE — vert sur du vieux.
+console.log('\n── Fraîcheur des pages lues ──')
+{
+  const minutes = Math.round(ageMaxObserve / 60)
+  console.log(
+    `  ℹ️  page la plus ancienne servie : ${ageMaxObserve}s (~${minutes} min).` +
+      (ageMaxObserve > 900
+        ? ` ⚠️ Au-delà d'un quart d'heure : si tu viens de mettre en ligne, relance dans quelques minutes — ces contrôles ont pu valider la version précédente.`
+        : ''),
+  )
 }
 
 console.log(

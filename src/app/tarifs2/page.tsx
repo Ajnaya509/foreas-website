@@ -16,6 +16,13 @@ import { authUrls } from '@/lib/auth-urls'
 // dans un .tsx, plus relié à rien, qui dérive dès que la vraie valeur bouge.
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
 import { PARRAINAGE, PLATEFORMES, COMMUNAUTE } from '@/lib/verite-commerciale'
+// ── 20/08/2026 — LES CITATIONS VIENNENT DU REGISTRE, PLUS DU FICHIER ────────
+// Mesuré : la parole de la même personne existait en quatre versions dans trois
+// fichiers. Chacune était un raccourci « pour que ça tienne » — et chacune faisait
+// dire à quelqu'un ce qu'il n'a pas dit. Le texte vit maintenant dans
+// src/lib/consentements.ts, et lui seul. Réécrire une citation ici est refusé par
+// `npm run canon`.
+import { citationDe } from '@/lib/consentements'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -435,7 +442,7 @@ function TarifsContent() {
                 produire : celle que Binate A. dit lui-même, face caméra, dans une vidéo
                 publiée sur ce site. Son chiffre, pas le nôtre — et c'est dit tel quel. */}
             <p className="text-white/75 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-              Binate A., Marne-la-Vallée&nbsp;: <span className="text-[#F8FAFC] font-semibold">«&nbsp;Mes revenus sont montés de 30&nbsp;%. Travailler moins pour avoir plus.&nbsp;»</span> Son chiffre, dit face caméra.
+              Binate A., Marne-la-Vallée&nbsp;: <span className="text-[#F8FAFC] font-semibold">«&nbsp;{citationDe('binate')}&nbsp;»</span> Son chiffre, dit face caméra.
             </p>
             <p className="text-white/55 text-base sm:text-[15px] max-w-xl mx-auto leading-relaxed mt-3">
               {/* « IA » retiré volontairement (décision Chandler) : le mot est devenu
@@ -729,9 +736,9 @@ function TarifsContent() {
                 Remplacés par 3 des 6 chauffeurs réellement filmés, avec LEURS mots et LEURS
                 badges, copiés depuis testimonials.data.ts. */}
             {[
-              { name: 'Haitham B.', city: 'Paris · 7 ans VTC', avatar: 'HB', gain: 'Liberté + lien', detail: '7 ans · Paris', quote: "Foreas m'aide à me concentrer à 100 % sur mon boulot. Quand on a besoin de quoi que ce soit, on a une réponse instantanément.", stars: 5 },
-              { name: 'Dragan P.', city: 'Paris · 9 ans VTC', avatar: 'DP', gain: '2 ans, il reste', detail: '9 ans VTC · 2 ans FOREAS', quote: "Plus de deux ans avec FOREAS, aucun souci. Tout se passe pour le mieux. J'y suis, j'y reste.", stars: 5 },
-              { name: 'Hadietou', city: 'Banlieue parisienne · 9 ans VTC', avatar: 'HD', gain: 'Il recommande', detail: 'Indépendant · 9 ans VTC', quote: "FOREAS représente un confort et un futur. Quand j'envoie un mail, on me répond dans les 24 heures. Je le recommanderais à mes amis proches.", stars: 5 },
+              { name: 'Haitham B.', city: 'Paris · 7 ans VTC', avatar: 'HB', gain: 'Liberté + lien', detail: '7 ans · Paris', quote: citationDe('haitham') },
+              { name: 'Dragan P.', city: 'Paris · 9 ans VTC', avatar: 'DP', gain: '2 ans, il reste', detail: '9 ans VTC · 2 ans FOREAS', quote: citationDe('dragan') },
+              { name: 'Hadietou', city: 'Banlieue parisienne · 9 ans VTC', avatar: 'HD', gain: 'Il recommande', detail: 'Indépendant · 9 ans VTC', quote: citationDe('hadietou') },
             ].map((t, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 hover:border-violet-500/30 transition-all"
@@ -745,7 +752,13 @@ function TarifsContent() {
                   <span className="bg-green-500/15 text-green-400 text-[11px] px-2 py-0.5 rounded-full font-bold tabular-nums whitespace-nowrap">{t.gain}</span>
                 </div>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="flex">{Array.from({ length: t.stars }).map((_, j) => <span key={j} className="text-yellow-400 text-sm">★</span>)}</div>
+                  {/*
+                    20/08/2026 — LES ÉTOILES SONT PARTIES. Elles valaient 5 pour tout le
+                    monde, écrites en dur, et aucune note n'existe nulle part. Cinq étoiles
+                    sous le visage de quelqu'un se lisent comme SA note ; ce n'en était pas
+                    une. « Filmé » est vrai et se vérifie.
+                  */}
+                  <span className="text-white/35 text-[10px] uppercase" style={{ letterSpacing: '0.15em' }}>Filmé</span>
                   <span className="text-white/35 text-[10px] uppercase" style={{ letterSpacing: '0.15em' }}>· {t.detail}</span>
                 </div>
                 <p className="text-white/75 text-[13px] leading-relaxed">"{t.quote}"</p>
