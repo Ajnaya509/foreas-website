@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Play, Pause } from 'lucide-react'
 import type { Testimonial } from './testimonials.data'
+import { citationPubliable, verdictCitation } from '@/lib/consentements'
 
 /**
  * MuxPlayer — chargement dynamique côté client uniquement (Web Component).
@@ -21,6 +22,42 @@ const MuxPlayer = dynamic(
     ),
   }
 )
+
+/**
+ * La citation de ce chauffeur peut-elle s'afficher ?
+ *
+ * Le registre `src/lib/consentements.ts` détient, pour chaque personne, la phrase
+ * EXACTE qu'elle a acceptée de voir publier. Cette fonction compare ce qui est sur
+ * le point de s'afficher à cette phrase.
+ *
+ * Deux comportements, et la nuance compte :
+ *  · La phrase DIFFÈRE de celle enregistrée → on n'affiche RIEN. C'est le vrai
+ *    risque, et il s'est déjà réalisé : une citation retouchée « pour raccourcir »
+ *    devient une affirmation que la personne n'a jamais faite.
+ *  · Aucune phrase n'est encore enregistrée pour elle → on affiche le verbatim de
+ *    la vidéo. Ces six chauffeurs ont participé au tournage, ce sont leurs mots ;
+ *    ce qui manque est la TRACE ÉCRITE de leur accord, pas leur accord.
+ *
+ * ⚠️ POUR PASSER AU RÉGIME STRICT — n'afficher que ce qui est formellement
+ * approuvé — remplacer le `return true` du cas « pas de phrase enregistrée » par
+ * `return false`. Une seule ligne. Elle attend les six accords écrits ; le jour où
+ * ils arrivent, les statuts passent à `approuve` dans le registre, rien d'autre ne
+ * bouge.
+ */
+const REGIME_STRICT = false
+
+function citationAffichable(t: Testimonial): boolean {
+  const cle = t.name.toLowerCase().split(/[\s.]/)[0].replace(/[^a-zà-ÿ]/g, '')
+
+  // Régime strict : seule une phrase formellement approuvée sort. Aujourd'hui
+  // aucun des six accords n'est signé — l'activer viderait les six cartes.
+  if (REGIME_STRICT) return citationPubliable(cle, t.quoteShort)
+
+  const verdict = verdictCitation(cle, t.quoteShort)
+  if (verdict === 'alteree') return false   // le cas grave : jamais à l'écran
+  if (verdict === 'inconnue') return false  // hors registre : on n'invente pas
+  return true                                // conforme, ou pas encore transcrite
+}
 
 interface TestimonialVideoCardProps {
   testimonial: Testimonial
@@ -151,12 +188,32 @@ export default function TestimonialVideoCard({
       {/* ── Quote ──────────────────────────────────────────────────────── */}
       {showQuote && (
         <div className="px-5 pt-3 pb-5 flex-1 flex flex-col">
+          {/*
+            20/08/2026 — LES CINQ ÉTOILES ONT ÉTÉ RETIRÉES.
+            Elles étaient écrites en dur, identiques pour les six chauffeurs, et
+            aucune note n'existe nulle part : ni dans `pieuvre_closer_testimonials`,
+            ni ailleurs. Cinq étoiles sous un visage réel, ça se lit comme une note
+            donnée par cette personne. Ce n'en était pas une.
+            Ce qui reste est vrai et se vérifie : c'est lui, filmé, à visage découvert.
+          */}
           <p className="text-white/45 text-[10px] uppercase mb-2" style={{ letterSpacing: '0.18em' }}>
-            ⭐⭐⭐⭐⭐ · {t.detail}
+            Filmé · {t.detail}
           </p>
-          <p className="text-white/80 text-[13px] leading-relaxed italic">
-            {t.quoteShort}
-          </p>
+          {/*
+            LA CITATION PASSE PAR LE REGISTRE DE CONSENTEMENT.
+            `citationAffichable` ne la laisse passer que si elle correspond, au
+            caractère près, à celle enregistrée dans src/lib/consentements.ts.
+            Une citation ALTÉRÉE ne s'affiche pas — c'est exactement ce qui s'est
+            produit le 14/08 : « aucun souci » était devenu « aucun souci de
+            PAIEMENT », une affirmation jamais faite, sur un sujet sensible, à
+            visage découvert. La vidéo, elle, continue de jouer : c'est lui qui
+            parle, avec ses mots.
+          */}
+          {citationAffichable(t) && (
+            <p className="text-white/80 text-[13px] leading-relaxed italic">
+              {t.quoteShort}
+            </p>
+          )}
         </div>
       )}
     </motion.div>

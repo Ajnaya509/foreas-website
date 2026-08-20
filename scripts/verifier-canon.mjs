@@ -312,6 +312,50 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── CHAQUE VISAGE AFFICHÉ A UNE LIGNE AU REGISTRE ──────────────────────────
+//
+// Mesuré le 20/08/2026 : le registre de consentement existait depuis le matin et
+// PERSONNE ne l'importait. Six chauffeurs à visage découvert, leurs phrases à
+// l'écran, et un fichier de garde que rien ne consultait. Un registre que rien ne
+// consulte ne protège rien.
+//
+// Ce contrôle est croisé entre deux fichiers, il ne peut donc pas s'écrire comme
+// un motif cherché dans un seul. Il vérifie qu'aucun témoignage ne s'affiche sans
+// entrée à son nom — sinon la garde le laisserait passer sans rien vérifier.
+{
+  let dat = null
+  let reg = null
+  try {
+    dat = readFileSync('src/components/zone/testimonials.data.ts', 'utf8')
+    reg = readFileSync('src/lib/consentements.ts', 'utf8')
+  } catch {
+    // Un des deux fichiers a disparu : c'est en soi une infraction, signalée plus bas.
+  }
+  if (!dat || !reg) {
+    infractions.push({
+      fichier: 'src/lib/consentements.ts',
+      quoi: 'le registre de consentement ou la source des témoignages est introuvable',
+      extrait: '(fichier absent)',
+      pourquoi:
+        "Ces deux fichiers se gardent l'un l'autre. Si l'un disparaît, plus rien ne vérifie qu'une parole affichée est bien celle de la personne.",
+    })
+  } else {
+    const ids = new Set([...reg.matchAll(/^\s*id:\s*'([a-z]+)'/gm)].map((m) => m[1]))
+    for (const m of dat.matchAll(/^\s*name:\s*'([^']+)'/gm)) {
+      const cle = m[1].toLowerCase().split(/[\s.]/)[0].replace(/[^a-zà-ÿ]/g, '')
+      if (!ids.has(cle)) {
+        infractions.push({
+          fichier: 'src/components/zone/testimonials.data.ts',
+          quoi: `le témoignage « ${m[1]} » n'a aucune entrée au registre de consentement`,
+          extrait: m[1],
+          pourquoi:
+            "Une parole attribuée à quelqu'un ne s'affiche que si le registre (src/lib/consentements.ts) porte une ligne à son nom. Sans elle, rien ne peut vérifier que la phrase affichée est bien la sienne. Ajoute l'entrée avant d'ajouter le témoignage.",
+        })
+      }
+    }
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {

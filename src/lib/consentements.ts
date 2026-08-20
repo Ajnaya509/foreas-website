@@ -176,6 +176,32 @@ function normaliser(texte: string): string {
  * réécrire « aucun souci » en « aucun souci de paiement » n'est pas une
  * reformulation, c'est une autre affirmation, sur un autre sujet.
  */
+/**
+ * Quatre verdicts possibles pour une citation sur le point de s'afficher.
+ *
+ * Séparer ces cas, plutôt que de renvoyer oui/non, permet de distinguer ce qui
+ * est GRAVE de ce qui est seulement EN ATTENTE :
+ *  · `alteree`      — la phrase affichée ne correspond pas au verbatim enregistré.
+ *                     C'est le cas grave, celui du 14/08. Elle ne doit jamais sortir.
+ *  · `conforme`     — mot pour mot le verbatim. Reste soumise au statut d'accord
+ *                     pour le régime strict, mais rien n'a été déformé.
+ *  · `sans_verbatim`— personne n'a encore transcrit ce que dit la vidéo. On ne peut
+ *                     donc RIEN vérifier : à signaler, pas à faire semblant.
+ *  · `inconnue`     — cette personne n'est pas au registre du tout.
+ */
+export type VerdictCitation = 'conforme' | 'alteree' | 'sans_verbatim' | 'inconnue'
+
+/**
+ * Compare une citation affichée au verbatim enregistré, SANS regarder le statut
+ * d'accord. Réutilise `normaliser` — la règle de comparaison n'existe qu'ici.
+ */
+export function verdictCitation(id: string, citationAffichee: string): VerdictCitation {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) return 'inconnue'
+  if (!c.citationAutorisee) return 'sans_verbatim'
+  return normaliser(c.citationAutorisee) === normaliser(citationAffichee) ? 'conforme' : 'alteree'
+}
+
 export function citationPubliable(id: string, citationAffichee: string): boolean {
   const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
   if (!c) return false
