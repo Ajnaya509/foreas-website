@@ -133,7 +133,12 @@ function HorizontalValueProps() {
         La solution
       </span>
       <h2 className="font-title text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-5">
-        Un réseau intelligent
+        {/* 20/08/2026 — disait « Un réseau intelligent », au présent de l'indicatif.
+            partner_referrals → 0 ligne, partner_applications → 0 ligne : le réseau
+            n'existe pas encore. Le PROGRAMME, lui, existe et s'ouvre — c'est ce
+            qu'on annonce. Une page qui dit vrai sur son stade attire des partenaires
+            fondateurs ; une page qui exagère les perd au premier rendez-vous. */}
+        Le réseau que nous construisons,
         <span className="block bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">
           au service de votre marque.
         </span>
