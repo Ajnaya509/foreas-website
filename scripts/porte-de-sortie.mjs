@@ -112,6 +112,43 @@ for (const { chemin, methode, attendu, quoi } of PORTES) {
   }
 }
 
+console.log('\n── Les backends Railway ne livrent rien à un inconnu ──')
+//
+// ⚠️ Ces routes ne sont PAS sur foreas.xyz : elles vivent sur deux backends
+// Railway jumeaux. Elles sont contrôlées ICI parce que c'est ici que se trouve
+// la seule porte automatique de l'écosystème — et parce qu'un rapport a pu
+// affirmer pendant des heures qu'elles fuyaient 100 courses réelles alors que
+// le caviardage était déjà en place. Une affirmation de sécurité qui n'est pas
+// rejouée par une machine est une affirmation qui périme en silence.
+//
+// Ce qu'on vérifie : un inconnu n'obtient RIEN (404), et si jamais une réponse
+// revenait, elle ne porterait aucun champ nominatif renseigné.
+const BACKENDS = [
+  'https://foreas-stripe-backend-production.up.railway.app',
+  'https://foreas-ai-backend-production.up.railway.app',
+]
+const ROUTES_BOLT = ['/api/bolt/drivers', '/api/bolt/orders/all', '/api/bolt/stats', '/api/bolt/vehicles']
+
+for (const base of BACKENDS) {
+  const nom = base.replace('https://', '').split('-production')[0]
+  for (const route of ROUTES_BOLT) {
+    try {
+      const r = await fetch(`${base}${route}`, { headers: { 'Cache-Control': 'no-cache' } })
+      if (r.status === 404 || r.status === 401 || r.status === 403) {
+        dire(true, `${nom}${route} → ${r.status} (fermé)`)
+        continue
+      }
+      // La porte est ouverte : on vérifie AU MOINS qu'aucun champ nominatif
+      // n'est renseigné. On ne lit jamais les valeurs, on compte.
+      const t = await r.text()
+      const nominatifs = (t.match(/"(phone|first_name|last_name|email|plate|address)"\s*:\s*(?!null)(?!"")/g) || []).length
+      dire(false, `${nom}${route} → ${r.status} OUVERT · ${nominatifs} champ(s) nominatif(s) RENSEIGNÉ(S)`)
+    } catch (e) {
+      dire(false, `${nom}${route} → injoignable : ${e.message}`)
+    }
+  }
+}
+
 console.log('\n── Aucun secret n’est publié ──')
 try {
   const { corps: c } = await lire('/api/checkout')
