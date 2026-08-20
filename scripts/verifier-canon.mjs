@@ -217,6 +217,30 @@ function texteAffiche(source) {
 
 const REGLES_STRUCTURELLES = [
   {
+    // ── UNE PAROLE NE SE RÉÉCRIT PAS AILLEURS QUE DANS SA SOURCE ────────────
+    //
+    // Le 14/08/2026, le prompt du modal d'accueil faisait dire à Dragan P.
+    // « 2 ans sans problème de PAIEMENT ». Ses mots réels, filmés : « Plus de
+    // deux ans avec FOREAS, aucun souci. » L'ajout lui prêtait une affirmation
+    // sur un sujet sensible qu'il n'a jamais faite, à visage découvert.
+    //
+    // La parole des six chauffeurs filmés vit à UN endroit :
+    // `src/components/zone/testimonials.data.ts`, verbatim de la vidéo. Tout
+    // autre fichier qui nomme l'un d'eux ET porte une citation doit passer par
+    // `src/lib/consentements.ts` — le registre qui dit quelle phrase exacte est
+    // autorisée. Sinon, c'est une reformulation, et une reformulation n'est pas
+    // couverte par un accord.
+    // Motif resserré : une CITATION, pas n'importe quelle apostrophe de code.
+    // La première version attrapait « Binate K. » des maquettes de tableau de
+    // bord (données de démonstration, autre personne) — une règle qui crie à
+    // tort finit désactivée, donc ne protège plus rien.
+    concerne: /(quote|citation|témoignage)[^\n]{0,80}(Haitham|Binate|Binaté|Zephy|Dragan|Hadietou|Nikolic)|(Haitham|Binate|Binaté|Zephy|Dragan|Hadietou|Nikolic)[^\n]{0,80}«/,
+    exige: /consentements|testimonials\.data/,
+    quoi: 'une parole attribuée à un chauffeur filmé, hors de sa source',
+    pourquoi:
+      "La citation d'une personne nommée vient de src/components/zone/testimonials.data.ts (verbatim de la vidéo) ou passe par le registre src/lib/consentements.ts. La réécrire ailleurs, même « pour raccourcir », produit une phrase qu'elle n'a pas prononcée — c'est exactement ce qui est arrivé à Dragan P. le 14/08.",
+  },
+  {
     // Un fichier qui parle de durée d'essai DOIT la lire dans offre.ts.
     concerne: /jours?\s+d['’]essai|essai\s+(gratuit\s+)?de\s+\d|trialDays|trial\.days/i,
     exige: /ESSAI_JOURS|TRIAL_DAYS/,
