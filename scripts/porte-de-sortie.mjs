@@ -33,10 +33,21 @@
 
 const BASE = process.argv[2] ?? 'https://www.foreas.xyz'
 
+// ⚠️ 21/08/2026 — CETTE LISTE EN COMPTAIT TREIZE. Le plan du site en déclare
+// VINGT-DEUX à Google. Neuf pages publiques n'étaient donc jamais vérifiées par
+// cette porte, dont les dix pages fabriquées en série qui portent tout le
+// référencement. Une porte de sortie qui ne regarde que la moitié des pages
+// donne un feu vert sur une moitié inconnue.
 const PAGES = [
+  // Les pages écrites à la main
   '/', '/tarifs2', '/chauffeurs', '/professionnels', '/technologie',
-  '/a-propos', '/experience', '/ou-ca-paie', '/cap', '/checkout',
+  '/a-propos', '/experience', '/ou-ca-paie', '/cap', '/checkout', '/contact',
+  '/reactivation', '/facturation-electronique-vtc-2026',
+  // Les pages légales
   '/cgu', '/confidentialite', '/mentions-legales',
+  // Les dix pages fabriquées en série, servies depuis la base
+  '/revenus', '/charges', '/clients', '/aeroport', '/airbnb',
+  '/surge', '/premium', '/optimisation', '/flotte', '/evenements',
 ]
 
 /** Ce qu'aucune page publique ne doit contenir. Voir scripts/verifier-canon.mjs. */
@@ -95,7 +106,15 @@ async function lire(chemin) {
   })
   const age = Number(r.headers.get('age') || 0)
   if (Number.isFinite(age) && age > ageMaxObserve) ageMaxObserve = age
-  return { statut: r.status, corps: await r.text(), age }
+  // ⚠️ `fetch` suit les redirections par défaut. Sans cette comparaison,
+  // /checkout affichait « HTTP 200 » alors qu'il renvoie 308 vers /tarifs2 —
+  // et le corps analysé pour ce chemin était en réalité celui de /tarifs2,
+  // donc les contrôles de texte passaient deux fois sur la même page en
+  // croyant en couvrir deux. Un contrôle qui se trompe de page est pire qu'un
+  // contrôle absent : il rend un vert sur une surface jamais regardée.
+  const arrivee = new URL(r.url).pathname
+  const demande = chemin.split('?')[0]
+  return { statut: r.status, corps: await r.text(), age, redirigeVers: arrivee !== demande ? arrivee : null }
 }
 
 console.log(`\n🚪 Porte de sortie — ${BASE}\n`)
@@ -104,9 +123,9 @@ console.log('── Les pages répondent ──')
 const corps = {}
 for (const p of PAGES) {
   try {
-    const { statut, corps: c } = await lire(p)
+    const { statut, corps: c, redirigeVers } = await lire(p)
     corps[p] = c
-    dire(statut === 200, `${p} → HTTP ${statut}`)
+    dire(statut === 200, `${p} → HTTP ${statut}${redirigeVers ? ` (redirigé vers ${redirigeVers} — le texte analysé est celui de l'arrivée)` : ''}`)
   } catch (e) {
     dire(false, `${p} → injoignable : ${e.message}`)
   }
@@ -426,6 +445,132 @@ console.log('\n── Bascule des clés Supabase (état, pas jugement) ──')
     } catch (e) {
       dire(false, `${c.nom} → voyant injoignable : ${e.message}`)
     }
+  }
+}
+
+// ─── L'ACCUEIL MÈNE-T-IL À LA CAISSE ? ──────────────────────────────────────
+//
+// 🔴 MESURÉ LE 21/08/2026 sur le HTML servi de l'accueil : ZÉRO occurrence de
+// « tarifs2 », SIX liens WhatsApp. Le bouton du menu nommé « Souscrire » ouvrait
+// lui aussi une conversation. Depuis la porte d'entrée du site, la page où l'on
+// paie était inatteignable autrement qu'en tapant l'adresse à la main.
+//
+// Ce contrôle vit ICI, en plus de la règle dans verifier-canon.mjs, parce que
+// les deux ne prouvent pas la même chose : le canon lit le DÉPÔT, cette porte
+// lit ce que la PRODUCTION sert réellement. Une leçon déjà payée : un garde qui
+// lit le dépôt ne dit rien de ce qui tourne.
+console.log('\n── L\'accueil mène-t-il à la caisse ? ──')
+{
+  const html = corps['/'] ?? ''
+  const versLaCaisse = (html.match(/tarifs2/g) ?? []).length
+  const versWhatsApp = (html.match(/wa\.me|api\.whatsapp/g) ?? []).length
+  dire(versLaCaisse > 0, `accueil → ${versLaCaisse} lien(s) vers /tarifs2 (il en faut au moins 1)`)
+  console.log(`     ℹ️  et ${versWhatsApp} lien(s) WhatsApp — normal, c'est l'aide à la décision.`)
+}
+
+// ─── AUCUN NET CALCULÉ DANS UN MESSAGE ENVOYÉ AU NOM DU CHAUFFEUR ───────────
+//
+// 🔴 MESURÉ LE 21/08/2026 : l'accueil affichait 8,71 € net et son PROPRE bouton
+// pré-remplissait « je touche environ 14€ net », à quarante pixels de là. Les
+// deux sortaient du même composant. À 100 €, l'écart passait de 34,82 € affiché
+// à 56 € annoncé.
+//
+// ⚠️ CE DÉFAUT A ÉCHAPPÉ À UNE RECHERCHE DE « 14 € » PARCE QUE LE CHIFFRE EST
+// URL-ENCODÉ dans le lien : %2014%E2%82%AC. On cherche donc la forme encodée.
+console.log('\n── Le message envoyé au nom du chauffeur ──')
+{
+  for (const page of ['/', '/ou-ca-paie']) {
+    const html = corps[page] ?? ''
+    // « je touche environ NN€ net », sous n'importe quel encodage.
+    const encode = /je(?:%20|\+|\s)touche(?:%20|\+|\s)environ/i.test(html)
+    dire(!encode, `${page} → ${encode ? 'un net est AFFIRMÉ dans le message pré-rempli' : 'aucun net affirmé dans le message'}`)
+  }
+}
+
+// ─── LES PORTES FERMÉES LE 21/08 LE SONT-ELLES ENCORE ? ─────────────────────
+//
+// Une porte fermée dans le dépôt et rouverte par un déploiement raté ne fait
+// aucun bruit. On le redemande à la production, à chaque passage.
+console.log('\n── Les portes fermées le 21/08 ──')
+{
+  const FERMEES_SITE = [
+    { chemin: '/api/subscription/contact', methode: 'POST', quoi: 'écriture Stripe sans authentification' },
+    { chemin: '/api/checkout/activate', methode: 'POST', quoi: 'activation d\'abonnement' },
+    { chemin: '/api/checkout/verify', methode: 'GET', quoi: 'vérification d\'abonnement' },
+  ]
+  for (const { chemin, methode, quoi } of FERMEES_SITE) {
+    try {
+      const r = await fetch(BASE + chemin, {
+        method: methode,
+        headers: { 'Content-Type': 'application/json' },
+        ...(methode === 'POST' ? { body: '{}' } : {}),
+      })
+      dire(r.status === 404, `${chemin} (${quoi}) → ${r.status}, attendu 404`)
+    } catch (e) {
+      dire(false, `${chemin} → ${e.message}`)
+    }
+  }
+}
+
+// ─── UN SUJET INCONNU DOIT LE DIRE ──────────────────────────────────────────
+//
+// /go/<n'importe quoi> redirigeait vers /tarifs2 exactement comme un vrai sujet,
+// à l'attribution près. Donc une faute de frappe dans le bouton d'une page —
+// /go/aeroprot — continuait de « marcher » en perdant son attribution POUR
+// TOUJOURS, sans que rien ne l'annonce. Un lien interne cassé doit se voir.
+console.log('\n── Les liens de sortie vers l\'offre ──')
+{
+  try {
+    const r = await fetch(`${BASE}/go/ce-sujet-nexiste-pas`, { redirect: 'manual' })
+    dire(r.status === 404, `/go/<sujet inconnu> → ${r.status}, attendu 404`)
+  } catch (e) {
+    dire(false, `/go/<sujet inconnu> → ${e.message}`)
+  }
+  try {
+    const r = await fetch(`${BASE}/go/aeroport`, { redirect: 'manual' })
+    const dest = r.headers.get('location') ?? ''
+    dire(
+      r.status === 307 && dest.includes('utm_campaign=aeroport'),
+      `/go/aeroport → ${r.status}, attribution ${dest.includes('utm_campaign=aeroport') ? 'présente' : 'PERDUE'}`,
+    )
+  } catch (e) {
+    dire(false, `/go/aeroport → ${e.message}`)
+  }
+}
+
+// ─── LA MESURE ARRIVE-T-ELLE VRAIMENT ? ─────────────────────────────────────
+//
+// Deux choses opposées à vérifier, et c'est voulu :
+//   · la route accepte un événement de page (sinon on ne compte plus rien) ;
+//   · elle REFUSE un abonnement annoncé par le navigateur.
+//
+// Le second point est le plus important. Un abonnement déduit d'une page de
+// remerciement est un chiffre inventé : n'importe qui pourrait déclarer autant
+// de ventes qu'il veut en appelant la route. On ne teste PAS l'écriture ici —
+// une porte de sortie ne doit pas salir la table qu'elle surveille.
+console.log('\n── La mesure ──')
+{
+  try {
+    const r = await fetch(`${BASE}/api/mesure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ evenement: 'SubscriptionConfirmed', page: '/porte-de-sortie' }),
+    })
+    dire(r.status === 403, `un abonnement annoncé par le navigateur → ${r.status}, attendu 403`)
+  } catch (e) {
+    dire(false, `/api/mesure → ${e.message}`)
+  }
+  try {
+    // Événement volontairement invalide : prouve que la route vit et valide,
+    // sans écrire une seule ligne.
+    const r = await fetch(`${BASE}/api/mesure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    dire(r.status === 400, `un événement sans nom → ${r.status}, attendu 400 (la route vit et valide)`)
+  } catch (e) {
+    dire(false, `/api/mesure → ${e.message}`)
   }
 }
 
