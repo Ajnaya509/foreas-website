@@ -303,3 +303,48 @@ export function villeDe(id: string): string | null {
  * COPIES littérales du verbatim. Une paraphrase n'est pas une copie. Une règle
  * qui traque la recopie ne protège pas de la réécriture.
  */
+
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * LE TÉMOIGNAGE ENTIER PEUT-IL ÊTRE PUBLIÉ ? — AJOUTÉ LE 21/08/2026
+ *
+ * Jusqu'ici, le site distinguait trois choses et n'en gardait qu'une :
+ *   · la CITATION passait par `citationPubliable()` — mais en régime souple ;
+ *   · le CHIFFRE passait par `chiffrePubliable()` — qui n'était appelée nulle
+ *     part avant le 21/08 ;
+ *   · la VIDÉO ne passait par rien du tout.
+ *
+ * Or c'est la vidéo qui expose le plus : un visage découvert, une voix, une
+ * personne identifiable, sur un site commercial. Le raisonnement qui la laissait
+ * tourner — « c'est lui qui parle, avec ses mots » — décrit qui a prononcé la
+ * phrase, pas qui a autorisé sa publication. Les deux sont différents.
+ *
+ * ⚠️ ÉTAT AU 21/08/2026 : les SIX accords sont au statut « en attente », avec
+ * `preuve: null`. Aucun n'est signé. Cette fonction renvoie donc `false` pour
+ * tout le monde, et toutes les preuves sociales du site disparaissent.
+ *
+ * Ce n'est pas un effet de bord : c'est la conséquence exacte de l'absence
+ * d'accord. « Probablement réel » ne suffit pas pour publier le visage de
+ * quelqu'un.
+ *
+ * POUR LES RALLUMER : passer le `statut` à `approuve` ET renseigner `preuve`
+ * pour chaque personne dont l'accord écrit est obtenu. Une par une — pas de
+ * drapeau global, parce que chaque accord appartient à une personne différente.
+ */
+export function temoignagePubliable(id: string): boolean {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) return false
+  return c.statut === 'approuve' && c.portee.includes('site')
+}
+
+/** Le même garde, à partir du nom affiché — pour les composants qui n'ont que ça. */
+export function temoignagePubliableParNom(nom: string): boolean {
+  const cle = nom.toLowerCase().split(/[\s.]/)[0].replace(/[^a-zà-ÿ]/g, '')
+  return temoignagePubliable(cle)
+}
+
+/** Y a-t-il au moins une preuve sociale publiable ? Sinon, la section se retire. */
+export function auMoinsUnTemoignagePubliable(): boolean {
+  return REGISTRE_CONSENTEMENTS.some((c) => c.statut === 'approuve' && c.portee.includes('site'))
+}

@@ -22,7 +22,7 @@ import { PARRAINAGE, PLATEFORMES, COMMUNAUTE, garantieAffichable } from '@/lib/v
 // dire à quelqu'un ce qu'il n'a pas dit. Le texte vit maintenant dans
 // src/lib/consentements.ts, et lui seul. Réécrire une citation ici est refusé par
 // `npm run canon`.
-import { citationDe } from '@/lib/consentements'
+import { citationDe, temoignagePubliable, temoignagePubliableParNom } from '@/lib/consentements'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -487,9 +487,14 @@ function TarifsContent() {
                 se paie devant la DGCCRF. Remplacé par la seule phrase chiffrée qu'on peut
                 produire : celle que Binate A. dit lui-même, face caméra, dans une vidéo
                 publiée sur ce site. Son chiffre, pas le nôtre — et c'est dit tel quel. */}
-            <p className="text-white/75 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-              Binate A., Marne-la-Vallée&nbsp;: <span className="text-[#F8FAFC] font-semibold">«&nbsp;{citationDe('binate')}&nbsp;»</span> Son chiffre, dit face caméra.
-            </p>
+            {/* ⚠️ 21/08/2026 — la parole vient bien du registre, mais l'accord de
+                cette personne est « en attente ». Elle disparaît tant qu'il n'est
+                pas signé, comme les vidéos et les notifications nominatives. */}
+            {temoignagePubliable('binate') && (
+              <p className="text-white/75 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
+                Binate A., Marne-la-Vallée&nbsp;: <span className="text-[#F8FAFC] font-semibold">«&nbsp;{citationDe('binate')}&nbsp;»</span> Son chiffre, dit face caméra.
+              </p>
+            )}
             <p className="text-white/55 text-base sm:text-[15px] max-w-xl mx-auto leading-relaxed mt-3">
               {/* « IA » retiré volontairement (décision Chandler) : le mot est devenu
                   anti-conversion sur cette cible. On dit ce qu'elle FAIT, pas ce qu'elle est. */}
@@ -785,7 +790,7 @@ function TarifsContent() {
               { name: 'Haitham B.', city: 'Paris · 7 ans VTC', avatar: 'HB', gain: 'Liberté + lien', detail: '7 ans · Paris', quote: citationDe('haitham') },
               { name: 'Dragan P.', city: 'Paris · 9 ans VTC', avatar: 'DP', gain: '2 ans, il reste', detail: '9 ans VTC · 2 ans FOREAS', quote: citationDe('dragan') },
               { name: 'Hadietou', city: 'Banlieue parisienne · 9 ans VTC', avatar: 'HD', gain: 'Il recommande', detail: 'Indépendant · 9 ans VTC', quote: citationDe('hadietou') },
-            ].map((t, i) => (
+            ].filter((t) => temoignagePubliableParNom(t.name)).map((t, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 hover:border-violet-500/30 transition-all"
               >

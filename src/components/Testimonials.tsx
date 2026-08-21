@@ -12,7 +12,7 @@ import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
 // dire à quelqu'un ce qu'il n'a pas dit. Le texte vit maintenant dans
 // src/lib/consentements.ts, et lui seul. Réécrire une citation ici est refusé par
 // `npm run canon`.
-import { citationDe } from '@/lib/consentements'
+import { citationDe, auMoinsUnTemoignagePubliable } from '@/lib/consentements'
 
 // Lazy load Mux Player — only loaded when user clicks play (saves ~200KB from critical path)
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
@@ -531,6 +531,16 @@ export default function Testimonials() {
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
     }
   }, [isInView, userInteracted])
+
+  // ⚠️ 21/08/2026 — SIX VIDÉOS DE CHAUFFEURS, AUCUN ACCORD SIGNÉ.
+  //
+  // Ce composant est monté par /chauffeurs. Il affiche six visages découverts,
+  // six noms et six paroles. Les six accords du registre sont « en attente »,
+  // sans preuve enregistrée.
+  //
+  // La section entière se retire, plutôt que de laisser un carrousel vide avec
+  // ses flèches et son titre.
+  if (!auMoinsUnTemoignagePubliable()) return null
 
   return (
     <section ref={sectionRef} className="relative py-20 md:py-32 bg-foreas-deepblack overflow-hidden">

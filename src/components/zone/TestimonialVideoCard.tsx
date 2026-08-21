@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Play, Pause } from 'lucide-react'
 import type { Testimonial } from './testimonials.data'
-import { citationPubliable, verdictCitation, chiffrePubliable } from '@/lib/consentements'
+import { citationPubliable, verdictCitation, chiffrePubliable, temoignagePubliableParNom } from '@/lib/consentements'
 
 /**
  * MuxPlayer — chargement dynamique côté client uniquement (Web Component).
@@ -101,6 +101,27 @@ export default function TestimonialVideoCard({
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const playerRef = useRef<unknown>(null)
+
+  // ⚠️ 21/08/2026 — LA VIDÉO NE PASSAIT PAR AUCUN GARDE.
+  //
+  // Le site vérifiait la citation, et depuis ce matin le chiffre. Pas la vidéo.
+  // Or c'est elle qui expose le plus : un visage découvert, une voix, une
+  // personne identifiable, sur un site commercial.
+  //
+  // Le raisonnement qui la laissait tourner — « c'est lui qui parle, avec ses
+  // mots » — décrit qui a PRONONCÉ la phrase, pas qui a AUTORISÉ sa
+  // publication. Les deux sont différents.
+  //
+  // Les six accords sont « en attente », sans aucune preuve enregistrée. Cette
+  // carte ne se rend donc pour personne aujourd'hui. Ce n'est pas un effet de
+  // bord : c'est la conséquence exacte de l'absence d'accord.
+  //
+  // ⚠️ LE GARDE EST ICI, APRÈS LES CROCHETS, ET PAS AVANT. Un retour anticipé
+  // placé au-dessus d'un useState rend l'appel des crochets conditionnel, et
+  // React lève une erreur dès qu'un rendu change de branche. C'était mon
+  // premier jet ; la vérification des types l'a attrapé.
+  if (!temoignagePubliableParNom(t.name)) return null
+
 
   const posterUrl = `https://image.mux.com/${t.playbackId}/thumbnail.jpg?time=${t.posterTimeSec}&width=640&fit_mode=smartcrop`
 

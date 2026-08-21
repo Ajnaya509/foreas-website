@@ -50,7 +50,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Video, X } from 'lucide-react'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
 
-import { personneDe, villeDe } from '@/lib/consentements'
+import { personneDe, villeDe, auMoinsUnTemoignagePubliable } from '@/lib/consentements'
 interface ProofEntry {
   /** L'identifiant au registre des accords. La parole et la ville viennent de là. */
   id: string
@@ -185,6 +185,24 @@ export default function LiveSocialProofToasts() {
     if (timersRef.current.show) clearTimeout(timersRef.current.show)
     if (timersRef.current.hide) clearTimeout(timersRef.current.hide)
   }
+
+  // ⚠️ 21/08/2026 — CES NOTIFICATIONS NOMMENT DE VRAIES PERSONNES.
+  //
+  // Elles affichent « <Prénom N.> à <ville> · a filmé son témoignage, à visage
+  // découvert ». C'est une affirmation publique sur une personne identifiable,
+  // sur une page commerciale.
+  //
+  // Les six accords sont « en attente », sans preuve enregistrée. Tant que
+  // c'est le cas, ces notifications ne s'affichent pas — au même titre que les
+  // cartes vidéo, et pour la même raison.
+  //
+  // ⚠️ L'EMPLACEMENT A DEMANDÉ TROIS ESSAIS, et chacun a été attrapé par la
+  // vérification des types : d'abord au-dessus des crochets (appel
+  // conditionnel), puis À L'INTÉRIEUR d'un useEffect (l'effet renvoyait null
+  // au lieu d'une fonction de nettoyage), puis dans une fonction utilitaire
+  // située AU-DESSUS du composant. Un retour anticipé se place après tous les
+  // crochets, et dans la bonne fonction.
+  if (!auMoinsUnTemoignagePubliable()) return null
 
   if (dismissed) return null
 

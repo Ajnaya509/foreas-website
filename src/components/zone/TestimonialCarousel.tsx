@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import TestimonialVideoCard from './TestimonialVideoCard'
 import { TESTIMONIALS } from './testimonials.data'
 
+import { auMoinsUnTemoignagePubliable } from '@/lib/consentements'
 /**
  * TestimonialCarousel — slider horizontal en boucle infinie avec auto-play
  *
@@ -24,6 +25,10 @@ import { TESTIMONIALS } from './testimonials.data'
  *                            qui amplifie la sensation de tribu (247 chauffeurs)
  */
 export default function TestimonialCarousel() {
+  // Si aucun accord n'est signé, il n'y a rien à faire défiler : la section
+  // entière se retire, plutôt que d'afficher un carrousel vide avec ses flèches.
+  if (!auMoinsUnTemoignagePubliable()) return null
+
   const autoplayRef = useRef(
     Autoplay({
       delay: 5000,
