@@ -266,7 +266,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
       {/* ── SECTION 2 — EPIPHANY BRIDGE ───────────────────────────────────── */}
       <section className="px-4 py-20 max-w-2xl mx-auto">
         <FadeIn>
-          <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-8">L&apos;histoire</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-8">L&apos;histoire</p>
           <div className="prose prose-invert prose-lg max-w-none">
             <p className="text-gray-300 leading-relaxed text-lg whitespace-pre-line">
               {c.story_body}
@@ -278,7 +278,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
       {/* ── SECTION 3 — DÉSIR VS RÉALITÉ ──────────────────────────────────── */}
       <section className="px-4 py-20 max-w-4xl mx-auto">
         <FadeIn>
-          <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-10 text-center">La réalité vs le possible</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-10 text-center">La réalité vs le possible</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Avant */}
             <div className="rounded-2xl border border-red-900/40 bg-red-950/10 p-6">
@@ -315,7 +315,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
       {/* ── SECTION 4 — BOULE DE CRISTAL ──────────────────────────────────── */}
       <section className="px-4 py-20 max-w-2xl mx-auto text-center">
         <FadeIn>
-          <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-4">Dans 30 jours</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-4">Dans 30 jours</p>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-8" style={{ fontFamily: 'Genos, sans-serif' }}>
             {c.projection_intro}
           </h2>
@@ -354,7 +354,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           la parole d'un chauffeur filmé, pas une garantie de résultat. */}
       <section className="px-4 py-20 max-w-2xl mx-auto">
         <FadeIn>
-          <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-8 text-center">
+          <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-8 text-center">
             Leurs mots, en vidéo
           </p>
           <div className="space-y-4">
@@ -363,7 +363,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
                   <div>
                     <p className="text-white font-semibold text-sm">{proof.name}</p>
-                    <p className="text-gray-500 text-xs">{proof.location} · {proof.period}</p>
+                    <p className="text-white/55 text-xs">{proof.location} · {proof.period}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[#10B981] font-black text-lg">{proof.result}</p>
@@ -399,7 +399,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
       {!!c.faq_items?.length && (
         <section className="px-4 py-16 max-w-2xl mx-auto">
           <FadeIn>
-            <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2 text-center">
+            <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-2 text-center">
               Avant de te décider
             </p>
             <h2 className="text-xl md:text-2xl font-bold text-white mb-8 text-center" style={{ fontFamily: 'Genos, sans-serif' }}>
@@ -424,7 +424,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
               patterns) bannit l'urgence fake ; ceci n'est pas un compte à rebours, c'est
               ce qui reste vrai demain si rien ne change aujourd'hui. */}
           {c.inaction_cost && (
-            <p className="text-gray-500 text-xs mb-4 max-w-sm mx-auto italic">{c.inaction_cost}</p>
+            <p className="text-white/55 text-xs mb-4 max-w-sm mx-auto italic">{c.inaction_cost}</p>
           )}
           <h2 className="text-3xl md:text-4xl font-black text-white mb-4 max-w-lg mx-auto" style={{ fontFamily: 'Genos, sans-serif' }}>
             {c.cta_headline}
@@ -457,6 +457,31 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           </Link>
         </div>
       )}
+
+      {/*
+        ⚠️ 21/08/2026 — CES DIX PAGES N'AVAIENT AUCUNE MENTION LÉGALE.
+
+        Ni pied de page, ni lien vers les conditions, la confidentialité ou les
+        mentions légales. Vérifié dans le code ET dans le HTML servi. Ce n'est
+        pas un sujet de confort : c'est une obligation non remplie sur dix pages
+        indexables, qui vendent un abonnement.
+
+        Bande minimale, pas le pied de page complet : celui-ci fait cent
+        cinquante lignes et changerait la fin de ces pages. Le choix entre les
+        deux appartient à Chandler ; l'obligation, elle, ne se discute pas.
+
+        Le rembourrage du bas laisse la place au bouton fixe du mobile, qui
+        recouvrirait sinon ces liens.
+      */}
+      <footer className="border-t border-white/[0.06] px-4 py-8 pb-28 md:pb-8 text-center">
+        <nav aria-label="Liens légaux" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/55">
+          <Link href="/cgu" className="hover:text-white/80 transition-colors">Conditions générales</Link>
+          <Link href="/confidentialite" className="hover:text-white/80 transition-colors">Confidentialité</Link>
+          <Link href="/mentions-legales" className="hover:text-white/80 transition-colors">Mentions légales</Link>
+          <Link href="/contact" className="hover:text-white/80 transition-colors">Contact</Link>
+        </nav>
+        <p className="mt-4 text-[11px] text-white/35">FOREAS — copilote des chauffeurs VTC.</p>
+      </footer>
     </div>
   )
 }
