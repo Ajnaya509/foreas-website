@@ -1,6 +1,18 @@
 import { Resend } from 'resend'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 
+/**
+ * ⚠️ 21/08/2026 — DEUX REPLIS DIVERGENTS POUR LA MÊME VARIABLE.
+ *
+ * Ce fichier repliait sur `https://dashboard.foreas.xyz`, qui NE RÉSOUT PAS EN
+ * DNS — vérifié : la requête échoue avant même d'atteindre un serveur.
+ * `src/lib/auth-urls.ts` replie, lui, sur `partners.foreas.xyz`, et son propre
+ * commentaire interdit d'écrire ce sous-domaine ailleurs.
+ *
+ * Un repli n'existe que pour le jour où la variable manque. Celui-ci menait
+ * donc, ce jour-là précisément, vers un nom qui n'existe pas.
+ */
+const DASH_DEFAUT = 'https://partners.foreas.xyz'
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 /**
@@ -103,9 +115,23 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
           <table cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:380px;">
             <tr>
               <td align="center" style="background-color:#8C52FF;border-radius:12px;padding:0;">
-                <a href="https://foreas.xyz/download" style="display:block;padding:16px 32px;color:#ffffff;font-family:'Genos',sans-serif;font-size:17px;font-weight:600;text-decoration:none;text-align:center;letter-spacing:0.5px;">
+                <a href="https://www.foreas.xyz/go" style="display:block;padding:16px 32px;color:#ffffff;font-family:'Genos',sans-serif;font-size:17px;font-weight:600;text-decoration:none;text-align:center;letter-spacing:0.5px;">
                   T&eacute;l&eacute;charger l&rsquo;app &rarr;
                 </a>
+              <!--
+                ⚠️ 21/08/2026 — LE MAIL N'ANNONÇAIT AUCUNE PORTE DE SECOURS.
+                Le mot de passe généré n'existe QUE dans ce message. S'il se
+                perd, le chauffeur payé n'a aucun recours annoncé — le filet
+                posé côté serveur alerte l'OPÉRATEUR, pas lui.
+                ⚠️ Ce lien n'est pas présenté comme éprouvé : sur toute
+                l'histoire du journal d'authentification, 22 demandes de
+                réinitialisation pour UN SEUL changement de mot de passe
+                effectif. Le bouton est cliquable ; que le chemin aboutisse
+                reste à prouver.
+              -->
+              <p style="margin:18px 0 0;font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:rgba(248,250,252,0.45);text-align:center;">
+                Mot de passe perdu&nbsp;? <a href="https://partners.foreas.xyz/auth/reset" style="color:rgba(248,250,252,0.7);">Reçois-en un nouveau</a>. Une question&nbsp;? Réponds simplement à ce message.
+              </p>
               </td>
             </tr>
           </table>
@@ -288,7 +314,7 @@ export async function sendPartnerInternalEmail(app: {
 }) {
   if (!resend) { console.log('[Email] Resend non configuré — internal'); return }
   const adminUrl =
-    (process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://dashboard.foreas.xyz').replace(/\/$/, '') +
+    (process.env.NEXT_PUBLIC_DASHBOARD_URL || DASH_DEFAUT).replace(/\/$/, '') +
     '/admin/partner-pending'
   const row = (k: string, v?: string) =>
     v

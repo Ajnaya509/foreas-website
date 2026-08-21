@@ -6,6 +6,20 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 
+/*
+ * ⚠️ 21/08/2026 — CETTE PAGE DISAIT LE CONTRAIRE DU MAIL QUI Y ENVOYAIT.
+ *
+ * Le mail de bienvenue avait pour SEUL bouton un lien vers ici, et la page
+ * répondait « l'app arrive bientôt », « en cours de validation », « Bientôt
+ * sur ». Un chauffeur qui vient de payer lisait donc, sur la seule page qu'on
+ * lui indique, que le produit n'existe pas encore.
+ *
+ * Or il existe : les deux boutons de cette page pointaient déjà les VRAIES
+ * fiches, vérifiées. Seuls les libellés mentaient.
+ *
+ * ⚠️ Corriger le mail SEUL aurait laissé la page mensongère pour tous les
+ * autres entrants — et il y en a : /checkout/merci et /success y mènent aussi.
+ */
 type Device = 'ios' | 'android' | 'desktop'
 
 function detectDevice(): Device {
@@ -69,7 +83,7 @@ export default function DownloadPage() {
             transition={{ delay: 0.3 }}
             className="font-body text-base text-white/50 mb-10 max-w-md mx-auto"
           >
-            L'app FOREAS arrive bientôt sur les stores. En attendant, tu peux
+            L'app FOREAS est disponible sur les deux boutiques. Tu peux aussi
             accéder à la webapp directement.
           </motion.p>
 
@@ -100,7 +114,7 @@ export default function DownloadPage() {
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
                 <div className="text-left">
-                  <div className="text-[10px] text-white/40 leading-none">Bientôt sur</div>
+                  <div className="text-[10px] text-white/40 leading-none">Disponible sur</div>
                   <div className="text-sm font-semibold">App Store</div>
                 </div>
               </a>
@@ -110,7 +124,7 @@ export default function DownloadPage() {
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.25c-.44-.25-.68-.71-.68-1.22V1.97c0-.51.24-.97.68-1.22l11.2 11.25-11.2 11.25zM14.89 14.5L5.62 23.18l12.15-6.82-2.88-1.86zm2.88-1.86l3.23 2.09c.44.28.73.78.73 1.27s-.29.99-.73 1.27l-3.23 2.09-3.18-3.36 3.18-3.36zM5.62.82L14.89 9.5 12.01 11.36 5.62.82z"/></svg>
                 <div className="text-left">
-                  <div className="text-[10px] text-white/40 leading-none">Bientôt sur</div>
+                  <div className="text-[10px] text-white/40 leading-none">Disponible sur</div>
                   <div className="text-sm font-semibold">Google Play</div>
                 </div>
               </a>
@@ -124,7 +138,7 @@ export default function DownloadPage() {
             transition={{ delay: 0.6 }}
             className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-white/40"
           >
-            L'app native est en cours de validation sur les stores.
+            Les deux boutons ci-dessus mènent aux fiches officielles.
             Tu seras notifié par email dès qu'elle sera disponible.
           </motion.div>
         </div>
