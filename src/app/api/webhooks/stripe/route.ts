@@ -17,6 +17,26 @@ import { URL_SITE } from '@/lib/site'
 // que de dégrader.
 import { cleServeurOuVide, clientServeurOuNull } from '@/lib/supabaseServeur'
 
+/**
+ * ⚠️ 21/08/2026 — LE TEMPS D'EXÉCUTION N'ÉTAIT DÉCLARÉ NULLE PART.
+ *
+ * Ce webhook crée un compte, écrit en base, envoie un e-mail et lance trois
+ * conversions publicitaires. Sans durée déclarée, il tombe sur la limite par
+ * défaut de l'hébergeur.
+ *
+ * Et ce n'est pas qu'une question de confort : le bail d'idempotence posé plus
+ * bas dure dix minutes. Si l'exécution peut être coupée à trente secondes, un
+ * exemplaire tué net laisse une réservation vivante pendant neuf minutes et
+ * demie, et toute relivraison de Stripe dans cette fenêtre est ignorée.
+ * Le bail doit toujours être plus long que l'exécution — d'où cette ligne AVANT
+ * celle-là.
+ *
+ * ⚠️ ON NE CRÉE PAS de vercel.json pour ça : le fichier existe déjà et porte la
+ * redirection des liens courts de parrainage plus trois en-têtes de sécurité.
+ * Le remplacer les effacerait.
+ */
+export const maxDuration = 60
+
 export const runtime = 'nodejs'
 
 function getStripeClient() {
@@ -106,12 +126,35 @@ async function updateSubscriberStatus(stripeSubId: string, status: string) {
     const supabase = createClient(supabaseUrl, supabaseKey)
     // Même piège que ci-dessus : sans déstructurer `error`, un échec passait
     // pour un succès silencieux.
-    const { error } = await supabase
+    // ⚠️ 21/08/2026 — UNE ANNULATION ET UN IMPAYÉ POUVAIENT DISPARAÎTRE.
+    //
+    // Trois défauts empilés dans six lignes :
+    //  · l'update n'avait aucun `.select()`, donc ZÉRO LIGNE MISE À JOUR était
+    //    structurellement indiscernable d'un succès — `error` reste null ;
+    //  · l'erreur était journalisée sans être levée ;
+    //  · la fonction rend `void`, donc l'appelant ne peut rien savoir.
+    // Puis l'événement passait à « fait » et le webhook répondait 200 : Stripe
+    // ne rejoue jamais. Un chauffeur résilié restait actif en base, un impayé
+    // restait payé, sans une ligne d'alerte.
+    //
+    // ⚠️ ON NE LÈVE PAS SUR « ZÉRO LIGNE ». Une résiliation qui ne trouve pas sa
+    // ligne n'est pas une panne de Stripe : rejouer n'y changerait rien. On
+    // ALERTE, et on laisse passer — sinon Stripe réessaie trois jours pour rien.
+    const { data, error } = await supabase
       .from('subscribers')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('stripe_subscription_id', stripeSubId)
+      .select('id')
     if (error) {
       console.error(`[webhook] ÉCHEC mise à jour statut (${stripeSubId}) : ${error.code} ${error.message}`)
+      throw new Error(`statut non écrit : ${error.code}`)
+    }
+    if (!data || data.length === 0) {
+      console.error(`[webhook] statut « ${status} » : AUCUNE ligne pour ${stripeSubId}`)
+      await sendProvisionFailureAlert({
+        email: 'inconnu',
+        reason: `statut « ${status} » reçu pour ${stripeSubId}, mais aucune ligne d'abonné ne correspond — l'état en base est faux`,
+      })
     }
   } catch (e) {
     console.error('[webhook] Erreur update status:', e)
@@ -153,9 +196,43 @@ async function updateSubscriberStatus(stripeSubId: string, status: string) {
  * Et le commentaire disait « Stripe réessaiera » — il décrivait une intention,
  * pas le comportement. Un faux témoin de plus.
  */
-type Reservation = 'obtenue' | 'prise_par_un_autre' | 'impossible'
+/**
+ * ⚠️ 21/08/2026, SECONDE PASSE — LE BAIL N'AVAIT NI PROPRIÉTAIRE NI EXPIRATION.
+ *
+ * Le premier jet posait une réservation, travaillait, marquait « fait », et
+ * supprimait en cas d'échec. Une réservation de plus de dix minutes était
+ * effacée puis reprise. Trois défauts, trouvés par une vérification adverse :
+ *
+ * 1. AUCUN PROPRIÉTAIRE. Confirmer et libérer filtraient sur l'identifiant
+ *    d'événement SEUL. Un exemplaire lent, repris après dix minutes, pouvait
+ *    donc marquer « fait » le travail d'un AUTRE — ou effacer une ligne déjà
+ *    terminée.
+ *
+ * 2. LA REPRISE N'ÉTAIT PAS ATOMIQUE : un effacement puis une insertion. Deux
+ *    exemplaires pouvaient passer entre les deux.
+ *
+ * 3. LE PIRE : « prise par un autre » rendait 200. Ce code confond « quelqu'un
+ *    a FINI » et « quelqu'un a COMMENCÉ et a peut-être planté ». Un arrêt
+ *    brutal en cours de traitement ne déclenche aucun rattrapage : la ligne
+ *    reste en cours, et toute relivraison de Stripe dans la fenêtre reçoit 200.
+ *    Stripe ne revient jamais.
+ *
+ * Désormais : une seule requête atomique côté base (voir la migration
+ * `reservation_stripe_un_bail_avec_proprietaire_et_expiration`), quatre
+ * réponses distinctes, et un jeton de propriété exigé pour confirmer ou
+ * libérer.
+ *
+ * ⚠️ LE BAIL (5 min) EST PLUS COURT QUE `maxDuration` (60 s) × marge, et plus
+ * LONG que l'exécution. Un bail plus court que l'exécution rendrait le vol
+ * systématique — c'est pourquoi la durée d'exécution est déclarée en tête.
+ */
+type Reservation = 'obtenue' | 'deja_fait' | 'bail_vivant' | 'impossible'
 
-async function reserverEvenement(id: string, type: string): Promise<Reservation> {
+async function reserverEvenement(
+  id: string,
+  type: string,
+  proprietaire: string,
+): Promise<Reservation> {
   const sb = clientServeurOuNull()
   if (!sb) {
     // On ne peut pas garantir l'unicité : on ÉCHOUE FRANCHEMENT pour que Stripe
@@ -163,52 +240,68 @@ async function reserverEvenement(id: string, type: string): Promise<Reservation>
     console.error('[webhook] pas de client serveur : réservation impossible')
     return 'impossible'
   }
-  // Une réservation abandonnée depuis plus de dix minutes se reprend : un
-  // processus tué net ne doit pas bloquer un événement pour toujours.
-  const limite = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-  await sb
-    .from('site_evenements_stripe_traites')
-    .delete()
-    .eq('event_id', id)
-    .eq('statut', 'en_cours')
-    .lt('reserve_le', limite)
-
-  const { data, error } = await sb
-    .from('site_evenements_stripe_traites')
-    .insert({ event_id: id, type })
-    .select('event_id')
-
+  const { data, error } = await sb.rpc('reclamer_evenement_stripe', {
+    p_event_id: id,
+    p_type: type,
+    p_proprietaire: proprietaire,
+  })
   if (error) {
-    // 23505 = clé déjà présente : quelqu'un d'autre a la réservation. Ce n'est
-    // PAS une erreur, c'est le mécanisme qui fonctionne.
-    if (error.code === '23505') return 'prise_par_un_autre'
-    console.error(`[webhook] réservation impossible (${error.code}) : ${error.message}`)
+    console.error(`[webhook] réclamation impossible (${error.code}) : ${error.message}`)
     return 'impossible'
   }
-  return Array.isArray(data) && data.length === 1 ? 'obtenue' : 'prise_par_un_autre'
+  const r = Array.isArray(data) ? data[0]?.resultat : (data as { resultat?: string })?.resultat
+  if (r === 'obtenue' || r === 'deja_fait' || r === 'bail_vivant') return r
+  console.error(`[webhook] réclamation : réponse inattendue « ${String(r)} »`)
+  return 'impossible'
 }
 
-async function confirmerEvenement(id: string, note?: string): Promise<void> {
+/** Marque terminé — et SEULEMENT si on détient encore le bail. */
+async function confirmerEvenement(id: string, proprietaire: string, note?: string): Promise<void> {
+  const sb = clientServeurOuNull()
+  if (!sb) return
+  const { data, error } = await sb
+    .from('site_evenements_stripe_traites')
+    .update({ statut: 'fait', fini_le: new Date().toISOString(), note: note ?? null })
+    .eq('event_id', id)
+    .eq('proprietaire', proprietaire)
+    .eq('statut', 'en_cours')
+    .select('event_id')
+  if (error) {
+    console.error(`[webhook] confirmation impossible : ${error.message}`)
+    return
+  }
+  if (!data || data.length === 0) {
+    // On a perdu le bail en route : quelqu'un d'autre a repris l'événement.
+    // Ne pas se taire — c'est le signe que l'exécution a dépassé son bail.
+    console.error(`[webhook] ${id} : bail perdu avant confirmation, travail peut-être fait deux fois`)
+  }
+}
+
+/**
+ * Rend le bail au lieu d'effacer la ligne.
+ *
+ * ⚠️ Un effacement perdrait le compteur de tentatives et la dernière erreur —
+ * exactement ce qu'on veut lire quand un événement échoue trois fois de suite.
+ */
+async function libererEvenement(id: string, proprietaire: string, erreur?: string): Promise<void> {
   const sb = clientServeurOuNull()
   if (!sb) return
   const { error } = await sb
     .from('site_evenements_stripe_traites')
-    .update({ statut: 'fait', fini_le: new Date().toISOString(), note: note ?? null })
+    .update({ bail_expire_le: new Date().toISOString(), derniere_erreur: erreur ?? null })
     .eq('event_id', id)
-  if (error) console.error(`[webhook] confirmation impossible : ${error.message}`)
-}
-
-async function libererEvenement(id: string): Promise<void> {
-  const sb = clientServeurOuNull()
-  if (!sb) return
-  const { error } = await sb.from('site_evenements_stripe_traites').delete().eq('event_id', id)
+    .eq('proprietaire', proprietaire)
+    .eq('statut', 'en_cours')
   if (error) console.error(`[webhook] libération impossible : ${error.message}`)
 }
 
 export async function POST(request: Request) {
-  // Déclarée HORS du try : le bloc de rattrapage doit pouvoir libérer la
-  // réservation, et il n'a pas accès aux variables déclarées à l'intérieur.
+  // Déclarées HORS du try : le bloc de rattrapage doit pouvoir rendre le bail,
+  // et il n'a pas accès aux variables déclarées à l'intérieur.
   let evenementReserve: string | null = null
+  // Le jeton de propriété de CET exemplaire. Sans lui, un exemplaire repris
+  // pourrait confirmer le travail d'un autre.
+  const proprietaire = crypto.randomUUID()
   try {
     const body = await request.text()
     const sig = request.headers.get('stripe-signature')
@@ -253,16 +346,24 @@ export async function POST(request: Request) {
     // ── ON RÉSERVE L'ÉVÉNEMENT AVANT DE TRAVAILLER ─────────────────────────
     // Si un autre exemplaire de cette fonction l'a déjà, on répond 200 : c'est
     // une relivraison, elle a été traitée, Stripe n'a pas à réessayer.
-    const reserve = await reserverEvenement(event.id, event.type)
+    const reserve = await reserverEvenement(event.id, event.type, proprietaire)
     if (reserve === 'impossible') {
       // On n'a pas pu écrire en base. Répondre 200 ici jetterait le paiement en
       // silence : Stripe ne rejoue jamais un 200.
       console.error(`[webhook] ${event.id} — réservation impossible, on demande à Stripe de rejouer`)
       return NextResponse.json({ error: 'réservation impossible' }, { status: 500 })
     }
-    if (reserve === 'prise_par_un_autre') {
-      console.log(`[webhook] ${event.id} (${event.type}) déjà traité ou en cours — ignoré`)
+    if (reserve === 'deja_fait') {
+      // Traité, et terminé. 200 est le bon code : Stripe n'a rien à rejouer.
+      console.log(`[webhook] ${event.id} (${event.type}) déjà traité — ignoré`)
       return NextResponse.json({ received: true, deja_traite: true })
+    }
+    if (reserve === 'bail_vivant') {
+      // ⚠️ 409, JAMAIS 200. Quelqu'un travaille encore dessus — et il a
+      // peut-être planté. Un 200 dirait à Stripe « c'est fait », et il ne
+      // reviendrait jamais. Un 409 le fait revenir quand le bail aura expiré.
+      console.warn(`[webhook] ${event.id} : bail vivant ailleurs — on demande à Stripe de repasser`)
+      return NextResponse.json({ error: 'traitement en cours ailleurs' }, { status: 409 })
     }
     evenementReserve = event.id
 
@@ -541,7 +642,7 @@ export async function POST(request: Request) {
       }
     }
 
-    await confirmerEvenement(event.id)
+    await confirmerEvenement(event.id, proprietaire)
     return NextResponse.json({ received: true })
   } catch (error) {
     // ⚠️ 21/08/2026 — ICI, LE CODE RÉPONDAIT 200 SUR N'IMPORTE QUELLE ERREUR.
@@ -561,7 +662,7 @@ export async function POST(request: Request) {
     //
     // On libère la réservation pour que le réessai puisse reprendre le travail.
     console.error('[webhook] Erreur générale — événement NON traité :', error)
-    if (evenementReserve) await libererEvenement(evenementReserve)
+    if (evenementReserve) await libererEvenement(evenementReserve, proprietaire, (error as Error)?.message?.slice(0, 300))
     return NextResponse.json({ error: 'traitement échoué' }, { status: 500 })
   }
 }
