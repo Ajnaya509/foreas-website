@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
-import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS } from '@/lib/offre'
+import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, resoudreFormule } from '@/lib/offre'
 
 // ─── Prix : construits dynamiquement, PAS de Price ID Stripe pré-créé ────────
 // Le mapping PRICE_IDS (Pro 97€ / Elite 247€ / weekly grandfathering / alias vip_*) a été
@@ -97,6 +97,33 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json({ error: 'Plan requis' }, { status: 400 })
     }
+
+    // ⚠️ 21/08/2026 — CE TUNNEL ACCEPTAIT N'IMPORTE QUELLE FORMULE.
+    //
+    // Mesuré en production : un POST avec `plan: 'elite_monthly'` — une formule
+    // retirée du catalogue — renvoyait 200 et une VRAIE session de paiement.
+    //
+    // Le garde existait pourtant. `resoudreFormule()` est écrite exactement pour
+    // ça, et son propre commentaire dit : « Renvoie null si la formule demandée
+    // n'existe plus (ex. elite_monthly) — l'appelant DOIT alors refuser la
+    // souscription. » Cette route ne l'appelait pas. Un garde-fou écrit puis
+    // jamais branché ne protège de rien : il rassure.
+    //
+    // ⚠️ ET LE SECOND DÉFAUT EST PIRE QUE LE PREMIER. L'intervalle se déduisait
+    // du SUFFIXE de la chaîne envoyée par le navigateur :
+    //     const isAnnual = plan.endsWith('_annual')
+    // Donc `elite_annual` — une formule qui n'existe plus — aurait été facturée
+    // à l'année. On lisait le nom du plan pour décider du montant, au lieu de
+    // lire la formule résolue. Un identifiant fourni par l'appelant ne décide
+    // pas d'un prix.
+    const formule = resoudreFormule(typeof plan === 'string' ? plan : null)
+    if (!formule) {
+      console.warn(`[checkout] formule refusée : ${String(plan).slice(0, 40)}`)
+      return NextResponse.json(
+        { error: 'Cette formule n’est plus proposée. Choisis une offre sur /tarifs2.' },
+        { status: 400 },
+      )
+    }
     // Reactivation / tarifs2 (paiement immédiat) : prix canonique 29,99€/mois,
     // construit dynamiquement — ne dépend PAS d'un Price ID Stripe pré-créé sur Vercel,
     // pour ne jamais désynchroniser affichage vs montant réellement prélevé.
@@ -108,7 +135,8 @@ export async function POST(request: NextRequest) {
     // lien WhatsApp) doivent facturer exactement le même montant annuel.
     const PRICE_CENTS = PRIX_MENSUEL_CENTIMES   // src/lib/offre.ts
     const ANNUAL_PRICE_CENTS = PRIX_ANNUEL_CENTIMES // src/lib/offre.ts
-    const isAnnual = typeof plan === 'string' && plan.endsWith('_annual')
+    // L'intervalle vient de la formule RÉSOLUE, plus du nom envoyé par le navigateur.
+    const isAnnual = formule === 'annuel'
 
     // ⚠️ Prix construit dynamiquement dans LES DEUX cas (essai ET paiement immédiat).
     // Avant, seul le chemin `immediate` utilisait price_data ; le chemin essai passait par

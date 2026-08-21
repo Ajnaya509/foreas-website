@@ -281,7 +281,16 @@ try {
 
 console.log('\n── Le prix facturé est le prix affiché ──')
 try {
-  const r = await fetch(`${BASE}/api/subscription/create`, {
+  // ⚠️ 21/08/2026 — CE CONTRÔLE VISAIT LA MAUVAISE ROUTE, ET ÇA A SERVI.
+  //
+  // Il interrogeait /api/subscription/create, fermée depuis (410). Il est passé
+  // au rouge, je l'ai redirigé vers le tunnel VIVANT — et là, /api/checkout
+  // acceptait « elite_monthly » et rendait une VRAIE session de paiement.
+  //
+  // Le garde existait : resoudreFormule() dit dans son propre commentaire que
+  // « l'appelant DOIT refuser ». Cette route ne l'appelait pas. Un contrôle qui
+  // se trompe de cible passe à côté ; un contrôle qui échoue fait chercher.
+  const r = await fetch(`${BASE}/api/checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: BASE },
     body: JSON.stringify({ plan: 'elite_monthly' }),
