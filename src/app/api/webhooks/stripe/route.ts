@@ -522,9 +522,27 @@ export async function POST(request: Request) {
 
       // 3. Meta CAPI — StartTrial (trial) + Subscribe (conversion signal)
       //    Signal crucial pour optimiser campagnes CTWA Meta Advantage+
-      const purchaseValue = subscription?.items.data[0]?.price?.unit_amount
-        ? subscription.items.data[0].price.unit_amount / 100
-        : 0
+      // ⚠️ 21/08/2026 — CE MONTANT ÉTAIT LE PRIX CATALOGUE, JAMAIS L'ENCAISSÉ.
+      //
+      // `checkout.session.completed` NE PROUVE AUCUN PAIEMENT : il prouve qu'une
+      // session s'est terminée. Avec un essai, zéro euro a été prélevé ; avec un
+      // coupon de parrainage à 100 %, zéro aussi.
+      //
+      // On envoyait pourtant le prix du mois plein, DEUX FOIS — « essai démarré »
+      // et « abonné » — donc les régies comptaient deux ventes pleines pour un
+      // euro jamais encaissé.
+      //
+      // ⚠️ ET ON NE PEUT PAS « METTRE LE BON MONTANT » ICI : le seul chiffre juste
+      // est celui de la facture, que cet événement ne porte pas. Recalculer
+      // depuis la remise des métadonnées serait faux aussi — cette donnée est
+      // absente des liens fabriqués hors dépôt, et ignore le coupon Stripe
+      // réellement appliqué.
+      //
+      // Donc : ZÉRO, pour tous les cas, et un seul événement — le démarrage.
+      // Le montant réel partira quand le Site traitera l'encaissement, ce qui
+      // suppose d'abord de trancher qui, du Site ou du serveur, en est
+      // propriétaire. Voir la question ouverte pour Chandler.
+      const purchaseValue = 0
       const currency = subscription?.items.data[0]?.price?.currency?.toUpperCase() || 'EUR'
       const nameParts = (session.customer_details?.name || '').split(' ')
       const capiUserData = {
@@ -576,33 +594,18 @@ export async function POST(request: Request) {
             eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
             actionSource: 'website',
           }),
-          sendCAPIEvent({
-            eventName: 'Subscribe',
-            eventId: `${event.id}-subscribe`,
-            userData: capiUserData,
-            customData: {
-              value: purchaseValue,
-              currency,
-              contentName: planInfo.name,
-              orderId: session.subscription as string,
-            },
-            eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
-            actionSource: 'website',
-          }),
-          // TikTok n'a pas d'équivalent standard "StartTrial" — Subscribe seul suffit
-          // à marquer le début de l'abonnement pour l'optimisation de campagne.
-          sendTikTokEvent({
-            eventName: 'Subscribe',
-            eventId: `${event.id}-subscribe`,
-            userData: tiktokUserData,
-            customData: {
-              value: purchaseValue,
-              currency,
-              contentName: planInfo.name,
-              orderId: session.subscription as string,
-            },
-            eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
-          }),
+          // ⚠️ 21/08/2026 — LES DEUX ÉVÉNEMENTS « ABONNÉ » ONT ÉTÉ RETIRÉS D'ICI.
+          //
+          // Ils affirmaient un abonnement PAYÉ sur un événement qui ne prouve
+          // aucun paiement : avec un essai, zéro euro a été prélevé ; avec un
+          // coupon de parrainage à 100 %, zéro aussi. Les régies comptaient donc
+          // DEUX ventes pleines pour un euro jamais encaissé — « essai démarré »
+          // et « abonné », tous deux valorisés au prix du mois plein.
+          //
+          // Ils reviendront sur l'événement de FACTURE, avec le montant
+          // réellement payé. Ce qui suppose d'abord de trancher qui, du Site ou
+          // du serveur, possède cet effet : le serveur traite déjà les factures.
+          // Deux propriétaires du même effet, c'est de l'argent compté deux fois.
         ])
       })
 
@@ -635,9 +638,21 @@ export async function POST(request: Request) {
     // ─── invoice.payment_failed ────────────────────────────────────
     if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object as Stripe.Invoice
-      if (invoice.subscription) {
-        await updateSubscriberStatus(invoice.subscription as string, 'past_due')
-        console.log('[webhook] Payment failed pour subscription:', invoice.subscription)
+      // ⚠️ 21/08/2026 — CETTE LECTURE DÉPEND DE LA VERSION D'API DE STRIPE, ET
+      // L'ÉPINGLE DU CLIENT NE PROTÈGE PAS.
+      //
+      // `apiVersion` n'estampille que les requêtes SORTANTES. La charge d'un
+      // événement ENTRANT est versionnée par la destination configurée chez
+      // Stripe — que ce code ne contrôle pas. Sur les versions récentes,
+      // `invoice.subscription` disparaît au profit d'un chemin imbriqué.
+      //
+      // Le jour où quelqu'un met à jour la destination dans le tableau de bord
+      // Stripe, ce bloc cesse de trouver l'abonnement : un impayé ne serait plus
+      // enregistré, sans erreur, sans alerte. On lit les deux formes.
+      const idAbonnement = ((invoice as unknown as { parent?: { subscription_details?: { subscription?: string } } }).parent?.subscription_details?.subscription) ?? invoice.subscription
+      if (idAbonnement) {
+        await updateSubscriberStatus(idAbonnement as string, 'past_due')
+        console.log('[webhook] Payment failed pour subscription:', idAbonnement)
         // TODO: envoyer email de relance
       }
     }

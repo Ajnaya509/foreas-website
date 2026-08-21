@@ -169,7 +169,24 @@ export async function POST(request: NextRequest) {
         // Sinon : essai glissant de 3 jours, identique pour tous (voir getTrialEnd).
         ...(immediate ? {} : { trial_end: trialEnd }),
         metadata: {
-          plan,
+          // ⚠️ 21/08/2026 — ON ÉCRIVAIT L'ALIAS BRUT DU NAVIGATEUR.
+          //
+          // `resoudreFormule()` est appelée cinquante lignes plus haut, et son
+          // résultat était ignoré ici : c'est la chaîne reçue de l'appelant qui
+          // partait dans les métadonnées Stripe — donc dans le mail de bienvenue
+          // et dans le nom de produit envoyé aux régies publicitaires.
+          //
+          // Elle porte encore le nom d'une grille tarifaire retirée en juillet.
+          //
+          // ⚠️ ET CE N'ÉTAIT PAS DORMANT. Le webhook déduisait l'intervalle de
+          // cette chaîne, en respectant la casse, alors que la résolution, elle,
+          // met en minuscules. Un POST avec « ANNUEL » — cette route est publique
+          // et sans session — était facturé à l'année ET enregistré comme mensuel.
+          //
+          // On écrit la formule RÉSOLUE. On garde la demande d'origine à côté :
+          // elle sert à comprendre d'où vient un appel, jamais à décider d'un prix.
+          plan: formule,
+          plan_demande: String(plan).slice(0, 40),
           flow: immediate ? 'immediate' : 'trial',
           ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
           ...(referralDiscountPct > 0 ? { referral_discount_pct: String(referralDiscountPct) } : {}),
