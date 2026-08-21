@@ -14,14 +14,14 @@ const MOCK_FLEET = {
 }
 
 const MOCK_DRIVERS = [
-  { id: 1, name: 'Binate K.', status: 'active', zone: 'République', netH: 28.50, score: 92, lastSeen: 'En course' },
-  { id: 2, name: 'Kitenge M.', status: 'active', zone: 'Gare du Nord', netH: 25.20, score: 85, lastSeen: 'En course' },
-  { id: 3, name: 'Haitham R.', status: 'active', zone: 'La Défense', netH: 23.80, score: 78, lastSeen: 'En attente' },
-  { id: 4, name: 'Nikolic D.', status: 'active', zone: 'Bastille', netH: 22.10, score: 74, lastSeen: 'En course' },
-  { id: 5, name: 'Hadietou S.', status: 'break', zone: '—', netH: 21.50, score: 70, lastSeen: 'Pause' },
-  { id: 6, name: 'Dragan P.', status: 'inactive', zone: '—', netH: 19.80, score: 65, lastSeen: 'Hors ligne' },
-  { id: 7, name: 'Moussa T.', status: 'active', zone: 'Châtelet', netH: 26.30, score: 88, lastSeen: 'En course' },
-  { id: 8, name: 'Youssef A.', status: 'active', zone: 'Opéra', netH: 24.70, score: 81, lastSeen: 'En attente' },
+  { id: 1, name: 'Camille D.', status: 'active', zone: 'République', netH: 28.50, score: 92, lastSeen: 'En course' },
+  { id: 2, name: 'Sofia R.', status: 'active', zone: 'Gare du Nord', netH: 25.20, score: 85, lastSeen: 'En course' },
+  { id: 3, name: 'Thomas B.', status: 'active', zone: 'La Défense', netH: 23.80, score: 78, lastSeen: 'En attente' },
+  { id: 4, name: 'Yanis K.', status: 'active', zone: 'Bastille', netH: 22.10, score: 74, lastSeen: 'En course' },
+  { id: 5, name: 'Inès T.', status: 'break', zone: '—', netH: 21.50, score: 70, lastSeen: 'Pause' },
+  { id: 6, name: 'Hugo P.', status: 'inactive', zone: '—', netH: 19.80, score: 65, lastSeen: 'Hors ligne' },
+  { id: 7, name: 'Nora S.', status: 'active', zone: 'Châtelet', netH: 26.30, score: 88, lastSeen: 'En course' },
+  { id: 8, name: 'Élias M.', status: 'active', zone: 'Opéra', netH: 24.70, score: 81, lastSeen: 'En attente' },
 ]
 
 const MOCK_ANNONCES = [

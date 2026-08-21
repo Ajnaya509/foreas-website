@@ -35,6 +35,16 @@ import { join, extname } from 'node:path'
 
 const RACINE = 'src'
 
+// Les prénoms du registre des accords, lus DANS le registre — pas recopiés.
+// Une liste recopiée finirait par oublier la septième personne du jour où on
+// l'ajoute, et la règle deviendrait aveugle précisément sur le cas neuf.
+const REGISTRE_NOMS = (() => {
+  const src = readFileSync(join(RACINE, 'lib/consentements.ts'), 'utf8')
+  return [...src.matchAll(/personne:\s*'([^']+)'/g)]
+    .map((m) => m[1].split(/[\s.]/)[0])
+    .filter((n) => n.length > 3)
+})()
+
 // Les sujets affichables, et les mots que le routeur /go se réserve. Recopiés
 // depuis src/lib/sujets.ts : ce programme tourne en node nu, sans résolution
 // de '@/...'. Le mot « go » lui-même est réservé — c'est le routeur racine.
@@ -438,6 +448,51 @@ for (const chemin of fichiers(RACINE)) {
       pourquoi:
         "Une route qui a besoin des droits serveur doit les avoir ou échouer franchement. Ce `||` la fait basculer sans bruit sur les droits d'un visiteur anonyme le jour d'une rotation de clé : pas de 500, pas d'alerte, juste des réponses incomplètes et des écritures refusées en silence. Utilise clientServeur() ou clientServeurOuNull() depuis src/lib/supabaseServeur.ts.",
     })
+  }
+}
+
+// ─── AUCUN NOM RÉEL DANS UNE DONNÉE INVENTÉE ───────────────────────────────
+//
+// 🔴 MESURÉ EN PRODUCTION LE 21/08/2026 : /dashboard/partner répondait 200 SANS
+// AUCUNE AUTHENTIFICATION, et son HTML servait :
+//
+//     Nikolic D.   ● En course      Bastille      22,10 €/h
+//     Hadietou S.  ● Pause          —             21,50 €/h
+//     Dragan P.    ● Hors ligne     —             19,80 €/h
+//
+// Ce sont les noms de six chauffeurs RÉELS — ceux-là mêmes qui ont accepté
+// d'être filmés et qui figurent au registre des accords. La zone, le statut, le
+// revenu et la note étaient inventés. La console d'administration leur
+// attribuait en plus des adresses e-mail plausibles et un statut « suspendu ».
+//
+// Un visiteur ne pouvait pas le deviner : sur une page publique, « Nikolic D. —
+// En course — Bastille » se lit comme la position d'une personne, en direct.
+//
+// Cette règle interdit qu'un nom du registre reparaisse dans les arbres de
+// consoles ou dans un bloc de données de démonstration.
+{
+  const NOMS = REGISTRE_NOMS
+  const DOSSIERS_CONSOLE = ['app/dashboard', 'app/509']
+  for (const chemin of fichiers(RACINE)) {
+    const relatif = chemin.replace(RACINE + '/', '')
+    const source = readFileSync(chemin, 'utf8')
+    const dansConsole = DOSSIERS_CONSOLE.some((d) => relatif.startsWith(d))
+    const contientMaquette = /\bMOCK_[A-Z_]+\s*=|\bDEMO_[A-Z_]+\s*=/.test(source)
+    if (!dansConsole && !contientMaquette) continue
+    const sansCommentaires = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+    for (const nom of NOMS) {
+      if (!sansCommentaires.includes(nom)) continue
+      infractions.push({
+        fichier: relatif,
+        quoi: 'le nom d’une personne réelle dans une donnée inventée',
+        extrait: nom,
+        pourquoi:
+          "Le 21/08/2026, /dashboard/partner servait publiquement les noms de six chauffeurs filmés, avec une zone, un statut d'activité et un revenu horaire inventés. Une personne réelle ne porte pas de chiffres qu'elle n'a pas produits. Les noms de démonstration vivent dans src/lib/donneesDemo.ts.",
+      })
+    }
   }
 }
 

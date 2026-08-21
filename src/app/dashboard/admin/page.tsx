@@ -16,12 +16,12 @@ const MOCK_PLATFORM = {
 }
 
 const MOCK_USERS = [
-  { id: 1, name: 'Binate K.', email: 'binate@email.com', role: 'driver', status: 'active', plan: 'Pro', lastActive: 'Il y a 2h', permissions: ['dashboard', 'analytics', 'finances'] },
+  { id: 1, name: 'Camille D.', email: 'camille@exemple.test', role: 'driver', status: 'active', plan: 'Pro', lastActive: 'Il y a 2h', permissions: ['dashboard', 'analytics', 'finances'] },
   { id: 2, name: 'TransVTC Paris', email: 'admin@transvtc.fr', role: 'partner', status: 'active', plan: 'Fleet 40', lastActive: 'Il y a 30min', permissions: ['fleet', 'annonces', 'recrutement', 'facturation'] },
-  { id: 3, name: 'Kitenge M.', email: 'kitenge@email.com', role: 'driver', status: 'active', plan: 'Standard', lastActive: 'Il y a 1h', permissions: ['dashboard', 'finances'] },
+  { id: 3, name: 'Sofia R.', email: 'sofia@exemple.test', role: 'driver', status: 'active', plan: 'Standard', lastActive: 'Il y a 1h', permissions: ['dashboard', 'finances'] },
   { id: 4, name: 'FleetMax IDF', email: 'contact@fleetmax.fr', role: 'partner', status: 'active', plan: 'Fleet 25', lastActive: 'Hier', permissions: ['fleet', 'annonces'] },
-  { id: 5, name: 'Haitham R.', email: 'haitham@email.com', role: 'driver', status: 'suspended', plan: 'Pro', lastActive: 'Il y a 5j', permissions: ['dashboard'] },
-  { id: 6, name: 'Nikolic D.', email: 'nikolic@email.com', role: 'driver', status: 'trial', plan: 'Trial', lastActive: 'Il y a 3h', permissions: ['dashboard'] },
+  { id: 5, name: 'Thomas B.', email: 'thomas@exemple.test', role: 'driver', status: 'suspended', plan: 'Pro', lastActive: 'Il y a 5j', permissions: ['dashboard'] },
+  { id: 6, name: 'Yanis K.', email: 'yanis@exemple.test', role: 'driver', status: 'trial', plan: 'Trial', lastActive: 'Il y a 3h', permissions: ['dashboard'] },
 ]
 
 const ALL_PERMISSIONS = [

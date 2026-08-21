@@ -50,5 +50,15 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // ⚠️ 21/08/2026 — `.well-known` A ÉTÉ AJOUTÉ À L'EXCLUSION.
+  //
+  // Sans lui, chaque appel à /.well-known/apple-app-site-association et à
+  // /.well-known/assetlinks.json passait par ce filtre — donc posait un cookie
+  // d'identité `foreas_vid` valable un an. Vérifié : deux appels consécutifs
+  // renvoyaient deux identifiants DIFFÉRENTS.
+  //
+  // Ces deux fichiers sont lus par les systèmes d'Apple et de Google, pas par un
+  // visiteur. Leur poser un badge de session n'a aucun sens, et transforme deux
+  // fichiers statiques en autant d'invocations de filtre.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|\\.well-known).*)'],
 }
