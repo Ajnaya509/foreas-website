@@ -432,6 +432,110 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── LE TEXTE QUI NE VIT PAS DANS LE DÉPÔT ──────────────────────────────────
+//
+// 🔴 MESURÉ LE 21/08/2026 : ce programme était AU VERT pendant que la production
+// servait « 7 plateformes » six fois et « en direct » sept fois sur /surge.
+//
+// La cause : RACINE vaut 'src'. Or 100 % du texte des dix pages fabriquées en
+// série vit dans la table `landing_pages` de Supabase, pas dans le dépôt. Le
+// canon ne l'a jamais lu. Il gardait une porte, pendant que le texte entrait par
+// la fenêtre.
+//
+// C'est le défaut le plus instructif du programme : un contrôle qui ne couvre
+// pas la source RÉELLE du contenu ne protège rien — et il est pire qu'absent,
+// parce qu'un vert rassure.
+//
+// ⚠️ SI LA BASE EST INJOIGNABLE, CE CONTRÔLE ÉCHOUE. Il ne passe pas « faute de
+// données ». Un contrôle qui s'annule quand il ne peut pas mesurer est
+// exactement le motif qu'on a passé la journée à corriger ailleurs.
+//
+// La clé utilisée est la clé PUBLIQUE : cette table est de la donnée éditoriale
+// publique. Aucun secret n'est nécessaire, donc aucun secret n'est manipulé ici.
+console.log('\n── Le texte des pages fabriquées en série (base de données) ──')
+{
+  // Ce programme tourne en `node` nu : contrairement à Next.js, il ne charge pas
+  // les fichiers d'environnement tout seul. On les lit donc à la main, sans
+  // dépendance. Sur Vercel, les variables sont déjà dans l'environnement de
+  // construction : cette boucle ne fait alors rien.
+  for (const nom of ['.env.local', '.env.production', '.env']) {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) break
+    try {
+      for (const ligne of readFileSync(nom, 'utf8').split('\n')) {
+        const m = ligne.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/)
+        if (!m) continue
+        const val = m[2].trim().replace(/^["']|["']$/g, '')
+        if (!process.env[m[1]] && val) process.env[m[1]] = val
+      }
+    } catch {
+      /* fichier absent : on passe au suivant */
+    }
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  // On accepte l'ancienne clé publique comme la nouvelle : pendant la bascule
+  // des clés Supabase, les deux coexistent. Les deux sont PUBLIQUES par
+  // conception — aucun secret n'est manipulé ici.
+  const cle =
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !cle) {
+    infractions.push({
+      fichier: 'landing_pages (base de données)',
+      quoi: 'le canon ne peut pas lire le texte des pages fabriquées en série',
+      extrait: 'NEXT_PUBLIC_SUPABASE_URL, ou aucune clé publique (SUPABASE_PUBLISHABLE_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY)',
+      pourquoi:
+        "Le 21/08/2026, ce programme était au vert pendant que la production servait « 7 plateformes » et « en direct » — parce qu'il ne lisait que src/. Le texte de ces pages vit en base. Sans accès, ce contrôle ne peut RIEN affirmer, et un contrôle qui ne peut rien affirmer doit échouer, pas passer.",
+    })
+  } else {
+    let lignes = null
+    try {
+      const r = await fetch(
+        `${url}/rest/v1/landing_pages?select=topic_slug,active,headline,pattern_interrupt_stat,epiphany_bridge_story,boule_de_cristal,aha_moment,cta_text,meta_title,meta_description,desire_vs_reality,credibility_proof,content`,
+        { headers: { apikey: cle, Authorization: `Bearer ${cle}` } },
+      )
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      lignes = await r.json()
+    } catch (e) {
+      infractions.push({
+        fichier: 'landing_pages (base de données)',
+        quoi: 'la base est injoignable — le canon ne peut pas vérifier ce texte',
+        extrait: String(e.message).slice(0, 80),
+        pourquoi:
+          "Ce contrôle échoue plutôt que de passer en silence : un vert obtenu faute de mesure est un mensonge de plus, pas une absence d'information.",
+      })
+    }
+
+    if (Array.isArray(lignes)) {
+      const actives = lignes.filter((l) => l.active !== false)
+      console.log(`  ℹ️  ${actives.length} page(s) active(s) lue(s) en base`)
+      for (const ligne of actives) {
+        const texte = [
+          ligne.headline, ligne.pattern_interrupt_stat, ligne.epiphany_bridge_story,
+          ligne.boule_de_cristal, ligne.aha_moment, ligne.cta_text,
+          ligne.meta_title, ligne.meta_description,
+          JSON.stringify(ligne.desire_vs_reality ?? ''), JSON.stringify(ligne.credibility_proof ?? ''),
+          JSON.stringify(ligne.content ?? ''),
+        ].filter(Boolean).join(' \n ')
+
+        for (const regle of REGLES) {
+          // Les exemptions de REGLES portent sur des CHEMINS de fichiers ; elles
+          // n'ont pas de sens ici. On applique la règle telle quelle.
+          const m = texte.match(regle.motif)
+          if (!m) continue
+          const i = texte.indexOf(m[0])
+          infractions.push({
+            fichier: `landing_pages → ${ligne.topic_slug}`,
+            quoi: regle.quoi,
+            extrait: texte.slice(Math.max(0, i - 55), i + m[0].length + 45).trim(),
+            pourquoi: regle.pourquoi,
+          })
+        }
+      }
+    }
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {
