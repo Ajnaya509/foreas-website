@@ -119,6 +119,26 @@ export default function RootLayout({
         <TikTokPixel />
         <MetaPixel />
         <IdentityObserver />
+        {/*
+          ⚠️ 21/08/2026 — LE FILET SANS JAVASCRIPT.
+
+          Le voile de marque est rendu par le serveur et ne part que par un
+          effet React. Sans JavaScript, il restait à l'écran pour toujours,
+          opaque, par-dessus la page entière.
+
+          Ce `noscript` est lu par TOUS les navigateurs, anciens compris, et
+          seulement quand les scripts sont désactivés ou en échec. Deux règles :
+          la seconde couvre le cas où le voile aurait changé de balise.
+
+          ⚠️ On utilise `display: none` et pas `opacity: 0` : un élément à
+          opacité nulle occupe toujours la place et reste dans le flux.
+        */}
+        <noscript>
+          <style>{`
+            .voile-de-marque { display: none !important; }
+            [aria-hidden="true"].fixed.inset-0.z-\\[100\\] { display: none !important; }
+          `}</style>
+        </noscript>
         <Preloader />
         <PostHogProvider>{children}</PostHogProvider>
         <GrainOverlay />

@@ -93,7 +93,23 @@ export default function Preloader() {
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           // Décor pur : rien à annoncer à un lecteur d'écran, et rien à cliquer.
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[#050508]"
+          // ⚠️ 21/08/2026 — SANS JAVASCRIPT, CE VOILE NE PARTAIT JAMAIS.
+          //
+          // Il est rendu par le serveur, il couvre tout l'écran, son fond est
+          // OPAQUE, et sa disparition dépend entièrement d'un effet React et
+          // d'une animation. Aucun repli. Un visiteur dont le JavaScript
+          // échoue — réseau coupé en cours de chargement, extension, appareil
+          // ancien — voyait un écran noir avec le logo, définitivement.
+          //
+          // La classe `voile-de-marque` est ciblée par une règle CSS placée
+          // dans un `noscript` du document : sans JavaScript, le voile est
+          // retiré du flux. Voir src/app/layout.tsx.
+          //
+          // ✔️ CE QUI ÉTAIT DÉJÀ BON, et qu'on ne casse pas : `pointer-events-none`
+          // laisse passer les clics, et `aria-hidden` le retire de l'arbre lu
+          // par les lecteurs d'écran. Le voile ne bloquait donc ni la souris ni
+          // la synthèse vocale — seulement les yeux.
+          className="voile-de-marque pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[#050508]"
         >
           {/* Halo ambiant discret */}
           <div className="pointer-events-none absolute top-1/2 left-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-purple/[0.06] blur-[120px]" />
