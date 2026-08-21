@@ -16,6 +16,7 @@ import {
 } from '@/lib/offre'
 import { PLATEFORMES, PARRAINAGE, COMPTA_PHRASES } from '@/lib/verite-commerciale'
 
+import { citationDe, personneDe, villeDe } from '@/lib/consentements'
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PartnerData {
   partner: {
@@ -544,15 +545,41 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                   structurellement impossible : `rides` ne porte ni distance à vide, ni trace
                   GPS entre deux courses. Le CLAUDE.md du dépôt lui attribue en plus un autre
                   chiffre (« -28% fatigue »).
-                REMPLACÉS par trois chauffeurs filmés à visage découvert, consentis et
-                vérifiables — source : src/components/zone/testimonials.data.ts (vidéos Mux
-                publiques). Les verbatims sont des extraits fidèles de ce qu'ils disent à
-                l'écran ; aucun chiffre de gain n'est mis en promesse. */}
+                REMPLACÉS par trois chauffeurs filmés à visage découvert.
+
+                ⚠️ 21/08/2026 — DEUX CHOSES ÉTAIENT FAUSSES DANS CE COMMENTAIRE.
+
+                1. IL DISAIT « CONSENTIS ». Les six accords sont au statut
+                   « en attente » depuis le premier jour. Aucun n'est signé.
+
+                2. LA CITATION DE HAITHAM ÉTAIT ALTÉRÉE, PAS RACCOURCIE.
+                   registre : « Foreas m'aide à me concentrer à 100 % sur mon
+                               boulot. Quand on a besoin de quoi que ce soit, on
+                               a une réponse instantanément. »
+                   ici      : « Je me concentre à 100 % sur mon boulot. »
+                   Retirer « Foreas m'aide à » lui retire son sujet : la phrase
+                   ne dit plus que FOREAS l'aide, elle dit qu'il se concentre.
+                   On lui faisait décrire sa propre discipline et on l'affichait
+                   comme un témoignage produit.
+
+                   Même famille que l'incident du 14/08 (« aucun souci » devenu
+                   « aucun souci de PAIEMENT »). Et la règle du canon ne l'a pas
+                   vue : elle cherche des COPIES du verbatim, or une réécriture
+                   n'est pas une copie.
+
+                Ce fichier n'importait même pas le registre. Il le fait
+                maintenant : la parole et la ville viennent de là, et de nulle
+                part ailleurs. */}
             {[
-              { name: 'Binate A.', city: 'Marne-la-Vallée', quote: '« Travailler moins pour avoir plus. »', detail: 'Tesla · 5 ans VTC · témoignage filmé' },
-              { name: 'Dragan P.', city: 'Paris', quote: '« Deux ans avec FOREAS. J’y suis, j’y reste. »', detail: '9 ans VTC · témoignage filmé' },
-              { name: 'Haitham B.', city: 'Paris', quote: '« Je me concentre à 100 % sur mon boulot. »', detail: '7 ans VTC · témoignage filmé' },
-            ].map((t, i) => (
+              { id: 'binate', detail: 'Tesla · 5 ans VTC · témoignage filmé' },
+              { id: 'dragan', detail: '9 ans VTC · témoignage filmé' },
+              { id: 'haitham', detail: '7 ans VTC · témoignage filmé' },
+            ].map(({ id, detail }) => ({
+              name: personneDe(id),
+              city: villeDe(id) ?? '',
+              quote: '« ' + citationDe(id) + ' »',
+              detail,
+            })).map((t, i) => (
               <motion.div
                 key={t.name}
                 initial={{ opacity: 0, y: 20 }}

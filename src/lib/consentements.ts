@@ -276,3 +276,30 @@ export function personneDe(id: string): string {
   if (!c) throw new Error(`[consentements] personne inconnue : ${id}`)
   return c.personne
 }
+
+/** La ville affichée. `null` quand la personne n'a pas accepté qu'on la nomme. */
+export function villeDe(id: string): string | null {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) throw new Error(`[consentements] personne inconnue : ${id}`)
+  return c.villeAffichee
+}
+
+/**
+ * ⚠️ 21/08/2026 — LE COMMENTAIRE CI-DESSUS ÉTAIT UN FAUX TÉMOIN.
+ *
+ * Il affirmait : « Toute surface qui affiche une citation lit MAINTENANT cette
+ * fonction. » C'était faux. `/cap` recopiait trois citations en dur, sans même
+ * importer ce fichier. Et l'une d'elles était altérée :
+ *
+ *   registre : « Foreas m'aide à me concentrer à 100 % sur mon boulot. […] »
+ *   /cap     : « Je me concentre à 100 % sur mon boulot. »
+ *
+ * Retirer « Foreas m'aide à » ne raccourcit pas la phrase : cela lui retire son
+ * sujet. Elle ne dit plus que FOREAS l'aide, elle dit qu'il se concentre. On lui
+ * fait décrire sa propre discipline et on l'affiche comme un témoignage produit.
+ *
+ * C'est la MÊME famille que l'incident du 14/08 (« aucun souci » devenu « aucun
+ * souci de PAIEMENT »). Et la règle du canon ne l'a pas vue : elle cherchait des
+ * COPIES littérales du verbatim. Une paraphrase n'est pas une copie. Une règle
+ * qui traque la recopie ne protège pas de la réécriture.
+ */

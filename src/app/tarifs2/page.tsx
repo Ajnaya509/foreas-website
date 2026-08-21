@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, Suspense, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
-import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { trackInitiateCheckout } from '@/lib/tracking'
@@ -304,8 +303,28 @@ const PRIX_AVEC_PARRAIN = formaterEuros(Math.round(PRIX_MENSUEL_CENTIMES * (1 - 
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 function TarifsContent() {
-  const searchParams = useSearchParams()
-  const isSuccess = searchParams.get('success') === 'true'
+  // ⚠️ 21/08/2026 — CETTE PAGE SERVAIT 26 128 OCTETS SANS UN SEUL MOT.
+  //
+  // Pas de balise de titre, pas le prix, pas le mot « essai ». Mesuré : le
+  // texte du corps faisait 28 caractères avant JavaScript, 6 310 après. Le
+  // prix 29,99 € n'apparaissait dans AUCUN des 26 128 octets, ni dans aucun
+  // des 23 scripts de la page.
+  //
+  // LA CAUSE : le crochet qui lit la chaîne de requête, appelé pendant le
+  // pré-rendu, lève une erreur de repli côté navigateur et FIGE la frontière
+  // d'attente la plus proche sur son écran de chargement. Le serveur n'a donc
+  // jamais rendu la page — il a rendu la roue qui tourne. Onze autres pages du
+  // site avaient exactement le même défaut.
+  //
+  // LA CORRECTION : on lit l'adresse DANS L'EFFET, jamais pendant le rendu.
+  //
+  // ⚠️ NE PAS « SIMPLIFIER » en lisant window.location dans l'initialiseur du
+  // useState : `window` n'existe pas au pré-rendu. La page ne serait plus vide,
+  // elle ne se construirait plus du tout.
+  const [isSuccess, setIsSuccess] = useState(false)
+  useEffect(() => {
+    setIsSuccess(new URLSearchParams(window.location.search).get('success') === 'true')
+  }, [])
 
   // La vue de la page de prix. C'est le dénominateur de tout : sans elle, on
   // ne peut pas dire si les gens n'arrivent pas jusqu'ici, ou s'ils arrivent

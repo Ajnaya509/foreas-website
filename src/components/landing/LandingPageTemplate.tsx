@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 
@@ -52,17 +51,38 @@ export interface LandingContent {
 
 // ─── Tracking hook ────────────────────────────────────────────────────────────
 function useLandingTracking(topicSlug: string) {
-  const searchParams = useSearchParams()
   const tracked = useRef(false)
   const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const maxScroll = useRef(0)
   const startTime = useRef(Date.now())
 
-  const getUtm = useCallback(() => ({
-    utm_source: searchParams.get('utm_source') || 'direct',
-    utm_medium: searchParams.get('utm_medium') || 'none',
-    utm_campaign: searchParams.get('utm_campaign') || 'none',
-  }), [searchParams])
+  // ⚠️ 21/08/2026 — CES DIX PAGES SERVAIENT UN HTML SANS UNE LIGNE DE TEXTE.
+  //
+  // Mesuré : /revenus servait 28 574 octets pour 28 caractères de texte, et
+  // 2 514 après exécution du JavaScript. Aucune balise de titre. Le contenu
+  // n'existait que dans la charge de reprise, jamais dans la page.
+  //
+  // LA CAUSE : le crochet de lecture de la chaîne de requête, appelé pendant le
+  // pré-rendu, lève une erreur de repli côté navigateur qui FIGE la frontière
+  // d'attente la plus proche sur son écran de chargement. Le serveur rendait la
+  // roue qui tourne, pas la page. Douze pages du site avaient ce défaut.
+  //
+  // LA CORRECTION : on lit l'adresse au moment de l'appel, pas au rendu.
+  // C'est possible ici parce que `getUtm` n'est JAMAIS appelé pendant le
+  // rendu — seulement dans les trois effets et rappels ci-dessous.
+  //
+  // ⚠️ NE PAS remonter cette lecture dans le corps du composant ni dans un
+  // initialiseur de `useState` : `window` n'existe pas au pré-rendu, et sur
+  // `(marketing)/[topic]` c'est `generateStaticParams` qui tomberait. Les dix
+  // pages passeraient de « vides » à « inexistantes » — franchement pire.
+  const getUtm = useCallback(() => {
+    const p = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search)
+    return {
+      utm_source: p?.get('utm_source') || 'direct',
+      utm_medium: p?.get('utm_medium') || 'none',
+      utm_campaign: p?.get('utm_campaign') || 'none',
+    }
+  }, [])
 
   useEffect(() => {
     if (tracked.current) return
