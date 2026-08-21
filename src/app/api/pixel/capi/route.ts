@@ -46,6 +46,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'missing_event_name' }, { status: 400 })
     }
 
+    // 🔴 21/08/2026 — CETTE ROUTE ACCEPTAIT « Purchase » DEPUIS LE NAVIGATEUR.
+    //
+    // Aucune liste blanche : n'importe quel nom d'événement passait, avec un
+    // identifiant de dédoublonnage FOURNI PAR L'APPELANT. Mesuré : un POST avec
+    // `eventName: 'Purchase'` et une valeur de 999 € était accepté.
+    //
+    // Il ne partait pas — seulement parce que l'identifiant Meta n'est pas
+    // configuré. Le jour où Chandler le pose, la porte s'ouvre avec.
+    //
+    // Le seul garde était la vérification d'origine, qu'un en-tête posé à la
+    // main satisfait. Une origine n'est pas une authentification.
+    //
+    // UNE CONVERSION PAYÉE APPARTIENT AU SERVEUR. Le navigateur peut déclarer
+    // ce qu'il observe — une page vue, un début de paiement. Il ne déclare
+    // jamais un euro encaissé : il n'a aucun moyen de le savoir, et tout ce
+    // qu'il affirme est réécrivable.
+    //
+    // C'est exactement la règle que /api/mesure applique déjà. Deux routes de
+    // mesure, une seule protégée — le jumeau, encore.
+    const NAVIGATEUR_AUTORISE = new Set([
+      'PageView', 'ViewContent', 'InitiateCheckout', 'AddPaymentInfo', 'Lead',
+    ])
+    if (!NAVIGATEUR_AUTORISE.has(body.eventName)) {
+      console.warn(`[capi] evenement refuse au navigateur : ${body.eventName}`)
+      return NextResponse.json({ error: 'evenement_reserve_au_serveur' }, { status: 403 })
+    }
+
     // Récupérer IP + user-agent pour enrichir le matching Meta
     const forwardedFor = request.headers.get('x-forwarded-for') || ''
     const clientIp = forwardedFor.split(',')[0]?.trim() || request.headers.get('x-real-ip') || undefined

@@ -771,7 +771,10 @@ const CALCULS = [
       quoi: 'un montant dérivé d’un calcul fait à la place du chauffeur',
     },
     {
-      motif: /\bcommission\b[^.!?]{0,30}\b\d{1,2}\s*(?:%|pour cent)/i,
+      // ⚠️ IL ÉTAIT UNIDIRECTIONNEL. Il exigeait « commission » AVANT le nombre,
+    // donc « 25 % de commission » — l'ordre le plus naturel en français — ne
+    // déclenchait rien. /tarifs2 le servait en production.
+    motif: /\bcommission\b[^.!?]{0,30}\b\d{1,2}\s*(?:%|pour cent)|\b\d{1,2}\s*(?:%|pour cent)[^.!?]{0,30}\bcommission\b/i,
       quoi: 'un taux de commission chiffré, alors qu’il dépend de la plateforme et de l’offre',
     },
     {
@@ -1104,7 +1107,15 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
             ligne.headline, ligne.meta_title, ligne.meta_description,
             ligne.pattern_interrupt_stat, ligne.epiphany_bridge_story,
             ligne.boule_de_cristal, ligne.aha_moment, ligne.cta_text,
+            // ⚠️ CES DEUX COLONNES ÉTAIENT RAMENÉES PAR LA REQUÊTE ET JAMAIS
+            // PASSÉES AU CRIBLE. Ce sont exactement celles qui portaient
+            // « ~25 % — vérifiable sur ton propre relevé » et « Ton net réel,
+            // commission déduite ». `.filter(Boolean)` avale un champ absent EN
+            // SILENCE : oublier une colonne ici ne produit aucune erreur, juste
+            // un vert faux et indétectable.
             texteDeContenu(ligne.content),
+            texteDeContenu(ligne.credibility_proof),
+            texteDeContenu(ligne.desire_vs_reality),
           ].filter(Boolean).join(' \n '),
         )
       }

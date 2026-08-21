@@ -258,7 +258,12 @@ const FEATURES: Feature[] = [
   {
     punch: 'Une course à 25 € ? 25 € pour toi.',
     detail: 'Un sticker dans ta voiture, un mini-site à ton nom : le client scanne et réserve en direct. La plateforme ne touche rien.',
-    worth: '25 % de commission',
+      // ⚠️ 21/08/2026 — C'ÉTAIT UN TAUX UNIVERSEL DÉGUISÉ EN ÉCONOMIE.
+      // « 25 % de commission » économisés suppose que la plateforme en prend
+      // 25 %. Or ce taux dépend de la plateforme, de l'offre et parfois de la
+      // course — et FOREAS en portait trois valeurs contradictoires, aucune
+      // mesurée. L'économie réelle, c'est SA commission, quelle qu'elle soit.
+      worth: 'ta commission, entière',
   },
   // 14/08/2026 — « tirelire » promettait un service financier que FOREAS ne rend pas :
   // aucune table de portefeuille, aucun compte de cantonnement, aucun mouvement d'argent
