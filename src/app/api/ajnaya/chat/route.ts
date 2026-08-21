@@ -241,7 +241,6 @@ RÈGLES :
 
 LIENS CLIQUABLES : quand tu mentionnes l'essai gratuit, utilise TOUJOURS le format markdown [texte](url). Exemples :
 - [Essai gratuit](/tarifs2)
-- [Voir les témoignages](/chauffeurs#testimonials)
 - [Détails des plans](/tarifs2)`
 
 // ─── Build full system prompt ────────────────────────────────────────────────

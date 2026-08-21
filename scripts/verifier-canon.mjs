@@ -1333,6 +1333,112 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
   }
 }
 
+// ─── AJNAYA NE PROPOSE QUE DES PAGES QUI EXISTENT ─────────────────────────
+//
+// Le 21/08/2026, le prompt d'Ajnaya offrait « [Voir les témoignages]
+// (/chauffeurs#testimonials) ». L'ancre n'existait plus : les témoignages
+// avaient été retirés faute d'accords écrits. Ajnaya invitait donc les
+// visiteurs à aller voir une preuve qu'on venait délibérément de retirer.
+//
+// Et le lien vivait dans les DEUX fichiers jumeaux — route.ts ET
+// ajnayaChatCore.ts — comme cinq autres choses avant lui dans ce projet.
+//
+// Cette règle relit les liens que le prompt propose et vérifie que la route
+// existe dans le dépôt. Elle ne vérifie PAS les ancres (#...) : ça demanderait
+// de rendre la page. Elle le dit plutôt que de laisser croire le contraire.
+
+{
+  const FICHIERS_DE_PROMPT = [
+    'src/app/api/ajnaya/chat/route.ts',
+    'src/lib/ajnayaChatCore.ts',
+  ]
+
+  // Les routes que le dépôt sait servir.
+  const routes = new Set()
+  const explorer = (dossier, prefixe) => {
+    for (const e of readdirSync(dossier, { withFileTypes: true })) {
+      if (!e.isDirectory()) continue
+      if (e.name.startsWith('_') || e.name.startsWith('.')) continue
+      // (marketing) et consorts : groupes, invisibles dans l'URL.
+      const segment = e.name.startsWith('(') ? '' : `/${e.name}`
+      const chemin = join(dossier, e.name)
+      if (existsSync(join(chemin, 'page.tsx'))) routes.add(prefixe + segment || '/')
+      explorer(chemin, prefixe + segment)
+    }
+  }
+  if (existsSync('src/app')) {
+    if (existsSync('src/app/page.tsx')) routes.add('/')
+    explorer('src/app', '')
+  }
+
+  let liens = 0
+  let ancresNonVerifiees = 0
+  for (const f of FICHIERS_DE_PROMPT) {
+    if (!existsSync(f)) continue
+    const texte = readFileSync(f, 'utf8')
+    for (const m of texte.matchAll(/\]\((\/[A-Za-z0-9\-_/]*)(#[A-Za-z0-9\-_]+)?\)/g)) {
+      const chemin = m[1].replace(/\/$/, '') || '/'
+
+      // ⚠️ 21/08 — PREMIÈRE VERSION DE CETTE RÈGLE : elle ne regardait que le
+      // chemin. Elle passait donc au VERT sur le lien qui l'a fait naître —
+      // `/chauffeurs#testimonials` — parce que `/chauffeurs` existe bel et bien.
+      // Seule l'ANCRE était morte. Une règle qui ne rattrape pas le bug qui l'a
+      // motivée est une règle décorative.
+      //
+      // On cherche donc l'ancre dans tout le dépôt. C'est une heuristique : un
+      // identifiant fabriqué à l'exécution échapperait au contrôle. Mais un
+      // identifiant écrit en clair — le cas courant — ne passe plus.
+      if (m[2]) {
+        const ancre = m[2].slice(1)
+        const motif = new RegExp(`id=["'\`]${ancre}["'\`]|id=\\{["'\`]${ancre}`)
+        let trouvee = false
+        const chercher = (dossier) => {
+          if (trouvee) return
+          for (const e of readdirSync(dossier, { withFileTypes: true })) {
+            if (trouvee) return
+            const chemin = join(dossier, e.name)
+            if (e.isDirectory()) { if (e.name !== 'node_modules') chercher(chemin); continue }
+            if (!['.tsx', '.ts'].includes(extname(e.name))) continue
+            if (motif.test(readFileSync(chemin, 'utf8'))) trouvee = true
+          }
+        }
+        chercher('src')
+        if (!trouvee) {
+          infractions.push({
+            fichier: `${f} (prompt d’Ajnaya)`,
+            quoi: `Ajnaya propose l’ancre « ${m[2]} », qui n’existe nulle part dans le site`,
+            extrait: m[0],
+            pourquoi:
+              'Le visiteur arrive sur la page et ne trouve rien à l’endroit ' +
+              'annoncé. C’est exactement ce qui est arrivé avec les témoignages : ' +
+              'retirés faute d’accords, mais toujours annoncés par Ajnaya.',
+          })
+          continue
+        }
+        ancresNonVerifiees++
+      }
+      // Une route dynamique ([topic]) couvre ses enfants : on ne juge que ce
+      // qui est écrit en clair.
+      if (routes.has(chemin)) { liens++; continue }
+      infractions.push({
+        fichier: `${f} (prompt d’Ajnaya)`,
+        quoi: `Ajnaya propose « ${chemin} », qui n’est pas une page du site`,
+        extrait: m[0],
+        pourquoi:
+          'Ajnaya envoie le visiteur dans le vide. Le pire cas est le lien vers ' +
+          'une preuve qu’on vient de retirer : il annonce ce qu’on a décidé de ' +
+          'ne plus montrer.',
+      })
+    }
+  }
+  console.log(
+    `   liens du prompt d’Ajnaya vérifiés : ${liens}` +
+      (ancresNonVerifiees
+        ? ` (${ancresNonVerifiees} ancre(s) # retrouvée(s) dans le dépôt)`
+        : ''),
+  )
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {
