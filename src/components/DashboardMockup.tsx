@@ -8,12 +8,31 @@ export default function DashboardMockup() {
   const reducedMotion = useReducedMotion()
   const skipFloat = isMobile || reducedMotion
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // 21/08/2026 — CE BLOC SE DÉCLARAIT « LIVE » AVEC DES CHIFFRES INVENTÉS.
+  //
+  // Servi sur /professionnels : pastille verte clignotante + « Live » +
+  // « Courses/jour 47 +12% · Courses suivies 18 · Revenus €2.4k /sem ».
+  // Mesuré le même jour : `partner_referrals` = 0, `referral_commissions` = 0.
+  // Aucun partenaire n'a jamais rien suivi ni encaissé.
+  //
+  // ⚠️ ET LE PLUS TROMPEUR N'ÉTAIT PAS LES FAUX CHIFFRES. Le 14/08, une
+  // correction a remplacé « Satisfaction 4,8/5 » par « Courses suivies 18 »,
+  // une valeur RÉELLEMENT en base — et a laissé les deux autres inventées, sous
+  // le mot « Live ». Un vrai chiffre au milieu de deux faux ne dilue pas le
+  // mensonge : il le cautionne. C'est ce qui rend un tableau crédible.
+  //
+  // La correction du 14/08 avait aussi retiré un « Ajnaya · Live » sur la page
+  // elle-même (professionnels/page.tsx:275) — et n'a pas vu ce fichier-ci.
+  // Huitième fois que le piège du jumeau se referme dans ce projet.
+  //
+  // Ce composant s'appelle « Mockup ». Il peut montrer une maquette : il doit
+  // juste cesser de la présenter comme une lecture en direct.
+  // ───────────────────────────────────────────────────────────────────────────
   const metrics = [
-    { label: 'Courses/jour', value: '47', trend: '+12%', color: '#00D4FF' },
-    // 14/08/2026 — « Satisfaction 4,8/5 » : aucune table, aucune colonne de
-  // satisfaction n'existe. Remplacé par une donnée réellement en base.
-  { label: 'Courses suivies', value: '18', trend: '', color: '#8C52FF' },
-    { label: 'Revenus', value: '€2.4k', trend: '/sem', color: '#10B981' },
+    { label: 'Courses/jour', value: '—', trend: '', color: '#00D4FF' },
+    { label: 'Courses suivies', value: '—', trend: '', color: '#8C52FF' },
+    { label: 'Revenus', value: '—', trend: '/sem', color: '#10B981' },
   ]
 
   return (
@@ -34,8 +53,8 @@ export default function DashboardMockup() {
             {/* Top bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-                <span className="text-[10px] font-mono text-accent-green/80 uppercase tracking-wider">Live</span>
+                <div className="w-2 h-2 rounded-full bg-white/25" />
+                <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">Exemple</span>
               </div>
               <span className="text-[10px] font-mono text-white/30">Dashboard Partenaire</span>
             </div>

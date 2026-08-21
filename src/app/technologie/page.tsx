@@ -25,8 +25,26 @@ const LATENCE_MESUREE = '~150 ms'
  */
 const SOURCES_CROISEES = 5
 
-/** Prédictions posées depuis la création de la table. `select count(*) from zone_predictions` → 295 (14/08/2026). */
+/**
+ * Prédictions posées depuis la création de la table.
+ * `select count(*) from zone_predictions` → 295 le 14/08/2026.
+ *
+ * ⚠️ 21/08/2026 — CE CHIFFRE ÉTAIT AFFICHÉ SOUS « À CE JOUR ».
+ *
+ * Un nombre figé dans le code ne peut pas dire « à ce jour » : il dit toujours
+ * le jour où quelqu'un l'a écrit. Une semaine plus tard la base en comptait
+ * **339** — le visiteur lisait 295 en croyant lire aujourd'hui.
+ *
+ * Ce n'est pas une erreur de saisie, c'est une erreur de FORME : tant que la
+ * page n'interroge pas la base, la seule phrase honnête porte la date de la
+ * mesure. C'est ce que fait maintenant l'étiquette.
+ *
+ * (Le brancher en direct est possible, mais cette page est pré-rendue : ça
+ * demanderait de la rendre dynamique pour un chiffre de vitrine. La date coûte
+ * moins cher et ne ment pas.)
+ */
 const PREDICTIONS_POSEES = 295
+const PREDICTIONS_MESUREES_LE = '14/08/2026'
 
 const techFeatures = [
   // TECH-02 — « Deep Learning · 87% précision » : aucun modèle entraîné n'existe
@@ -39,7 +57,14 @@ const techFeatures = [
   // que le moteur lit. rides = 18 lignes, dernière le 30/04/2026, et 0 ligne avec
   // pickup_lat → aucune course n'est rattachable à une zone. Les 295 prédictions
   // portent à 100 % sur 9 zones semées (heatmap_zones : source='seed_v1' sur 30/30).
-  { icon: Database, title: 'Sources publiques', desc: 'Rien d’opaque : chaque source est vérifiable.' },
+  // ⚠️ 21/08/2026 — DISAIT « SOURCES PUBLIQUES · CHAQUE SOURCE EST VÉRIFIABLE ».
+  // Les cinq sources mesurées sont openweather, sncf, tomtom, idfm et **bolt**.
+  // Les quatre premières sont publiques ; la cinquième ne l'est pas, et personne
+  // ne peut la vérifier de l'extérieur. La tuile juste au-dessus n'en nomme que
+  // quatre — sous un compteur qui en annonce cinq. Le visiteur attentif comptait
+  // donc quatre noms pour cinq sources, dont une invérifiable annoncée comme
+  // vérifiable.
+  { icon: Database, title: 'Sources ouvertes', desc: 'Quatre des cinq sources sont publiques et vérifiables.' },
   // TECH-04 — voir LATENCE_MESUREE ci-dessus.
   { icon: Zap, title: LATENCE_MESUREE, desc: 'Latence recommandation, mesurée.' },
   // TECH-06 — « Chiffrement E2E » : le E2E signifie que le serveur ne peut PAS lire.
@@ -74,7 +99,7 @@ const stats = [
   // On affiche le seul chiffre qu'on sait compter : le volume posé.
   // Aucun pourcentage de précision ne revient tant que zone_reliability.accuracy_pct
   // est NULL. Vérification terrain en cours.
-  { value: String(PREDICTIONS_POSEES), label: 'Prédictions posées à ce jour' },
+  { value: String(PREDICTIONS_POSEES), label: `Prédictions posées au ${PREDICTIONS_MESUREES_LE}` },
   // TECH-05 — second emplacement du « <100ms ». Même constante que la tuile.
   { value: LATENCE_MESUREE, label: 'Latence mesurée' },
   // TECH-03 — « 10M+ Prédictions/jour » : le record absolu est de 38 prédictions

@@ -138,8 +138,11 @@ export default function DownloadPage() {
             transition={{ delay: 0.6 }}
             className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-white/40"
           >
+            {/* 21/08/2026 — la ligne du dessus disait déjà « disponible sur les
+                deux boutiques » (page.tsx:86), et celle-ci promettait un e-mail
+                « dès qu'elle sera disponible ». La même page annonçait donc
+                l'app comme sortie et comme à venir, à cinquante lignes d'écart. */}
             Les deux boutons ci-dessus mènent aux fiches officielles.
-            Tu seras notifié par email dès qu'elle sera disponible.
           </motion.div>
         </div>
       </section>

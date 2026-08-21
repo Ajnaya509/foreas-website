@@ -48,8 +48,13 @@ export default function DownloadSection() {
           viewport={{ once: true }}
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wider uppercase text-accent-cyan/80 border border-accent-cyan/20 rounded-full mb-6">
+            {/* 21/08/2026 — disait « Bientôt disponible » AU-DESSUS de deux
+                boutons qui mènent à des fiches vivantes. Les liens ont été
+                réparés le matin même ; ce libellé, lui, était resté. Réparer un
+                bouton sans relire ce qui l'entoure produit une page qui se
+                contredit elle-même en trois centimètres. */}
             <span className="w-1.5 h-1.5 bg-accent-cyan rounded-full animate-pulse" />
-            Bientôt disponible
+            Disponible maintenant
           </span>
         </motion.div>
 
@@ -71,7 +76,7 @@ export default function DownloadSection() {
           transition={{ delay: 0.15 }}
           className="text-white/50 text-lg mb-10 max-w-xl mx-auto"
         >
-          L'app arrive sur iOS et Android. Soyez les premiers informés du lancement.
+          L'app FOREAS est disponible sur iOS et sur Android.
         </motion.p>
 
         {/* Store buttons */}

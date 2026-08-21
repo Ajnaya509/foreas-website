@@ -16,7 +16,32 @@ import {
 } from '@/lib/offre'
 import { PLATEFORMES, PARRAINAGE, COMPTA_PHRASES } from '@/lib/verite-commerciale'
 
-import { citationDe, personneDe, villeDe } from '@/lib/consentements'
+import { citationDe, personneDe, villeDe, temoignagePubliable } from '@/lib/consentements'
+
+/**
+ * Les témoignages que cette page a le DROIT d'afficher.
+ *
+ * Le filtre est ici, hors du rendu, pour qu'il ne puisse pas être « oublié »
+ * dans une branche du composant : il n'y a plus qu'une seule liste, et elle est
+ * déjà filtrée quand elle arrive à l'écran.
+ *
+ * Tant que les accords sont « en attente », cette liste est VIDE et la section
+ * entière disparaît. C'est le comportement voulu : le jour où un accord est
+ * signé dans src/lib/consentements.ts, la personne réapparaît toute seule, sans
+ * qu'on touche à ce fichier.
+ */
+const TEMOIGNAGES_CAP = [
+  { id: 'binate', detail: 'Tesla · 5 ans VTC · témoignage filmé' },
+  { id: 'dragan', detail: '9 ans VTC · témoignage filmé' },
+  { id: 'haitham', detail: '7 ans VTC · témoignage filmé' },
+]
+  .filter(({ id }) => temoignagePubliable(id))
+  .map(({ id, detail }) => ({
+    name: personneDe(id),
+    city: villeDe(id) ?? '',
+    quote: '« ' + citationDe(id) + ' »',
+    detail,
+  }))
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PartnerData {
   partner: {
@@ -528,6 +553,24 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
       </section>
 
       {/* ── Social proof ──────────────────────────────────────────────────────── */}
+      {/* ⚠️ 21/08/2026 — CETTE SECTION SERVAIT TROIS PERSONNES RÉELLES SANS ACCORD.
+          Binate, Dragan et Haitham étaient nommés, cités et localisés sur cette
+          page en ligne, avec « Mes revenus sont montés de 30 % ».
+
+          Le commentaire ci-dessous DISAIT DÉJÀ que les six accords sont « en
+          attente » et qu'aucun n'est signé. Le fichier importait même le
+          registre — pour y lire la parole, jamais pour demander la permission.
+          Un commentaire qui constate le problème pendant que le code le commet
+          est la pire configuration possible : il donne l'illusion que quelqu'un
+          a regardé.
+
+          Le garde `temoignagePubliable()` existait et était appelé dans CINQ
+          autres fichiers. Celui-ci était le sixième, et le seul oublié. Septième
+          fois que le piège du jumeau se referme dans ce projet.
+
+          Toute la section disparaît quand personne n'est publiable — laisser un
+          titre « ils en parlent » au-dessus du vide serait pire que rien. */}
+      {TEMOIGNAGES_CAP.length > 0 && (
       <section className="py-16 px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -570,16 +613,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 Ce fichier n'importait même pas le registre. Il le fait
                 maintenant : la parole et la ville viennent de là, et de nulle
                 part ailleurs. */}
-            {[
-              { id: 'binate', detail: 'Tesla · 5 ans VTC · témoignage filmé' },
-              { id: 'dragan', detail: '9 ans VTC · témoignage filmé' },
-              { id: 'haitham', detail: '7 ans VTC · témoignage filmé' },
-            ].map(({ id, detail }) => ({
-              name: personneDe(id),
-              city: villeDe(id) ?? '',
-              quote: '« ' + citationDe(id) + ' »',
-              detail,
-            })).map((t, i) => (
+            {TEMOIGNAGES_CAP.map((t, i) => (
               <motion.div
                 key={t.name}
                 initial={{ opacity: 0, y: 20 }}
@@ -602,6 +636,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
           </div>
         </div>
       </section>
+      )}
 
       {/* ── Final CTA ─────────────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 px-6 lg:px-8">
