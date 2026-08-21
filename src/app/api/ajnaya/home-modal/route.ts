@@ -35,6 +35,7 @@ import { citationDe } from '@/lib/consentements'
 // que de dégrader.
 import { clientServeurOuNull, cleServeurOuVide } from '@/lib/supabaseServeur'
 
+import { temoignagePubliableParNom } from '@/lib/consentements'
 export const runtime = 'nodejs'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -116,7 +117,22 @@ const TESTIMONIAL_HAITHAM: Testimonial = {
  *    (NE PAS pousser Binate Disneyland à un chauffeur Bordeaux : hors-contexte = churn)
  *  - Zone inconnue / fallback → Dragan seul (le plus universel)
  */
+/**
+ * ⚠️ 21/08/2026 — CETTE ROUTE SERVAIT DES TÉMOIGNAGES NON CONSENTIS.
+ *
+ * Elle construit des objets porteurs d'un nom, d'une citation, d'un gain chiffré
+ * et d'un identifiant de vidéo, et la fenêtre de conversation de l'accueil les
+ * affiche avec la vignette. Aucun garde.
+ *
+ * Le masquage du matin avait couvert les cartes, le carrousel, les notifications
+ * et deux pages — pas cette route. Le filtre est posé À LA SORTIE de la
+ * sélection : peu importe la zone demandée, personne ne sort sans accord.
+ */
 function pickTestimonialsForZone(zone: string | null | undefined): Testimonial[] {
+  return choisirPourZone(zone).filter((t) => temoignagePubliableParNom(t.name))
+}
+
+function choisirPourZone(zone: string | null | undefined): Testimonial[] {
   const z = (zone ?? '').toLowerCase()
   if (!z) return [TESTIMONIAL_DRAGAN]
 

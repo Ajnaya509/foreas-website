@@ -6,6 +6,7 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 import { COMMUNAUTE } from '@/lib/verite-commerciale'
 import TestimonialCarousel from './TestimonialCarousel'
 
+import { auMoinsUnTemoignagePubliable } from '@/lib/consentements'
 /**
  * ZoneSocialProof — Section 4 témoignages chauffeurs (vidéos Mux LIVE)
  *
@@ -29,6 +30,21 @@ export default function ZoneSocialProof() {
   }
 
   const waUrl = buildWAUrl({ section: 'social_proof' })
+
+  // 🔴 21/08/2026 — CETTE SECTION AFFIRMAIT UN CONSENTEMENT QUE LE REGISTRE NIE.
+  //
+  // Elle servait, en production : « Ces 6 chauffeurs ont accepté que leur visage
+  // et leur voix apparaissent. » Le registre du même dépôt place les six en
+  // « en attente », sans aucune preuve enregistrée.
+  //
+  // Et le garde avait été posé sur l'ENFANT — le carrousel — jamais sur la
+  // section. Résultat mesuré : le titre, le compteur « 6 » et l'invitation
+  // « tu cliques, tu les écoutes » survivaient au-dessus d'un conteneur VIDE.
+  //
+  // Retirer les vidéos en laissant la phrase qui affirme l'accord est un RECUL,
+  // pas une correction : avant, la promesse s'appuyait au moins sur quelque
+  // chose de visible.
+  if (!auMoinsUnTemoignagePubliable()) return null
 
   return (
     <section className="relative py-16 sm:py-24 px-4 border-b border-white/[0.06]">

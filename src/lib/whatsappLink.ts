@@ -99,7 +99,13 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
       return `Salut Ajnaya, je veux la démo de 90 secondes.`
 
     case 'social_proof':
-      return `Salut Ajnaya, je veux voir d'autres cas de chauffeurs comme Haitham.`
+      // ⚠️ 21/08/2026 — CE MESSAGE PORTAIT LE PRÉNOM D'UNE VRAIE PERSONNE.
+      //
+      // Il part au nom du chauffeur, dans SA conversation. Le raisonnement posé
+      // vingt lignes plus haut pour le message « douleur » vaut ici aussi : on ne
+      // fait pas dire à quelqu'un le nom d'un tiers dont l'accord est en attente.
+      // Corrigé sur un seul des deux cas le matin — le jumeau, encore.
+      return `Salut Ajnaya, je veux voir d'autres cas de chauffeurs.`
 
     case 'plan':
       return `Salut Ajnaya. Je veux le brief de demain matin.`

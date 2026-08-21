@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 
+import { temoignagePubliableParNom } from '@/lib/consentements'
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface LandingContent {
   topic_slug: string
@@ -358,7 +359,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
             Leurs mots, en vidéo
           </p>
           <div className="space-y-4">
-            {c.proof_items.map((proof, i) => (
+            {c.proof_items.filter((proof) => temoignagePubliableParNom(proof.name)).map((proof, i) => (
               <FadeIn key={i} delay={i * 0.08}>
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
                   <div>

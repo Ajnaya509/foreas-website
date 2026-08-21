@@ -54,6 +54,18 @@ const SUJETS = [
 ]
 const MOTS_RESERVES = ['go', 'zones', 'rentabilite', 'clientele', 'ajnaya', 'communaute', 'desktop']
 
+// Les prénoms du registre dont l'accord n'est PAS signé. Recopiés depuis
+// src/lib/consentements.ts : ce programme tourne en node nu. Le jour où un accord
+// est signé, retirer le prénom d'ici — et pas avant.
+/** Retire `proof_items` : ce champ est filtré côté serveur avant d'être servi. */
+function retirerLesPreuves(content) {
+  if (!content || typeof content !== 'object') return content ?? ''
+  const { proof_items: _ignore, ...reste } = content
+  return reste
+}
+
+const PERSONNES_NON_APPROUVEES = ['Haitham', 'Binate', 'Zefi', 'Dragan', 'Hadietou', 'Nikolic']
+
 // ─── Les règles ─────────────────────────────────────────────────────────────
 // Chaque règle dit CE QUI EST INTERDIT et POURQUOI, avec la mesure qui le prouve.
 // Ajouter une règle ici, c'est empêcher un mensonge de renaître.
@@ -640,6 +652,37 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── LE FILTRE QUI REND L'EXCLUSION DE `proof_items` LÉGITIME ──────────────
+//
+// La règle « aucun nom du registre dans le texte de la base » exclut le champ
+// `proof_items`. Cette exclusion n'est acceptable QUE parce que la page le
+// filtre avant de servir quoi que ce soit.
+//
+// 🔴 CE QUI SE PASSAIT AVANT : un filtre posé sur le RENDU empêchait
+// l'affichage mais pas l'ENVOI. Les trois personnes de `proof_items` — nom,
+// ville, ancienneté, gain chiffré — partaient dans la charge des dix pages,
+// lisibles par qui ouvre le code source. Masquées à l'œil, publiées quand même.
+//
+// Si ce filtre disparaît, l'exclusion devient un trou béant. Cette règle garde
+// la garde.
+{
+  const chemin = join(RACINE, 'app/(marketing)/[topic]/page.tsx')
+  if (existsSync(chemin)) {
+    const sansCommentaires = readFileSync(chemin, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+    if (!/temoignagePubliableParNom/.test(sansCommentaires)) {
+      infractions.push({
+        fichier: 'src/app/(marketing)/[topic]/page.tsx',
+        quoi: 'les preuves de la base partent sans filtre de consentement',
+        extrait: 'aucun appel à temoignagePubliableParNom',
+        pourquoi:
+          "Sans ce filtre, les personnes de `proof_items` partent dans la charge des dix pages — nom, ville, ancienneté, gain chiffré — même si rien ne les affiche. Masqué à l'œil n'est pas non publié. Et la règle qui cherche les noms en base EXCLUT ce champ en comptant sur ce filtre : le retirer ouvre les deux d'un coup.",
+      })
+    }
+  }
+}
+
 // ─── AUCUN TAUX EN DUR APPLIQUÉ À L'ARGENT D'UN CHAUFFEUR ──────────────────
 //
 // 🔴 CE QUE LE CALCULATEUR DE L'ACCUEIL FAISAIT JUSQU'AU 21/08/2026 :
@@ -865,6 +908,44 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
     if (Array.isArray(lignes)) {
       const actives = lignes.filter((l) => l.active !== false)
       console.log(`  ℹ️  ${actives.length} page(s) active(s) lue(s) en base`)
+
+      // ── AUCUN NOM DU REGISTRE DANS LE TEXTE DE LA BASE ──────────────────
+      //
+      // 🔴 21/08/2026, TROISIÈME JUMEAU HORS DÉPÔT DE LA JOURNÉE.
+      //
+      // Les six preuves sociales du site ont été masquées le matin : cartes,
+      // carrousel, notifications, deux pages, puis les dix pages en série.
+      // Toutes ces corrections portaient sur du CODE.
+      //
+      // Pendant ce temps, /optimisation servait dans sa description indexée :
+      //     « Travailler moins pour avoir plus » — <prénom + initiale>, 5 ans de VTC
+      //
+      // Un filtre posé sur des objets de témoignage ne peut rien contre une
+      // chaîne de caractères écrite dans une colonne. Le grep sur src/ était
+      // propre, et le nom partait quand même chez Google.
+      //
+      // Cette règle lit la BASE et y cherche les noms du registre. Elle ne
+      // s'active que pour les personnes dont l'accord n'est pas signé.
+      for (const ligne of actives) {
+        const texte = [
+          ligne.headline, ligne.meta_title, ligne.meta_description,
+          ligne.pattern_interrupt_stat, ligne.epiphany_bridge_story,
+          ligne.boule_de_cristal, ligne.aha_moment, ligne.cta_text,
+          // ⚠️ `proof_items` est EXCLU — et cette exclusion ne vaut QUE parce que la
+          // page le filtre AVANT de servir. Une règle plus bas garde cette garde.
+          JSON.stringify(retirerLesPreuves(ligne.content)),
+        ].filter(Boolean).join(' ')
+        for (const p of PERSONNES_NON_APPROUVEES) {
+          if (!new RegExp('\\b' + p + '\\b', 'i').test(texte)) continue
+          infractions.push({
+            fichier: `landing_pages → ${ligne.topic_slug}`,
+            quoi: 'le nom d’une personne dont l’accord n’est pas signé, dans le texte servi',
+            extrait: p,
+            pourquoi:
+              "Les six accords du registre sont « en attente », sans preuve enregistrée. Un filtre posé sur du code ne peut rien contre un nom écrit en toutes lettres dans une colonne : il part quand même dans la description que Google affiche. Retire le nom, ou fais signer l’accord et passe le statut à « approuve ».",
+          })
+        }
+      }
 
       // ── UN CHIFFRE DE LA DESCRIPTION INDEXÉE DOIT EXISTER DANS LA PAGE ──
       //

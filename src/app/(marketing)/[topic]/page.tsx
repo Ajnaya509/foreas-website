@@ -5,6 +5,7 @@ import LandingPageTemplate, { type LandingContent } from '@/components/landing/L
 import { canonique } from '@/lib/site'
 
 import { SUJETS } from '@/lib/sujets'
+import { temoignagePubliableParNom } from '@/lib/consentements'
 export const revalidate = 3600 // ISR — revalide toutes les heures
 
 // ─── Whitelist statique ───────────────────────────────────────────────────────
@@ -49,11 +50,38 @@ async function getContent(topic: string): Promise<LandingContent | null> {
       .eq('active', true)
       .single()
 
-    return data as LandingContent | null
+    // ⚠️ 21/08/2026 — LES NOMS PARTAIENT MÊME QUAND ILS N'ÉTAIENT PAS AFFICHÉS.
+    //
+    // Un filtre posé sur le rendu empêche l'AFFICHAGE, pas l'ENVOI : `content`
+    // part entier dans la charge de la page, et les trois personnes de
+    // `proof_items` — nom, ville, ancienneté, gain chiffré — voyageaient avec,
+    // lisibles par qui ouvre le code source. Sur les dix pages.
+    //
+    // Les six accords sont « en attente ». On coupe donc À LA SOURCE : ce qui
+    // n'a pas d'accord ne quitte pas la base. Les lignes restent intactes — le
+    // jour où un accord est signé, il suffit de changer son statut.
+    return retirerCeQuiNaPasDAccord(data as LandingContent | null)
   } catch {
     return null
   }
 }
+
+/**
+ * Ne laisse sortir de la base que les personnes dont l'accord est signé.
+ * Aujourd'hui : aucune. La section de preuve disparaît donc entièrement.
+ */
+function retirerCeQuiNaPasDAccord(data: LandingContent | null): LandingContent | null {
+  if (!data?.content) return data
+  const c = data.content as unknown as Record<string, unknown>
+  const preuves = c.proof_items
+  if (!Array.isArray(preuves)) return data
+  const gardees = preuves.filter(
+    (x) => typeof (x as { name?: unknown }).name === 'string'
+      && temoignagePubliableParNom((x as { name: string }).name),
+  )
+  return { ...data, content: { ...c, proof_items: gardees } } as unknown as LandingContent
+}
+
 
 // ─── generateStaticParams ─────────────────────────────────────────────────────
 export async function generateStaticParams() {
