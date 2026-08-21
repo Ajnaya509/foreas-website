@@ -605,6 +605,40 @@ console.log('\n── L\'accueil mène-t-il à la caisse ? ──')
 //
 // ⚠️ CE DÉFAUT A ÉCHAPPÉ À UNE RECHERCHE DE « 14 € » PARCE QUE LE CHIFFRE EST
 // URL-ENCODÉ dans le lien : %2014%E2%82%AC. On cherche donc la forme encodée.
+// ─── L'ACCUEIL PROPOSE-T-IL L'APP ? ────────────────────────────────────────
+//
+// 🔴 MESURÉ LE 21/08/2026 : le texte servi de `/` ne contenait NI « App Store »,
+// NI « Google Play », NI « télécharger ». Le seul bloc qui proposait l'app
+// vivait sur `/509`, une page secondaire.
+//
+// Pendant ce temps les deux fiches répondaient 200 : l'app était publiée depuis
+// des semaines, et introuvable depuis la porte d'entrée du site.
+//
+// ⚠️ CE CONTRÔLE CHERCHE LES ADRESSES, PAS LES MOTS. Un bouton peut s'appeler
+// « Installer », « Télécharger » ou « Obtenir » — seule l'adresse de la fiche
+// prouve qu'il mène quelque part. Chercher le libellé aurait laissé passer un
+// bouton qui ne fait rien, ce qui est exactement l'état d'avant.
+console.log('\n── L\'accueil propose-t-il l\'app ? ──')
+{
+  const html = corps['/'] ?? ''
+  if (!html) {
+    injoignables++
+    console.log("  ⏸️  l'accueil n'a pas pu être chargé — rien à conclure")
+  } else {
+    const apple = /apps\.apple\.com\/[a-z]{2}\/app\/id\d+/.test(html)
+    const google = /play\.google\.com\/store\/apps\/details\?id=[a-z0-9._]+/.test(html)
+    const routageAppareil = /href="\/go"/.test(html)
+    dire(
+      apple || routageAppareil,
+      `accueil → fiche Apple ${apple ? 'présente' : 'absente'}, routage /go ${routageAppareil ? 'présent' : 'absent'} (il faut au moins un des deux)`,
+    )
+    dire(
+      google || routageAppareil,
+      `accueil → fiche Google ${google ? 'présente' : 'absente'}, routage /go ${routageAppareil ? 'présent' : 'absent'} (il faut au moins un des deux)`,
+    )
+  }
+}
+
 console.log('\n── Le message envoyé au nom du chauffeur ──')
 {
   for (const page of ['/', '/ou-ca-paie']) {

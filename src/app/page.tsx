@@ -7,6 +7,7 @@ import MesureVue from '@/components/mesure/MesureVue'
 import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
 import HomeHeroCream from '@/components/home2026/HomeHeroCream'
 import HomeProofStrip from '@/components/home2026/HomeProofStrip'
+import HomeAppStores from '@/components/home2026/HomeAppStores'
 import HomeBigDomino from '@/components/home2026/HomeBigDomino'
 
 // ─── Below-the-fold : code-split (SSR conservé pour le SEO, JS client à la demande) ───
@@ -167,6 +168,15 @@ export default function HomePage() {
         <ZoneCapPartnerCTA />
 
         {/* SECTION 8 — Final CTA + PS signature humaine */}
+        {/* ⚠️ 21/08/2026 — L'ACCUEIL NE PROPOSAIT PAS L'APP.
+            Mesuré : ni « App Store », ni « Google Play », ni « télécharger »
+            dans le texte servi de `/`. Le seul bloc qui la proposait vivait sur
+            `/509`. Les deux fiches répondent 200 depuis des semaines : l'app
+            était publiée, et introuvable depuis la porte d'entrée du site.
+            Placé AVANT l'appel final : quelqu'un qui descend jusqu'ici a lu
+            l'argument, et doit pouvoir choisir entre installer et voir le prix. */}
+        <HomeAppStores />
+
         <ZoneFinalCTAWithPS />
 
         <Footer />
