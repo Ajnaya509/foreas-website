@@ -118,13 +118,30 @@ async function updateSubscriberStatus(stripeSubId: string, status: string) {
  * LIBÈRE la réservation — sinon le réessai de Stripe serait ignoré et
  * l'événement perdu pour de bon. C'est le piège classique de ce mécanisme.
  */
-async function reserverEvenement(id: string, type: string): Promise<boolean> {
+/**
+ * ⚠️ TROIS RÉPONSES, PAS DEUX — ET LA DIFFÉRENCE EST TOUT LE SUJET.
+ *
+ * Premier jet de cette fonction : elle renvoyait un booléen. `false` couvrait
+ * DEUX situations opposées — « un autre exemplaire a déjà cet événement » et
+ * « je n'ai pas pu écrire en base ». L'appelant répondait 200 dans les deux cas.
+ *
+ * Conséquence, si la clé serveur venait à manquer : **chaque paiement aurait été
+ * silencieusement jeté**, avec un 200 renvoyé à Stripe, qui ne rejoue jamais un
+ * 200. C'est-à-dire EXACTEMENT la panne que ce fichier a passé la journée à
+ * éliminer, réintroduite par sa propre correction.
+ *
+ * Et le commentaire disait « Stripe réessaiera » — il décrivait une intention,
+ * pas le comportement. Un faux témoin de plus.
+ */
+type Reservation = 'obtenue' | 'prise_par_un_autre' | 'impossible'
+
+async function reserverEvenement(id: string, type: string): Promise<Reservation> {
   const sb = clientServeurOuNull()
   if (!sb) {
-    // Pas de client serveur : on ne peut pas garantir l'unicité. On refuse de
-    // traiter plutôt que de risquer un double envoi — Stripe réessaiera.
-    console.error('[webhook] pas de client serveur : impossible de réserver l’événement')
-    return false
+    // On ne peut pas garantir l'unicité : on ÉCHOUE FRANCHEMENT pour que Stripe
+    // rejoue. Ne jamais répondre 200 ici — ce serait perdre le paiement.
+    console.error('[webhook] pas de client serveur : réservation impossible')
+    return 'impossible'
   }
   // Une réservation abandonnée depuis plus de dix minutes se reprend : un
   // processus tué net ne doit pas bloquer un événement pour toujours.
@@ -144,11 +161,11 @@ async function reserverEvenement(id: string, type: string): Promise<boolean> {
   if (error) {
     // 23505 = clé déjà présente : quelqu'un d'autre a la réservation. Ce n'est
     // PAS une erreur, c'est le mécanisme qui fonctionne.
-    if (error.code === '23505') return false
+    if (error.code === '23505') return 'prise_par_un_autre'
     console.error(`[webhook] réservation impossible (${error.code}) : ${error.message}`)
-    return false
+    return 'impossible'
   }
-  return Array.isArray(data) && data.length === 1
+  return Array.isArray(data) && data.length === 1 ? 'obtenue' : 'prise_par_un_autre'
 }
 
 async function confirmerEvenement(id: string, note?: string): Promise<void> {
@@ -217,11 +234,17 @@ export async function POST(request: Request) {
     // Si un autre exemplaire de cette fonction l'a déjà, on répond 200 : c'est
     // une relivraison, elle a été traitée, Stripe n'a pas à réessayer.
     const reserve = await reserverEvenement(event.id, event.type)
-    if (reserve) evenementReserve = event.id
-    if (!reserve) {
+    if (reserve === 'impossible') {
+      // On n'a pas pu écrire en base. Répondre 200 ici jetterait le paiement en
+      // silence : Stripe ne rejoue jamais un 200.
+      console.error(`[webhook] ${event.id} — réservation impossible, on demande à Stripe de rejouer`)
+      return NextResponse.json({ error: 'réservation impossible' }, { status: 500 })
+    }
+    if (reserve === 'prise_par_un_autre') {
       console.log(`[webhook] ${event.id} (${event.type}) déjà traité ou en cours — ignoré`)
       return NextResponse.json({ received: true, deja_traite: true })
     }
+    evenementReserve = event.id
 
     // ─── checkout.session.completed ────────────────────────────────
     if (event.type === 'checkout.session.completed') {
