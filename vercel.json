@@ -1,8 +1,5 @@
 {
   "framework": "nextjs",
-  "regions": [
-    "cdg1"
-  ],
   "rewrites": [
     {
       "source": "/c/:slug",
