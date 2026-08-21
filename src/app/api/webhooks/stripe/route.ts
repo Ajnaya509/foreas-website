@@ -15,7 +15,7 @@ import { URL_SITE } from '@/lib/site'
 // bruyante se répare ; une dégradation silencieuse s'installe.
 // Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
 // que de dégrader.
-import { cleServeurOuVide } from '@/lib/supabaseServeur'
+import { cleServeurOuVide, clientServeurOuNull } from '@/lib/supabaseServeur'
 
 export const runtime = 'nodejs'
 
@@ -98,7 +98,80 @@ async function updateSubscriberStatus(stripeSubId: string, status: string) {
   }
 }
 
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * L'IDEMPOTENCE — AJOUTÉE LE 21/08/2026
+ *
+ * Stripe livre AU MOINS UNE FOIS. Le même événement arrive deux fois, et
+ * c'est normal. Mesuré ce jour-là : `grep event.id` sur tout le code du site
+ * renvoyait ZÉRO occurrence. Aucune déduplication n'était tentée.
+ *
+ * Ce qu'un rejeu de `checkout.session.completed` produisait :
+ *   · la ligne d'abonné ne doublait pas (conflit géré) ;
+ *   · le compte d'authentification ne doublait pas (l'adresse existe déjà) ;
+ *   · MAIS le mail de bienvenue REPARTAIT — il est appelé sans condition ;
+ *   · ET les trois conversions publicitaires étaient RECOMPTÉES.
+ * Un chauffeur recevait deux fois ses identifiants, et les plateformes
+ * comptaient deux ventes pour une.
+ *
+ * LE PROTOCOLE : on réserve, on travaille, on confirme. Et si on échoue, on
+ * LIBÈRE la réservation — sinon le réessai de Stripe serait ignoré et
+ * l'événement perdu pour de bon. C'est le piège classique de ce mécanisme.
+ */
+async function reserverEvenement(id: string, type: string): Promise<boolean> {
+  const sb = clientServeurOuNull()
+  if (!sb) {
+    // Pas de client serveur : on ne peut pas garantir l'unicité. On refuse de
+    // traiter plutôt que de risquer un double envoi — Stripe réessaiera.
+    console.error('[webhook] pas de client serveur : impossible de réserver l’événement')
+    return false
+  }
+  // Une réservation abandonnée depuis plus de dix minutes se reprend : un
+  // processus tué net ne doit pas bloquer un événement pour toujours.
+  const limite = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+  await sb
+    .from('site_evenements_stripe_traites')
+    .delete()
+    .eq('event_id', id)
+    .eq('statut', 'en_cours')
+    .lt('reserve_le', limite)
+
+  const { data, error } = await sb
+    .from('site_evenements_stripe_traites')
+    .insert({ event_id: id, type })
+    .select('event_id')
+
+  if (error) {
+    // 23505 = clé déjà présente : quelqu'un d'autre a la réservation. Ce n'est
+    // PAS une erreur, c'est le mécanisme qui fonctionne.
+    if (error.code === '23505') return false
+    console.error(`[webhook] réservation impossible (${error.code}) : ${error.message}`)
+    return false
+  }
+  return Array.isArray(data) && data.length === 1
+}
+
+async function confirmerEvenement(id: string, note?: string): Promise<void> {
+  const sb = clientServeurOuNull()
+  if (!sb) return
+  const { error } = await sb
+    .from('site_evenements_stripe_traites')
+    .update({ statut: 'fait', fini_le: new Date().toISOString(), note: note ?? null })
+    .eq('event_id', id)
+  if (error) console.error(`[webhook] confirmation impossible : ${error.message}`)
+}
+
+async function libererEvenement(id: string): Promise<void> {
+  const sb = clientServeurOuNull()
+  if (!sb) return
+  const { error } = await sb.from('site_evenements_stripe_traites').delete().eq('event_id', id)
+  if (error) console.error(`[webhook] libération impossible : ${error.message}`)
+}
+
 export async function POST(request: Request) {
+  // Déclarée HORS du try : le bloc de rattrapage doit pouvoir libérer la
+  // réservation, et il n'a pas accès aux variables déclarées à l'intérieur.
+  let evenementReserve: string | null = null
   try {
     const body = await request.text()
     const sig = request.headers.get('stripe-signature')
@@ -138,6 +211,16 @@ export async function POST(request: Request) {
     } catch (err) {
       console.error('[webhook] Vérification signature échouée:', (err as Error).message)
       return NextResponse.json({ error: 'Signature invalide' }, { status: 400 })
+    }
+
+    // ── ON RÉSERVE L'ÉVÉNEMENT AVANT DE TRAVAILLER ─────────────────────────
+    // Si un autre exemplaire de cette fonction l'a déjà, on répond 200 : c'est
+    // une relivraison, elle a été traitée, Stripe n'a pas à réessayer.
+    const reserve = await reserverEvenement(event.id, event.type)
+    if (reserve) evenementReserve = event.id
+    if (!reserve) {
+      console.log(`[webhook] ${event.id} (${event.type}) déjà traité ou en cours — ignoré`)
+      return NextResponse.json({ received: true, deja_traite: true })
     }
 
     // ─── checkout.session.completed ────────────────────────────────
@@ -376,10 +459,27 @@ export async function POST(request: Request) {
       }
     }
 
+    await confirmerEvenement(event.id)
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('[webhook] Erreur générale:', error)
-    // Toujours retourner 200 pour éviter que Stripe retry en boucle
-    return NextResponse.json({ received: true })
+    // ⚠️ 21/08/2026 — ICI, LE CODE RÉPONDAIT 200 SUR N'IMPORTE QUELLE ERREUR.
+    //
+    // Le commentaire disait : « Toujours retourner 200 pour éviter que Stripe
+    // retry en boucle ». Il décrivait exactement ce qu'il faisait, et c'était
+    // le problème : Stripe lit un 200 comme une livraison réussie et ne rejoue
+    // JAMAIS. Toute exception entre la vérification de signature et la fin —
+    // un appel réseau à Stripe qui expire, une limite de débit, une coupure —
+    // laissait le chauffeur débité, sans ligne en base, sans compte, sans mail,
+    // et SANS ALERTE.
+    //
+    // ⚠️ CETTE CORRECTION N'EST VALABLE QU'AVEC LA RÉSERVATION CI-DESSUS.
+    // Seule, elle transformerait une perte silencieuse en spam bruyant : Stripe
+    // réessaie pendant trois jours, et chaque tentative rejouerait tout ce qui
+    // avait déjà réussi — le mail de bienvenue en tête. Les deux vont ensemble.
+    //
+    // On libère la réservation pour que le réessai puisse reprendre le travail.
+    console.error('[webhook] Erreur générale — événement NON traité :', error)
+    if (evenementReserve) await libererEvenement(evenementReserve)
+    return NextResponse.json({ error: 'traitement échoué' }, { status: 500 })
   }
 }
