@@ -160,7 +160,7 @@ function FreeSignupContent() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            Sans CB.
+            Sans compte.
           </span>
         </h1>
 

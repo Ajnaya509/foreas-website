@@ -356,7 +356,7 @@ export default function ScrollMapAnimation() {
                 </div>
                 <div className="min-w-0">
                   <p className={`text-white font-semibold ${isMobile ? 'text-[11px]' : 'text-sm'}`}>Repositionné</p>
-                  <p className={`text-white/50 ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>Arrivé avant les autres. <span className="text-accent-cyan font-semibold">Course garantie.</span></p>
+                  <p className={`text-white/50 ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>Arrivé avant les autres.</p>
                 </div>
               </div>
             </div>

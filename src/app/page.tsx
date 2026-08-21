@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { URL_SITE, canonique } from '@/lib/site'
+import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS } from '@/lib/offre'
 import dynamic from 'next/dynamic'
 // ─── Above-the-fold (critique pour le 1er rendu) : statique ───
 import MesureVue from '@/components/mesure/MesureVue'
@@ -70,13 +71,30 @@ const JSON_LD = {
         'FOREAS pour chauffeurs VTC indépendants — rassemble tes courses Uber, Bolt et Heetch et affiche ce qu\'il te reste, ta commission déduite, avant que t\'acceptes.',
       offers: {
         '@type': 'Offer',
-        price: '0',
+        // ── 21/08/2026 — CE CHAMP DÉCLARAIT LE PRODUIT GRATUIT ──
+        // Il valait '0'. La phrase juste en dessous précise bien qu'il s'agit
+        // de l'essai — mais Google ne lit pas la phrase, il lit CE champ. Un
+        // abonnement à 29,99 €/mois s'annonçait donc « gratuit » dans les
+        // données indexées, avec le risque d'être affiché comme tel dans les
+        // résultats de recherche.
+        //
+        // Le prix récurrent va ici, l'essai reste dans la description. Et il
+        // vient du catalogue : écrire « 29.99 » à la main aurait créé un
+        // neuvième endroit à corriger le jour où le prix bouge.
+        price: (PRIX_MENSUEL_CENTIMES / 100).toFixed(2),
         priceCurrency: 'EUR',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: (PRIX_MENSUEL_CENTIMES / 100).toFixed(2),
+          priceCurrency: 'EUR',
+          billingIncrement: 1,
+          unitCode: 'MON',
+        },
         // 14/08/2026 — disait « sans carte ». Faux : api/checkout crée la session avec
             // payment_method_collection:'always', la carte EST enregistrée. Cette phrase
             // vit dans les données structurées lues par Google : une promesse fausse
             // qui s'indexe et qu'on ne voit jamais à l'écran.
-            description: 'Essai 3 jours à 0 € — carte demandée, rien débité, annulation en un clic.',
+            description: `Essai ${ESSAI_JOURS} jours à 0 € — carte demandée, rien débité, annulation en un clic.`,
       },
       // aggregateRating retiré : pas d'avis vérifiables. Un faux rich-snippet de notation
       // = risque pénalité Google + pratique commerciale trompeuse. À remettre quand de

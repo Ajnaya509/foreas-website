@@ -276,7 +276,7 @@ const FEATURES: Feature[] = [
   },
   {
     punch: 'Ton site à ton nom. Le client scanne, il réserve.',
-    detail: 'foreas.xyz/ton-prénom, ton QR code prêt à coller dans la voiture. Monté pour toi, rien à configurer.',
+    detail: 'Une page à ton nom et ton QR code prêt à coller dans la voiture. Monté pour toi, rien à configurer.',
     worth: '25 €/mois',
   },
   {
@@ -399,7 +399,7 @@ function TarifsContent() {
     // `select count(*) from referral_commissions` → 0, aucune commission n'a jamais été
     // versée. Le dire franchement vaut mieux que de le faire découvrir au premier filleul.
     { id: 'faq-parrainage', q: `${PARRAINAGE.paliers[0].commissionEur}€/filleul à vie, est-ce un piège ?`, a: `Non, et voilà exactement comment ça marche. Tant que ton filleul reste abonné ET que toi aussi, tu touches ${PARRAINAGE.paliers[0].commissionEur} € par mois sur lui. À partir de 15 filleuls, c'est ${PARRAINAGE.paliers[1].commissionEur} €. À partir de 50, c'est ${PARRAINAGE.paliers[2].commissionEur} €. Ce sont des paliers de volume, pas une pyramide : on ne te promet rien sur les filleuls de tes filleuls. Ton filleul, lui, a −${REMISE_PARRAIN_MIN_PCT} % à vie sur le mensuel, jusqu'à −${REMISE_PARRAIN_MAX_PCT} % selon ton palier. Et on est cash : le programme vient d'ouvrir, aucune commission n'a encore été versée. Tu serais dans les premiers.` },
-    { id: 'faq-directs', q: "« Clients directs », ça veut dire quoi concrètement ?", a: "Un sticker avec ton QR code dans la voiture, et un mini-site à ton nom (foreas.xyz/ton-prénom). Le client scanne, il réserve avec toi, il te paie. Aucune plateforme au milieu, donc aucune commission prélevée : une course à 25€, c'est 25€ pour toi. Ça ne remplace pas Uber du jour au lendemain — ça se construit course après course, avec les clients qui reviennent." },
+    { id: 'faq-directs', q: "« Clients directs », ça veut dire quoi concrètement ?", a: "Un sticker avec ton QR code dans la voiture, et un mini-site à ton nom. Le client scanne, il réserve avec toi, il te paie. Aucune plateforme au milieu, donc aucune commission prélevée : une course à 25€, c'est 25€ pour toi. Ça ne remplace pas Uber du jour au lendemain — ça se construit course après course, avec les clients qui reviennent." },
     { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — et c'est toi qui fais le tri, le soir, fatigué. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un tableau de bord de plus. " + (IMMEDIATE_PAYMENT ? (garantieAffichable() ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : "Et tu résilies quand tu veux, depuis ton espace, sans avoir à te justifier.") : `Et tu as ${TRIAL_DAYS} jours pour te faire ta propre idée sur tes vraies courses, sans rien payer.`) },
     { id: 'faq-desactivation', q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme te coupe, tu redistribues ton temps sur les autres en 1 minute. La communauté FOREAS te briefe sur les bons réflexes pour récupérer ton compte." },
     // 14/08/2026 — « downgrade vers Free » promettait une formule gratuite qui n'existe pas

@@ -24,6 +24,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 
 export const dynamic = 'force-dynamic'
@@ -56,6 +57,24 @@ function texte(v: unknown, max: number): string | null {
 
 export async function POST(request: NextRequest) {
   try {
+    // ─────────────────────────────────────────────────────────────────────────
+    // 21/08/2026 — CETTE PORTE ÉTAIT GRANDE OUVERTE.
+    //
+    // Sa jumelle `/api/track-landing` refuse les appels venus d'ailleurs depuis
+    // toujours (route.ts:12). Celle-ci, non. N'importe qui pouvait donc écrire
+    // dans `events` — la table sur laquelle on juge si le site marche.
+    //
+    // Ce n'est pas un risque théorique : c'est ce qui rend les chiffres
+    // OPPOSABLES ou non. Une table que le monde entier peut remplir ne prouve
+    // rien, et les décisions prises dessus sont des décisions prises au hasard.
+    //
+    // ⚠️ LA GARDE EST AVANT LE PLAFOND, ET C'EST VOLONTAIRE. Le plafond est de
+    // 600 par minute. Placée après, un appel extérieur l'épuiserait, et la
+    // vraie mesure repartirait en « 202 · plafond » — le contrôle se tairait au
+    // lieu de crier. L'ordre des deux lignes est le correctif.
+    // ─────────────────────────────────────────────────────────────────────────
+    if (!isSameOriginRequest(request)) return forbiddenOrigin()
+
     if (!sousPlafond()) {
       // 202 : on accepte de ne pas compter plutôt que de faire échouer une page.
       // Mais on le DIT dans les journaux — un plafond silencieux fabrique un

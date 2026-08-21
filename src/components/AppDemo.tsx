@@ -48,8 +48,12 @@ export default function AppDemo() {
               {[
                 {
                   icon: '🗺️',
-                  title: 'Carte en temps réel',
-                  description: 'Zones chaudes actualisées toutes les 30 secondes'
+                  // 21/08 — disait « en temps réel » et « toutes les 30 secondes ».
+                  // Le rafraîchissement connu de la chaîne est de trois minutes.
+                  // Annoncer une cadence qu'on ne tient pas se vérifie en une
+                  // minute, chronomètre en main, par le premier chauffeur curieux.
+                  title: 'Carte des zones',
+                  description: 'Les zones que FOREAS suit pour toi'
                 },
                 {
                   icon: '🤖',
