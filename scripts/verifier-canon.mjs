@@ -57,11 +57,34 @@ const MOTS_RESERVES = ['go', 'zones', 'rentabilite', 'clientele', 'ajnaya', 'com
 // Les prénoms du registre dont l'accord n'est PAS signé. Recopiés depuis
 // src/lib/consentements.ts : ce programme tourne en node nu. Le jour où un accord
 // est signé, retirer le prénom d'ici — et pas avant.
-/** Retire `proof_items` : ce champ est filtré côté serveur avant d'être servi. */
-function retirerLesPreuves(content) {
-  if (!content || typeof content !== 'object') return content ?? ''
+/**
+ * Retire `proof_items`, puis rend le TEXTE des valeurs — pas leur forme JSON.
+ *
+ * ⚠️ 21/08/2026 — MA RÈGLE ÉTAIT DÉFAITE PAR L'ÉCHAPPEMENT, ET JE L'AI CRUE
+ * VERTE.
+ *
+ * Elle cherchait un nom avec une limite de mot dans `JSON.stringify(content)`.
+ * Or un retour à la ligne devient, dans cette forme, les DEUX CARACTÈRES `\` et
+ * `n`. Un nom précédé d'un saut de ligne s'écrit donc « …\nDragan », et la
+ * limite de mot ne s'y trouve pas : le `n` est un caractère de mot.
+ *
+ * Résultat mesuré : /premium racontait l'histoire de DEUX personnes nommées, en
+ * production, et la règle passait au vert. Elle a attrapé /optimisation
+ * seulement parce que le nom y suivait un espace.
+ *
+ * On ne cherche donc plus dans la forme JSON : on récupère les valeurs texte.
+ */
+function texteDeContenu(content) {
+  if (!content || typeof content !== 'object') return String(content ?? '')
   const { proof_items: _ignore, ...reste } = content
-  return reste
+  const morceaux = []
+  const parcourir = (v) => {
+    if (typeof v === 'string') morceaux.push(v)
+    else if (Array.isArray(v)) v.forEach(parcourir)
+    else if (v && typeof v === 'object') Object.values(v).forEach(parcourir)
+  }
+  parcourir(reste)
+  return morceaux.join(' \n ')
 }
 
 const PERSONNES_NON_APPROUVEES = ['Haitham', 'Binate', 'Zefi', 'Dragan', 'Hadietou', 'Nikolic']
@@ -956,7 +979,7 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
           ligne.boule_de_cristal, ligne.aha_moment, ligne.cta_text,
           // ⚠️ `proof_items` est EXCLU — et cette exclusion ne vaut QUE parce que la
           // page le filtre AVANT de servir. Une règle plus bas garde cette garde.
-          JSON.stringify(retirerLesPreuves(ligne.content)),
+          texteDeContenu(ligne.content),
         ].filter(Boolean).join(' ')
         for (const p of PERSONNES_NON_APPROUVEES) {
           if (!new RegExp('\\b' + p + '\\b', 'i').test(texte)) continue
