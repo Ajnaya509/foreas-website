@@ -86,6 +86,18 @@ function FaqItem({ q, a, id }: { q: string; a: string; id?: string }) {
 // false = ESSAI 3 JOURS, carte demandée à l'inscription, 0 € débité avant la fin (ACTUEL,
 //         décision Chandler 22/07). true = paiement immédiat + garantie 30j (ancien mode
 //         cash-now, archi conservée telle quelle → rebrancher = repasser true).
+// ⚠️ 21/08/2026 — CE DRAPEAU POUVAIT RALLUMER LA GARANTIE À LUI SEUL.
+//
+// Neuf endroits de cette page annonçaient « garanti 30 jours » derrière ce seul
+// drapeau, sans passer par garantieAffichable(). Le basculer — un geste de
+// TARIFICATION, sans rapport avec le consentement juridique — aurait remis la
+// promesse en ligne sur neuf surfaces d'un coup.
+//
+// Et npm run canon ne l'aurait pas vu : sa règle exempte un FICHIER entier dès
+// qu'il contient le garde quelque part. Deux trous qui se couvraient l'un
+// l'autre.
+//
+// Chaque occurrence exige maintenant LES DEUX conditions.
 const IMMEDIATE_PAYMENT = false
 
 // ─── Trial Bridge ────────────────────────────────────────────────────────────
@@ -164,7 +176,7 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-violet-900/30 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center"><span className="text-[10px] font-bold text-white">F</span></div>
-            <div><p className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">{IMMEDIATE_PAYMENT ? 'Paiement aujourd\'hui · garanti 30 jours remboursé' : `0€ débité · Premier débit le ${formatDateFR(trialEnd)}`}</p></div>
+            <div><p className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">{IMMEDIATE_PAYMENT && garantieAffichable() ? 'Paiement aujourd\'hui · garanti 30 jours remboursé' : `0€ débité · Premier débit le ${formatDateFR(trialEnd)}`}</p></div>
           </div>
           <button onClick={onClose} className="text-white/55 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
         </div>
@@ -173,7 +185,7 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
               mode essai (IMMEDIATE_PAYMENT = false), où aucune garantie 30 jours n'existe :
               ni sur cette page, ni dans le parcours Stripe. Promesse affichée au moment
               exact où on demande la carte, sans rien derrière. Le badge suit le mode. */}
-          {['SSL chiffré', 'Annulation 1 clic', IMMEDIATE_PAYMENT ? 'Remboursement 30j' : `0 € pendant ${TRIAL_DAYS} jours`].map(t => (
+          {['SSL chiffré', 'Annulation 1 clic', IMMEDIATE_PAYMENT && garantieAffichable() ? 'Remboursement 30j' : `0 € pendant ${TRIAL_DAYS} jours`].map(t => (
             <span key={t} className="flex items-center gap-1.5 text-green-400 text-xs">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>{t}
             </span>
@@ -464,7 +476,7 @@ function TarifsContent() {
             <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-1.5 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               <span className="text-green-300 text-xs font-semibold uppercase" style={{ letterSpacing: '0.1em' }}>
-                {IMMEDIATE_PAYMENT ? 'Garanti 30 jours · remboursé' : '0€ aujourd\'hui · Annulation 1 clic'}
+                {IMMEDIATE_PAYMENT && garantieAffichable() ? 'Garanti 30 jours · remboursé' : '0€ aujourd\'hui · Annulation 1 clic'}
               </span>
             </div>
             <h1
@@ -641,7 +653,7 @@ function TarifsContent() {
               {PLAN.cta}
             </motion.button>
             <p className="text-center text-white/45 text-[11px] mt-3">
-              {IMMEDIATE_PAYMENT
+              {IMMEDIATE_PAYMENT && garantieAffichable()
                 ? 'Garanti 30 jours · remboursé sans question'
                 : `Carte demandée, 0 € débité pendant ${TRIAL_DAYS} jours · annulation 1 clic`}
             </p>
@@ -868,14 +880,14 @@ function TarifsContent() {
                 reste de la page, qui affichait déjà 3 jours partout ailleurs. Un chauffeur
                 qui lit 7 et se fait débiter à J+3 ne revient pas. La valeur vient
                 maintenant d'offre.ts, elle ne peut plus diverger. */}
-            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>{IMMEDIATE_PAYMENT ? 'GARANTI 30 JOURS · ZÉRO RISQUE · TU DÉCIDES' : `${TRIAL_DAYS} JOURS · ZÉRO RISQUE · TU DÉCIDES`}</p>
+            <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-4" style={{ letterSpacing: '0.28em' }}>{IMMEDIATE_PAYMENT && garantieAffichable() ? 'GARANTI 30 JOURS · ZÉRO RISQUE · TU DÉCIDES' : `${TRIAL_DAYS} JOURS · ZÉRO RISQUE · TU DÉCIDES`}</p>
             <h2 className="text-4xl sm:text-5xl font-black text-[#F8FAFC] mb-5 leading-[1.05]" style={{ letterSpacing: '-0.045em' }}>
               {IMMEDIATE_PAYMENT
                 ? <>Ce soir,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu reprends la main.</span></>
                 : <>Dans {TRIAL_DAYS} jours,{' '}<span className="bg-gradient-to-r from-violet-300 via-cyan-200 to-violet-300 bg-clip-text text-transparent">tu sauras.</span></>}
             </h2>
             <p className="text-white/75 text-base sm:text-lg mb-3 leading-relaxed">
-              {IMMEDIATE_PAYMENT
+              {IMMEDIATE_PAYMENT && garantieAffichable()
                 ? <>Soit Ajnaya te fait gagner plus.<br className="hidden sm:block" />Soit tu te fais rembourser sous 30 jours. Dans les deux cas, tu ne perds rien.</>
                 : <>Soit Ajnaya t&apos;a fait gagner plus.<br className="hidden sm:block" />Soit tu fermes, tu ne paies rien, tu continues comme avant.</>}
             </p>
@@ -892,7 +904,7 @@ function TarifsContent() {
             </motion.button>
             <div className="flex items-center justify-center gap-x-6 gap-y-2 mt-6 text-white/50 text-[11px] flex-wrap tabular-nums">
               <span>🔒 Stripe · SSL</span>
-              <span>{IMMEDIATE_PAYMENT ? <>🛡️ Garanti 30 jours</> : <>✓ 0&nbsp;€ aujourd&apos;hui</>}</span>
+              <span>{IMMEDIATE_PAYMENT && garantieAffichable() ? <>🛡️ Garanti 30 jours</> : <>✓ 0&nbsp;€ aujourd&apos;hui</>}</span>
               <span>🛡️ Annulation 1 clic</span>
               <span>✓ Sans engagement</span>
             </div>

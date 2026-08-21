@@ -766,9 +766,32 @@ for (const chemin of fichiers(RACINE)) {
       .replace(/\/\*[\s\S]*?\*\//g, ' ')
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
       .replace(/^\s*\/\/.*$/gm, ' ')
-    const m = sansCommentaires.match(MOTIFS)
-    if (!m) continue
-    if (sansCommentaires.includes('garantieAffichable(')) continue
+    // ⚠️ On regarde une FENÊTRE, pas une ligne. Dans un ternaire écrit sur
+    // plusieurs lignes, le garde se trouve deux lignes plus haut que le texte
+    // qu'il protège. Un test ligne à ligne signalerait des cas parfaitement
+    // gardés — un contrôle qui crie à tort finit désactivé, et c'est pire.
+    const l = sansCommentaires.split('\n')
+    let nonGardee = null
+    for (let k = 0; k < l.length; k++) {
+      if (!MOTIFS.test(l[k])) continue
+      const fenetre = l.slice(Math.max(0, k - 3), k + 2).join(' ')
+      if (fenetre.includes('garantieAffichable(')) continue
+      nonGardee = l[k]
+      break
+    }
+    if (!nonGardee) continue
+    const m = [nonGardee.trim()]
+    // ⚠️ 21/08/2026, SECONDE PASSE — L'EXEMPTION ÉTAIT AU FICHIER, PAS À
+    // L'OCCURRENCE. Dès qu'un fichier contenait `garantieAffichable(` quelque
+    // part, le fichier ENTIER était sauté. Résultat mesuré : neuf annonces de
+    // /tarifs2, gardées seulement par un drapeau de tarification, n'étaient
+    // jamais vues — dont « GARANTI 30 JOURS · ZÉRO RISQUE · TU DÉCIDES ».
+    //
+    // La règle prouvait qu'un fichier SANS garde est attrapé. Elle ne prouvait
+    // jamais qu'un fichier AVEC garde est ENTIÈREMENT gardé. C'est la même
+    // faute que « vérifier la forme au lieu de l'identité ».
+    //
+    // On regarde maintenant chaque occurrence dans SA ligne.
     infractions.push({
       fichier: relatif,
       quoi: 'la garantie 30 jours annoncée sans passer par son garde',
