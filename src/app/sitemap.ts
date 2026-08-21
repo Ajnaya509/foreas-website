@@ -78,6 +78,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/technologie`,                      lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/a-propos`,                         lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`,                          lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    // ⚠️ 21/08/2026 — CETTE PAGE ÉTAIT LIÉE DEPUIS L'ACCUEIL ET ABSENTE DU PLAN.
+    //
+    // ZoneCapPartnerCTA, monté sur la page d'accueil, y envoie ses visiteurs.
+    // C'est donc une surface d'acquisition vivante — et Google n'en était pas
+    // informé. Elle est indexable (aucune balise de refus), simplement jamais
+    // déclarée : le pire des deux mondes, puisqu'elle pouvait être trouvée sans
+    // qu'on sache qu'elle existe.
+    //
+    // À ne pas confondre avec /cap, la page d'un parrain identifié par son code :
+    // celle-là ne s'indexe pas, et porte bien son refus.
+    { url: `${BASE}/devenir-partenaire`,               lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     // Landing SEO — facturation électronique VTC 2026
     { url: `${BASE}/facturation-electronique-vtc-2026`, lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
     // Pages légales
