@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { repere } from '@/lib/journal'
 
 // Simple in-memory storage for demo
 // En prod: utiliser une base de données (Supabase, PlanetScale, etc.)
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     //   properties: { Email: { email: { email } } }
     // })
 
-    console.log(`[Waitlist] New signup: ${email}`)
+    console.log(`[Waitlist] New signup: ${repere(email)}`)
 
     return NextResponse.json({
       success: true,

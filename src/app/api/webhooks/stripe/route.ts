@@ -16,6 +16,7 @@ import { URL_SITE } from '@/lib/site'
 // Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
 // que de dégrader.
 import { cleServeurOuVide, clientServeurOuNull } from '@/lib/supabaseServeur'
+import { repere } from '@/lib/journal'
 
 /**
  * ⚠️ 21/08/2026 — LE TEMPS D'EXÉCUTION N'ÉTAIT DÉCLARÉ NULLE PART.
@@ -58,7 +59,7 @@ async function upsertSubscriber(data: Record<string, unknown>) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = cleServeurOuVide()
   if (!supabaseUrl || !supabaseKey) {
-    console.log('[webhook] Supabase non configuré — subscriber non sauvegardé:', data.email)
+    console.log('[webhook] Supabase non configuré — subscriber non sauvegardé:', repere(data.email))
     return
   }
   try {
@@ -618,7 +619,7 @@ export async function POST(request: Request) {
       //   })
       // }
 
-      console.log('[webhook] checkout.session.completed traité pour', session.customer_details?.email)
+      console.log('[webhook] checkout.session.completed traité pour', repere(session.customer_details?.email))
     }
 
     // ─── customer.subscription.updated ─────────────────────────────

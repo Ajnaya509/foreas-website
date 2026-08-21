@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
+import { repere } from './journal'
 
 /**
  * ⚠️ 21/08/2026 — DEUX REPLIS DIVERGENTS POUR LA MÊME VARIABLE.
@@ -200,7 +201,7 @@ export async function sendWelcomeEmail({ email, name, plan, trialEnd, credential
   credentials?: { email: string; password: string } | null
 }): Promise<boolean> {
   if (!resend) {
-    console.log('[Email] Resend non configuré — email non envoyé à', email)
+    console.log('[Email] Resend non configuré — email non envoyé à', repere(email))
     return false
   }
   try {
@@ -225,6 +226,13 @@ export async function sendWelcomeEmail({ email, name, plan, trialEnd, credential
       html: buildWelcomeHTML({ name, plan, trialEnd, credentials }),
     })
       if (error) {
+        // ⚠️ RISQUE RÉSIDUEL ASSUMÉ, 21/08/2026. Le message d'erreur vient du
+        // service d'envoi et peut recopier l'adresse du destinataire
+        // (« Invalid recipient: … »). On le garde quand même : sans lui, un
+        // échec d'envoi devient indiagnosticable, et un envoi qui échoue en
+        // silence coûte plus cher qu'une adresse dans un journal.
+        // Le masquer demanderait de connaître la forme de chaque message —
+        // c'est-à-dire de deviner. À revoir si le service documente ses codes.
         console.error(`[Email] ÉCHEC welcome email : ${error.name} — ${error.message}`)
         return false
       }
@@ -261,7 +269,7 @@ function foreasEmailShell(inner: string): string {
 export async function sendPartnerApplicantEmail({ email, contactName, companyName }: {
   email: string; contactName: string; companyName: string
 }) {
-  if (!resend) { console.log('[Email] Resend non configuré — applicant', email); return }
+  if (!resend) { console.log('[Email] Resend non configuré — applicant', repere(email)); return }
   const firstName = contactName ? escapeHtml(contactName.split(' ')[0]) : ''
   const inner = `
     <h1 style="font-family:'Genos',sans-serif;font-size:28px;font-weight:600;color:#ffffff;text-align:center;margin:0 0 12px;line-height:1.2;">Demande bien reçue${firstName ? ', ' + firstName : ''}.</h1>
@@ -274,7 +282,7 @@ export async function sendPartnerApplicantEmail({ email, contactName, companyNam
       subject: 'Ta demande de partenariat FOREAS est bien reçue',
       html: foreasEmailShell(inner),
     })
-    console.log('[Email] Partner applicant envoyé à', email)
+    console.log('[Email] Partner applicant envoyé à', repere(email))
   } catch (e) { console.error('[Email] Échec applicant:', e) }
 }
 
@@ -305,7 +313,7 @@ export async function sendProvisionFailureAlert({ email, name, reason }: {
       subject: `⚠️ Compte non créé après paiement : ${email}`,
       html: foreasEmailShell(inner),
     })
-    console.log('[Email] Alerte provisionnement envoyée pour', email)
+    console.log('[Email] Alerte provisionnement envoyée pour', repere(email))
   } catch (e) { console.error('[Email] Échec alerte provisionnement:', e) }
 }
 
