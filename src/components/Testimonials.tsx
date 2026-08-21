@@ -163,7 +163,11 @@ const TESTIMONIALS: Testimonial[] = [
     // FAUX : « Avant je tournais en rond. Maintenant chaque kilomètre compte. »
     // reprenait en prose la promesse chiffrée qu'on vient de retirer. Remplacé par
     // ses propos filmés.
-    quote: "Aucun souci avec FOREAS. Tout se passe pour le mieux. J'y suis, j'y reste.",
+    // ⚠️ 21/08/2026 — SEULE CITATION DES SIX À ÊTRE ENCORE RECOPIÉE ICI.
+    // Elle perdait « Plus de deux ans avec FOREAS, » : la durée disparaissait
+    // de la phrase alors qu'elle en est le sujet. Les cinq autres lisaient
+    // déjà le registre.
+    quote: citationDe('dragan'),
     playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
     accentColor: '#06b6d4',
   },

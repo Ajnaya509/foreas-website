@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Play, Pause } from 'lucide-react'
 import type { Testimonial } from './testimonials.data'
-import { citationPubliable, verdictCitation } from '@/lib/consentements'
+import { citationPubliable, verdictCitation, chiffrePubliable } from '@/lib/consentements'
 
 /**
  * MuxPlayer — chargement dynamique côté client uniquement (Web Component).
@@ -45,6 +45,19 @@ const MuxPlayer = dynamic(
  * bouge.
  */
 const REGIME_STRICT = false
+
+/**
+ * Un badge qui porte un chiffre est une promesse. Il exige un accord qui nomme
+ * ce chiffre. Un badge qui porte un mot n'engage sur aucun résultat.
+ */
+function badgeAffichable(t: Testimonial): boolean {
+  const badge = (t.gainBadge ?? '').trim()
+  if (!badge) return false
+  const porteUnChiffre = /\d/.test(badge)
+  if (!porteUnChiffre) return true
+  const cle = t.name.toLowerCase().split(/[\s.]/)[0].replace(/[^a-zà-ÿ]/g, '')
+  return chiffrePubliable(cle, badge)
+}
 
 function citationAffichable(t: Testimonial): boolean {
   const cle = t.name.toLowerCase().split(/[\s.]/)[0].replace(/[^a-zà-ÿ]/g, '')
@@ -126,9 +139,28 @@ export default function TestimonialVideoCard({
           <p className="font-semibold text-[#F8FAFC] text-sm truncate">{t.name}</p>
           <p className="text-white/55 text-[11px] truncate">{t.context}</p>
         </div>
-        <span className="bg-green-500/15 text-green-400 text-[11px] px-2 py-0.5 rounded-full font-bold tabular-nums whitespace-nowrap">
-          {t.gainBadge}
-        </span>
+        {/*
+          ⚠️ 21/08/2026 — CE BADGE S'AFFICHAIT SANS AUCUNE GARDE.
+
+          `chiffrePubliable()` existe dans src/lib/consentements.ts depuis le
+          20/08 — et n'était APPELÉE NULLE PART. Un garde-fou écrit puis jamais
+          branché ne protège de rien ; il rassure, ce qui est pire.
+
+          Résultat mesuré : « +30 % revenus » était servi dans le HTML de la
+          page d'accueil, sous le visage d'un chauffeur dont l'accord est au
+          statut « en attente », à côté de sa citation.
+
+          ON NE MASQUE PAS TOUT POUR AUTANT. Sur les six badges, cinq sont
+          qualitatifs — « Indépendance », « Il recommande », « 2 ans, il reste ».
+          Un mot n'est pas une promesse de gain. Seul un badge qui porte un
+          CHIFFRE engage FOREAS sur un résultat, et seul celui-là doit être
+          couvert par un accord nommant ce chiffre.
+        */}
+        {badgeAffichable(t) && (
+          <span className="bg-green-500/15 text-green-400 text-[11px] px-2 py-0.5 rounded-full font-bold tabular-nums whitespace-nowrap">
+            {t.gainBadge}
+          </span>
+        )}
       </div>
 
       {/* ── Vidéo Mux Player ───────────────────────────────────────────── */}

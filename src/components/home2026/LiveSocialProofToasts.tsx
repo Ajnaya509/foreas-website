@@ -50,7 +50,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Video, X } from 'lucide-react'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
 
+import { personneDe, villeDe } from '@/lib/consentements'
 interface ProofEntry {
+  /** L'identifiant au registre des accords. La parole et la ville viennent de là. */
+  id: string
   driver: string  // "Haitham B."
   city: string    // "Paris"
   initial: string // "H"
@@ -60,18 +63,39 @@ interface ProofEntry {
 }
 
 /**
- * Les 6 chauffeurs filmés, consentis, vérifiables. Nom, ville et ancienneté
- * copiés depuis src/components/zone/testimonials.data.ts — la seule base de
- * consentement. N'ajoute JAMAIS un nom ici sans l'y ajouter d'abord.
+ * Les six chauffeurs filmés.
+ *
+ * ⚠️ 21/08/2026 — CE COMMENTAIRE PORTAIT TROIS ERREURS, ET LE BLOC QUATRE.
+ *
+ * LE COMMENTAIRE disait « consentis » : les six accords sont au statut
+ * « en attente » depuis le premier jour, avec `preuve: null`. Et il désignait
+ * `testimonials.data.ts` comme « la seule base de consentement » — c'est un
+ * fichier d'affichage. La base des accords, c'est `src/lib/consentements.ts`.
+ *
+ * LE BLOC portait :
+ *  · « Zephy K. », qui n'existe pas. Il s'appelle Zefi K. Le défaut ne se
+ *    voyait pas dans le HTML servi : la notification n'apparaît qu'après
+ *    hydratation, donc le mauvais nom vivait dans le paquet JavaScript ;
+ *  · une ville pour Zefi, Hadietou et Nikolic, alors que le registre porte
+ *    `villeAffichee: null` pour ces trois-là. Une ville nulle au registre n'est
+ *    pas une case à remplir : c'est une localisation qu'ils n'ont pas acceptée
+ *    qu'on publie.
+ *
+ * Le nom et la ville viennent maintenant du registre, et de nulle part ailleurs.
+ * Une ville absente reste absente.
  */
-const ENTRIES: ProofEntry[] = [
-  { driver: 'Haitham B.', city: 'Paris',                initial: 'H', accent: 'violet', tenure: '7 ans VTC' },
-  { driver: 'Binate A.',  city: 'Marne-la-Vallée',      initial: 'B', accent: 'gold',   tenure: '5 ans · Tesla' },
-  { driver: 'Zephy K.',   city: 'Marne-la-Vallée',      initial: 'Z', accent: 'cyan',   tenure: 'ex-cadre, reconverti' },
-  { driver: 'Dragan P.',  city: 'Paris',                initial: 'D', accent: 'rose',   tenure: '9 ans VTC' },
-  { driver: 'Hadietou',   city: 'Paris (banlieue)',     initial: 'H', accent: 'violet', tenure: '9 ans VTC' },
-  { driver: 'Nikolic N.', city: 'Paris',                initial: 'N', accent: 'cyan',   tenure: '10 ans VTC' },
-]
+const ENTRIES: ProofEntry[] = ([
+  { id: 'haitham',  initial: 'H', accent: 'violet', tenure: '7 ans VTC' },
+  { id: 'binate',   initial: 'B', accent: 'gold',   tenure: '5 ans · Tesla' },
+  { id: 'zefi',     initial: 'Z', accent: 'cyan',   tenure: 'ex-cadre, reconverti' },
+  { id: 'dragan',   initial: 'D', accent: 'rose',   tenure: '9 ans VTC' },
+  { id: 'hadietou', initial: 'H', accent: 'violet', tenure: '9 ans VTC' },
+  { id: 'nikolic',  initial: 'N', accent: 'cyan',   tenure: '10 ans VTC' },
+] as const).map((e) => ({
+  ...e,
+  driver: personneDe(e.id),
+  city: villeDe(e.id) ?? '',
+}))
 
 /** La seule chose qu'on sache d'eux, et qu'ils ont accepté qu'on dise. */
 const PREUVE_COPY = 'a filmé son témoignage, à visage découvert'

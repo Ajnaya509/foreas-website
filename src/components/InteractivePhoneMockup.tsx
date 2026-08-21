@@ -205,10 +205,26 @@ function SocialScreen() {
       <h3 className="text-white font-semibold mb-4">Communauté</h3>
 
       <div className="space-y-3">
+        {/*
+          ⚠️ 21/08/2026 — « +280€ aujourd'hui grâce à Ajnaya » A ÉTÉ RETIRÉ.
+
+          C'était un gain chiffré attribué à un chauffeur nommé, dans une
+          maquette présentée comme l'application, sur /chauffeurs et /509.
+          Personne ne l'a gagné : ni « David K. » ni le chiffre n'existent en
+          base. Un montant attribué à quelqu'un qui n'existe pas, sur une page
+          commerciale, est une pratique commerciale trompeuse — pas une
+          illustration.
+
+          Les deux autres messages restent : ils décrivent une zone et des
+          travaux, ils ne promettent aucun résultat. C'est la différence.
+
+          Les prénoms sont remplacés par ceux des données de démonstration, pour
+          qu'aucun nom du registre des accords ne puisse réapparaître ici.
+        */}
         {[
-          { name: 'Karim M.', message: 'Zone Opéra fire ce soir 🔥', time: '2 min' },
-          { name: 'Sarah L.', message: 'Évitez Châtelet, travaux', time: '15 min' },
-          { name: 'David K.', message: '+280€ aujourd\'hui grâce à Ajnaya', time: '1h' },
+          { name: 'Camille D.', message: 'Zone Opéra fire ce soir 🔥', time: '2 min' },
+          { name: 'Sofia R.', message: 'Évitez Châtelet, travaux', time: '15 min' },
+          { name: 'Thomas B.', message: 'Gare de Lyon se remplit, je m’y mets', time: '1h' },
         ].map((item, i) => (
           <div key={i} className="bg-white/5 rounded-xl p-3 flex gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center text-white font-medium">

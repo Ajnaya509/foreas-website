@@ -408,7 +408,20 @@ for (const chemin of fichiers(RACINE)) {
     }
     for (const chemin of fichiers(RACINE)) {
       if (chemin.endsWith('src/lib/consentements.ts')) continue
+      // ⚠️ 21/08/2026 — LES COMMENTAIRES SONT RETIRÉS AVANT LA RECHERCHE.
+      //
+      // Cette règle s'est déclenchée sur une note qui CITAIT un fragment pour
+      // expliquer pourquoi on venait de le retirer du code. Un commentaire ne
+      // s'affiche à personne : ce n'est pas une publication, c'est une trace.
+      //
+      // Troisième fois aujourd'hui qu'un commentaire fausse une règle — dans
+      // les deux sens : ici il déclenche à tort, ailleurs il faisait passer au
+      // vert une page qui n'avait aucun lien vers la caisse. Une règle qui lit
+      // du code doit lire du CODE.
       const source = readFileSync(chemin, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+        .replace(/^\s*\/\/.*$/gm, ' ')
       for (const f of fragments) {
         if (!source.includes(f.court)) continue
         infractions.push({
