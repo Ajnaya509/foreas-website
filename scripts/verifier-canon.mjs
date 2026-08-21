@@ -716,6 +716,52 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
       const actives = lignes.filter((l) => l.active !== false)
       console.log(`  ℹ️  ${actives.length} page(s) active(s) lue(s) en base`)
 
+      // ── UN CHIFFRE DE LA DESCRIPTION INDEXÉE DOIT EXISTER DANS LA PAGE ──
+      //
+      // 🔴 CETTE RÈGLE VIENT D'UNE ERREUR QUE J'AI FAITE MOI-MÊME, LE 21/08/2026.
+      //
+      // La page /aeroport annonçait « c'est une course à 24 €/h », un chiffre
+      // dérivable d'AUCUNE des durées que la page énonce elle-même : son corps dit
+      // 90 min d'attente + 40 min de trajet, soit 2 h 10, et 60 € sur 2 h 10 font
+      // 27,69 €/h. Il aurait fallu 2 h 30 pour tomber sur 24.
+      //
+      // J'ai corrigé le titre, mesuré, et « 24 €/h » apparaissait ENCORE trois fois
+      // dans le HTML servi. La cause : `meta_description` est une COLONNE de la
+      // table, pas une clé du JSON `content`. J'avais interrogé
+      // `content->>'meta_description'`, obtenu NULL, et conclu qu'il n'y avait rien
+      // à corriger.
+      //
+      // Et l'endroit oublié était le PIRE des deux : une description meta est ce que
+      // Google AFFICHE dans ses résultats, et elle y reste après correction.
+      //
+      // La règle : tout nombre écrit dans la description doit se retrouver quelque
+      // part dans le texte de la page. Une description qui porte un chiffre que la
+      // page ne dit plus est un chiffre orphelin — exactement ce qui vient d'arriver.
+      for (const ligne of actives) {
+        const description = ligne.meta_description || ''
+        if (!description) continue
+        const corps = [
+          ligne.headline, ligne.pattern_interrupt_stat, ligne.epiphany_bridge_story,
+          ligne.boule_de_cristal, ligne.aha_moment, ligne.cta_text, ligne.meta_title,
+          JSON.stringify(ligne.content ?? ''),
+        ].filter(Boolean).join(' ')
+        // Les nombres significatifs seulement : deux chiffres ou plus, ou une
+        // décimale. « 3 jours » ou « 0 € » ne se comparent pas utilement.
+        const nombres = [...description.matchAll(/\d+(?:[.,]\d+)?/g)]
+          .map((m) => m[0])
+          .filter((n) => n.length > 1)
+        for (const n of new Set(nombres)) {
+          if (corps.includes(n)) continue
+          infractions.push({
+            fichier: `landing_pages → ${ligne.topic_slug} (colonne meta_description)`,
+            quoi: 'un chiffre dans la description indexée que la page ne dit nulle part',
+            extrait: n,
+            pourquoi:
+              "La description meta est ce que Google AFFICHE dans ses résultats, et elle y reste après correction de la page. Un chiffre qui n'existe que là est un chiffre orphelin : personne ne le relit, et il survit à toutes les corrections du texte visible. C'est exactement ce qui est arrivé au « 24 €/h » de /aeroport.",
+          })
+        }
+      }
+
       // ── CHAQUE PAGE ACTIVE DOIT ÊTRE ATTEIGNABLE ────────────────────────
       //
       // 🔴 MESURÉ LE 21/08/2026 : onze pages actives en base, DIX sujets
