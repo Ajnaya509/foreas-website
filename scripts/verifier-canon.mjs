@@ -35,6 +35,15 @@ import { join, extname } from 'node:path'
 
 const RACINE = 'src'
 
+// Les sujets affichables, et les mots que le routeur /go se réserve. Recopiés
+// depuis src/lib/sujets.ts : ce programme tourne en node nu, sans résolution
+// de '@/...'. Le mot « go » lui-même est réservé — c'est le routeur racine.
+const SUJETS = [
+  'airbnb', 'surge', 'premium', 'optimisation', 'revenus',
+  'flotte', 'charges', 'aeroport', 'evenements', 'clients',
+]
+const MOTS_RESERVES = ['go', 'zones', 'rentabilite', 'clientele', 'ajnaya', 'communaute', 'desktop']
+
 // ─── Les règles ─────────────────────────────────────────────────────────────
 // Chaque règle dit CE QUI EST INTERDIT et POURQUOI, avec la mesure qui le prouve.
 // Ajouter une règle ici, c'est empêcher un mensonge de renaître.
@@ -561,6 +570,35 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
     if (Array.isArray(lignes)) {
       const actives = lignes.filter((l) => l.active !== false)
       console.log(`  ℹ️  ${actives.length} page(s) active(s) lue(s) en base`)
+
+      // ── CHAQUE PAGE ACTIVE DOIT ÊTRE ATTEIGNABLE ────────────────────────
+      //
+      // 🔴 MESURÉ LE 21/08/2026 : onze pages actives en base, DIX sujets
+      // connus du code. La onzième porte l'identifiant « go » — le même mot
+      // que la route statique qui envoie vers les boutiques.
+      //
+      // Next.js sert une route statique avant une route dynamique. Donc
+      // /go renvoie vers l'App Store (vérifié en production) et la page
+      // n'est affichable NULLE PART. Elle est active depuis le 4 avril 2026.
+      // Son texte est entretenu — ses formulations ont été corrigées ce
+      // matin même — et aucun visiteur ne l'a jamais vue.
+      //
+      // Personne ne pouvait s'en apercevoir : rien n'échoue, rien n'alerte.
+      // Une page dans le vide ressemble en tout point à une page qui marche.
+      for (const ligne of actives) {
+        const sujet = ligne.topic_slug
+        if (SUJETS.includes(sujet)) continue
+        const raison = MOTS_RESERVES.includes(sujet)
+          ? `le mot « ${sujet} » est déjà pris par une route statique de /go, qui gagne toujours`
+          : `le sujet « ${sujet} » n'est pas dans src/lib/sujets.ts`
+        infractions.push({
+          fichier: `landing_pages → ${sujet}`,
+          quoi: 'une page active que personne ne peut afficher',
+          extrait: raison,
+          pourquoi:
+            "Une page active et inatteignable est une panne totalement silencieuse : elle compte dans les rapports, son texte est relu et corrigé, et elle ne sert jamais à personne. Soit tu lui donnes un identifiant libre inscrit dans src/lib/sujets.ts, soit tu la passes à active = false.",
+        })
+      }
       for (const ligne of actives) {
         const texte = [
           ligne.headline, ligne.pattern_interrupt_stat, ligne.epiphany_bridge_story,

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { notFound } from 'next/navigation'
+import { sujetValide } from '@/lib/sujets'
 
 /**
  * /go/<topic> — destination du CTA de chaque landing SEO.
@@ -42,13 +44,12 @@ import { NextResponse } from 'next/server'
  * présents dans l'URL d'entrée (campagnes payantes) ne sont jamais écrasés.
  */
 
-// Doit rester aligné sur VALID_TOPICS de src/app/(marketing)/[topic]/page.tsx.
-// Un topic inconnu n'est pas une erreur : on envoie quand même vers l'offre,
-// simplement sans attribution — perdre l'attribution vaut mieux qu'un 404.
-const VALID_TOPICS = [
-  'airbnb', 'surge', 'premium', 'optimisation', 'revenus',
-  'flotte', 'charges', 'aeroport', 'evenements', 'clients',
-]
+// ⚠️ CHANGÉ LE 21/08/2026 — LA LISTE NE VIT PLUS ICI.
+//
+// Elle portait une consigne d'alignement manuel avec l'autre fichier qui la
+// recopiait. Un alignement à la main entre deux fichiers, c'est le piège qui
+// s'est déclenché sept fois dans ce dépôt cette semaine.
+// Source unique : src/lib/sujets.ts.
 
 export async function GET(
   request: Request,
@@ -63,12 +64,27 @@ export async function GET(
     if (k.startsWith('utm_') || k === 'ref') target.searchParams.set(k, v)
   })
 
-  // Attribution de la landing, sans écraser une campagne payante existante.
-  if (VALID_TOPICS.includes(topic)) {
-    if (!target.searchParams.has('utm_source')) target.searchParams.set('utm_source', 'seo')
-    if (!target.searchParams.has('utm_medium')) target.searchParams.set('utm_medium', 'landing')
-    if (!target.searchParams.has('utm_campaign')) target.searchParams.set('utm_campaign', topic)
+  // ── UN SUJET INCONNU EST UNE ERREUR, ET LE DIT ──────────────────────────
+  //
+  // AVANT, cette route redirigeait N'IMPORTE QUEL mot vers /tarifs2, avec ce
+  // raisonnement écrit : « perdre l'attribution vaut mieux qu'un 404 ».
+  //
+  // Le raisonnement se retourne. Vérifié en production le 21/08/2026 :
+  // /go/nimportequoi et /go/go rendaient EXACTEMENT la même réponse qu'un vrai
+  // sujet, à l'attribution près. Donc une faute de frappe dans le bouton d'une
+  // landing — /go/aeroprot — continuait de « marcher », et cette page perdait
+  // son attribution POUR TOUJOURS sans que rien ne l'annonce.
+  //
+  // Un lien interne cassé doit se voir. Une attribution perdue en silence, non.
+  if (!sujetValide(topic)) {
+    console.warn('[go] sujet inconnu : ' + topic + ' — lien interne cassé ou adresse inventée')
+    notFound()
   }
+
+  // Attribution de la landing, sans écraser une campagne payante existante.
+  if (!target.searchParams.has('utm_source')) target.searchParams.set('utm_source', 'seo')
+  if (!target.searchParams.has('utm_medium')) target.searchParams.set('utm_medium', 'landing')
+  if (!target.searchParams.has('utm_campaign')) target.searchParams.set('utm_campaign', topic)
 
   return NextResponse.redirect(target, 307)
 }

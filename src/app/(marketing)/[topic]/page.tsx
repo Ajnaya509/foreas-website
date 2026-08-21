@@ -5,13 +5,13 @@ import type { Metadata } from 'next'
 import LandingPageTemplate, { type LandingContent } from '@/components/landing/LandingPageTemplate'
 import { canonique } from '@/lib/site'
 
+import { SUJETS } from '@/lib/sujets'
 export const revalidate = 3600 // ISR — revalide toutes les heures
 
 // ─── Whitelist statique ───────────────────────────────────────────────────────
-const VALID_TOPICS = [
-  'airbnb', 'surge', 'premium', 'optimisation', 'revenus',
-  'flotte', 'charges', 'aeroport', 'evenements', 'clients',
-]
+// La liste vient de src/lib/sujets.ts — elle vivait ici ET dans
+// src/app/go/[topic]/route.ts, recopiée à la main.
+const VALID_TOPICS = SUJETS as readonly string[]
 
 // ─── Routes existantes à NE PAS écraser ───────────────────────────────────────
 // Next.js résout les routes statiques en priorité sur les dynamiques.
