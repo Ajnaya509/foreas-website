@@ -478,7 +478,20 @@ export default function HomePage() {
               { chiffre: 'App Store', detail: 'application publiée' },
               { chiffre: 'Google Play', detail: 'application publiée' },
               { chiffre: '6', detail: 'chauffeurs filmés, à visage découvert' },
-              { chiffre: 'France', detail: 'conçu et hébergé en Europe' },
+              // ⚠️ 21/08/2026 — DISAIT « conçu et hébergé en Europe ». MESURÉ FAUX
+              // POUR TOUT LE CÔTÉ SERVEUR. L'en-tête `x-vercel-id` de la
+              // production donnait `cdg1::iad1` sur /api/mesure, /api/checkout,
+              // /api/track-landing, /api/ajnaya/chat et le rendu serveur de
+              // /cap : entrée à Paris, EXÉCUTION À WASHINGTON.
+              //
+              // Aucune région n'était déclarée : c'était la valeur par défaut du
+              // compte, pas une décision. Une valeur par défaut est
+              // indiscernable d'un choix tant que personne ne la mesure.
+              //
+              // `vercel.json` déclare désormais `cdg1`. La phrase reste
+              // volontairement modeste : une préférence de région n'est pas une
+              // garantie contractuelle.
+              { chiffre: 'France', detail: 'conçu en France, servi depuis Paris' },
             ].map((item) => (
               <span key={item.chiffre} className="text-center select-none">
                 <span className="block font-title text-lg md:text-xl text-text-secondary tracking-wide tabular-nums">

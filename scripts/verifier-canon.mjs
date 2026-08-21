@@ -122,6 +122,82 @@ const PERSONNES_NON_APPROUVEES = ['Haitham', 'Binate', 'Zefi', 'Dragan', 'Hadiet
 // Ajouter une règle ici, c'est empêcher un mensonge de renaître.
 
 const REGLES = [
+  // ─────────────────────────────────────────────────────────────────────────
+  // SEPT PROMESSES RETIRÉES LE 21/08/2026 AU SOIR, ET CE QUI LES A TUÉES.
+  //
+  // Elles avaient toutes survécu aux contrôles précédents pour la même raison :
+  // ces contrôles cherchaient des CHIFFRES faux. Celles-ci étaient des MOTS
+  // faux — « mesuré », « précision », « partenaire », « suivie » — qui
+  // promettent une capacité, pas une valeur. Un mot qui promet une capacité
+  // qu'aucune table ne porte est aussi faux qu'un chiffre inventé, et
+  // beaucoup plus difficile à démentir de bonne foi.
+  //
+  // Chaque règle porte la requête qui la ressuscitera légitimement.
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    motif: /\b(clos|limité|réservé)\s+(à|aux)\s+\d{2,5}\s+(abonnés?|places?|chauffeurs?)/i,
+    quoi: '« clos à N abonnés » — une rareté sans compteur',
+    pourquoi:
+      'mesuré le 21/08 : aucun code ne comptait vers ce plafond, et `subscribers` valait 0. ' +
+      'Une urgence qu\'aucun compteur ne fabrique est une urgence inventée. Elle ne revient ' +
+      'qu\'avec les QUATRE : décision écrite, source unique du plafond, compteur sur des ' +
+      'abonnements éligibles, et règle qui ferme vraiment. Un compteur décoratif est interdit.',
+  },
+  {
+    motif: /temps\s+à\s+vide\s+(mesuré|calculé|suivi)|(mesuré|calculé)[^.]{0,25}temps\s+à\s+vide/i,
+    quoi: '« temps à vide mesuré »',
+    pourquoi:
+      'select count(*) filter (where pickup_lat is not null) from rides → 0 sur 18 (21/08 20h39 UTC). ' +
+      'Sans coordonnée de départ, la distance entre deux courses n\'est pas approximative : elle ' +
+      'est IMPOSSIBLE à établir. Décrire le temps à vide comme un problème reste permis ; ' +
+      'affirmer qu\'on le mesure ne l\'est pas.',
+  },
+  {
+    motif: /\bPrécision\.|\b(précision|fiabilité)\s+(de|à)\s*\d{1,3}\s*%|\b\d{1,3}\s*%\s+de\s+(précision|fiabilité|réussite)/i,
+    quoi: 'un taux ou une promesse de précision',
+    pourquoi:
+      'select count(*) filter (where was_right is not null) from zone_predictions → 0 sur 339 ; ' +
+      'zone_reliability : 0 sur 9 avec un taux (21/08 20h39 UTC). Aucune prédiction n\'a JAMAIS ' +
+      'été confrontée au réel. Le mot « précision » nomme une chose qu\'on n\'a jamais calculée.',
+  },
+  {
+    // ⚠️ LE MOT SEUL NE SUFFIT PAS À CONDAMNER LA PHRASE.
+    // Première version : elle a signalé /facturation-electronique-vtc-2026, qui
+    // écrit pourtant « un expert-comptable partenaire inscrit à l'Ordre — CE
+    // RÉSEAU EST EN COURS DE CONSTITUTION ». C'est exactement la formulation
+    // honnête qu'on veut obtenir : la règle punissait la bonne réponse.
+    // Un contrôle qui crie à tort finit désactivé. On exige donc que la phrase
+    // NE porte PAS son propre correctif dans les 120 caractères qui suivent.
+    motif: /expert[- ]comptable\s+partenaire(?![^.]{0,120}(en cours de constitution|à venir|pas encore))|réseau\s+de\s+comptables(?![^.]{0,120}en cours)/i,
+    quoi: 'un expert-comptable « partenaire » présenté comme existant',
+    pourquoi:
+      'aucun partenaire comptable n\'existe, ni en base ni dans le dépôt (cherché le 21/08). ' +
+      '« En cours de constitution » est la formulation honnête — et c\'est déjà celle qu\'emploie ' +
+      'la page jumelle /facturation-electronique-vtc-2026.',
+  },
+  {
+    motif: /réputation\s+(suivie|mesurée|notée)|réputation[^.]{0,20}comme\s+un\s+chiffre/i,
+    quoi: 'une réputation « suivie »',
+    pourquoi:
+      'select count(*) from driver_reviews → 0 (21/08 20h39 UTC). Aucun avis n\'existe, donc rien ' +
+      'n\'est suivi. Parler de ce qui fait revenir un client reste permis ; dire qu\'on le mesure, non.',
+  },
+  {
+    motif: /alertes?\s+(envoyées?|poussées?|notifiées?)|on\s+te\s+prévient\s+(dès|quand)/i,
+    quoi: 'une alerte présentée comme ENVOYÉE',
+    pourquoi:
+      'push_notifications : 1 222 lignes, sum(sent_count) = 0 ; community_alerts : 1 389 lignes, ' +
+      'created_by NULL sur 100 % (21/08 20h39 UTC). Rien n\'a jamais été envoyé, et aucun chauffeur ' +
+      'n\'a jamais rien signalé. COLLECTER n\'est pas ENVOYER — c\'est la confusion qui rend cette ' +
+      'phrase crédible.',
+  },
+  {
+    motif: /communauté\s+(active|vivante)|\d{2,}\s+chauffeurs?\s+(actifs?|connectés?|en\s+ligne)/i,
+    quoi: 'une communauté présentée comme active',
+    pourquoi:
+      'select count(*) from community_members → 0 (21/08 20h39 UTC). Il n\'y a pas de membres, ' +
+      'donc pas de communauté à décrire au présent.',
+  },
   {
     motif: /\b7\s*(plateformes|apps|applis)\b/i,
     quoi: '« 7 plateformes / 7 apps »',
@@ -240,6 +316,22 @@ const EXEMPTS = [
   'lib/offre.ts',
   'lib/provenance.ts',
   'scripts/verifier-canon.mjs',
+  // ⚠️ 21/08/2026 — LES SIX CONSOLES EN DÉCOR SONT EXEMPTÉES, ET C'EST RISQUÉ.
+  //
+  // Elles portent des données inventées (« Chauffeurs actifs 12/18 »), mais leur
+  // texte n'est SERVI À PERSONNE : `src/middleware.ts` renvoie /dashboard/* et
+  // /509/dashboard/* vers /tarifs2 en 307, vérifié en production.
+  //
+  // Ce canon juge le texte AFFICHÉ. Punir du texte que personne ne voit ferait
+  // crier la règle à tort, et une règle qui crie à tort finit désactivée.
+  //
+  // ⚠️ MAIS L'EXEMPTION DÉPEND ENTIÈREMENT DU RENVOI. Si quelqu'un retire ces
+  // chemins du middleware, six pages de fausses données redeviennent publiques
+  // ET muettes pour le canon. La règle `porte-de-sortie` vérifie ce renvoi en
+  // production à chaque passage : c'est elle qui tient cette exemption debout.
+  // Ne retirer l'une qu'en retirant l'autre.
+  'app/dashboard/',
+  'app/509/dashboard/',
 ]
 
 // ─── Lecture ────────────────────────────────────────────────────────────────

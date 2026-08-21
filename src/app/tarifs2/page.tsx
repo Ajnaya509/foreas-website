@@ -281,7 +281,19 @@ const FEATURES: Feature[] = [
   },
   {
     punch: 'Ton vrai tarif horaire. Pas celui que tu crois.',
-    detail: 'Ton net par heure, ton net par km, ton temps à vide. C\'est là que tu vois où part ta journée.',
+    // ⚠️ 21/08/2026 — PROMETTAIT « ton temps à vide ».
+    //
+    // Mesuré le 21/08 à 20h39 UTC : la table `rides` compte 18 lignes, dont
+    // **0** avec une coordonnée de départ. Sans point de départ ni point
+    // d'arrivée, la distance parcourue entre deux courses n'est pas calculable.
+    // Le temps à vide n'est donc pas « approximatif » : il est **impossible**
+    // à établir avec les données existantes.
+    //
+    // Les deux autres — net par heure, net par km — se calculent, eux, à partir
+    // de ce que le chauffeur saisit. On garde ce qui tient, on retire ce qui ne
+    // tient pas. Promettre les trois pour faire une belle liste de trois, c'est
+    // exactement comme ça qu'un chiffre invérifiable se glisse entre deux vrais.
+    detail: 'Ton net par heure et ton net par km. C\'est là que tu vois où part ta journée.',
   },
 ]
 
@@ -461,10 +473,18 @@ function TarifsContent() {
                 n'importe quel chauffeur — c'est le but. */}
             Tes courses {PLATEFORMES.reellementVues.join(', ')} au même endroit
           </span>
-          <span className="text-white/20 hidden sm:inline">·</span>
-          <span className="text-white/55 text-xs">
-            Tarif découverte <span className="text-orange-300 font-semibold tabular-nums">clos à 500 abonnés</span>
-          </span>
+          {/* ⚠️ 21/08/2026 — « TARIF DÉCOUVERTE CLOS À 500 ABONNÉS » A ÉTÉ RETIRÉ.
+              C'était une rareté que personne ne pouvait ni tenir ni vérifier :
+              aucun code ne comptait vers 500, et `subscribers` valait 0.
+              Une urgence qu'aucun compteur ne fabrique est une urgence inventée.
+
+              Elle ne peut revenir QUE si les quatre existent ensemble :
+                1. une décision commerciale écrite ;
+                2. une source unique du plafond ;
+                3. un compteur calculé sur des abonnements éligibles ;
+                4. une règle qui ferme réellement à l'atteinte du plafond.
+              Un compteur décoratif est interdit — c'est la même faute en plus
+              convaincant. Une règle de `npm run canon` le vérifie désormais. */}
         </div>
       </div>
 

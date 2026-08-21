@@ -1,5 +1,29 @@
 {
   "framework": "nextjs",
+  "_pourquoi_regions": [
+    "21/08/2026 — LE SITE DISAIT « CONÇU ET HÉBERGÉ EN EUROPE ». C'ÉTAIT FAUX",
+    "POUR TOUT LE CÔTÉ SERVEUR.",
+    "",
+    "Mesuré sur l'en-tête x-vercel-id de la production : les pages statiques",
+    "partaient bien de cdg1 (Paris), mais TOUTES les fonctions serveur",
+    "s'exécutaient à iad1 — Washington. Vérifié sur /api/mesure, /api/checkout,",
+    "/api/track-landing, /api/ajnaya/chat et sur le rendu serveur de /cap.",
+    "",
+    "Donc la caisse, la mesure et les conversations avec Ajnaya traversaient",
+    "l'Atlantique. Aucune région n'était déclarée nulle part : c'était la valeur",
+    "par défaut du compte, pas une décision. Une valeur par défaut est",
+    "indiscernable d'un choix tant que personne ne la mesure.",
+    "",
+    "Deux effets, pas un :",
+    "  1. la phrase du site devient vraie ;",
+    "  2. la latence annoncée (~150 ms) cesse de payer un aller-retour",
+    "     Paris → Washington → Paris sur chaque appel.",
+    "",
+    "cdg1 = Paris. Si Vercel n'a plus de capacité là-bas, il bascule ailleurs :",
+    "ce réglage est une préférence forte, pas une garantie contractuelle. La",
+    "phrase du site doit rester mesurable, pas absolue."
+  ],
+  "regions": ["cdg1"],
   "rewrites": [
     {
       "source": "/c/:slug",

@@ -66,7 +66,13 @@ const techFeatures = [
   // vérifiable.
   { icon: Database, title: 'Sources ouvertes', desc: 'Quatre des cinq sources sont publiques et vérifiables.' },
   // TECH-04 — voir LATENCE_MESUREE ci-dessus.
-  { icon: Zap, title: LATENCE_MESUREE, desc: 'Latence recommandation, mesurée.' },
+  // ⚠️ 21/08/2026 — DISAIT « Latence recommandation, mesurée. » sans date.
+  // La mesure d'origine tient en 8 relevés du 14/08 (voir LATENCE_MESUREE).
+  // Huit essais un jour donné ne décrivent pas la vitesse générale d'un
+  // service — surtout depuis qu'on a découvert que les fonctions serveur
+  // s'exécutaient à Washington. Le chiffre porte donc sa date, comme le
+  // compteur de prédictions juste à côté.
+  { icon: Zap, title: LATENCE_MESUREE, desc: 'Latence relevée le 14/08/2026.' },
   // TECH-06 — « Chiffrement E2E » : le E2E signifie que le serveur ne peut PAS lire.
   // Or au 14/08/2026 une simple regex SQL sur `drivers` sort 11 e-mails, 5 téléphones
   // et 14 prénoms en clair (email text, phone varchar, first_name varchar — aucune
@@ -153,7 +159,19 @@ export default function TechnologiePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="font-body text-base md:text-lg text-white/50 max-w-lg mx-auto"
           >
-            Prédiction. Précision. Performance.
+            {/* ⚠️ 21/08/2026 — DISAIT « Prédiction. Précision. Performance. »
+                Mesuré le 21/08 à 20h39 UTC : `zone_predictions` = 339 lignes,
+                dont **0** avec `was_right` renseigné ; `zone_reliability` = 9
+                lignes, dont **0** avec un taux de justesse.
+
+                Le mot « Précision » promet une mesure qui n'existe pas. Il ne
+                s'agit pas d'une exagération : c'est le nom d'une chose qu'on
+                n'a jamais calculée une seule fois.
+
+                La formulation ci-dessous dit ce que le produit fait vraiment :
+                il propose, il ne certifie pas. Elle redeviendra « précision »
+                le jour où `was_right` sera rempli — et pas avant. */}
+            Des recommandations, pas des certitudes.
           </motion.p>
         </div>
       </section>

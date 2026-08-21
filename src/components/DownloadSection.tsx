@@ -140,8 +140,15 @@ export default function DownloadSection() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
+              {/* ⚠️ 21/08/2026 — DISAIT « On te prévient dès que l'app est dispo. »
+                  L'app EST disponible : les deux fiches répondent 200. On promettait
+                  donc une notification pour un événement DÉJÀ ARRIVÉ.
+                  Et la promesse était doublement creuse : push_notifications compte
+                  1 222 lignes pour sum(sent_count) = 0. Rien n'est jamais parti. */}
               <p className="text-white font-medium mb-1">Parfait !</p>
-              <p className="text-white/50 text-sm">On te prévient dès que l'app est dispo.</p>
+              <p className="text-white/50 text-sm">
+                L'app est déjà en ligne — les deux boutons ci-dessus t'y emmènent.
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="relative">
