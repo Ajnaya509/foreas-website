@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { headers } from 'next/headers'
 import ExperienceClient from './ExperienceClient'
 
+import MesureVue from '@/components/mesure/MesureVue'
 export const metadata: Metadata = {
   title: 'FOREAS — Discute avec Ajnaya',
   description: "Écris à Ajnaya, en direct. Pas une démo : le vrai chat qui aide les chauffeurs VTC à savoir où ça paie ce soir.",
@@ -26,5 +27,13 @@ export default async function ExperiencePage() {
   // l'en-tête est absent (dev local, host non-Vercel), on retombe sur l'ordre national par défaut.
   const h = await headers()
   const geoCity = h.get('x-vercel-ip-city') || null
-  return <ExperienceClient geoCity={geoCity} />
+  return (
+    <>
+      {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des dix
+          pages commerciales n'avait de compteur : on connaissait les abonnements,
+          jamais la page qui les avait produits. */}
+      <MesureVue page="/experience" intention="ajnaya" audience="chauffeur" />
+      <ExperienceClient geoCity={geoCity} />
+    </>
+  )
 }

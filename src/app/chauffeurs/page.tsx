@@ -16,6 +16,7 @@ import { authUrls } from '@/lib/auth-urls'
 import { ESSAI_JOURS, PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
 import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
 
+import MesureVue from '@/components/mesure/MesureVue'
 // ═══════════════════════════════════════════════════════════════════════════════
 // FOREAS /chauffeurs — BIG DOMINO CHAUFFEUR
 // Structure : Frustration ↔ Désir → Ajnaya = solution
@@ -453,6 +454,10 @@ export default function ChauffeursPage() {
 
   return (
     <main className="min-h-screen bg-[#050508]">
+      {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des
+          dix pages commerciales n'avait de compteur : on connaissait les
+          abonnements, jamais la page qui les avait produits. */}
+      <MesureVue page="/chauffeurs" intention="general" audience="chauffeur" />
       <Header />
       <StickyMobileCTA />
 

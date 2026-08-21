@@ -441,6 +441,44 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── TOUTE PAGE COMMERCIALE COMPTE SA VUE ──────────────────────────────────
+//
+// 🔴 MESURÉ LE 21/08/2026 : UN SEUL appel de mesure dans tout src/. Les dix
+// pages commerciales du site n'avaient aucun compteur de vue.
+//
+// La conséquence n'était pas « on ne sait pas encore », c'était « on ne pourra
+// jamais savoir ». On connaissait le nombre d'abonnements ; jamais la page qui
+// les avait produits. Donc toute décision de fusionner ou de supprimer une page
+// était un pari : rien n'aurait dit si la conversion avait monté ou baissé.
+//
+// La vue est le DÉNOMINATEUR. Sans elle, un nombre d'essais ne veut rien dire :
+// dix essais sur mille visites et dix essais sur douze visites sont deux
+// situations opposées qui produisent le même chiffre.
+{
+  const COMMERCIALES = [
+    'chauffeurs', 'professionnels', 'ou-ca-paie', 'cap', 'experience',
+    'reactivation', 'facturation-electronique-vtc-2026', 'technologie',
+    'a-propos', 'contact', 'tarifs2',
+  ]
+  for (const page of COMMERCIALES) {
+    const chemin = join(RACINE, 'app/' + page + '/page.tsx')
+    if (!existsSync(chemin)) continue
+    const source = readFileSync(chemin, 'utf8')
+    const sansCommentaires = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+    if (/<MesureVue\b|mesurer\s*\(\s*['"](?:PageView|PricingView)['"]/.test(sansCommentaires)) continue
+    infractions.push({
+      fichier: 'src/app/' + page + '/page.tsx',
+      quoi: 'une page commerciale qui ne compte pas sa vue',
+      extrait: 'ni <MesureVue />, ni mesurer(PageView) hors commentaire',
+      pourquoi:
+        "La vue est le dénominateur de toute conversion. Sans elle, dix essais peuvent venir de mille visites ou de douze : le même chiffre décrit deux situations opposées. Pose <MesureVue page=... intention=... audience=... /> dans le rendu.",
+    })
+  }
+}
+
 // ─── AUCUN CHIFFRE CALCULÉ DANS UN MESSAGE ENVOYÉ AU NOM DU CHAUFFEUR ───────
 //
 // 🔴 MESURÉ LE 21/08/2026 : le bouton du bloc « douleur » de l'accueil

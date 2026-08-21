@@ -22,6 +22,7 @@ import { canonique, URL_SITE } from '@/lib/site'
 import Link from 'next/link'
 import { ESSAI_JOURS, PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
 
+import MesureVue from '@/components/mesure/MesureVue'
 const PRIX_MOIS = formaterEuros(PRIX_MENSUEL_CENTIMES)
 
 /**
@@ -169,6 +170,10 @@ export default function FacturationElectroniqueVTC2026() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des
+            dix pages commerciales n'avait de compteur : on connaissait les
+            abonnements, jamais la page qui les avait produits. */}
+        <MesureVue page="/facturation-electronique-vtc-2026" intention="rentabilite" audience="chauffeur" />
 
       <main className="min-h-screen bg-[#050508] text-white">
         {/* ── HERO ─────────────────────────────────────── */}

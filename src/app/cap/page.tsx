@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { Metadata } from 'next'
 import CapClient from './CapClient'
 
+import MesureVue from '@/components/mesure/MesureVue'
 export const metadata: Metadata = {
   title: 'Rejoindre FOREAS — Offre partenaire',
   description: 'Votre partenaire vous a invité à rejoindre FOREAS, le copilote des chauffeurs VTC.',
@@ -38,6 +39,10 @@ export default async function CapPage({ searchParams }: PageProps) {
 
   return (
     <Suspense fallback={null}>
+      {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des dix
+          pages commerciales n'avait de compteur : on connaissait les abonnements,
+          jamais la page qui les avait produits. */}
+      <MesureVue page="/cap" intention="partenaire" audience="partenaire" />
       <CapClient
         referralCode={referralCode}
         partnerData={partnerData}

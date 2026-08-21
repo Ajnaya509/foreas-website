@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import { Layers, Database, Zap, Shield, Globe, Cpu } from 'lucide-react'
 import { PLATEFORMES } from '@/lib/verite-commerciale'
 
+import MesureVue from '@/components/mesure/MesureVue'
 /**
  * TECH-04 + TECH-05 — « <100ms » était affiché DEUX FOIS sur cette page (tuile
  * Architecture + bloc Stats). Mesure du 14/08/2026 : 8 appels sur l'endpoint que
@@ -91,6 +92,10 @@ const stats = [
 export default function TechnologiePage() {
   return (
     <main className="min-h-screen bg-[#050508]">
+      {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des
+          dix pages commerciales n'avait de compteur : on connaissait les
+          abonnements, jamais la page qui les avait produits. */}
+      <MesureVue page="/technologie" intention="ajnaya" audience="chauffeur" />
       <Header />
 
       {/* Hero */}

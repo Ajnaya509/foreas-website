@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import { Mail, MessageSquare, MapPin } from 'lucide-react'
 import FormulaireContact from '@/components/contact/FormulaireContact'
 
+import MesureVue from '@/components/mesure/MesureVue'
 const contacts = [
   { icon: Mail, title: 'Email', value: 'contact@foreas.net' },
   { icon: MessageSquare, title: 'Support', value: 'support@foreas.net' },
@@ -15,6 +16,10 @@ const contacts = [
 export default function ContactPage() {
   return (
     <main className="min-h-screen bg-[#050508]">
+      {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des
+          dix pages commerciales n'avait de compteur : on connaissait les
+          abonnements, jamais la page qui les avait produits. */}
+      <MesureVue page="/contact" intention="general" audience="entreprise" />
       <Header />
 
       {/* Hero */}

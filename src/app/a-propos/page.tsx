@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
+import MesureVue from '@/components/mesure/MesureVue'
 const values = [
   // APROPOS-05 — « Données réelles » : le substrat du moteur de zones est SEMÉ,
   // pas réel. heatmap_zones : 30 lignes, source='seed_v1' sur les 30,
@@ -19,6 +20,10 @@ const values = [
 export default function AProposPage() {
   return (
     <main className="min-h-screen bg-[#050508]">
+      {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des
+          dix pages commerciales n'avait de compteur : on connaissait les
+          abonnements, jamais la page qui les avait produits. */}
+      <MesureVue page="/a-propos" intention="general" audience="chauffeur" />
       <Header />
 
       {/* Hero */}

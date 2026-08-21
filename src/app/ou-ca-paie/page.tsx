@@ -12,6 +12,7 @@ import ZonePlanTimeline from '@/components/zone/ZonePlanTimeline'
 import ZoneCapPartnerCTA from '@/components/zone/ZoneCapPartnerCTA'
 import ZoneFinalCTAWithPS from '@/components/zone/ZoneFinalCTAWithPS'
 
+import MesureVue from '@/components/mesure/MesureVue'
 /*
  * TITRE + DESCRIPTION — une seule source, lue par la <meta> ET par le JSON-LD.
  *
@@ -140,6 +141,10 @@ const JSON_LD = {
 export default function OuCaPaiePage() {
   return (
     <main className="min-h-screen bg-black text-[#F8FAFC] overflow-x-hidden">
+      {/* La vue de cette page est comptée. Avant le 21/08/2026, aucune des
+          dix pages commerciales n'avait de compteur : on connaissait les
+          abonnements, jamais la page qui les avait produits. */}
+      <MesureVue page="/ou-ca-paie" intention="rentabilite" audience="chauffeur" />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}

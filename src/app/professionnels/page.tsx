@@ -13,6 +13,7 @@ import { Clock, ShieldQuestion, TrendingDown, Brain, BarChart3, Palette, Wallet 
 // jamais d'une constante écrite à la main dans le JSX. C'est exactement comme ça que
 // « 147 actifs · Paris » a pu vivre deux ans sur cette page sans être relié à rien.
 import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
+import MesureVue from '@/components/mesure/MesureVue'
 // Site2026v51 — Apple-grade depth system
 // Site2026v55 — Müller-Brockmann grid system (Container, Grid 12-col)
 import {
@@ -252,6 +253,9 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-foreas-obsidian">
+      {/* La vue de cette page est comptée. C'est la porte B2B du site : tout
+          son formulaire de contact y arrivait sans qu'on sache d'où. */}
+      <MesureVue page="/professionnels" intention="partenaire" audience="entreprise" />
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════
