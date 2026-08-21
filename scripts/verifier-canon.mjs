@@ -586,6 +586,60 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── LE MANIFESTE DES CINQ PARCOURS DIT-IL VRAI ? ──────────────────────────
+//
+// Un tableau dans un document Markdown vieillit sans prévenir : personne ne le
+// relit, rien ne le contredit, et il finit par décrire un site qui n'existe
+// plus. Ce dépôt en a plusieurs preuves — des commentaires y affirmaient des
+// choses fausses depuis des semaines.
+//
+// Le manifeste vit donc dans src/lib/parcours.ts, et cette règle le confronte
+// au dépôt : chaque page qu'il déclare doit exister, et chaque route de
+// boutique qu'il annonce doit avoir son fichier.
+//
+// ⚠️ Elle ne vérifie PAS que la promesse est tenue — aucune règle ne peut faire
+// ça. Elle vérifie que le manifeste ne ment pas sur ce qui est vérifiable.
+{
+  const chemin = join(RACINE, 'lib/parcours.ts')
+  if (existsSync(chemin)) {
+    const src = readFileSync(chemin, 'utf8')
+
+    const pages = [
+      ...[...src.matchAll(/pageMere:\s*'([^']+)'/g)].map((m) => m[1]),
+      ...[...src.matchAll(/pagesSecondaires:\s*\[([^\]]*)\]/g)]
+        .flatMap((m) => [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1])),
+    ]
+    for (const page of new Set(pages)) {
+      const nom = page.replace(/^\//, '')
+      const candidats = [
+        join(RACINE, 'app', nom, 'page.tsx'),
+        join(RACINE, 'app/(marketing)/[topic]/page.tsx'),
+      ]
+      const sujetEnBase = SUJETS.includes(nom)
+      if (existsSync(candidats[0]) || (sujetEnBase && existsSync(candidats[1]))) continue
+      infractions.push({
+        fichier: 'src/lib/parcours.ts',
+        quoi: 'le manifeste déclare une page qui n’existe pas',
+        extrait: page,
+        pourquoi:
+          "Un manifeste qui nomme une page absente est pire qu'un manifeste absent : il fait croire qu'un parcours existe. Soit la page se crée, soit le manifeste se corrige.",
+      })
+    }
+
+    for (const m of src.matchAll(/routeBoutique:\s*'\/go\/([^']+)'/g)) {
+      const f = join(RACINE, 'app/go', m[1], 'route.ts')
+      if (existsSync(f)) continue
+      infractions.push({
+        fichier: 'src/lib/parcours.ts',
+        quoi: 'le manifeste déclare une route de boutique qui n’existe pas',
+        extrait: '/go/' + m[1],
+        pourquoi:
+          "Sans cette route, le parcours n'a aucun chemin vers l'application : le visiteur qui clique « Installer » n'arrive nulle part, et l'installation n'est attribuée à aucune intention.",
+      })
+    }
+  }
+}
+
 // ─── AUCUN TAUX EN DUR APPLIQUÉ À L'ARGENT D'UN CHAUFFEUR ──────────────────
 //
 // 🔴 CE QUE LE CALCULATEUR DE L'ACCUEIL FAISAIT JUSQU'AU 21/08/2026 :
