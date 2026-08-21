@@ -87,6 +87,34 @@ function texteDeContenu(content) {
   return morceaux.join(' \n ')
 }
 
+/**
+ * Retire les commentaires d'un fichier source, pour qu'une règle lise du CODE.
+ *
+ * ⚠️ 21/08/2026 — J'AI ÉCRIT DEUX RÈGLES QUI LISAIENT LES COMMENTAIRES.
+ *
+ * Elles appelaient `texteDeContenu()`, qui sert à aplatir le JSON venu de la
+ * base — et ne retire rien du tout d'un fichier `.tsx`. Résultat : la règle
+ * « pas d'attente invisible » a signalé `src/app/cap/page.tsx` à cause du
+ * COMMENTAIRE que je venais d'y écrire pour EXPLIQUER le bug corrigé.
+ *
+ * C'est le troisième faux témoin par commentaire dans ce projet — et le premier
+ * qui accuse au lieu d'innocenter. Les deux sens sont aussi nuisibles : un
+ * contrôle qui crie à tort finit désactivé, exactement comme un contrôle qui se
+ * tait à tort finit ignoré.
+ *
+ * Volontairement simple et un peu trop zélé : une chaîne de caractères qui
+ * contiendrait `//` perd sa fin de ligne. Pour ce que les règles cherchent
+ * — des motifs de code — trop retirer est sans danger ; trop garder ne l'est pas.
+ */
+function sansCommentaires(source) {
+  return String(source ?? '')
+    // {/* ... */} des enfants JSX, puis /* ... */ classiques
+    .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, ' ')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    // // ... jusqu'à la fin de la ligne
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')
+}
+
 const PERSONNES_NON_APPROUVEES = ['Haitham', 'Binate', 'Zefi', 'Dragan', 'Hadietou', 'Nikolic']
 
 // ─── Les règles ─────────────────────────────────────────────────────────────
@@ -1456,7 +1484,18 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
 
 {
   const LECTURE = /\b(citationDe|personneDe|villeDe|TEMOIGNAGES|temoignageDe)\b/
-  const PERMISSION = /\btemoignagePubliable(ParNom)?\b/
+  // ⚠️ 21/08/2026 — CE MOTIF CHERCHAIT LE NOM, PAS L'APPEL.
+  //
+  // Il valait `/\btemoignagePubliable(ParNom)?\b/`. Testé en retirant le filtre
+  // de /cap : la règle est restée MUETTE, parce que le nom du garde figurait
+  // encore dans la ligne `import`. Importer une permission n'est pas la
+  // demander — c'est précisément la faute que cette règle existe pour attraper,
+  // et elle l'aurait laissée passer.
+  //
+  // On exige donc une parenthèse ouvrante : un APPEL, pas une mention. Et on
+  // retire les lignes d'import avant de chercher, pour qu'aucune déclaration ne
+  // puisse passer pour un usage.
+  const PERMISSION = /\btemoignagePubliable(ParNom)?\s*\(/
 
   const fichiers = []
   const explorer = (dossier) => {
@@ -1477,7 +1516,7 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
 
     // On lit le CODE, pas les commentaires : un commentaire qui cite le nom du
     // garde a déjà fait passer une règle au vert dans ce projet.
-    const code = texteDeContenu ? texteDeContenu(brut, f) : brut
+    const code = sansCommentaires(brut).replace(/^\s*import[^\n]*$/gm, ' ')
     if (!LECTURE.test(code)) continue
 
     surveilles++
@@ -1493,6 +1532,57 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
     }
   }
   console.log(`   fichiers qui citent quelqu’un, et demandent la permission : ${surveilles}`)
+}
+
+// ─── UN REPLI INVISIBLE REND UNE PANNE INVISIBLE ───────────────────────────
+//
+// Le 21/08/2026, /cap — la page de l'offre partenaire, une surface d'argent —
+// répondait 200, servait 612 mots de HTML, et affichait VINGT-HUIT CARACTÈRES
+// à l'écran. Le contenu restait dans une zone de préparation masquée que le
+// navigateur ne révélait jamais.
+//
+// La frontière responsable portait `fallback={null}`. C'est ce détail qui a
+// rendu la panne indétectable pendant des semaines :
+//   · un repli qui AFFICHE quelque chose montre un écran d'attente bloqué —
+//     tout le monde voit qu'il y a un problème ;
+//   · un repli à `null` montre une page vide, ce qui ressemble à une page qui
+//     charge. On attend, on s'en va, on n'en parle à personne.
+//
+// Cette règle ne juge pas Suspense — elle exige que l'attente SE VOIE.
+
+{
+  const pages = []
+  const explorer = (dossier) => {
+    for (const e of readdirSync(dossier, { withFileTypes: true })) {
+      const chemin = join(dossier, e.name)
+      if (e.isDirectory()) { if (e.name !== 'node_modules') explorer(chemin); continue }
+      if (['.tsx'].includes(extname(e.name))) pages.push(chemin)
+    }
+  }
+  if (existsSync('src/app')) explorer('src/app')
+
+  let frontieres = 0
+  for (const f of pages) {
+    const brut = readFileSync(f, 'utf8')
+    if (!brut.includes('<Suspense')) continue
+    const code = sansCommentaires(brut)
+    for (const m of code.matchAll(/<Suspense[^>]*fallback=\{\s*(null|undefined|<>\s*<\/>)\s*\}/g)) {
+      frontieres++
+      infractions.push({
+        fichier: f,
+        quoi: 'une attente invisible : `fallback={null}`',
+        extrait: m[0].slice(0, 80),
+        pourquoi:
+          'si cette frontière reste bloquée, le visiteur voit une page VIDE et ' +
+          'croit qu’elle charge. C’est exactement ce qui a caché la panne de ' +
+          '/cap. Donne un repli qui se voit — un squelette, un fond, un mot.',
+      })
+    }
+    // Compter les frontières saines pour que la règle prouve qu'elle a regardé.
+    for (const _ of code.matchAll(/<Suspense/g)) frontieres += 0
+  }
+  const total = pages.filter((f) => readFileSync(f, 'utf8').includes('<Suspense')).length
+  console.log(`   pages avec une attente, et dont l’attente se voit : ${total - frontieres}/${total}`)
 }
 
 // ─── Verdict ────────────────────────────────────────────────────────────────
