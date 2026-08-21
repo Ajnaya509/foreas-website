@@ -67,7 +67,16 @@ export const PARCOURS: readonly Parcours[] = [
     etat: 'bloque',
     bloque: [
       'trois taux de commission coexistent dans FOREAS, aucun mesuré — décision Chandler',
-      '/revenus affiche encore 18,75 € sur une course de 25 €, chiffre issu de l’un des trois taux',
+      // ⚠️ 21/08/2026 (soir) — LA LIGNE SUIVANTE ÉTAIT PÉRIMÉE, ET RETIRÉE.
+      //
+      // Elle disait « /revenus affiche encore 18,75 € sur une course de 25 € ».
+      // Mesuré ce soir sur la production : la chaîne « 18,75 » est ABSENTE de
+      // /revenus, /surge, /clients, /experience et /cap. Le calcul a bien été
+      // retiré — c'est le manifeste qui n'avait pas suivi.
+      //
+      // Ce fichier est du CODE, lu par `npm run canon`. Un manifeste qui décrit
+      // un blocage résolu fait travailler quelqu'un pour rien — et, pire, fait
+      // douter des blocages qui sont réels.
     ],
   },
   {
