@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { URL_SITE, canonique } from '@/lib/site'
 import dynamic from 'next/dynamic'
 // ─── Above-the-fold (critique pour le 1er rendu) : statique ───
+import MesureVue from '@/components/mesure/MesureVue'
 import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
 import HomeHeroCream from '@/components/home2026/HomeHeroCream'
 import HomeProofStrip from '@/components/home2026/HomeProofStrip'
@@ -115,6 +116,10 @@ export default function HomePage() {
       />
 
       {/* Header crème transparent → glass au scroll */}
+      {/* La vue de l'accueil se compte enfin. Sans elle, aucun taux de
+          conversion n'est calculable : on connaissait les abonnements, jamais
+          le nombre de personnes passées devant. */}
+      <MesureVue page="/" intention="general" audience="chauffeur" />
       <HomeHeaderCream />
 
       {/* SECTION 1 — Hero crème + barre de recherche → modal Ajnaya */}

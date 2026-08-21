@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, MessageCircle } from 'lucide-react'
+import { Menu, X, MessageCircle, ArrowRight } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
 import { useOverlayLock } from '@/lib/overlayStore'
 import { authUrls } from '@/lib/auth-urls'
+import { useLienOffre } from '@/hooks/useLienOffre'
+import { ESSAI_JOURS } from '@/lib/offre'
+import { mesurer } from '@/lib/mesure'
 
 /**
  * HomeHeaderCream — header blanc Apple absolu (Site2026v72)
@@ -14,8 +17,17 @@ import { authUrls } from '@/lib/auth-urls'
  * Refonte +100/100 :
  * - Logo "/" en violet pur #6C3CE0 (un seul ton — plus de gradient candy)
  * - Liens Pro / Connexion en noir Apple #1d1d1f
- * - Souscrire = noir Apple solide #1d1d1f (cohérence Apple, signal premium)
- *   sub-line "Sans CB · 7 j offerts" parfaitement alignée
+ * - Action principale = « Essayer » vers /tarifs2, la page où l'on paie.
+ *
+ *   ⚠️ 21/08/2026 — AVANT, CE BOUTON MENAIT À WHATSAPP. Il s'appelait
+ *   « Souscrire » et ouvrait une conversation. Mesuré sur le HTML servi de
+ *   l'accueil : zéro lien vers /tarifs2, six liens WhatsApp. Depuis la porte
+ *   d'entrée du site, la page de paiement était inatteignable autrement qu'en
+ *   tapant l'adresse à la main.
+ *
+ *   WhatsApp n'est pas retiré : il descend en action secondaire. Et la durée
+ *   d'essai vient désormais de offre.ts — l'ancien commentaire ici annonçait
+ *   « 7 j offerts » alors que la source unique dit trois.
  * - Au scroll : background blanc Apple `rgba(255,255,255,0.92)` + blur
  */
 export default function HomeHeaderCream() {
@@ -30,7 +42,28 @@ export default function HomeHeaderCream() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const subscribeUrl = buildWAUrl({ section: 'final' })
+  // L'action principale mène à l'offre. WhatsApp reste, en second.
+  const urlOffre = useLienOffre('general')
+  const urlWhatsApp = buildWAUrl({ section: 'final' })
+
+  function clicPrincipal(emplacement: string) {
+    mesurer('PrimaryCTAClick', {
+      page: '/',
+      intention: 'general',
+      audience: 'chauffeur',
+      promesse: 'Essayer ' + ESSAI_JOURS + ' jours',
+      detail: { emplacement, destination: '/tarifs2' },
+    })
+  }
+
+  function clicWhatsApp(emplacement: string) {
+    mesurer('WhatsAppClick', {
+      page: '/',
+      intention: 'general',
+      audience: 'chauffeur',
+      detail: { emplacement },
+    })
+  }
 
   return (
     <header
@@ -91,10 +124,9 @@ export default function HomeHeaderCream() {
             </a>
             {/* Souscrire — noir Apple solide */}
             <div className="ml-3 flex flex-col items-end">
-              <a
-                href={subscribeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={urlOffre}
+                onClick={() => clicPrincipal('header-bureau')}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all hover:opacity-90 active:scale-95"
                 style={{
                   background: 'linear-gradient(135deg, #8C52FF, #6C3CE0)',
@@ -102,9 +134,9 @@ export default function HomeHeaderCream() {
                   boxShadow: '0 6px 20px -6px rgba(140,82,255,0.5)',
                 }}
               >
-                <MessageCircle className="w-3.5 h-3.5" />
-                Souscrire
-              </a>
+                Essayer
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
               <span
                 className="text-[9px] font-semibold uppercase mt-1 tabular-nums"
                 style={{
@@ -112,7 +144,7 @@ export default function HomeHeaderCream() {
                   color: '#86868b',
                 }}
               >
-                Réponse en moins d&apos;1 min · gratuit
+                {ESSAI_JOURS} jours d&apos;essai · 0 € débité
               </span>
             </div>
           </div>
@@ -162,16 +194,29 @@ export default function HomeHeaderCream() {
                 >
                   Connexion
                 </a>
-                <a
-                  href={subscribeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMobileOpen(false)}
+                <Link
+                  href={urlOffre}
+                  onClick={() => { clicPrincipal('header-mobile'); setMobileOpen(false) }}
                   className="mt-3 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-full text-white text-sm font-semibold active:scale-95"
                   style={{ background: 'linear-gradient(135deg, #8C52FF, #6C3CE0)', boxShadow: '0 8px 24px -8px rgba(140,82,255,0.5)' }}
                 >
+                  Essayer {ESSAI_JOURS} jours
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                {/*
+                  WhatsApp reste accessible — mais en second. Il aide à décider ;
+                  il n'est plus la seule sortie du site.
+                */}
+                <a
+                  href={urlWhatsApp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => { clicWhatsApp('header-mobile'); setMobileOpen(false) }}
+                  className="mt-2 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-medium active:scale-95"
+                  style={{ color: '#1d1d1f', border: '1px solid rgba(0,0,0,0.12)' }}
+                >
                   <MessageCircle className="w-4 h-4" />
-                  Souscrire — discuter avec Ajnaya
+                  Poser une question à Ajnaya
                 </a>
                 <span
                   className="text-[10px] font-semibold uppercase mt-2 tabular-nums text-center"
@@ -180,7 +225,7 @@ export default function HomeHeaderCream() {
                     color: '#86868b',
                   }}
                 >
-                  Réponse en moins d&apos;1 min · gratuit
+                  0 € débité aujourd&apos;hui
                 </span>
               </div>
             </motion.div>

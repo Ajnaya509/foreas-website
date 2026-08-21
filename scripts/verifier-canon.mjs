@@ -30,7 +30,7 @@
  * balayages manuels avant d'être vu.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, extname } from 'node:path'
 
 const RACINE = 'src'
@@ -429,6 +429,58 @@ for (const chemin of fichiers(RACINE)) {
       pourquoi:
         "Une route qui a besoin des droits serveur doit les avoir ou échouer franchement. Ce `||` la fait basculer sans bruit sur les droits d'un visiteur anonyme le jour d'une rotation de clé : pas de 500, pas d'alerte, juste des réponses incomplètes et des écritures refusées en silence. Utilise clientServeur() ou clientServeurOuNull() depuis src/lib/supabaseServeur.ts.",
     })
+  }
+}
+
+// ─── L'ACCUEIL DOIT MENER À LA CAISSE ───────────────────────────────────────
+//
+// 🔴 MESURÉ LE 21/08/2026 sur le HTML servi de la page d'accueil :
+// ZÉRO occurrence de « tarifs2 », SIX liens WhatsApp. Le bouton du menu qui
+// s'appelait « Souscrire » ouvrait lui aussi une conversation.
+//
+// Depuis la porte d'entrée du site, la page où l'on paie était inatteignable
+// autrement qu'en tapant l'adresse à la main. Ce n'est pas un bouton oublié :
+// c'est un site qui envoie tout le monde discuter et espère que la discussion
+// vendra. Résultat mesuré : 0 € jamais attribué au site.
+//
+// Cette règle relit les composants montés sur l'accueil. Si plus aucun ne
+// pointe vers l'offre, elle échoue — avant le déploiement, pas après.
+{
+  const accueil = join(RACINE, 'app/page.tsx')
+  if (existsSync(accueil)) {
+    const page = readFileSync(accueil, 'utf8')
+
+    // Les composants réellement montés, lus dans le JSX de l'accueil.
+    const montes = [...page.matchAll(/<([A-Z][A-Za-z0-9]*)\b/g)].map((m) => m[1])
+    const sources = [page]
+    for (const nom of new Set(montes)) {
+      for (const chemin of fichiers(RACINE)) {
+        if (chemin.endsWith(`/${nom}.tsx`)) sources.push(readFileSync(chemin, 'utf8'))
+      }
+    }
+
+    // ⚠️ ON RETIRE LES COMMENTAIRES AVANT DE CHERCHER.
+    // Premier jet de cette règle : elle passait au vert sur l'ancienne version
+    // du site. La cause : ZoneCapPartnerCTA.tsx citait « /tarifs2 » dans un
+    // commentaire d'explication. Un commentaire qui parle d'un lien n'est pas
+    // un lien — et il suffisait à rendre ce garde-fou inutile.
+    const sansCommentaires = (src) =>
+      src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
+
+    // Et on exige un CHEMIN, pas une mention : un href, ou le crochet qui
+    // fabrique l'adresse de l'offre.
+    const motifLien = /href=\{?['"`]?[^'"`}\s]*tarifs2|useLienOffre\s*\(|lienOffre\s*\(/
+
+    const versLOffre = sources.some((src) => motifLien.test(sansCommentaires(src)))
+    if (!versLOffre) {
+      infractions.push({
+        fichier: 'src/app/page.tsx',
+        quoi: "aucun chemin de l'accueil vers la page de paiement",
+        extrait: `${montes.length} composants montés, aucun ne mène à /tarifs2`,
+        pourquoi:
+          "Le 21/08/2026, l'accueil offrait six sorties WhatsApp et zéro lien vers /tarifs2 : un visiteur décidé ne pouvait pas payer. WhatsApp a sa place — en action secondaire, pour aider à décider. L'action principale doit mener à l'offre.",
+      })
+    }
   }
 }
 

@@ -7,6 +7,7 @@ import { MapPin, ArrowRight, LocateFixed } from 'lucide-react'
 import { useTypewriter } from '@/hooks/useTypewriter'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import ZoneAutocomplete from './ZoneAutocomplete'
+import { mesurer } from '@/lib/mesure'
 
 // Modale lourde (posthog + fingerprint + carte zone) → lazy : ne charge QU'à l'ouverture.
 // Le hero peint sans elle = LCP plus rapide, surtout sur mobile.
@@ -66,6 +67,14 @@ export default function HomeHeroCream() {
     setHasInteracted(true)
     if (initialZone) setZoneInput(initialZone)
     setModalOpen(true)
+    // L'ouverture de la fenêtre Ajnaya est LE geste d'intérêt du héros. Elle
+    // n'était comptée que par `fbq`, qui n'existe pas faute d'identifiant Meta.
+    mesurer('AjnayaOpened', {
+      page: '/',
+      intention: 'zones',
+      audience: 'chauffeur',
+      detail: { zone: initialZone || null, origine: 'recherche-heros' },
+    })
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('trackCustom', 'AjnayaModalOpened', {
         zone: initialZone || 'empty',

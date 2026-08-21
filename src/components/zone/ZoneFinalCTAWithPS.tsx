@@ -3,6 +3,10 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import Link from 'next/link'
+import { useLienOffre } from '@/hooks/useLienOffre'
+import { ESSAI_JOURS } from '@/lib/offre'
+import { mesurer } from '@/lib/mesure'
 
 /**
  * ZoneFinalCTAWithPS — Section 7 final CTA + PS signature humaine
@@ -16,6 +20,16 @@ import { buildWAUrl } from '@/lib/whatsappLink'
  */
 export default function ZoneFinalCTAWithPS() {
   const handleWAClick = () => {
+    // ⚠️ Avant, ce clic n'était compté QUE par le pixel Meta. Or l'identifiant
+    // Meta n'est pas configuré (`meta_conversions` : 0 ligne), donc `fbq`
+    // n'existe pas et la condition était toujours fausse. Autrement dit : le
+    // seul chemin de sortie du site n'était compté nulle part.
+    mesurer('WhatsAppClick', {
+      page: '/',
+      intention: 'general',
+      audience: 'chauffeur',
+      detail: { emplacement: 'cta-final' },
+    })
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('trackCustom', 'WhatsAppLinkClicked', {
         section: 'final',
@@ -24,6 +38,17 @@ export default function ZoneFinalCTAWithPS() {
   }
 
   const waUrl = buildWAUrl({ section: 'final' })
+  const urlOffre = useLienOffre('general')
+
+  const clicPrincipal = () => {
+    mesurer('PrimaryCTAClick', {
+      page: '/',
+      intention: 'general',
+      audience: 'chauffeur',
+      promesse: 'Essayer ' + ESSAI_JOURS + ' jours',
+      detail: { emplacement: 'cta-final', destination: '/tarifs2' },
+    })
+  }
 
   return (
     <section className="relative py-16 sm:py-28 px-4 overflow-hidden">
@@ -63,24 +88,46 @@ export default function ZoneFinalCTAWithPS() {
             Toi seul tranches.
           </p>
 
+          {/*
+            ACTION PRINCIPALE : la page où l'on paie. Avant le 21/08/2026, ce
+            bloc n'offrait QUE WhatsApp — comme les cinq autres sorties de
+            l'accueil. Un visiteur décidé n'avait aucun moyen de payer.
+
+            ⚠️ Les mentions rassurantes ont changé avec la destination.
+            « Sans inscription » était vrai pour WhatsApp et FAUX ici :
+            `/api/checkout` pose `payment_method_collection: 'always'`, donc la
+            carte est demandée. Une réassurance qu'on n'honore pas se paie au
+            moment du débit, pas au moment du clic.
+          */}
+          <Link
+            href={urlOffre}
+            onClick={clicPrincipal}
+            className="inline-flex items-center justify-center gap-2 sm:gap-3 px-8 sm:px-12 py-4 rounded-2xl t-h3 transition-all bg-gradient-to-r from-[#8C52FF] to-[#6C3CE0] hover:from-[#9A66FF] hover:to-[#7B4CF0] text-white"
+            style={{ boxShadow: '0 0 100px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
+          >
+            Essayer {ESSAI_JOURS} jours
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+
+          <div className="flex items-center justify-center gap-x-5 gap-y-2 mt-6 text-white/45 t-caption flex-wrap tabular-nums">
+            <span>💳 Carte demandée</span>
+            <span>✓ 0 € débité aujourd&apos;hui</span>
+            <span>🛡️ Sans engagement</span>
+          </div>
+
+          {/* ACTION SECONDAIRE : WhatsApp. Il aide à décider, il ne remplace
+              plus la caisse. Sans inscription — et là, c'est vrai. */}
           <a
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWAClick}
-            className="inline-flex items-center justify-center gap-2 sm:gap-3 px-8 sm:px-12 py-4 rounded-2xl t-h3 transition-all bg-gradient-to-r from-[#8C52FF] to-[#6C3CE0] hover:from-[#9A66FF] hover:to-[#7B4CF0] text-white"
-            style={{ boxShadow: '0 0 100px rgba(140,82,255,0.55), 0 4px 20px rgba(0,0,0,0.4)' }}
+            className="inline-flex items-center justify-center gap-2 mt-8 px-6 py-3 rounded-2xl t-body text-white/70 hover:text-white transition-colors border border-white/15 hover:border-white/30"
           >
-            <MessageCircle className="w-5 h-5" />
-            Lance Ajnaya — 0&nbsp;€ aujourd&apos;hui
-            <ArrowRight className="w-5 h-5" />
+            <MessageCircle className="w-4 h-4" />
+            Une question ? Parle à Ajnaya
           </a>
-
-          <div className="flex items-center justify-center gap-x-5 gap-y-2 mt-6 text-white/45 t-caption flex-wrap tabular-nums">
-            <span>🔒 Sans inscription</span>
-            <span>✓ 0 € débité</span>
-            <span>🛡️ Sans engagement</span>
-          </div>
+          <p className="mt-3 text-white/35 t-caption">Sans inscription, réponse immédiate.</p>
 
           {/* PS signature humaine — Halbert "lettre d'un ami" */}
           <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-lg mx-auto">

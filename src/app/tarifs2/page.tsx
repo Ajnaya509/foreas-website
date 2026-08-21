@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { trackInitiateCheckout } from '@/lib/tracking'
+import { mesurer } from '@/lib/mesure'
 import { authUrls } from '@/lib/auth-urls'
 // 14/08/2026 — les montants et la durée d'essai ne sont plus écrits à la main dans cette
 // page. Ils viennent des DEUX sources uniques : offre.ts (ce qu'on facture) et
@@ -305,6 +306,16 @@ const PRIX_AVEC_PARRAIN = formaterEuros(Math.round(PRIX_MENSUEL_CENTIMES * (1 - 
 function TarifsContent() {
   const searchParams = useSearchParams()
   const isSuccess = searchParams.get('success') === 'true'
+
+  // La vue de la page de prix. C'est le dénominateur de tout : sans elle, on
+  // ne peut pas dire si les gens n'arrivent pas jusqu'ici, ou s'ils arrivent
+  // et repartent. Les deux problèmes se soignent différemment.
+  const vueComptee = useRef(false)
+  useEffect(() => {
+    if (vueComptee.current) return
+    vueComptee.current = true
+    mesurer('PricingView', { page: '/tarifs2', intention: 'general', audience: 'chauffeur' })
+  }, [])
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [flowState, setFlowState] = useState<'idle' | 'bridge' | 'checkout'>('idle')
@@ -317,7 +328,18 @@ function TarifsContent() {
     // Paiement immédiat → droit au checkout, pas de bridge qui promettrait « 0 € aujourd'hui ».
     setFlowState(IMMEDIATE_PAYMENT ? 'checkout' : 'bridge')
     const price = billing === 'monthly' ? plan.monthlyPrice : plan.annualMonthlyPrice
+    // Deux destinations, volontairement. `trackInitiateCheckout` part vers
+    // Meta — utile le jour où l'identifiant existera. `mesurer` écrit chez
+    // nous, aujourd'hui. Le même `event_id` des deux côtés évitera de compter
+    // l'achat deux fois quand les deux chemins seront vivants.
     trackInitiateCheckout(plan.name, price)
+    mesurer('InitiateCheckout', {
+      page: '/tarifs2',
+      intention: 'general',
+      audience: 'chauffeur',
+      promesse: plan.name,
+      detail: { prix_centimes: Math.round(price * 100) },
+    })
   }
   const closeAll = () => { setFlowState('idle'); setSelectedPlan(null) }
   const confirmCheckout = () => setFlowState('checkout')
