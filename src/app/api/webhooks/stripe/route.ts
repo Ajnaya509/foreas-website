@@ -44,8 +44,34 @@ async function upsertSubscriber(data: Record<string, unknown>) {
   try {
     const { createClient } = await import('@supabase/supabase-js')
     const supabase = createClient(supabaseUrl, supabaseKey)
-    await supabase.from('subscribers').upsert(data, { onConflict: 'stripe_subscription_id' })
-    console.log('[webhook] Subscriber sauvegardé:', data.email)
+    // ⚠️ 21/08/2026 — CE JOURNAL DISAIT « SAUVEGARDÉ » À CHAQUE ÉCHEC.
+    //
+    // L'écriture échouait en 42P10 : `ON CONFLICT (stripe_subscription_id)`
+    // sans index unique sur cette colonne. Reproduit sans rien écrire :
+    //   EXPLAIN INSERT INTO subscribers (…) ON CONFLICT (stripe_subscription_id) …
+    //   → « there is no unique or exclusion constraint matching … »
+    //
+    // Et le `catch` ne s'exécutait JAMAIS : supabase-js ne rejette pas sur une
+    // erreur PostgREST, il RÉSOUT avec { data: null, error }. Personne ne
+    // déstructurait `error`, donc la ligne suivante s'exécutait et journalisait
+    // un succès. Le bloc `catch` était du code mort.
+    //
+    // C'est le pire mode de panne : pas d'exception, pas d'alerte, un journal
+    // qui affirme le contraire de ce qui s'est passé. Ajouter un `throw` dans
+    // le catch n'aurait rien changé — il ne tourne pas.
+    //
+    // L'index unique manquant est posé par la migration
+    // subscribers_index_unique_sur_stripe_subscription_id.
+    const { error } = await supabase
+      .from('subscribers')
+      .upsert(data, { onConflict: 'stripe_subscription_id' })
+    if (error) {
+      // Pas d'adresse e-mail dans le journal : l'identifiant Stripe suffit à
+      // retrouver la ligne, et il n'est pas une donnée personnelle.
+      console.error(`[webhook] ÉCHEC écriture subscriber (${data.stripe_subscription_id ?? 'sans id'}) : ${error.code} ${error.message}`)
+      return
+    }
+    console.log('[webhook] subscriber enregistré :', data.stripe_subscription_id ?? 'sans id')
   } catch (e) {
     console.error('[webhook] Erreur Supabase:', e)
   }
@@ -58,9 +84,15 @@ async function updateSubscriberStatus(stripeSubId: string, status: string) {
   try {
     const { createClient } = await import('@supabase/supabase-js')
     const supabase = createClient(supabaseUrl, supabaseKey)
-    await supabase.from('subscribers')
+    // Même piège que ci-dessus : sans déstructurer `error`, un échec passait
+    // pour un succès silencieux.
+    const { error } = await supabase
+      .from('subscribers')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('stripe_subscription_id', stripeSubId)
+    if (error) {
+      console.error(`[webhook] ÉCHEC mise à jour statut (${stripeSubId}) : ${error.code} ${error.message}`)
+    }
   } catch (e) {
     console.error('[webhook] Erreur update status:', e)
   }

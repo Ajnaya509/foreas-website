@@ -441,6 +441,45 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── AUCUN CHIFFRE CALCULÉ DANS UN MESSAGE ENVOYÉ AU NOM DU CHAUFFEUR ───────
+//
+// 🔴 MESURÉ LE 21/08/2026 : le bouton du bloc « douleur » de l'accueil
+// pré-remplissait « je touche environ 14€ net » pendant que la page affichait
+// 8,71 € au même instant, à quarante pixels de là. Les deux venaient du MÊME
+// composant. À 100 €, l'écart passait de 34,82 € affiché à 56 € annoncé.
+//
+// Deux raisons de l'interdire, pas seulement de l'aligner :
+//
+//  1. ce message s'affiche dans la conversation du chauffeur COMME S'IL
+//     L'AVAIT ÉCRIT. On ne lui fait pas dire un chiffre — surtout pas un que
+//     notre propre page dément ;
+//  2. il n'existe pas de bon coefficient à mettre là. FOREAS porte trois taux
+//     de commission Uber saisis à la main et jamais mesurés (0,45 · 0,25 ·
+//     0,75 de part chauffeur). En choisir un en aurait fabriqué un quatrième.
+//
+// Le message porte le montant que le chauffeur a lui-même réglé, et POSE la
+// question. Ajnaya répond, en connaissant sa plateforme et son statut.
+{
+  const chemin = join(RACINE, 'lib/whatsappLink.ts')
+  if (existsSync(chemin)) {
+    const source = readFileSync(chemin, 'utf8')
+    const sansCommentaires = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+    // Un montant multiplié par un coefficient, à l'intérieur d'un gabarit.
+    const m = sansCommentaires.match(/\$\{[^}]*\b(?:amount|montant|brut|grossFare)\b[^}]*[*/][^}]*\}/)
+    if (m) {
+      infractions.push({
+        fichier: 'src/lib/whatsappLink.ts',
+        quoi: 'un montant calculé dans un message envoyé au nom du chauffeur',
+        extrait: m[0],
+        pourquoi:
+          "Ce message s'affiche dans la conversation du chauffeur comme s'il l'avait écrit lui-même. Le 21/08/2026, il annonçait 14 € net pendant que la même page affichait 8,71 €. Le message doit porter le montant que le chauffeur a réglé et POSER la question — pas y répondre avec un taux que personne n'a mesuré.",
+      })
+    }
+  }
+}
+
 // ─── L'ACCUEIL DOIT MENER À LA CAISSE ───────────────────────────────────────
 //
 // 🔴 MESURÉ LE 21/08/2026 sur le HTML servi de la page d'accueil :

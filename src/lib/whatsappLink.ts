@@ -69,7 +69,31 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
         : `Salut Ajnaya, je veux le tarif horaire exact sur ma zone.`
 
     case 'pain':
-      return `Salut Ajnaya. Sur une course de ${amount ?? 25}€, je touche environ ${Math.round((amount ?? 25) * 0.56)}€ net. Je gagnerais combien avec FOREAS sur les mêmes courses ?`
+      // ⚠️ 21/08/2026 — CE MESSAGE AFFIRMAIT UN NET QUE LA PAGE CONTREDISAIT.
+      //
+      // Il écrivait : « je touche environ ${Math.round(amount * 0.56)}€ net ».
+      // Sur 25 € cela donnait 14 €. Or le bloc qui porte ce bouton affichait
+      // 8,71 € au même instant, à quarante pixels de là — les deux sortent du
+      // MÊME composant (ZonePainCalculator : le net à la ligne 31, le lien à
+      // la ligne 52). Et l'écart grandissait avec le curseur : à 100 €, la
+      // page annonçait 34,82 € et le message 56 €.
+      //
+      // Deux raisons de ne pas simplement « aligner les deux coefficients » :
+      //
+      // 1. CE MESSAGE PART AU NOM DU CHAUFFEUR. Il s'affiche dans SA
+      //    conversation comme s'il l'avait écrit. On ne lui fait pas dire un
+      //    chiffre — surtout pas un chiffre que notre propre page dément.
+      //
+      // 2. IL N'Y A PAS DE BON COEFFICIENT À METTRE ICI. FOREAS porte trois
+      //    taux de commission Uber saisis à la main et jamais mesurés (0,45
+      //    dans le calculateur, 0,25 dans pieuvre_platform_commissions, 0,75
+      //    de part chauffeur dans coachInstant.ts). Choisir en aurait fait un
+      //    quatrième, présenté comme une vérité.
+      //
+      // Donc : le message porte le brut que le chauffeur a lui-même réglé, et
+      // POSE la question au lieu d'y répondre. C'est à Ajnaya de calculer, en
+      // connaissant sa plateforme et son statut — pas à un lien de le deviner.
+      return `Salut Ajnaya. Sur une course de ${amount ?? 25}€, il me reste quoi vraiment ? Et je gagnerais combien de plus avec FOREAS sur les mêmes courses ?`
 
     case 'mechanism':
       return `Salut Ajnaya, je veux la démo de 90 secondes.`
