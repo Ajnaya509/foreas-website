@@ -74,6 +74,13 @@ const PORTES = [
 ]
 
 let echecs = 0
+
+/**
+ * Ce qui manque et qui n'est PAS un échec : des valeurs que seul un humain peut
+ * fournir. Séparé des échecs pour que le rouge garde son sens — un contrôle
+ * rouge en permanence finit par être lu comme du vert.
+ */
+const enAttente = []
 const dire = (ok, texte) => {
   console.log(`  ${ok ? '✅' : '❌'} ${texte}`)
   if (!ok) echecs++
@@ -551,6 +558,66 @@ console.log('\n── Les liens de sortie vers l\'offre ──')
   }
 }
 
+// ─── LES FICHIERS QUI DEVRAIENT OUVRIR L'APP SERVENT UN GABARIT VIDE ────────
+//
+// Mesuré le 21/08/2026 :
+//   /.well-known/apple-app-site-association → 200, contient « [TEAM_ID] »
+//   /.well-known/assetlinks.json            → 200, contient « [SHA256_FINGERPRINT] »
+//
+// Deux chaînes de gabarit jamais remplacées, parties en production le 5 mai.
+// C'est exactement le défaut « id[APP_ID] » qui avait envoyé tous les visiteurs
+// iPhone sur une page introuvable — resté vivant ici, dans deux fichiers que
+// personne ne relit jamais.
+//
+// ⚠️ CE CONTRÔLE NE DIT PAS « LES LIENS PROFONDS SONT CASSÉS ». C'est plus
+// subtil, et la nuance compte : l'application ne revendique AUCUN domaine
+// (aucune trace d'`associatedDomains` ni d'`autoVerify` dans les cinq dépôts).
+// Ces deux fichiers seraient donc inertes même parfaitement remplis. Et le
+// passage du site vers l'app fonctionne déjà par un autre chemin.
+//
+// CE QUE CE CONTRÔLE DIT : deux fichiers répondent 200 avec un gabarit non
+// rempli. Un 200 fait croire que quelque chose est configuré. Tant que ces
+// chaînes sont là, la porte le RÉPÈTE — au lieu de laisser un défaut vieux de
+// trois mois dormir derrière un code de succès.
+//
+// ⚠️ ET SURTOUT : l'empreinte Android ne se DEVINE JAMAIS. Elle vient de la
+// console Google Play. Un identifiant plausible mais faux serait pire que le
+// gabarit — « [TEAM_ID] » se dénonce à la lecture, pas une valeur inventée.
+console.log('\n── Les fichiers d\'ouverture de l\'app ──')
+{
+  const GABARITS = [
+    { chemin: '/.well-known/apple-app-site-association', marqueur: '[TEAM_ID]', quoi: 'identifiant d\'équipe Apple' },
+    { chemin: '/.well-known/assetlinks.json', marqueur: '[SHA256_FINGERPRINT]', quoi: 'empreinte de signature Android' },
+  ]
+  for (const { chemin, marqueur, quoi } of GABARITS) {
+    try {
+      const r = await fetch(BASE + chemin)
+      const corps = await r.text()
+      const vide = corps.includes(marqueur)
+      if (!vide) {
+        dire(true, `${chemin} → rempli`)
+      } else {
+        // ⚠️ ON NE FAIT PAS ÉCHOUER LA PORTE POUR ÇA, ET C'EST RÉFLÉCHI.
+        //
+        // Ce défaut ne bloque rien : l'application ne revendique aucun domaine,
+        // donc ces fichiers seraient inertes même remplis. Faire échouer chaque
+        // vérification de mise en ligne pour un défaut non bloquant a un coût
+        // certain : au bout de trois jours, on lit le rouge sans le voir, et le
+        // jour où il signale autre chose, personne ne le remarque.
+        //
+        // Mais on ne le passe pas non plus en vert. Il est ATTENDU, il porte le
+        // nom de ce qui manque, et il attend quelqu'un.
+        enAttente.push(`${chemin} — ${quoi}`)
+        console.log(`  ⏳ ${chemin} → gabarit NON REMPLI (${quoi} manquant)`)
+        console.log(`     ℹ️  la valeur vient de la console du magasin d'applications. NE JAMAIS l'inventer :`)
+        console.log(`        « ${marqueur} » se dénonce à la lecture, une valeur plausible mais fausse non.`)
+      }
+    } catch (e) {
+      dire(false, `${chemin} → ${e.message}`)
+    }
+  }
+}
+
 // ─── LE WEBHOOK STRIPE REFUSE-T-IL CE QUI NE VIENT PAS DE STRIPE ? ──────────
 //
 // Deux contrôles opposés, et c'est voulu :
@@ -639,6 +706,11 @@ console.log('\n── Fraîcheur des pages lues ──')
         ? ` ⚠️ Au-delà d'un quart d'heure : si tu viens de mettre en ligne, relance dans quelques minutes — ces contrôles ont pu valider la version précédente.`
         : ''),
   )
+}
+
+if (enAttente.length > 0) {
+  console.log(`\n⏳ ${enAttente.length} valeur(s) attendent quelqu'un — ce ne sont pas des échecs :`)
+  for (const a of enAttente) console.log(`     · ${a}`)
 }
 
 console.log(
