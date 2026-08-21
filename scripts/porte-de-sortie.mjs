@@ -518,14 +518,20 @@ console.log('\n── Les portes fermées le 21/08 ──')
     { chemin: '/api/checkout/activate', methode: 'POST', quoi: 'activation d\'abonnement' },
     { chemin: '/api/checkout/verify', methode: 'GET', quoi: 'vérification d\'abonnement' },
   ]
-  for (const { chemin, methode, quoi } of FERMEES_SITE) {
+  // ⚠️ Celle-ci répond 410 et non 404 : la ressource a existé, elle est retirée
+  // volontairement. Elle créait un client ET un abonnement Stripe réels sans
+  // aucune authentification, avec une remise de 20 % obtenable par un simple
+  // booléen dans le corps de la requête.
+  FERMEES_SITE.push({ chemin: '/api/subscription/create', methode: 'POST', quoi: 'création d\'abonnement sans authentification', attendu: 410 })
+  for (const porte of FERMEES_SITE) {
+    const { chemin, methode, quoi } = porte
     try {
       const r = await fetch(BASE + chemin, {
         method: methode,
         headers: { 'Content-Type': 'application/json' },
         ...(methode === 'POST' ? { body: '{}' } : {}),
       })
-      dire(r.status === 404, `${chemin} (${quoi}) → ${r.status}, attendu 404`)
+      dire(r.status === (porte.attendu ?? 404), `${chemin} (${quoi}) → ${r.status}, attendu ${porte.attendu ?? 404}`)
     } catch (e) {
       dire(false, `${chemin} → ${e.message}`)
     }

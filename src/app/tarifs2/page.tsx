@@ -24,6 +24,7 @@ import { PARRAINAGE, PLATEFORMES, COMMUNAUTE, garantieAffichable } from '@/lib/v
 // `npm run canon`.
 import { citationDe, temoignagePubliable, temoignagePubliableParNom } from '@/lib/consentements'
 
+import AnimatedCounter from '@/components/AnimatedCounter'
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
 // ─── Utils ───────────────────────────────────────────────────────────────────
@@ -43,28 +44,24 @@ function formatDateFR(d: Date): string {
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-function AnimatedCounter({ target, suffix = '', duration = 2000 }: { target: number; suffix?: string; duration?: number }) {
-  const [value, setValue] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const started = useRef(false)
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started.current) {
-        started.current = true
-        const start = performance.now()
-        const animate = (now: number) => {
-          const p = Math.min((now - start) / duration, 1)
-          setValue(Math.round((1 - Math.pow(1 - p, 3)) * target))
-          if (p < 1) requestAnimationFrame(animate)
-        }
-        requestAnimationFrame(animate)
-      }
-    }, { threshold: 0.3 })
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [target, duration])
-  return <span ref={ref}>{value}{suffix}</span>
-}
+/**
+ * ⚠️ 21/08/2026 — UN COMPTEUR JUMEAU VIVAIT ICI, ET IL AFFICHAIT ZÉRO.
+ *
+ * Mesuré dans le HTML servi de cette page :
+ *     <span>0</span> plateformes : Uber, Bolt, Heetch
+ *     <span>0</span> chauffeurs filmés, à visage découvert
+ *     <span>0j</span> d'essai — 0 € débité
+ *
+ * La page se contredisait dans le même document : « 3 jours pour te faire
+ * ton avis » se trouvait trois cents caractères plus loin.
+ *
+ * Il existait DEUX compteurs dans ce dépôt — celui-ci, local, et
+ * src/components/AnimatedCounter.tsx. J'ai d'abord corrigé le partagé, mesuré
+ * la page… et le zéro était toujours là. Le piège du jumeau, une fois de plus.
+ *
+ * Le local est SUPPRIMÉ, pas corrigé : deux compteurs, c'est une occasion de
+ * n'en réparer qu'un.
+ */
 
 function FaqItem({ q, a, id }: { q: string; a: string; id?: string }) {
   const [open, setOpen] = useState(false)
@@ -684,7 +681,7 @@ function TarifsContent() {
             ].map((kpi, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
                 <div className={'text-4xl sm:text-6xl font-black bg-gradient-to-r ' + kpi.color + ' bg-clip-text text-transparent mb-2 tabular-nums'} style={{ letterSpacing: '-0.04em' }}>
-                  <AnimatedCounter target={kpi.target} suffix={kpi.suffix} />
+                  <AnimatedCounter value={kpi.target} suffix={kpi.suffix} />
                 </div>
                 <p className="text-white/55 text-[11px] sm:text-sm leading-tight">{kpi.label}</p>
               </motion.div>
