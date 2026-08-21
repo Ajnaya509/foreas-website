@@ -20,6 +20,18 @@ import { PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
 import { COMMUNAUTE_PHRASES, COMPTA_PHRASES } from '@/lib/verite-commerciale'
 
 import { garantieAffichable } from '@/lib/verite-commerciale'
+/**
+ * ⚠️ 21/08/2026 — PEUT ÊTRE `undefined`, ET C'EST NOUVEAU.
+ *
+ * `testimonials.data.ts` filtre désormais sur les accords signés. Tant que les
+ * six sont « en attente », la liste est VIDE — donc `TESTIMONIALS[0]` vaut
+ * `undefined` et non plus un témoignage.
+ *
+ * TypeScript ne l'a PAS signalé : sans `noUncheckedIndexedAccess`, l'accès par
+ * indice est typé comme s'il réussissait toujours. Le typecheck passait au vert
+ * sur une page qui aurait planté au premier chargement. Un vert de compilateur
+ * n'est pas une preuve d'exécution.
+ */
 const BINATE = TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[1]
 
 /**
@@ -171,7 +183,7 @@ export default function ReactivationClient() {
         {/* ── PREUVE VIDÉO (l'humain casse la méfiance) ─────────────────────── */}
         {/* Remplaçable par la vidéo FONDATEUR quand elle est prête. En attendant : Binaté, cas réel. */}
         <section className="mt-8">
-          <TestimonialVideoCard testimonial={BINATE} index={0} showQuote />
+          {BINATE && (<TestimonialVideoCard testimonial={BINATE} index={0} showQuote />)}
           {/*
             ⚠️ Ici s'affichait « 8 chauffeurs sur 10 qui reviennent choisissent Pro ».
             Mesuré faux le 14/08/2026 : `select count(*) from subscriptions` → 4 (toutes

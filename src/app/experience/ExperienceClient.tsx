@@ -56,6 +56,18 @@ const heroReveal = {
   transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
 }
 
+/**
+ * ⚠️ 21/08/2026 — PEUT ÊTRE `undefined`, ET C'EST NOUVEAU.
+ *
+ * `testimonials.data.ts` filtre désormais sur les accords signés. Tant que les
+ * six sont « en attente », la liste est VIDE — donc `TESTIMONIALS[0]` vaut
+ * `undefined` et non plus un témoignage.
+ *
+ * TypeScript ne l'a PAS signalé : sans `noUncheckedIndexedAccess`, l'accès par
+ * indice est typé comme s'il réussissait toujours. Le typecheck passait au vert
+ * sur une page qui aurait planté au premier chargement. Un vert de compilateur
+ * n'est pas une preuve d'exécution.
+ */
 const BINATE = TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[0]
 
 /**
@@ -415,7 +427,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
         <div className="mx-auto max-w-md md:max-w-xl">
           <p className="mb-4 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Pas moi qui le dis. Eux.</p>
-          <TestimonialVideoCard testimonial={BINATE} showQuote />
+          {BINATE && (<TestimonialVideoCard testimonial={BINATE} showQuote />)}
         </div>
       </motion.section>
 

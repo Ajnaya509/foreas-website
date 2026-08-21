@@ -1,7 +1,7 @@
 // ── 20/08/2026 — LE TEXTE VIENT DU REGISTRE, PLUS D'ICI ────────────────────
 // La parole de la même personne existait en quatre versions dans trois
 // fichiers. Elle vit maintenant dans src/lib/consentements.ts, et là seulement.
-import { citationDe } from '@/lib/consentements'
+import { citationDe, temoignagePubliable } from '@/lib/consentements'
 /**
  * TESTIMONIALS DATA — FOREAS
  *
@@ -18,6 +18,9 @@ import { citationDe } from '@/lib/consentements'
  */
 
 export interface Testimonial {
+  /** L'identifiant dans le registre des accords — sans lui, impossible de
+   *  demander la permission personne par personne. */
+  registre: string
   /** Ordre d'affichage (1 = primary card) */
   order: number
   /** Mux Playback ID (public policy) */
@@ -46,7 +49,7 @@ export interface Testimonial {
   keyEmotion: string
 }
 
-export const TESTIMONIALS: readonly Testimonial[] = [
+const TOUS: readonly Testimonial[] = [
   // ─── 1. HAITHAM — primary card + Big Domino loop background ─────────
   {
     order: 1,
@@ -55,6 +58,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Haitham B.',
     context: 'Paris · 7 ans VTC',
     profile: 'Chauffeur indépendant maghrébin · pivot identification persona',
+    registre: 'haitham',
     quoteShort: `« ${citationDe('haitham')} »`,
     gainBadge: 'Liberté + lien',
     detail: '7 ans · Paris',
@@ -72,6 +76,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Binate A.',
     context: 'Marne-la-Vallée · 5 ans · Tesla',
     profile: 'Chauffeur Tesla · clientèle privée Disneyland · profil aspirationnel',
+    registre: 'binate',
     quoteShort: `« ${citationDe('binate')} »`,
     gainBadge: '+30 % revenus',
     detail: 'Tesla · Disneyland',
@@ -90,6 +95,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Zefi K.',
     context: 'Marne-la-Vallée · ex-cadre Paris',
     profile: 'Reconversion cadre → chauffeur · Disneyland · service haut de gamme',
+    registre: 'zefi',
     quoteShort: `« ${citationDe('zefi')} »`,
     gainBadge: 'Indépendance',
     detail: 'Reconversion · Disneyland',
@@ -106,6 +112,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Dragan P.',
     context: 'Paris · 9 ans VTC',
     profile: 'Europe de l\'Est · 49 ans · costume · 2 ans FOREAS',
+    registre: 'dragan',
     quoteShort: `« ${citationDe('dragan')} »`,
     gainBadge: '2 ans, il reste',
     detail: '9 ans VTC · 2 ans FOREAS',
@@ -126,6 +133,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Hadietou',
     context: 'Banlieue parisienne · 9 ans VTC',
     profile: 'Banlieue parisienne · 35 ans · indépendant',
+    registre: 'hadietou',
     quoteShort: `« ${citationDe('hadietou')} »`,
     gainBadge: 'Il recommande',
     detail: 'Indépendant · 9 ans VTC',
@@ -145,6 +153,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: 'Nikolic N.',
     context: 'Paris · 10 ans VTC',
     profile: 'Europe de l\'Est · 52 ans · costume · 2 ans FOREAS',
+    registre: 'nikolic',
     quoteShort: `« ${citationDe('nikolic')} »`,
     gainBadge: '2 ans, il reste',
     detail: '10 ans VTC · 2 ans FOREAS',
@@ -155,7 +164,27 @@ export const TESTIMONIALS: readonly Testimonial[] = [
 ] as const
 
 /** Big Domino loop (Haitham par défaut) — vidéo en background du Big Domino */
-export const BIG_DOMINO_VIDEO = TESTIMONIALS[0]
+/**
+ * ⚠️ 21/08/2026 — CE FICHIER EST LA SOURCE, ET IL NE DEMANDAIT AUCUNE PERMISSION.
+ *
+ * Il lisait la parole de six personnes réelles dans le registre des accords, et
+ * l'exportait telle quelle vers /experience et /reactivation. Les composants en
+ * aval portaient bien un garde — mais un garde « au moins un », donc « tous ou
+ * aucun » : le jour où UN accord est signé, les six s'affichent.
+ *
+ * Filtrer ici protège les deux pages d'un seul geste, et rend l'oubli
+ * impossible en aval : ce qui sort de ce fichier est déjà autorisé.
+ *
+ * Tant que les six accords sont « en attente », cette liste est VIDE. C'est le
+ * comportement voulu.
+ */
+export const TESTIMONIALS: readonly Testimonial[] = TOUS.filter((t) =>
+  temoignagePubliable(t.registre),
+)
+
+/** Peut être `undefined` : la liste est vide tant qu'aucun accord n'est signé. */
+export const BIG_DOMINO_VIDEO: Testimonial | undefined = TESTIMONIALS[0]
 
 /** Bonus WhatsApp Ajnaya (vidéo full envoyée en récompense du push numéro) */
-export const WHATSAPP_BONUS_VIDEO = TESTIMONIALS[1] // Binate (chiffré + Tesla)
+/** Peut être `undefined` — même raison. */
+export const WHATSAPP_BONUS_VIDEO: Testimonial | undefined = TESTIMONIALS[1]

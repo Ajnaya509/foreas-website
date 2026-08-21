@@ -50,7 +50,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Video, X } from 'lucide-react'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
 
-import { personneDe, villeDe, auMoinsUnTemoignagePubliable } from '@/lib/consentements'
+import { personneDe, villeDe, temoignagePubliable } from '@/lib/consentements'
 interface ProofEntry {
   /** L'identifiant au registre des accords. La parole et la ville viennent de là. */
   id: string
@@ -91,11 +91,26 @@ const ENTRIES: ProofEntry[] = ([
   { id: 'dragan',   initial: 'D', accent: 'rose',   tenure: '9 ans VTC' },
   { id: 'hadietou', initial: 'H', accent: 'violet', tenure: '9 ans VTC' },
   { id: 'nikolic',  initial: 'N', accent: 'cyan',   tenure: '10 ans VTC' },
-] as const).map((e) => ({
-  ...e,
-  driver: personneDe(e.id),
-  city: villeDe(e.id) ?? '',
-}))
+] as const)
+  // ⚠️ 21/08/2026 — LE GARDE ÉTAIT « AU MOINS UN », DONC « TOUS OU AUCUN ».
+  //
+  // `auMoinsUnTemoignagePubliable()` cachait tout tant que personne n'était
+  // approuvé. Correct aujourd'hui — les six accords sont en attente. Mais le
+  // jour où UN SEUL est signé, il rend `true`, et LES SIX s'affichent, dont
+  // cinq sans accord.
+  //
+  // C'est le même piège qu'en base la semaine dernière : « à un booléen près ».
+  // Une protection dont la justesse dépend du fait que rien n'a encore changé
+  // n'est pas une protection, c'est un délai.
+  //
+  // On filtre donc personne par personne. Le jour où Haitham signe, Haitham
+  // apparaît — et lui seul.
+  .filter((e) => temoignagePubliable(e.id))
+  .map((e) => ({
+    ...e,
+    driver: personneDe(e.id),
+    city: villeDe(e.id) ?? '',
+  }))
 
 /** La seule chose qu'on sache d'eux, et qu'ils ont accepté qu'on dise. */
 const PREUVE_COPY = 'a filmé son témoignage, à visage découvert'
@@ -202,7 +217,7 @@ export default function LiveSocialProofToasts() {
   // au lieu d'une fonction de nettoyage), puis dans une fonction utilitaire
   // située AU-DESSUS du composant. Un retour anticipé se place après tous les
   // crochets, et dans la bonne fonction.
-  if (!auMoinsUnTemoignagePubliable()) return null
+  if (ENTRIES.length === 0) return null
 
   if (dismissed) return null
 

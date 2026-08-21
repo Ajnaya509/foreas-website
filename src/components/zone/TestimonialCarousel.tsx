@@ -7,7 +7,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import TestimonialVideoCard from './TestimonialVideoCard'
 import { TESTIMONIALS } from './testimonials.data'
 
-import { auMoinsUnTemoignagePubliable } from '@/lib/consentements'
 /**
  * TestimonialCarousel — slider horizontal en boucle infinie avec auto-play
  *
@@ -27,7 +26,11 @@ import { auMoinsUnTemoignagePubliable } from '@/lib/consentements'
 export default function TestimonialCarousel() {
   // Si aucun accord n'est signé, il n'y a rien à faire défiler : la section
   // entière se retire, plutôt que d'afficher un carrousel vide avec ses flèches.
-  if (!auMoinsUnTemoignagePubliable()) return null
+  // 21/08 — testait `auMoinsUnTemoignagePubliable()`, un « tous ou aucun » :
+  // un seul accord signé rendait `true` et affichait les six. La liste importée
+  // est désormais filtrée à la source ; on interroge donc CE qu'on affiche, pas
+  // une seconde source qui pourrait dire autre chose.
+  if (TESTIMONIALS.length === 0) return null
 
   const autoplayRef = useRef(
     Autoplay({

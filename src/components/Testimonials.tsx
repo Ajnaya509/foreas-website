@@ -12,7 +12,7 @@ import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
 // dire à quelqu'un ce qu'il n'a pas dit. Le texte vit maintenant dans
 // src/lib/consentements.ts, et lui seul. Réécrire une citation ici est refusé par
 // `npm run canon`.
-import { citationDe, auMoinsUnTemoignagePubliable } from '@/lib/consentements'
+import { citationDe, temoignagePubliable } from '@/lib/consentements'
 
 // Lazy load Mux Player — only loaded when user clicks play (saves ~200KB from critical path)
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
@@ -23,6 +23,9 @@ const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
  * Thumbnail auto-générée par Mux via: image.mux.com/{playbackId}/thumbnail.webp
  * ─────────────────────────────────────────────────────────────── */
 interface Testimonial {
+  /** L'identifiant dans le registre des accords. Sans lui, on ne peut pas
+   *  demander la permission personne par personne. */
+  registre: string
   id: number
   name: string
   city: string
@@ -78,6 +81,7 @@ const TESTIMONIALS: Testimonial[] = [
     // FAUX : « FOREAS a changé ma manière de travailler. Je sais exactement où
     // aller. » n'apparaît dans AUCUN de ses propos enregistrés. Remplacé par deux
     // de ses key_quotes, mot pour mot.
+    registre: 'binate' as const,
     quote: citationDe('binate'),
     playbackId: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
     accentColor: '#00d4ff',
@@ -96,6 +100,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Sa zone', label: 'connue par cœur' },
     // FAUX : « FOREAS a transformé ma vision du métier… » n'existe dans aucun de
     // ses propos. Remplacé par sa key_quote — son terrain, pas le produit.
+    registre: 'zefi' as const,
     quote: citationDe('zefi'),
     playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
     accentColor: '#a855f7',
@@ -112,6 +117,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Réponse', label: 'quand il en a besoin' },
     // FAUX : « Moins de temps à attendre, plus de temps à rouler » était du
     // copywriting posé sur un visage réel. Remplacé par ses propos filmés.
+    registre: 'haitham' as const,
     quote: citationDe('haitham'),
     playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
     accentColor: '#22c55e',
@@ -127,6 +133,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Sérieux', label: "et à l'écoute" },
     // FAUX : « FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui
     // comprennent le terrain. » n'est pas de lui. Remplacé par ses propos filmés.
+    registre: 'nikolic' as const,
     quote: citationDe('nikolic'),
     playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
     accentColor: '#f59e0b',
@@ -145,6 +152,7 @@ const TESTIMONIALS: Testimonial[] = [
     stat: { value: 'Confort', label: 'et un futur' },
     // FAUX : « Je recommande FOREAS à tous les chauffeurs… » n'est pas de lui.
     // Remplacé par ses propos filmés (au conditionnel, comme il le dit).
+    registre: 'hadietou' as const,
     quote: citationDe('hadietou'),
     playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
     accentColor: '#ef4444',
@@ -167,11 +175,34 @@ const TESTIMONIALS: Testimonial[] = [
     // Elle perdait « Plus de deux ans avec FOREAS, » : la durée disparaissait
     // de la phrase alors qu'elle en est le sujet. Les cinq autres lisaient
     // déjà le registre.
+    registre: 'dragan' as const,
     quote: citationDe('dragan'),
     playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
     accentColor: '#06b6d4',
   },
 ]
+
+/**
+ * Les témoignages que ce composant a le DROIT d'afficher.
+ *
+ * ⚠️ 21/08/2026 — LE GARDE ÉTAIT « AU MOINS UN », DONC « TOUS OU AUCUN ».
+ *
+ * `auMoinsUnTemoignagePubliable()` cachait tout tant que personne n'était
+ * approuvé. Correct aujourd'hui — les six accords sont en attente. Mais le jour
+ * où UN SEUL est signé, il rend `true`, et TOUS s'affichent, dont ceux qui
+ * n'ont pas d'accord.
+ *
+ * Même piège qu'en base la semaine dernière : « à un booléen près ». Une
+ * protection dont la justesse dépend du fait que rien n'a encore changé n'est
+ * pas une protection, c'est un délai.
+ *
+ * ⚠️ ET LE FILTRE EST AU NIVEAU DU MODULE, PAS DANS LE COMPOSANT. Posé dans le
+ * composant, il coexistait avec cinq usages de la liste NON filtrée (flèches,
+ * pastilles, compteur « 1/6 », carte affichée) : le garde existait et le rendu
+ * l'ignorait. Une seule liste arrive à l'écran, et elle est déjà filtrée.
+ */
+const AUTORISES: Testimonial[] = TESTIMONIALS.filter((t) => temoignagePubliable(t.registre))
+
 
 /* ─── Premium Play Button Overlay ──────────────────────────────────── */
 function PremiumPlayButton({ isVisible }: { isVisible: boolean }) {
@@ -507,11 +538,11 @@ export default function Testimonials() {
   }
 
   const goNext = () => {
-    setActiveIndex((prev) => (prev + 1) % TESTIMONIALS.length)
+    setActiveIndex((prev) => (prev + 1) % AUTORISES.length)
   }
 
   const goPrev = () => {
-    setActiveIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
+    setActiveIndex((prev) => (prev - 1 + AUTORISES.length) % AUTORISES.length)
   }
 
   // Autoplay: starts when section scrolls into view, stops permanently on user interaction
@@ -540,7 +571,7 @@ export default function Testimonials() {
   //
   // La section entière se retire, plutôt que de laisser un carrousel vide avec
   // ses flèches et son titre.
-  if (!auMoinsUnTemoignagePubliable()) return null
+  if (AUTORISES.length === 0) return null
 
   return (
     <section ref={sectionRef} className="relative py-20 md:py-32 bg-foreas-deepblack overflow-hidden">
@@ -643,7 +674,7 @@ export default function Testimonials() {
               exit={{ opacity: 0, x: -40 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              <CinematicVideoCard testimonial={TESTIMONIALS[activeIndex]} onVideoPlay={() => stopAutoPlay()} />
+              <CinematicVideoCard testimonial={AUTORISES[activeIndex]} onVideoPlay={() => stopAutoPlay()} />
             </motion.div>
 
             {/* Desktop navigation arrows */}
@@ -669,7 +700,7 @@ export default function Testimonials() {
             <div className="flex items-center gap-4">
               {/* Dots */}
               <div className="flex gap-2">
-                {TESTIMONIALS.map((t, i) => (
+                {AUTORISES.map((t, i) => (
                   <motion.button
                     key={t.id}
                     onClick={() => goTo(i)}
@@ -687,7 +718,7 @@ export default function Testimonials() {
 
               {/* Counter */}
               <span className="text-white/50 text-sm font-mono tabular-nums">
-                {activeIndex + 1}/{TESTIMONIALS.length}
+                {activeIndex + 1}/{AUTORISES.length}
               </span>
             </div>
 

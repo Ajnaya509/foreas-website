@@ -345,6 +345,17 @@ export function temoignagePubliableParNom(nom: string): boolean {
 }
 
 /** Y a-t-il au moins une preuve sociale publiable ? Sinon, la section se retire. */
+/**
+ * ⚠️ NE PAS UTILISER POUR DÉCIDER D'UN AFFICHAGE. Gardé pour les diagnostics.
+ *
+ * Le 21/08/2026, quatre composants s'en servaient comme d'un garde. C'est un
+ * « au moins un », donc un « TOUS ou AUCUN » : le jour où UNE personne signe,
+ * il rend `true` et les six s'affichent, dont cinq sans accord.
+ *
+ * Il était juste tant que rien n'avait changé. Une protection dont la justesse
+ * dépend du fait que rien n'a encore bougé n'est pas une protection : c'est un
+ * délai. Utilise `temoignagePubliable(id)`, personne par personne.
+ */
 export function auMoinsUnTemoignagePubliable(): boolean {
   return REGISTRE_CONSENTEMENTS.some((c) => c.statut === 'approuve' && c.portee.includes('site'))
 }

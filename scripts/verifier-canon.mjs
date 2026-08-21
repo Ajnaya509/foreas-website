@@ -1439,6 +1439,62 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
   )
 }
 
+// ─── LIRE LE REGISTRE N'EST PAS AVOIR LA PERMISSION ────────────────────────
+//
+// Le 21/08/2026, /cap servait TROIS PERSONNES RÉELLES — nommées, citées,
+// localisées — alors que les six accords sont au statut « en attente ».
+//
+// Le fichier importait `citationDe`, `personneDe` et `villeDe` du registre des
+// consentements. Il lisait donc la source d'autorité... pour y prendre la
+// parole, jamais pour demander la permission. Le garde `temoignagePubliable()`
+// existait, et était appelé dans CINQ autres fichiers. Celui-là était le seul
+// oublié — et un commentaire au-dessus du bloc constatait déjà que rien n'était
+// signé, pendant que le code publiait.
+//
+// La règle : qui lit une parole du registre doit demander si elle est publiable.
+// Elle ne juge pas l'affichage — elle rend l'oubli visible.
+
+{
+  const LECTURE = /\b(citationDe|personneDe|villeDe|TEMOIGNAGES|temoignageDe)\b/
+  const PERMISSION = /\btemoignagePubliable(ParNom)?\b/
+
+  const fichiers = []
+  const explorer = (dossier) => {
+    for (const e of readdirSync(dossier, { withFileTypes: true })) {
+      const chemin = join(dossier, e.name)
+      if (e.isDirectory()) { if (e.name !== 'node_modules') explorer(chemin); continue }
+      if (['.ts', '.tsx'].includes(extname(e.name))) fichiers.push(chemin)
+    }
+  }
+  if (existsSync('src')) explorer('src')
+
+  let surveilles = 0
+  for (const f of fichiers) {
+    // Le registre lui-même définit les deux : il n'est pas son propre appelant.
+    if (f.endsWith('consentements.ts')) continue
+    const brut = readFileSync(f, 'utf8')
+    if (!brut.includes("lib/consentements") && !brut.includes("'./consentements'")) continue
+
+    // On lit le CODE, pas les commentaires : un commentaire qui cite le nom du
+    // garde a déjà fait passer une règle au vert dans ce projet.
+    const code = texteDeContenu ? texteDeContenu(brut, f) : brut
+    if (!LECTURE.test(code)) continue
+
+    surveilles++
+    if (!PERMISSION.test(code)) {
+      infractions.push({
+        fichier: f,
+        quoi: 'ce fichier lit la parole de quelqu’un sans jamais demander si elle est publiable',
+        extrait: (code.match(LECTURE) || ['?'])[0],
+        pourquoi:
+          'importer le registre des accords ne vaut pas avoir l’accord. Appelle ' +
+          'temoignagePubliable(id) avant d’afficher — ou n’affiche pas.',
+      })
+    }
+  }
+  console.log(`   fichiers qui citent quelqu’un, et demandent la permission : ${surveilles}`)
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {

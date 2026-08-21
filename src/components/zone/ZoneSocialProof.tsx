@@ -6,7 +6,7 @@ import { buildWAUrl } from '@/lib/whatsappLink'
 import { COMMUNAUTE } from '@/lib/verite-commerciale'
 import TestimonialCarousel from './TestimonialCarousel'
 
-import { auMoinsUnTemoignagePubliable } from '@/lib/consentements'
+import { TESTIMONIALS } from './testimonials.data'
 /**
  * ZoneSocialProof — Section 4 témoignages chauffeurs (vidéos Mux LIVE)
  *
@@ -44,7 +44,9 @@ export default function ZoneSocialProof() {
   // Retirer les vidéos en laissant la phrase qui affirme l'accord est un RECUL,
   // pas une correction : avant, la promesse s'appuyait au moins sur quelque
   // chose de visible.
-  if (!auMoinsUnTemoignagePubliable()) return null
+  // 21/08 — même correction qu'au-dessus : on interroge la liste réellement
+  // affichée, pas un « au moins un » qui ouvrirait les six d'un coup.
+  if (TESTIMONIALS.length === 0) return null
 
   return (
     <section className="relative py-16 sm:py-24 px-4 border-b border-white/[0.06]">
