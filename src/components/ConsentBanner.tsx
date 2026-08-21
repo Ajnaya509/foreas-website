@@ -49,6 +49,44 @@ export function ConsentBanner() {
     setShowBanner(false)
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ⚠️ 21/08/2026 — CE BANDEAU RECOUVRAIT LE BOUTON PRINCIPAL DE /experience.
+  //
+  // Mesuré à 390 × 844 : le bouton « Essayer gratuitement » vit dans une barre
+  // collante en bas d'écran (z-50, 78 px). Le bandeau, lui, occupe les 121
+  // derniers pixels en z-[9999] avec `pointer-events: auto`.
+  //
+  // Recouvrement TOTAL. Et il ne touche que les visiteurs qui n'ont pas encore
+  // choisi — c'est-à-dire **tous les nouveaux venus**, exactement ceux qu'on
+  // essaie de convertir. Quelqu'un qui a déjà cliqué « Accepter » ne le voit
+  // jamais : c'est pour ça que ça a pu durer.
+  //
+  // On publie donc la hauteur réelle du bandeau sur la racine du document.
+  // N'importe quelle barre collante peut s'en décaler, sans connaître ce
+  // fichier. Mesurée, pas devinée : le bandeau change de hauteur selon la
+  // largeur de l'écran et la zone sûre de l'appareil.
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const racine = document.documentElement
+    if (!showBanner) {
+      racine.style.removeProperty('--hauteur-bandeau-consentement')
+      return
+    }
+    const publier = () => {
+      const h = bannerRef.current?.offsetHeight ?? 0
+      racine.style.setProperty('--hauteur-bandeau-consentement', `${h}px`)
+    }
+    publier()
+    const observateur = new ResizeObserver(publier)
+    if (bannerRef.current) observateur.observe(bannerRef.current)
+    window.addEventListener('resize', publier)
+    return () => {
+      observateur.disconnect()
+      window.removeEventListener('resize', publier)
+      racine.style.removeProperty('--hauteur-bandeau-consentement')
+    }
+  }, [showBanner])
+
   if (!showBanner) return null
 
   return (

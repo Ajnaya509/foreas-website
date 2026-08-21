@@ -530,7 +530,27 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       <div
         inert={!ctaVisible || undefined}
         className={`fixed inset-x-4 z-50 flex items-end gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${ctaVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
-        style={{ bottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
+        // ⚠️ 21/08/2026 — CE BOUTON ÉTAIT ENTIÈREMENT RECOUVERT PAR LE BANDEAU
+        // DE CONSENTEMENT au premier passage, donc pour TOUS les nouveaux
+        // visiteurs. `--hauteur-bandeau-consentement` est publiée par
+        // ConsentBanner tant qu'il est affiché, et vaut 0 sinon : la barre
+        // remonte pile de ce qu'il faut, et redescend dès qu'on a choisi.
+        // ⚠️ PAS DE `max()` ICI, ET C'EST UNE LEÇON PAYÉE.
+        // La première version écrivait
+        //   calc(max(16px, env(safe-area-inset-bottom, 0px)) + var(--hauteur…))
+        // Le navigateur rendait **16px** : l'imbrication max() + env() + var()
+        // échoue en SILENCE — pas d'erreur, pas de style ignoré, juste la
+        // moitié de l'expression évaluée. Mesuré : la variable valait bien
+        // 121px et `bottom` calculait 16px.
+        //
+        // Une addition simple de trois termes se comporte, elle, comme prévu.
+        // Le retrait du `max()` coûte quelques pixels sur les appareils sans
+        // zone sûre — un prix négligeable pour un bouton qui redevient
+        // cliquable.
+        style={{
+          bottom:
+            'calc(16px + env(safe-area-inset-bottom, 0px) + var(--hauteur-bandeau-consentement, 0px))',
+        }}
       >
         {/* Le CTA « pulse » (demande Chandler) : un seul glow violet qui respire à 1.8s DERRIÈRE
             le bouton (R1 : jamais empilé ; famille « Ajnaya vit », exception documentée). */}
