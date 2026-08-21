@@ -524,6 +524,50 @@ console.log('\n── Bascule des clés Supabase (état, pas jugement) ──')
   }
 }
 
+// ─── AUCUN CALCUL FINANCIER RACONTÉ, SUR AUCUNE PAGE SERVIE ────────────────
+//
+// 🔴 Le 21/08/2026, /revenus servait « autour de 25 %, il te reste 18,75 € »
+// APRÈS trois corrections successives et pendant que le contrôle du dépôt
+// sortait vert. Le calcul n'était pas dans le code : il était RACONTÉ, en base.
+//
+// Ce contrôle-ci lit ce que la PRODUCTION sert. Le canon lit le dépôt : les
+// deux ne prouvent pas la même chose, et c'est exactement l'écart qui a laissé
+// ce texte en ligne.
+console.log('\n── Aucun calcul financier raconté ──')
+{
+  const normaliser = (t) =>
+    String(t)
+      .replace(/&nbsp;|&#160;|\u00a0/gi, ' ')
+      .replace(/&euro;|&#8364;/gi, '€')
+      .replace(/&[a-z]+;/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+
+  const MOTIFS = [
+    { r: /\b(?:autour de|environ|à peu près|~)\s*\d{1,2}\s*(?:%|pour cent)/i, quoi: 'taux approximatif universel' },
+    { r: /\b(?:il te reste|tu touches|tu gardes|tu récupères)\s+(?:environ\s+)?\d+[.,]?\d*\s*€/i, quoi: 'montant déduit à la place du chauffeur' },
+    { r: /\bnet\s+réel\b/i, quoi: 'promesse d’un « net réel » non calculable' },
+  ]
+  const BAREME = /\b(filleul\w*|parrain\w*|apport d.affaires|partenaire\w*)\b/i
+
+  let trouve = 0
+  for (const page of PAGES) {
+    const html = corps[page]
+    if (!html) continue
+    const t = normaliser(html)
+    for (const m of MOTIFS) {
+      const x = t.match(m.r)
+      if (!x) continue
+      const autour = t.slice(Math.max(0, t.indexOf(x[0]) - 90), t.indexOf(x[0]) + x[0].length + 90)
+      if (BAREME.test(autour)) continue
+      dire(false, `${page} → ${m.quoi} : « ${x[0]} »`)
+      trouve++
+      break
+    }
+  }
+  dire(trouve === 0, `aucun calcul financier raconté sur les ${PAGES.length} pages servies`)
+}
+
 // ─── L'ACCUEIL MÈNE-T-IL À LA CAISSE ? ──────────────────────────────────────
 //
 // 🔴 MESURÉ LE 21/08/2026 sur le HTML servi de l'accueil : ZÉRO occurrence de

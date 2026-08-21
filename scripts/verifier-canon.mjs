@@ -793,7 +793,7 @@ const CALCULS = [
  * ⚠️ Sans cette exception, la règle bloquait le barème de parrainage. Un
  * contrôle qui crie à tort finit désactivé — et c'est pire qu'aucun contrôle.
  */
-const CONTEXTE_BAREME = /\b(filleul|parrain|parrainage|apport d.affaires|partenaire|commission d.apport)\b/i
+const CONTEXTE_BAREME = /\b(filleul\w*|parrain\w*|apport d.affaires|partenaire\w*|commission d.apport)\b/i
 
 const signalerCalcul = (ou, texte) => {
   const t = normaliser(texte)
