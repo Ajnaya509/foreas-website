@@ -83,9 +83,43 @@ async function upsertSubscriber(data: Record<string, unknown>) {
     //
     // L'index unique manquant est posé par la migration
     // subscribers_index_unique_sur_stripe_subscription_id.
+    // ─────────────────────────────────────────────────────────────────────────
+    // ⚠️ 21/08/2026, TROISIÈME PASSE — LA CAUSE, PAS LE SYMPTÔME.
+    //
+    // Le commentaire vingt lignes plus bas DÉCRIT ce défaut depuis la deuxième
+    // passe : « la table porte aussi un index unique sur `stripe_customer_id`,
+    // que `onConflict: 'stripe_subscription_id'` ne couvre pas ».
+    //
+    // Cette passe-là avait corrigé le SYMPTÔME — lever au lieu de se taire, pour
+    // que Stripe rejoue. Mais le rejeu échoue à l'identique, indéfiniment : la
+    // contrainte violée est toujours là. Un correctif qui fait crier une panne
+    // sans la réparer transforme une perte silencieuse en boucle bruyante.
+    //
+    // Vérifié en base le 21/08 à 21h20 UTC — `pg_indexes` sur `subscribers` :
+    //   · subscribers_stripe_customer_id_key      UNIQUE (stripe_customer_id)
+    //   · subscribers_stripe_subscription_id_key  UNIQUE (stripe_subscription_id)
+    //
+    // Le cas réel n'a rien d'exotique : un chauffeur au mensuel qui passe à
+    // l'annuel. Nouvel abonnement, MÊME client. L'écriture ne trouve pas de
+    // conflit sur l'abonnement, tente d'insérer, heurte l'unicité du client, et
+    // rend 23505. Chauffeur débité, aucune ligne, aucun accès. C'est le passage
+    // le plus rentable du site qui casse.
+    //
+    // On désigne donc le CLIENT comme clé de rapprochement : un client a une
+    // ligne, et son abonnement courant y est mis à jour. L'unicité sur
+    // l'abonnement reste en place et continue de bloquer les vrais doublons.
+    //
+    // ⚠️ SI L'IDENTIFIANT CLIENT MANQUE, on retombe sur l'ancienne clé. Un
+    // `onConflict` sur une colonne nulle ne rapproche rien et insérerait en
+    // double : mieux vaut l'ancien comportement, connu, que ce silence-là.
+    // ─────────────────────────────────────────────────────────────────────────
+    const cleDeRapprochement = data.stripe_customer_id
+      ? 'stripe_customer_id'
+      : 'stripe_subscription_id'
+
     const { error } = await supabase
       .from('subscribers')
-      .upsert(data, { onConflict: 'stripe_subscription_id' })
+      .upsert(data, { onConflict: cleDeRapprochement })
     if (error) {
       // ⚠️ 21/08/2026, SECONDE PASSE — ICI, LE `return` PERDAIT LE PAIEMENT.
       //

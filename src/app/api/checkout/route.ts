@@ -212,8 +212,31 @@ export async function POST(request: NextRequest) {
         : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs2?canceled=true` }),
     }
 
-    // Remise parrainage (coupon %) OU codes promo manuels — mutuellement exclusifs chez Stripe.
-    if (referralCouponId) {
+    // ─────────────────────────────────────────────────────────────────────────
+    // ⚠️ 21/08/2026 — LA REMISE PARRAIN S'APPLIQUAIT AUSSI À L'ANNUEL.
+    //
+    // `isAnnual` est calculé ligne 139 et servait à trois choses — le nom du
+    // produit, le montant, la périodicité — puis n'était PLUS jamais consulté.
+    // Le coupon partait donc sur les deux formules.
+    //
+    // Or `/tarifs2` écrit, en toutes lettres : « L'annuel est au tarif fixe. »
+    //
+    // Ce que ça coûtait : 249,99 € − 18 % = 204,99 €. Quarante-cinq euros par
+    // abonné et par an — et le coupon est `duration: 'forever'`, donc à CHAQUE
+    // renouvellement, indéfiniment. Le site promettait une chose et la caisse
+    // en facturait une autre, dans le sens défavorable à FOREAS.
+    //
+    // ⚠️ CE DÉFAUT ÉTAIT INVISIBLE AUX CONTRÔLES. Le prix affiché était juste,
+    // le prix envoyé à Stripe était juste, la remise était juste : c'est leur
+    // COMBINAISON qui contredisait la phrase. Aucune règle cherchant un chiffre
+    // faux ne pouvait l'attraper.
+    //
+    // ⚠️ ET LA CORRECTION NE SUFFIT PAS SEULE : le coupon étant « forever », les
+    // abonnements annuels déjà créés avec un coupon attaché continueront d'être
+    // remisés. Ce point part au fil qui possède Stripe — le Site ne touche pas
+    // aux abonnements existants.
+    // ─────────────────────────────────────────────────────────────────────────
+    if (referralCouponId && !isAnnual) {
       sessionParams.discounts = [{ coupon: referralCouponId }]
     } else {
       sessionParams.allow_promotion_codes = true
