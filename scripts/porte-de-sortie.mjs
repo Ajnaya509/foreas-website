@@ -787,22 +787,57 @@ console.log('\n── Le webhook de paiement ──')
 // une porte de sortie ne doit pas salir la table qu'elle surveille.
 console.log('\n── La mesure ──')
 {
+  // ─────────────────────────────────────────────────────────────────────────
+  // 21/08/2026 — CES CONTRÔLES ONT ÉTÉ REFAITS, ET L'UN D'EUX ÉTAIT UN FAUX VERT.
+  //
+  // Une garde d'origine a été posée sur /api/mesure ce jour-là. Elle tire AVANT
+  // toute autre vérification. Conséquence immédiate :
+  //   · le contrôle « un événement sans nom → 400 » est passé au ROUGE, parce
+  //     qu'il n'atteignait plus le code de validation ;
+  //   · et le contrôle « un abonnement annoncé par le navigateur → 403 » est
+  //     resté au VERT **pour la mauvaise raison** — il recevait 403 à cause de
+  //     l'origine, plus du tout parce que l'événement est réservé au serveur.
+  //
+  // Un contrôle qui passe pour une raison qui n'est pas la sienne ne surveille
+  // plus rien. C'est pire que celui qui échoue : celui-là, au moins, se voit.
+  //
+  // On sépare donc les deux questions, et on envoie une origine légitime quand
+  // on veut atteindre le code derrière la porte.
+  // ─────────────────────────────────────────────────────────────────────────
+  const ORIGINE_LEGITIME = new URL(BASE).origin
+
   try {
+    // 1. La porte elle-même : sans origine, on n'entre pas.
     const r = await joindre(`${BASE}/api/mesure`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ evenement: 'SubscriptionConfirmed', page: '/porte-de-sortie' }),
+      body: JSON.stringify({ evenement: 'PageView', page: '/porte-de-sortie' }),
     })
-    dire(r.status === 403, `un abonnement annoncé par le navigateur → ${r.status}, attendu 403`)
+    dire(r.status === 403, `un appel sans origine → ${r.status}, attendu 403 (la porte tient)`)
   } catch (e) {
     direOuInjoignable(e, `/api/mesure`)
   }
   try {
-    // Événement volontairement invalide : prouve que la route vit et valide,
-    // sans écrire une seule ligne.
+    // 2. Derrière la porte : un abonnement annoncé par un navigateur reste
+    //    refusé — cette fois pour SA raison, pas pour celle de la porte.
     const r = await joindre(`${BASE}/api/mesure`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Origin: ORIGINE_LEGITIME },
+      body: JSON.stringify({ evenement: 'SubscriptionConfirmed', page: '/porte-de-sortie' }),
+    })
+    dire(
+      r.status === 403,
+      `un abonnement annoncé par le navigateur, origine légitime → ${r.status}, attendu 403`,
+    )
+  } catch (e) {
+    direOuInjoignable(e, `/api/mesure`)
+  }
+  try {
+    // 3. La validation vit toujours : événement sans nom, origine légitime.
+    //    Aucune ligne écrite — un contrôle ne salit pas la table qu'il surveille.
+    const r = await joindre(`${BASE}/api/mesure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: ORIGINE_LEGITIME },
       body: JSON.stringify({}),
     })
     dire(r.status === 400, `un événement sans nom → ${r.status}, attendu 400 (la route vit et valide)`)
