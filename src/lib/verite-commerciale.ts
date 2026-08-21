@@ -46,10 +46,40 @@ export const MESURE_DU = '2026-08-14'
  * `select count(*) from subscriptions where status='active'` → 4
  */
 export const COMMUNAUTE = {
-  chauffeursInscrits: 30,
+  // ─────────────────────────────────────────────────────────────────────────
+  // ⚠️ 21/08/2026, 20h50 UTC — « abonnementsActifs: 4 » ÉTAIT FAUX, ET IL A ÉTÉ
+  // RÉPÉTÉ DE RAPPORT EN RAPPORT PENDANT DES SEMAINES.
+  //
+  // La table `subscriptions` compte bien 4 lignes `status='active'` à 39,99 €.
+  // Mais AUCUNE n'est un abonnement Stripe réel :
+  //   · 3 n'ont NI `stripe_subscription_id` NI `stripe_customer_id` ;
+  //   · la 4ᵉ porte `sub_test_forea…` — un identifiant de test ;
+  //   · 0 ligne sur 4 a une référence de la forme `sub_1…` (la vraie forme) ;
+  //   · les 3 dernières ont été créées le MÊME JOUR, avec une fin de période en
+  //     2028 — deux ans, ce qui n'existe dans aucune formule vendue.
+  //
+  // Ce sont des lignes de démonstration. « Statut actif » décrivait leur
+  // colonne, pas un client.
+  //
+  // ⚠️ CE QUI REND CETTE ERREUR SI DURABLE : la ligne était VRAIE au sens de la
+  // requête (`count(*) where status='active'` → 4) et FAUSSE au sens du monde.
+  // Personne n'avait regardé la COLONNE D'À CÔTÉ. Un compteur juste sur une
+  // table peuplée de démonstrations compte des démonstrations.
+  //
+  // CE QUI EST RÉEL, LUI : `subscription_events` porte 5 événements Stripe
+  // authentiques (forme `evt_1…`) — UNE activation le 28/07, puis QUATRE
+  // `payment_failed` d'affilée les 31/07, 01/08, 02/08 et 03/08. Une personne a
+  // vraiment essayé de payer, et sa carte a été refusée quatre fois.
+  //
+  // Le vrai nombre d'abonnements payants aujourd'hui est donc ZÉRO, et
+  // FOREAS a déjà perdu une vente faute d'avoir vu ces quatre refus.
+  // ─────────────────────────────────────────────────────────────────────────
+  /** 30 lignes dans `drivers`, dont 2 adresses de test. Le chiffre publiable est 28. */
+  chauffeursInscrits: 28,
   chauffeursMarquesActifs: 9,
   chauffeursActifs24h: 0,
-  abonnementsActifs: 4,
+  /** Abonnements Stripe RÉELS : 0 sur 4 lignes ont une référence `sub_1…`. */
+  abonnementsActifs: 0,
   /** Témoignages filmés, consentis, vérifiables (src/components/zone/testimonials.data.ts). */
   temoignagesVideoReels: 6,
 } as const

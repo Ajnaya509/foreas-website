@@ -1677,6 +1677,113 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
   console.log(`   pages avec une attente, et dont l’attente se voit : ${total - frontieres}/${total}`)
 }
 
+// ─── COMPTER DES LIGNES N'EST PAS COMPTER DES CLIENTS ──────────────────────
+//
+// 🔴 21/08/2026, 20h50 UTC. `verite-commerciale.ts` déclarait
+// « abonnementsActifs: 4 », chiffre répété de rapport en rapport pendant des
+// semaines et transmis à Chandler comme un revenu réel.
+//
+// La requête était juste : `count(*) from subscriptions where status='active'`
+// → 4. Le monde, lui, disait autre chose :
+//   · 3 lignes n'ont NI `stripe_subscription_id` NI `stripe_customer_id` ;
+//   · la 4ᵉ porte `sub_test_forea…` ;
+//   · 0 sur 4 a une référence de la vraie forme `sub_1…` ;
+//   · 3 créées le MÊME JOUR, fin de période en 2028 — deux ans, une durée qui
+//     n'existe dans aucune formule vendue.
+//
+// Ce sont des lignes de démonstration. « Statut actif » décrivait leur colonne.
+//
+// ⚠️ CE QUI REND CETTE ERREUR SI DURABLE : elle est VRAIE au sens de la requête
+// et FAUSSE au sens du monde. Personne n'avait regardé LA COLONNE D'À CÔTÉ.
+// Un compteur juste sur une table peuplée de démonstrations compte des
+// démonstrations — et il ne se dénonce jamais tout seul.
+//
+// Cette règle compare ce que le site DÉCLARE à ce que la forme des identifiants
+// prouve. Elle ne fait pas confiance au statut.
+
+{
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const cle =
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  const declare = (() => {
+    if (!existsSync('src/lib/verite-commerciale.ts')) return null
+    // ⚠️ SANS `sansCommentaires`, CETTE RÈGLE LIT SON PROPRE COMMENTAIRE.
+    // Premier essai : elle a rapporté « le site déclare 4 » alors que la valeur
+    // venait d'être passée à 0 — le 4 vivait dans le commentaire qui EXPLIQUE
+    // l'erreur. Quatrième faux témoin par commentaire dans ce projet.
+    const m = sansCommentaires(readFileSync('src/lib/verite-commerciale.ts', 'utf8'))
+      .match(/abonnementsActifs:\s*(\d+)/)
+    return m ? Number(m[1]) : null
+  })()
+
+  if (declare === null) {
+    console.warn('  ⚠️  `abonnementsActifs` introuvable — règle NON exécutée, ce n’est pas un succès.')
+  } else if (!url || !cle) {
+    console.warn('')
+    console.warn('  ⚠️  RÈGLE NON EXÉCUTÉE : abonnements déclarés vs abonnements réels.')
+    console.warn('      Pas d’accès en lecture à la base depuis ici.')
+    console.warn('      Ce n’est PAS un succès. Le chiffre n’a pas été confronté.')
+    console.warn('')
+  } else {
+    try {
+      const r = await fetch(
+        `${url}/rest/v1/subscriptions?select=status,stripe_subscription_id&status=eq.active`,
+        { headers: { apikey: cle, Authorization: `Bearer ${cle}` } },
+      )
+      const lignes = await r.json()
+
+      // ⚠️ UNE LISTE VIDE N'EST PAS UN ZÉRO. La clé publique est soumise aux
+      // règles d'accès de la base : si elles ferment `subscriptions`, PostgREST
+      // renvoie `[]` — exactement ce que renverrait une table réellement vide.
+      //
+      // Premier essai de cette règle : elle a annoncé « 0 abonnement réel »
+      // alors qu'elle n'avait RIEN LU. Elle serait tombée juste par accident, et
+      // aurait menti le jour où un vrai client existe.
+      //
+      // On demande donc d'abord si la table est lisible du tout.
+      const sonde = await fetch(`${url}/rest/v1/subscriptions?select=id&limit=1`, {
+        headers: { apikey: cle, Authorization: `Bearer ${cle}` },
+      })
+      const echantillon = await sonde.json()
+      const lisible = Array.isArray(echantillon) && echantillon.length > 0
+
+      if (!lisible) {
+        console.warn('')
+        console.warn('  ⚠️  RÈGLE NON EXÉCUTÉE : `subscriptions` n’est pas lisible avec la clé publique.')
+        console.warn('      Une liste vide ici ne prouve PAS qu’il n’y a aucun abonnement :')
+        console.warn('      les règles d’accès de la base renvoient exactement la même chose.')
+        console.warn('      Ce n’est PAS un succès. Le chiffre n’a pas été confronté.')
+        console.warn('')
+      } else if (Array.isArray(lignes)) {
+        // La forme d'un vrai identifiant d'abonnement Stripe : `sub_` puis un
+        // identifiant long. `sub_test_…` et l'absence pure ne comptent pas.
+        const reels = lignes.filter((l) =>
+          /^sub_1[A-Za-z0-9]{10,}$/.test(String(l.stripe_subscription_id ?? '')),
+        ).length
+
+        console.log(
+          `   abonnements : ${lignes.length} ligne(s) « active », dont ${reels} avec une vraie référence Stripe`,
+        )
+
+        if (declare > reels) {
+          infractions.push({
+            fichier: 'src/lib/verite-commerciale.ts',
+            quoi: `le site déclare ${declare} abonnement(s) actif(s), la base n’en prouve que ${reels}`,
+            extrait: `abonnementsActifs: ${declare} · références Stripe réelles : ${reels}`,
+            pourquoi:
+              'une ligne « active » sans référence Stripe de la forme `sub_1…` est une ' +
+              'démonstration, pas un client. Compter le statut au lieu de la preuve, ' +
+              'c’est comment « 4 abonnés » a voyagé de rapport en rapport pendant des semaines.',
+          })
+        }
+      }
+    } catch {
+      console.warn('  ⚠️  base injoignable — règle NON exécutée. Ce n’est pas un succès.')
+    }
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {
