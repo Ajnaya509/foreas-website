@@ -1,3 +1,31 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   21/08/2026 — LES 8 DÉCLARATIONS @font-face DE MONTSERRAT ONT ÉTÉ RETIRÉES.
+
+   Mesuré : Montserrat ne rendait AUCUN pixel du site. La décision date de
+   `Site2026v50` — « Inter remplace Montserrat sur body + h1-h6 + UI » — et les
+   déclarations sont restées derrière, à peser dans le dépôt sans jamais servir.
+
+   Comparaison faite avant de trancher, dans un vrai navigateur, sur le vrai
+   texte du site, aux deux largeurs (358 px et 640 px) et aux deux tailles
+   (15 px et 16 px) : Inter et Montserrat produisent EXACTEMENT le même nombre
+   de lignes et la même hauteur. L'écart de largeur mesuré sur « Ajnaya
+   0123456789 » à 60 px est de 2 px sur 563 — 0,35 %.
+
+   ⚠️ La première mesure donnait « 0 % » sur les quatre cas, ce qui ressemblait
+   à une police non appliquée. Vérifié : elle L'ÉTAIT bien (565 px contre 563,
+   et les deux témoins serif/monospace donnaient 526 et 614). Le 0 % était vrai.
+   Une égalité parfaite mérite d'être confirmée avant d'être crue.
+
+   Le choix ne coûte donc rien en mise en page. Il ne restait que le poids.
+
+   ⚠️ DEUX FICHIERS MONTSERRAT SONT CONSERVÉS, ET C'EST DÉLIBÉRÉ :
+   `Montserrat-Medium.ttf` et `Montserrat-Bold-og.ttf` sont lus CÔTÉ SERVEUR par
+   `src/app/opengraph-image.tsx`, qui fabrique l'image affichée quand on partage
+   un lien FOREAS. Les supprimer aurait cassé tous les aperçus de partage — et
+   un `grep` sur les @font-face ne les aurait pas vus, parce qu'ils ne passent
+   pas par la CSS.
+   ───────────────────────────────────────────────────────────────────────────── */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -187,70 +215,22 @@ html { scroll-behavior: smooth; }
 /* Montserrat - Texte courant */
 
 /* Montserrat - Local fonts (Variable) */
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-VariableFont_wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Italic-VariableFont_wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
+
+
 
 /* Montserrat - Static fallbacks */
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Italic.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
+
+
+
+
+
+
 
 /* Genos — Local fonts (config IDENTIQUE à Site2026v35 — restaurée v53) */
 @font-face {

@@ -1784,6 +1784,69 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
   }
 }
 
+// ─── UNE POLICE QUI NE SERT À RIEN NE DOIT PAS ÊTRE DÉPLOYÉE ───────────────
+//
+// 21/08/2026 : `public/fonts/` pesait 8 396 Ko en 28 fichiers. Dix-neuf
+// n'étaient référencés NULLE PART — ni en CSS, ni dans le code. Ils partaient
+// à chaque mise en ligne depuis des mois.
+//
+// ⚠️ ET LE PIÈGE EST DANS LA MÊME PHRASE. Trois fichiers ne sont référencés par
+// AUCUN `@font-face`, et sont pourtant indispensables :
+// `Genos-og.ttf`, `Montserrat-Medium.ttf`, `Montserrat-Bold-og.ttf` sont lus
+// CÔTÉ SERVEUR par `src/app/opengraph-image.tsx`, qui fabrique l'image affichée
+// quand on partage un lien FOREAS.
+//
+// Une règle qui n'aurait regardé que la CSS les aurait déclarés morts, et
+// aurait cassé tous les aperçus de partage — en toute confiance. Elle regarde
+// donc les DEUX chemins.
+
+{
+  const DOSSIER = 'public/fonts'
+  if (existsSync(DOSSIER)) {
+    // Tout ce que le dépôt mentionne, CSS et code confondus.
+    const mentions = new Set()
+    const balayer = (dossier) => {
+      for (const e of readdirSync(dossier, { withFileTypes: true })) {
+        const chemin = join(dossier, e.name)
+        if (e.isDirectory()) { if (e.name !== 'node_modules') balayer(chemin); continue }
+        if (!['.ts', '.tsx', '.css', '.js', '.mjs', '.json'].includes(extname(e.name))) continue
+        const brut = readFileSync(chemin, 'utf8')
+        // On garde les commentaires ici : un fichier cité dans un commentaire
+        // reste un fichier que quelqu'un a jugé utile de nommer. Trop prudent
+        // vaut mieux que supprimer une police dont on a besoin.
+        for (const m of brut.matchAll(/([A-Za-z0-9_-]+\.(?:ttf|otf|woff2?))/g)) mentions.add(m[1])
+      }
+    }
+    balayer('src')
+    if (existsSync('scripts')) balayer('scripts')
+
+    const morts = []
+    let poidsMort = 0
+    for (const nom of readdirSync(DOSSIER)) {
+      if (!/\.(ttf|otf|woff2?)$/i.test(nom)) continue
+      if (mentions.has(nom)) continue
+      morts.push(nom)
+      try { poidsMort += statSync(join(DOSSIER, nom)).size } catch { /* ignoré */ }
+    }
+
+    const vivantes = readdirSync(DOSSIER).filter((n) => /\.(ttf|otf|woff2?)$/i.test(n)).length
+    console.log(`   polices déployées : ${vivantes}, toutes référencées : ${morts.length === 0 ? 'oui' : 'NON'}`)
+
+    if (morts.length > 0) {
+      infractions.push({
+        fichier: DOSSIER,
+        quoi: `${morts.length} police(s) déployée(s) que rien ne référence (${Math.round(poidsMort / 1024)} Ko)`,
+        extrait: morts.slice(0, 5).join(', ') + (morts.length > 5 ? ' …' : ''),
+        pourquoi:
+          'un fichier que ni la CSS ni le code ne nomme part à chaque mise en ligne ' +
+          'pour rien. ⚠️ Avant d’en supprimer un, vérifie qu’il n’est pas lu CÔTÉ ' +
+          'SERVEUR : trois polices « -og » servent à fabriquer l’image de partage ' +
+          'et n’apparaissent dans aucun @font-face.',
+      })
+    }
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {
