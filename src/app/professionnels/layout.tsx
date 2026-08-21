@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { canonique } from '@/lib/site'
+import { metadonneesPage } from '@/lib/site'
 
 /**
  * Métadonnées de /professionnels.
@@ -13,9 +13,11 @@ import { canonique } from '@/lib/site'
  * Google choisit seul entre les deux versions d'une même page, et les deux se
  * concurrencent. L'adresse vient de src/lib/site.ts, seul endroit où elle vit.
  */
-export const metadata: Metadata = {
-  alternates: { canonical: canonique('/professionnels') },
-}
+export const metadata: Metadata = metadonneesPage(
+  '/professionnels',
+  "Pour les professionnels — FOREAS",
+  'Hôtels, conciergeries, entreprises : offrez à vos clients un transport tenu par des chauffeurs indépendants, sans plateforme intermédiaire.',
+)
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return children

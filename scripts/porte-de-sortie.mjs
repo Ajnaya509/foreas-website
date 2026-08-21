@@ -396,8 +396,21 @@ try {
     for (const m of html.matchAll(/"(?:@id|url|mainEntityOfPage)":"(https:\/\/foreas\.xyz[^"]*)"/g)) {
       contradictions.push(`${u} → données structurées ${m[1]}`)
     }
+    // ⚠️ 21/08/2026 — CE CONTRÔLE NE VÉRIFIAIT QUE LA FORME, JAMAIS L'IDENTITÉ.
+    //
+    // Il exigeait seulement que l'adresse de partage commence par `https://www.`.
+    // Résultat : NEUF pages annonçaient `https://www.foreas.xyz` — l'accueil —
+    // et passaient au vert. Partager /tarifs2 affichait l'aperçu de l'accueil et
+    // menait à l'accueil : la page de prix était impartageable, et le contrôle
+    // certifiait l'inverse.
+    //
+    // Une vérification de forme ne remplace jamais une vérification d'identité.
     const og = html.match(/property="og:url"\s+content="([^"]+)"/)?.[1]
-    if (og && !og.startsWith('https://www.')) contradictions.push(`${u} → og:url ${og}`)
+    if (og) {
+      const attendu = u.replace(/\/$/, '')
+      const obtenu = og.replace(/\/$/, '')
+      if (obtenu !== attendu) contradictions.push(`${u} → og:url ${og}`)
+    }
   }
   dire(sansCanonique.length === 0, `toutes les pages ont une adresse de référence — ${sansCanonique.slice(0, 3).join(', ') || 'aucune manquante'}`)
   dire(

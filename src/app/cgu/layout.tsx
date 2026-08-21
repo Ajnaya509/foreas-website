@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { canonique } from '@/lib/site'
+import { metadonneesPage } from '@/lib/site'
 
 /**
  * Métadonnées de /cgu.
@@ -13,9 +13,11 @@ import { canonique } from '@/lib/site'
  * Google choisit seul entre les deux versions d'une même page, et les deux se
  * concurrencent. L'adresse vient de src/lib/site.ts, seul endroit où elle vit.
  */
-export const metadata: Metadata = {
-  alternates: { canonical: canonique('/cgu') },
-}
+export const metadata: Metadata = metadonneesPage(
+  '/cgu',
+  "Conditions générales d'utilisation — FOREAS",
+  "Les conditions d'utilisation du service FOREAS.",
+)
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return children
