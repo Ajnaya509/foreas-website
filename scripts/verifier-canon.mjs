@@ -586,6 +586,55 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── AUCUN TAUX EN DUR APPLIQUÉ À L'ARGENT D'UN CHAUFFEUR ──────────────────
+//
+// 🔴 CE QUE LE CALCULATEUR DE L'ACCUEIL FAISAIT JUSQU'AU 21/08/2026 :
+//
+//     commission = course * 0.45
+//     tva        = apresCommission * 0.166
+//     cotisations= apresTva * 0.11
+//     gasoil     = course * 0.06        ← sur le PRIX, sans aucune distance
+//
+// Sur 25 €, il affichait 8,71 € « dans la poche ». Quatre défauts distincts :
+//
+//  · le taux de commission existait en TROIS exemplaires contradictoires dans
+//    FOREAS (0,45 · 0,25 · 0,75 de part chauffeur), aucun mesuré. Sur la même
+//    course, le site affichait 8,71 € ici et 18,75 € sur /revenus ;
+//  · une commission dépend de la plateforme, de l'offre, du pays et parfois de
+//    la course : un taux unique est faux pour presque tout le monde ;
+//  · les trois taux de charges n'avaient AUCUNE source, et dépendent du statut
+//    fiscal — que le site n'a jamais demandé ;
+//  · le carburant croissait avec le PRIX de la course. Deux courses de même
+//    distance, l'une à 20 € et l'autre à 60 €, n'ont pas consommé le même
+//    gasoil. C'est physiquement faux.
+//
+// LA RÈGLE : un montant qui appartient à un chauffeur ne se multiplie pas par un
+// nombre écrit en dur. Soit la valeur vient de lui, soit elle ne s'affiche pas.
+{
+  const FAMILLE = '(?:fare|montant|brut|gross|course|revenu|earning|gain|amount)'
+  const motif = new RegExp(
+    '\\b\\w*' + FAMILLE + '\\w*\\s*\\*\\s*0\\.\\d+|0\\.\\d+\\s*\\*\\s*\\w*' + FAMILLE + '\\w*\\b',
+    'i',
+  )
+  for (const chemin of fichiers(RACINE)) {
+    const relatif = chemin.replace(RACINE + '/', '')
+    const source = readFileSync(chemin, 'utf8')
+    const sansCommentaires = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+    const m = sansCommentaires.match(motif)
+    if (!m) continue
+    infractions.push({
+      fichier: relatif,
+      quoi: 'un taux écrit en dur appliqué à l’argent d’un chauffeur',
+      extrait: m[0],
+      pourquoi:
+        "Une commission dépend de la plateforme, de l'offre et parfois de la course ; une charge dépend du statut fiscal. Le 21/08/2026, ce motif affichait 8,71 € « dans la poche » sur une course de 25 €, quand /revenus en annonçait 18,75 € — trois taux contradictoires coexistaient dans FOREAS, aucun mesuré. Soit la valeur vient du chauffeur, soit elle ne s'affiche pas.",
+    })
+  }
+}
+
 // ─── LA GARANTIE 30 JOURS NE S'ANNONCE PAS SANS SON GARDE ──────────────────
 //
 // ⚠️ 21/08/2026 — CE N'EST PAS UNE PROMESSE INVENTÉE, ET C'EST CE QUI REND LE
