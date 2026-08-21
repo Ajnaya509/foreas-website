@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import Stripe from 'stripe'
 import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
@@ -376,52 +376,75 @@ export async function POST(request: Request) {
         country: 'FR',
         externalId: session.customer as string | undefined,
       }
-      // Même conversion, deux canaux pub. Fire-and-forget — jamais bloquer le webhook
-      // Stripe pour une pub qui échouerait (les deux sendX() sont déjà fail-open).
+      // ⚠️ 21/08/2026 — « FIRE-AND-FORGET » VOULAIT DIRE « PEUT-ÊTRE JAMAIS ».
+      //
+      // Ces trois envois partaient sans `await` et sans rien pour les retenir.
+      // L'intention était bonne — ne jamais bloquer un paiement pour une pub qui
+      // échoue — mais sur cet hébergeur la fonction est GELÉE dès que la réponse
+      // est renvoyée. Les requêtes en vol pouvaient donc ne jamais partir, et le
+      // taux de perte est inconnu.
+      //
+      // `after()` est fait exactement pour ça : le travail s'exécute APRÈS la
+      // réponse, sans la retarder, et l'hébergeur garde la fonction en vie.
+      //
+      // ⚠️ CE N'EST PAS `await` QU'IL FALLAIT. Attendre rendrait le webhook
+      // dépendant de la latence de Meta et de TikTok : un incident chez eux
+      // ferait expirer la livraison côté Stripe, et une panne de MESURE
+      // deviendrait une perte de PAIEMENT. On ne troque pas l'un contre l'autre.
+      //
+      // Chaque envoi porte maintenant un identifiant dérivé de l'événement
+      // Stripe. Il est STABLE : si le même événement repassait, ou si le
+      // navigateur envoyait le même achat de son côté, les plateformes
+      // reconnaîtraient un doublon au lieu de compter deux ventes.
       const tiktokUserData = {
         email: capiUserData.email,
         phone: capiUserData.phone,
         externalId: capiUserData.externalId,
       }
-      Promise.allSettled([
-        sendCAPIEvent({
-          eventName: 'StartTrial',
-          userData: capiUserData,
-          customData: {
-            value: purchaseValue,
-            currency,
-            contentName: planInfo.name,
-            orderId: session.subscription as string,
-          },
-          eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
-          actionSource: 'website',
-        }),
-        sendCAPIEvent({
-          eventName: 'Subscribe',
-          userData: capiUserData,
-          customData: {
-            value: purchaseValue,
-            currency,
-            contentName: planInfo.name,
-            orderId: session.subscription as string,
-          },
-          eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
-          actionSource: 'website',
-        }),
-        // TikTok n'a pas d'équivalent standard "StartTrial" — Subscribe seul suffit
-        // à marquer le début de l'abonnement pour l'optimisation de campagne.
-        sendTikTokEvent({
-          eventName: 'Subscribe',
-          userData: tiktokUserData,
-          customData: {
-            value: purchaseValue,
-            currency,
-            contentName: planInfo.name,
-            orderId: session.subscription as string,
-          },
-          eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
-        }),
-      ]).catch(() => {})
+      after(async () => {
+        await Promise.allSettled([
+          sendCAPIEvent({
+            eventName: 'StartTrial',
+            eventId: `${event.id}-starttrial`,
+            userData: capiUserData,
+            customData: {
+              value: purchaseValue,
+              currency,
+              contentName: planInfo.name,
+              orderId: session.subscription as string,
+            },
+            eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
+            actionSource: 'website',
+          }),
+          sendCAPIEvent({
+            eventName: 'Subscribe',
+            eventId: `${event.id}-subscribe`,
+            userData: capiUserData,
+            customData: {
+              value: purchaseValue,
+              currency,
+              contentName: planInfo.name,
+              orderId: session.subscription as string,
+            },
+            eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
+            actionSource: 'website',
+          }),
+          // TikTok n'a pas d'équivalent standard "StartTrial" — Subscribe seul suffit
+          // à marquer le début de l'abonnement pour l'optimisation de campagne.
+          sendTikTokEvent({
+            eventName: 'Subscribe',
+            eventId: `${event.id}-subscribe`,
+            userData: tiktokUserData,
+            customData: {
+              value: purchaseValue,
+              currency,
+              contentName: planInfo.name,
+              orderId: session.subscription as string,
+            },
+            eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
+          }),
+        ])
+      })
 
       // 4. TODO: SMS via Twilio
       // if (phone) {
