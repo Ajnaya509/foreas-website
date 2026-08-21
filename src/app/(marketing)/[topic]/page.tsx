@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import LandingPageTemplate, { type LandingContent } from '@/components/landing/LandingPageTemplate'
 import { canonique } from '@/lib/site'
@@ -106,8 +105,6 @@ export default async function TopicLandingPage(
   if (!data) return notFound()
 
   return (
-    <Suspense fallback={<div className="bg-[#050508] min-h-screen" />}>
-      <LandingPageTemplate content={data} />
-    </Suspense>
+    <LandingPageTemplate content={data} />
   )
 }
