@@ -292,7 +292,32 @@ export default function FeatureScreen({ kind }: { kind: ScreenKind }) {
     kind === 'voice' ? <VoiceScreen /> :
     kind === 'direct' ? <DirectScreen /> :
     <ComptaScreen />
-  return <ScaledScreen>{screen}</ScaledScreen>
+  // ⚠️ 21/08/2026 — CES ÉCRANS SONT DES EXEMPLES, ET RIEN NE LE DISAIT.
+  //
+  // Mesuré sur la production : le mot « exemple » était TOTALEMENT ABSENT du
+  // texte affiché de /experience, pendant que l'écran annonçait « Sarah a
+  // réservé. 25 € pour toi. » et « 1 240 € — provision calculée ».
+  //
+  // Sarah n'existe pas, et personne n'a provisionné 1 240 €. Un chauffeur qui
+  // lit ça n'a aucun moyen de savoir qu'il regarde une maquette : rien ne le
+  // distingue d'une capture d'écran réelle. C'est la définition d'une
+  // démonstration trompeuse — pas parce qu'elle montre le produit, mais parce
+  // qu'elle ne dit pas qu'elle le SIMULE.
+  //
+  // La mention est posée ICI, sur l'enveloppe commune, et pas sur chacun des
+  // cinq écrans : une mention à recopier cinq fois est une mention qu'on
+  // oubliera au sixième.
+  return (
+    <div className="relative">
+      <ScaledScreen>{screen}</ScaledScreen>
+      <span
+        className="pointer-events-none absolute bottom-1 right-1 rounded-full border border-white/15 bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white/60"
+        aria-label="Cet écran est un exemple, pas une capture réelle"
+      >
+        Exemple
+      </span>
+    </div>
+  )
 }
 
 export { SCREEN_W, SCREEN_H }
