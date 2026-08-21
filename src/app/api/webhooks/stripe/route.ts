@@ -104,9 +104,31 @@ export async function POST(request: Request) {
     const sig = request.headers.get('stripe-signature')
 
     const webhookSecret = getWebhookSecret()
-    if (!sig || !webhookSecret) {
-      console.warn('[webhook] Signature ou secret manquant')
-      return NextResponse.json({ received: true })
+
+    // ⚠️ 21/08/2026 — CES DEUX CAS ÉTAIENT CONFONDUS, ET LE SECOND EST GRAVE.
+    //
+    // AVANT : `if (!sig || !webhookSecret) return { received: true }` — un 200,
+    // dans les deux cas.
+    //
+    // Pour une requête sans signature, ce n'est pas dramatique : ce n'est pas
+    // Stripe, et rien n'est traité.
+    //
+    // Mais si le SECRET disparaissait de l'environnement — une variable oubliée
+    // à un redéploiement, une rotation ratée — alors chaque abonnement réel
+    // recevait « bien reçu ». Stripe considère un 200 comme une livraison
+    // réussie : il ne réessaie jamais. Tous les abonnements auraient été perdus
+    // en silence, sans une seule erreur nulle part.
+    //
+    // C'est le pire mode de panne de ce dépôt, et il s'est déjà produit
+    // ailleurs. Un secret absent doit provoquer un ÉCHEC BRUYANT : Stripe
+    // réessaie pendant trois jours, ce qui laisse le temps de s'en apercevoir.
+    if (!webhookSecret) {
+      console.error('[webhook] STRIPE_WEBHOOK_SECRET ABSENT — aucun abonnement ne peut être traité')
+      return NextResponse.json({ error: 'webhook non configuré' }, { status: 500 })
+    }
+    if (!sig) {
+      // Pas d'en-tête de signature : l'appel ne vient pas de Stripe.
+      return NextResponse.json({ error: 'signature manquante' }, { status: 400 })
     }
 
     const stripe = getStripeClient()
@@ -130,12 +152,55 @@ export async function POST(request: Request) {
 
       // Récupérer la subscription pour les détails
       let subscription: Stripe.Subscription | null = null
-      let planInfo = { name: 'Hebdomadaire', cycle: 'weekly' }
+
+      // ⚠️ 21/08/2026 — CETTE ÉTIQUETTE ÉTAIT FAUSSE À TOUS LES COUPS.
+      //
+      // Elle valait `{ name: 'Hebdomadaire', cycle: 'weekly' }` par défaut, puis
+      // tentait `PLAN_MAP[priceId]`. Or les trois chemins de paiement du site
+      // construisent le prix À LA VOLÉE (`price_data`) : le tarif engendré porte
+      // un identifiant neuf à chaque session, jamais égal aux deux clés du
+      // tableau. Le repli gagnait donc TOUJOURS.
+      //
+      // Conséquence : « Hebdomadaire » partait dans le nom de contenu envoyé à
+      // Meta (deux fois), dans la description envoyée à TikTok, ET dans le mail
+      // de bienvenue — à un chauffeur qui venait de souscrire un MENSUEL.
+      // FOREAS ne vend plus d'hebdomadaire depuis juillet.
+      //
+      // LA CORRECTION : l'étiquette voyage déjà dans l'objet Stripe. C'est
+      // `/api/checkout` qui la pose, en toutes lettres :
+      //     subscription_data.metadata = { plan, flow }
+      // On la LIT, au lieu de la deviner. Trois niveaux, du plus sûr au moins :
+      //   1. `metadata.plan`   — la valeur canonique posée par le site ;
+      //   2. `PLAN_MAP`        — pour les liens fabriqués hors dépôt (n8n), qui
+      //                          utilisent peut-être un tarif pré-créé ;
+      //   3. l'intervalle réel — month | year, lu chez Stripe.
+      // Et si rien ne répond : « inconnu ». Une étiquette absente se voit et se
+      // corrige ; une étiquette fausse se propage et personne ne la questionne.
+      let planInfo: { name: string; cycle: string } = { name: 'inconnu', cycle: 'inconnu' }
 
       if (session.subscription) {
         subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-        const priceId = subscription.items.data[0]?.price?.id || ''
-        planInfo = PLAN_MAP[priceId] || planInfo
+        const prix = subscription.items.data[0]?.price
+        const planMeta = (subscription.metadata?.plan || '').trim()
+        const intervalle = prix?.recurring?.interval || ''
+
+        if (planMeta) {
+          planInfo = {
+            name: planMeta,
+            cycle: planMeta.includes('annual') || planMeta.includes('annuel') ? 'annual' : 'monthly',
+          }
+        } else if (prix?.id && PLAN_MAP[prix.id]) {
+          planInfo = PLAN_MAP[prix.id]
+        } else if (intervalle) {
+          planInfo = {
+            name: intervalle === 'year' ? 'Annuel' : intervalle === 'month' ? 'Mensuel' : intervalle,
+            cycle: intervalle === 'year' ? 'annual' : intervalle === 'month' ? 'monthly' : intervalle,
+          }
+        }
+
+        if (planInfo.name === 'inconnu') {
+          console.warn(`[webhook] plan non identifiable pour ${session.subscription} — étiquette « inconnu » assumée`)
+        }
       }
 
       const trialEnd = subscription?.trial_end
@@ -163,7 +228,11 @@ export async function POST(request: Request) {
         city,
         plan: planInfo.name,
         billing_cycle: planInfo.cycle,
-        status: 'trialing',
+        // ⚠️ 'trialing' ÉTAIT ÉCRIT EN DUR, alors que le vrai statut est
+        // disponible deux lignes plus haut et n'était jamais lu. /reactivation
+        // passe `immediate: true` : Stripe renvoie alors `active`, et le
+        // webhook écrivait quand même « en essai ».
+        status: subscription?.status ?? 'incomplete',
         trial_end: trialEnd,
         amount_eur: amountEur,
         discount_eur: discountEur,

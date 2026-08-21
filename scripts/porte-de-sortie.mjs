@@ -551,6 +551,44 @@ console.log('\n── Les liens de sortie vers l\'offre ──')
   }
 }
 
+// ─── LE WEBHOOK STRIPE REFUSE-T-IL CE QUI NE VIENT PAS DE STRIPE ? ──────────
+//
+// Deux contrôles opposés, et c'est voulu :
+//   · un appel SANS en-tête de signature doit être refusé (400) ;
+//   · un appel AVEC une signature invalide doit l'être aussi (400).
+//
+// Le second prouve en plus que le SECRET est bien configuré : sans lui, la
+// route ne pourrait pas distinguer une signature fausse d'une vraie.
+//
+// ⚠️ POURQUOI CE CONTRÔLE EXISTE : avant le 21/08/2026, l'absence de signature
+// ET l'absence de secret renvoyaient toutes deux 200 « bien reçu ». Or Stripe
+// lit un 200 comme une livraison réussie et ne réessaie jamais. Si le secret
+// disparaissait de l'environnement, TOUS les abonnements se seraient perdus en
+// silence, sans une seule erreur nulle part.
+console.log('\n── Le webhook de paiement ──')
+{
+  try {
+    const r = await fetch(`${BASE}/api/webhooks/stripe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    dire(r.status === 400, `sans signature → ${r.status}, attendu 400`)
+  } catch (e) {
+    dire(false, `webhook sans signature → ${e.message}`)
+  }
+  try {
+    const r = await fetch(`${BASE}/api/webhooks/stripe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'stripe-signature': 't=1,v1=invalide' },
+      body: '{}',
+    })
+    dire(r.status === 400, `signature invalide → ${r.status}, attendu 400 (prouve que le secret est posé)`)
+  } catch (e) {
+    dire(false, `webhook signature invalide → ${e.message}`)
+  }
+}
+
 // ─── LA MESURE ARRIVE-T-ELLE VRAIMENT ? ─────────────────────────────────────
 //
 // Deux choses opposées à vérifier, et c'est voulu :
