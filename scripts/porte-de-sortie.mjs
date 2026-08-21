@@ -74,6 +74,53 @@ const PORTES = [
 ]
 
 let echecs = 0
+let injoignables = 0
+
+/**
+ * ⚠️ 21/08/2026 — CETTE PORTE A ANNONCÉ « 81 CONTRÔLES EN ÉCHEC », PUIS
+ * « 96 VERTS, 0 ÉCHEC », À TROIS MINUTES D'INTERVALLE. SUR LA MÊME PRODUCTION.
+ *
+ * La cause n'était pas le site : c'était une grappe de coupures réseau depuis ce
+ * poste. Mesuré à l'instant : 17 connexions réussies sur 20, les 3 échecs
+ * groupés. Un `fetch` qui expire lève une exception, et chaque contrôle
+ * l'attrapait en la comptant comme un refus du site.
+ *
+ * C'EST UN DÉFAUT GRAVE DE L'OUTIL, pas un détail. Un contrôle qui ne distingue
+ * pas « le site a dit non » de « je n'ai pas pu joindre le site » ment dans les
+ * deux sens : il crie au loup quand le réseau tousse, et le jour où 81 contrôles
+ * tombent pour de vrai, personne ne le croira.
+ *
+ * Ce qu'on fait : un seul réessai sur erreur de CONNEXION (jamais sur une
+ * réponse du serveur — un 500 est une réponse, elle se compte), et un compteur
+ * séparé pour ce qu'on n'a pas pu joindre. La porte échoue toujours si un
+ * contrôle a réellement refusé ; elle DIT à part ce qu'elle n'a pas pu vérifier.
+ */
+async function joindre(url, options = {}) {
+  try {
+    return await fetch(url, options)
+  } catch (premiere) {
+    // Une seule seconde chance. Deux échecs de connexion d'affilée, ce n'est
+    // plus une toux du réseau.
+    await new Promise((r) => setTimeout(r, 1200))
+    try {
+      return await fetch(url, options)
+    } catch (seconde) {
+      seconde.injoignable = true
+      throw seconde
+    }
+  }
+}
+
+/** À appeler dans un `catch` : sépare l'injoignable du refus. */
+const direOuInjoignable = (e, texte) => {
+  if (e && e.injoignable) {
+    injoignables++
+    console.log(`  ⏸️  ${texte} — INJOIGNABLE depuis ce poste (pas un échec du site)`)
+    return
+  }
+  echecs++
+  console.log(`  ❌ ${texte} — ${e?.message ?? e}`)
+}
 
 /**
  * Ce qui manque et qui n'est PAS un échec : des valeurs que seul un humain peut
@@ -108,7 +155,7 @@ const dire = (ok, texte) => {
 let ageMaxObserve = 0
 
 async function lire(chemin) {
-  const r = await fetch(`${BASE}${chemin}${chemin.includes('?') ? '&' : '?'}_pds=${Date.now()}`, {
+  const r = await joindre(`${BASE}${chemin}${chemin.includes('?') ? '&' : '?'}_pds=${Date.now()}`, {
     headers: { 'Cache-Control': 'no-cache' },
   })
   const age = Number(r.headers.get('age') || 0)
@@ -134,7 +181,7 @@ for (const p of PAGES) {
     corps[p] = c
     dire(statut === 200, `${p} → HTTP ${statut}${redirigeVers ? ` (redirigé vers ${redirigeVers} — le texte analysé est celui de l'arrivée)` : ''}`)
   } catch (e) {
-    dire(false, `${p} → injoignable : ${e.message}`)
+    direOuInjoignable(e, `${p}`)
   }
 }
 
@@ -147,7 +194,7 @@ for (const { motif, quoi } of INTERDITS) {
 console.log('\n── Les portes sont fermées à un inconnu ──')
 for (const { chemin, methode, attendu, quoi } of PORTES) {
   try {
-    const r = await fetch(`${BASE}${chemin}`, {
+    const r = await joindre(`${BASE}${chemin}`, {
       method: methode,
       ...(methode === 'POST'
         ? { headers: { 'Content-Type': 'application/json' }, body: '{}' }
@@ -155,7 +202,7 @@ for (const { chemin, methode, attendu, quoi } of PORTES) {
     })
     dire(attendu.includes(r.status), `${chemin} (${quoi}) → ${r.status}, attendu ${attendu.join('/')}`)
   } catch (e) {
-    dire(false, `${chemin} → ${e.message}`)
+    direOuInjoignable(e, `${chemin}`)
   }
 }
 
@@ -180,7 +227,7 @@ for (const base of BACKENDS) {
   const nom = base.replace('https://', '').split('-production')[0]
   for (const route of ROUTES_BOLT) {
     try {
-      const r = await fetch(`${base}${route}`, { headers: { 'Cache-Control': 'no-cache' } })
+      const r = await joindre(`${base}${route}`, { headers: { 'Cache-Control': 'no-cache' } })
       if (r.status === 404 || r.status === 401 || r.status === 403) {
         dire(true, `${nom}${route} → ${r.status} (fermé)`)
         continue
@@ -191,7 +238,7 @@ for (const base of BACKENDS) {
       const nominatifs = (t.match(/"(phone|first_name|last_name|email|plate|address)"\s*:\s*(?!null)(?!"")/g) || []).length
       dire(false, `${nom}${route} → ${r.status} OUVERT · ${nominatifs} champ(s) nominatif(s) RENSEIGNÉ(S)`)
     } catch (e) {
-      dire(false, `${nom}${route} → injoignable : ${e.message}`)
+      direOuInjoignable(e, `${nom}${route}`)
     }
   }
 }
@@ -219,7 +266,7 @@ const ROUTES_PAYANTES = [
 for (const [base, route, quoi] of ROUTES_PAYANTES) {
   const nom = base.replace('https://', '').split('-production')[0]
   try {
-    const r = await fetch(`${base}${route}`, {
+    const r = await joindre(`${base}${route}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{}',
@@ -229,7 +276,7 @@ for (const [base, route, quoi] of ROUTES_PAYANTES) {
       `${nom}${route} (${quoi}) → ${r.status}, attendu 401/403/404`,
     )
   } catch (e) {
-    dire(false, `${nom}${route} → ${e.message}`)
+    direOuInjoignable(e, `${nom}${route}`)
   }
 }
 
@@ -239,7 +286,7 @@ try {
   const fuite = /sk_live|sk_test|keyPrefix|hasKey|eyJ[A-Za-z0-9_-]{20}/.test(c)
   dire(!fuite, 'GET /api/checkout ne publie ni clé ni indice de clé')
 } catch (e) {
-  dire(false, `GET /api/checkout → ${e.message}`)
+  direOuInjoignable(e, `GET /api/checkout`)
 }
 
 console.log('\n── Le saut vers l\'app marche sur les trois appareils ──')
@@ -258,25 +305,25 @@ const ATTENDU = { iPhone: 'apps.apple.com', Android: 'play.google.com', ordinate
 
 for (const [appareil, agent] of Object.entries(AGENTS_TEST)) {
   try {
-    const r = await fetch(`${BASE}/go/zones`, { redirect: 'manual', headers: { 'User-Agent': agent } })
+    const r = await joindre(`${BASE}/go/zones`, { redirect: 'manual', headers: { 'User-Agent': agent } })
     const vers = r.headers.get('location') ?? ''
     dire(vers.includes(ATTENDU[appareil]), `${appareil} → ${vers.slice(0, 52)}`)
   } catch (e) {
-    dire(false, `${appareil} → ${e.message}`)
+    direOuInjoignable(e, `${appareil}`)
   }
 }
 
 // Le test qui compte : personne ne doit pouvoir fabriquer un lien en foreas.xyz
 // qui emmène ailleurs.
 try {
-  const r = await fetch(`${BASE}/go/zones?url=https://exemple-malveillant.test`, {
+  const r = await joindre(`${BASE}/go/zones?url=https://exemple-malveillant.test`, {
     redirect: 'manual',
     headers: { 'User-Agent': AGENTS_TEST.ordinateur },
   })
   const vers = r.headers.get('location') ?? ''
   dire(!vers.includes('exemple-malveillant'), `aucune redirection ouverte → ${vers.slice(0, 46)}`)
 } catch (e) {
-  dire(false, `redirection ouverte → ${e.message}`)
+  direOuInjoignable(e, `redirection ouverte`)
 }
 
 console.log('\n── Le prix facturé est le prix affiché ──')
@@ -290,7 +337,7 @@ try {
   // Le garde existait : resoudreFormule() dit dans son propre commentaire que
   // « l'appelant DOIT refuser ». Cette route ne l'appelait pas. Un contrôle qui
   // se trompe de cible passe à côté ; un contrôle qui échoue fait chercher.
-  const r = await fetch(`${BASE}/api/checkout`, {
+  const r = await joindre(`${BASE}/api/checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: BASE },
     body: JSON.stringify({ plan: 'elite_monthly' }),
@@ -301,7 +348,7 @@ try {
     'une formule hors catalogue (elite_monthly, 247 €) est refusée',
   )
 } catch (e) {
-  dire(false, `/api/subscription/create → ${e.message}`)
+  direOuInjoignable(e, `/api/subscription/create`)
 }
 
 // ─── LES QUATRE ROUTES FERMÉES LE 20/08 AU SOIR ─────────────────────────────
@@ -325,14 +372,14 @@ for (const base of BACKENDS) {
   const nom = base.includes('stripe') ? 'stripe' : 'ia'
   for (const { chemin, methode, quoi } of ROUTES_FERMEES) {
     try {
-      const r = await fetch(base + chemin, {
+      const r = await joindre(base + chemin, {
         method: methode,
         headers: { 'Content-Type': 'application/json' },
         ...(methode === 'POST' ? { body: '{}' } : {}),
       })
       dire(r.status === 401 || r.status === 404, `${nom}${chemin.slice(0, 34)} (${quoi}) → ${r.status}, attendu 401/404`)
     } catch (e) {
-      dire(false, `${nom}${chemin} → ${e.message}`)
+      direOuInjoignable(e, `${nom}${chemin}`)
     }
   }
 }
@@ -348,12 +395,12 @@ console.log('\n── Le frigo du Coach : vivant, mais sans donnée nominative �
 for (const base of BACKENDS) {
   const nom = base.includes('stripe') ? 'stripe' : 'ia'
   try {
-    const r = await fetch(`${base}/api/coach/decision-context?driver_id=${UUID_INVENTE}`)
+    const r = await joindre(`${base}/api/coach/decision-context?driver_id=${UUID_INVENTE}`)
     const j = await r.json().catch(() => ({}))
     dire(r.status === 200, `${nom} frigo répond → ${r.status}, attendu 200 (le fermer casserait le Coach)`)
     dire(j.first_name === '' || j.first_name === undefined, `${nom} frigo sans jeton → aucun prénom renvoyé`)
   } catch (e) {
-    dire(false, `${nom} frigo → ${e.message}`)
+    direOuInjoignable(e, `${nom} frigo`)
   }
 }
 
@@ -365,14 +412,14 @@ for (const base of BACKENDS) {
 // on ne le fait pas échouer, on l'AFFICHE, pour que l'état soit su.
 console.log('\n── État des portes dédiées (lisible, sans aucun secret) ──')
 try {
-  const r = await fetch('https://foreas-ai-backend-production.up.railway.app/api/ajnaya/pieuvre-health')
+  const r = await joindre('https://foreas-ai-backend-production.up.railway.app/api/ajnaya/pieuvre-health')
   const j = await r.json()
   const p = j.portes_dediees || {}
   dire(typeof p.cle_bolt_posee === 'boolean', `le voyant existe (clé Bolt posée : ${p.cle_bolt_posee})`)
   dire(p.sel_analytics_pose === true, `sel d’anonymisation des IP posé → ${p.sel_analytics_pose}`)
   dire(p.secret_webhook_voix_pose === true, `secret des webhooks voix posé → ${p.secret_webhook_voix_pose}`)
 } catch (e) {
-  dire(false, `point de santé → ${e.message}`)
+  direOuInjoignable(e, `point de santé`)
 }
 
 // ─── LE RÉFÉRENCEMENT AUSSI SE REJOUE ───────────────────────────────────────
@@ -391,7 +438,7 @@ try {
 //     moins qu'un seul signal clair.
 console.log('\n── Le plan du site et les adresses de référence ──')
 try {
-  const rSitemap = await fetch(`${BASE}/sitemap.xml`)
+  const rSitemap = await joindre(`${BASE}/sitemap.xml`)
   const xml = await rSitemap.text()
   const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
   dire(urls.length > 0, `le plan du site liste ${urls.length} page(s)`)
@@ -403,7 +450,7 @@ try {
   let sansCanonique = []
   let contradictions = []
   for (const u of urls) {
-    const r = await fetch(u, { headers: { 'Cache-Control': 'no-cache' } })
+    const r = await joindre(u, { headers: { 'Cache-Control': 'no-cache' } })
     const html = await r.text()
     const can = html.match(/rel="canonical"\s+href="([^"]+)"/)?.[1]
     if (!can) { sansCanonique.push(u); continue }
@@ -434,7 +481,7 @@ try {
     `aucun signal ne contredit l'adresse de référence — ${contradictions.slice(0, 3).join(' · ') || 'aucune contradiction'}`,
   )
 } catch (e) {
-  dire(false, `plan du site → ${e.message}`)
+  direOuInjoignable(e, `plan du site`)
 }
 
 // ─── OÙ EN EST LA BASCULE DE CLÉ, COMPOSANT PAR COMPOSANT ───────────────────
@@ -464,7 +511,7 @@ console.log('\n── Bascule des clés Supabase (état, pas jugement) ──')
   ]
   for (const c of composants) {
     try {
-      const r = await fetch(c.url, { headers: { 'Cache-Control': 'no-cache' } })
+      const r = await joindre(c.url, { headers: { 'Cache-Control': 'no-cache' } })
       const j = await r.json()
       const etat = c.champ(j)
       dire(etat === 'nouvelle' || etat === 'ancienne', `${c.nom} → clé « ${etat} »`)
@@ -472,7 +519,7 @@ console.log('\n── Bascule des clés Supabase (état, pas jugement) ──')
         console.log(`     ℹ️  normal aujourd'hui. Deviendra « nouvelle » quand la clé dédiée sera posée.`)
       }
     } catch (e) {
-      dire(false, `${c.nom} → voyant injoignable : ${e.message}`)
+      direOuInjoignable(e, `${c.nom} → voyant injoignable`)
     }
   }
 }
@@ -491,10 +538,18 @@ console.log('\n── Bascule des clés Supabase (état, pas jugement) ──')
 console.log('\n── L\'accueil mène-t-il à la caisse ? ──')
 {
   const html = corps['/'] ?? ''
+  // ⚠️ Un contrôle qui lit un corps JAMAIS CHARGÉ conclurait « 0 lien » alors
+  // qu'il n'a rien lu. C'est exactement le mensonge qu'on vient de corriger,
+  // déplacé d'un cran : la page n'a pas répondu, on ne sait pas, on le dit.
+  if (!html) {
+    injoignables++
+    console.log("  ⏸️  l'accueil n'a pas pu être chargé — rien à conclure sur ses liens")
+  } else {
   const versLaCaisse = (html.match(/tarifs2/g) ?? []).length
   const versWhatsApp = (html.match(/wa\.me|api\.whatsapp/g) ?? []).length
   dire(versLaCaisse > 0, `accueil → ${versLaCaisse} lien(s) vers /tarifs2 (il en faut au moins 1)`)
   console.log(`     ℹ️  et ${versWhatsApp} lien(s) WhatsApp — normal, c'est l'aide à la décision.`)
+  }
 }
 
 // ─── AUCUN NET CALCULÉ DANS UN MESSAGE ENVOYÉ AU NOM DU CHAUFFEUR ───────────
@@ -510,6 +565,11 @@ console.log('\n── Le message envoyé au nom du chauffeur ──')
 {
   for (const page of ['/', '/ou-ca-paie']) {
     const html = corps[page] ?? ''
+    if (!html) {
+      injoignables++
+      console.log(`  ⏸️  ${page} n'a pas pu être chargée — rien à conclure sur son message`)
+      continue
+    }
     // « je touche environ NN€ net », sous n'importe quel encodage.
     const encode = /je(?:%20|\+|\s)touche(?:%20|\+|\s)environ/i.test(html)
     dire(!encode, `${page} → ${encode ? 'un net est AFFIRMÉ dans le message pré-rempli' : 'aucun net affirmé dans le message'}`)
@@ -535,14 +595,14 @@ console.log('\n── Les portes fermées le 21/08 ──')
   for (const porte of FERMEES_SITE) {
     const { chemin, methode, quoi } = porte
     try {
-      const r = await fetch(BASE + chemin, {
+      const r = await joindre(BASE + chemin, {
         method: methode,
         headers: { 'Content-Type': 'application/json' },
         ...(methode === 'POST' ? { body: '{}' } : {}),
       })
       dire(r.status === (porte.attendu ?? 404), `${chemin} (${quoi}) → ${r.status}, attendu ${porte.attendu ?? 404}`)
     } catch (e) {
-      dire(false, `${chemin} → ${e.message}`)
+      direOuInjoignable(e, `${chemin}`)
     }
   }
 }
@@ -556,20 +616,20 @@ console.log('\n── Les portes fermées le 21/08 ──')
 console.log('\n── Les liens de sortie vers l\'offre ──')
 {
   try {
-    const r = await fetch(`${BASE}/go/ce-sujet-nexiste-pas`, { redirect: 'manual' })
+    const r = await joindre(`${BASE}/go/ce-sujet-nexiste-pas`, { redirect: 'manual' })
     dire(r.status === 404, `/go/<sujet inconnu> → ${r.status}, attendu 404`)
   } catch (e) {
-    dire(false, `/go/<sujet inconnu> → ${e.message}`)
+    direOuInjoignable(e, `/go/<sujet inconnu>`)
   }
   try {
-    const r = await fetch(`${BASE}/go/aeroport`, { redirect: 'manual' })
+    const r = await joindre(`${BASE}/go/aeroport`, { redirect: 'manual' })
     const dest = r.headers.get('location') ?? ''
     dire(
       r.status === 307 && dest.includes('utm_campaign=aeroport'),
       `/go/aeroport → ${r.status}, attribution ${dest.includes('utm_campaign=aeroport') ? 'présente' : 'PERDUE'}`,
     )
   } catch (e) {
-    dire(false, `/go/aeroport → ${e.message}`)
+    direOuInjoignable(e, `/go/aeroport`)
   }
 }
 
@@ -606,7 +666,7 @@ console.log('\n── Les fichiers d\'ouverture de l\'app ──')
   ]
   for (const { chemin, marqueur, quoi } of GABARITS) {
     try {
-      const r = await fetch(BASE + chemin)
+      const r = await joindre(BASE + chemin)
       const corps = await r.text()
       const vide = corps.includes(marqueur)
       if (!vide) {
@@ -628,7 +688,7 @@ console.log('\n── Les fichiers d\'ouverture de l\'app ──')
         console.log(`        « ${marqueur} » se dénonce à la lecture, une valeur plausible mais fausse non.`)
       }
     } catch (e) {
-      dire(false, `${chemin} → ${e.message}`)
+      direOuInjoignable(e, `${chemin}`)
     }
   }
 }
@@ -650,24 +710,24 @@ console.log('\n── Les fichiers d\'ouverture de l\'app ──')
 console.log('\n── Le webhook de paiement ──')
 {
   try {
-    const r = await fetch(`${BASE}/api/webhooks/stripe`, {
+    const r = await joindre(`${BASE}/api/webhooks/stripe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{}',
     })
     dire(r.status === 400, `sans signature → ${r.status}, attendu 400`)
   } catch (e) {
-    dire(false, `webhook sans signature → ${e.message}`)
+    direOuInjoignable(e, `webhook sans signature`)
   }
   try {
-    const r = await fetch(`${BASE}/api/webhooks/stripe`, {
+    const r = await joindre(`${BASE}/api/webhooks/stripe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'stripe-signature': 't=1,v1=invalide' },
       body: '{}',
     })
     dire(r.status === 400, `signature invalide → ${r.status}, attendu 400 (prouve que le secret est posé)`)
   } catch (e) {
-    dire(false, `webhook signature invalide → ${e.message}`)
+    direOuInjoignable(e, `webhook signature invalide`)
   }
 }
 
@@ -684,26 +744,26 @@ console.log('\n── Le webhook de paiement ──')
 console.log('\n── La mesure ──')
 {
   try {
-    const r = await fetch(`${BASE}/api/mesure`, {
+    const r = await joindre(`${BASE}/api/mesure`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ evenement: 'SubscriptionConfirmed', page: '/porte-de-sortie' }),
     })
     dire(r.status === 403, `un abonnement annoncé par le navigateur → ${r.status}, attendu 403`)
   } catch (e) {
-    dire(false, `/api/mesure → ${e.message}`)
+    direOuInjoignable(e, `/api/mesure`)
   }
   try {
     // Événement volontairement invalide : prouve que la route vit et valide,
     // sans écrire une seule ligne.
-    const r = await fetch(`${BASE}/api/mesure`, {
+    const r = await joindre(`${BASE}/api/mesure`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     })
     dire(r.status === 400, `un événement sans nom → ${r.status}, attendu 400 (la route vit et valide)`)
   } catch (e) {
-    dire(false, `/api/mesure → ${e.message}`)
+    direOuInjoignable(e, `/api/mesure`)
   }
 }
 
@@ -728,9 +788,30 @@ if (enAttente.length > 0) {
   for (const a of enAttente) console.log(`     · ${a}`)
 }
 
+if (injoignables > 0) {
+  console.log(
+    `\n⏸️  ${injoignables} contrôle(s) INJOIGNABLES depuis ce poste — deux tentatives de connexion` +
+      `\n    échouées. Ce n'est pas un refus du site : c'est le réseau entre lui et moi.` +
+      `\n    Relance pour les vérifier. Ne conclus rien tant qu'ils n'ont pas répondu.`,
+  )
+}
+
 console.log(
   echecs === 0
-    ? '\n✅ Porte franchie — la production dit la vérité et ses portes sont fermées.\n'
+    ? injoignables === 0
+      ? '\n✅ Porte franchie — la production dit la vérité et ses portes sont fermées.\n'
+      : `\n🟡 Porte franchie sur ce qui a répondu — mais ${injoignables} contrôle(s) n'ont pas pu être vérifiés.\n`
     : `\n❌ ${echecs} contrôle(s) en échec. Ne pas envoyer de trafic sur cet état.\n`,
 )
-process.exit(echecs === 0 ? 0 : 1)
+// ⚠️ TROIS CODES DE SORTIE, PAS DEUX.
+//
+// Un contrôle qui n'a RIEN pu vérifier ne doit pas rendre un feu vert : lu par
+// un automate, `0` veut dire « tout va bien ». Or « je n'ai pas pu regarder » et
+// « j'ai regardé, tout va bien » ne sont pas la même chose — c'est précisément la
+// confusion qui a fait annoncer « 81 contrôles en échec » sur une production
+// parfaitement saine.
+//
+//   0 — tout a répondu, tout est vert
+//   1 — un contrôle a réellement échoué : ne pas envoyer de trafic
+//   2 — rien de cassé, mais des contrôles n'ont pas pu être joints : relancer
+process.exit(echecs > 0 ? 1 : injoignables > 0 ? 2 : 0)
