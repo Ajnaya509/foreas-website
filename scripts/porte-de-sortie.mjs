@@ -844,6 +844,22 @@ console.log('\n── La mesure ──')
   } catch (e) {
     direOuInjoignable(e, `/api/mesure`)
   }
+
+  // ⚠️ CE QUE CES TROIS CONTRÔLES NE PROUVENT PAS — À LIRE AVANT DE S'Y FIER.
+  //
+  // Le vrai chemin de la mesure n'est PAS celui qu'on teste ici. `src/lib/mesure.ts`
+  // envoie d'abord par `navigator.sendBeacon` (ligne 142) ; `fetch` n'est qu'un
+  // repli (ligne 146). Un `sendBeacon` ne peut pas être émis depuis une ligne de
+  // commande : il n'existe que dans un navigateur.
+  //
+  // Donc ce script vérifie que la PORTE tient, jamais que la mesure ARRIVE.
+  // Vérifié à la main le 21/08 dans un vrai navigateur : le beacon passe, la ligne
+  // atterrit en base en six secondes. Mais c'est une vérification humaine, pas un
+  // contrôle automatique — et il ne faut pas la confondre avec un vert d'ici.
+  console.log(
+    '    ℹ️  le VRAI chemin (sendBeacon depuis un navigateur) n’est PAS testé ici —',
+  )
+  console.log('       une ligne de commande ne peut pas en émettre un.')
 }
 
 // ─── FRAÎCHEUR DE CE QU'ON VIENT DE LIRE ────────────────────────────────────
