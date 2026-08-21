@@ -1,6 +1,27 @@
 import type { NextConfig } from 'next'
+import path from 'node:path'
 
 const nextConfig: NextConfig = {
+  /**
+   * ⚠️ 21/08/2026 — NEXT PRENAIT LE DOSSIER PERSONNEL POUR LA RACINE DU PROJET.
+   *
+   * Message exact à chaque assemblage :
+   *   « We detected multiple lockfiles and selected the directory of
+   *     /Users/chandlermilien/package-lock.json as the root directory. »
+   *
+   * Il existe un fichier de dépendances égaré dans le dossier personnel. Next
+   * remonte l'arborescence pour deviner la racine de l'espace de travail, le
+   * trouve, et considère TOUT le dossier personnel comme la racine.
+   *
+   * Ce n'est pas qu'un avertissement : c'est depuis cette racine que Next trace
+   * les fichiers à embarquer dans le paquet serveur. Une racine trop haute fait
+   * remonter des fichiers étrangers au projet — y compris ceux des autres
+   * projets de Chandler.
+   *
+   * ⚠️ ON NE SUPPRIME PAS le fichier égaré : il n'appartient pas à ce dépôt, et
+   * un autre projet en dépend peut-être. On déclare simplement notre racine.
+   */
+  outputFileTracingRoot: path.join(__dirname),
   images: {
     formats: ['image/avif', 'image/webp'],
   },

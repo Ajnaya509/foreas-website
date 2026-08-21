@@ -76,7 +76,7 @@ export default function ReactivationClient() {
       className={`inline-flex items-center gap-2 rounded-full px-4 py-2 ${className}`}
       style={{ background: 'rgba(16,185,129,0.10)', border: `1px solid rgba(16,185,129,0.28)` }}
     >
-      /*
+      {/*
       ⚠️ 21/08/2026 — LA GARANTIE 30 JOURS N'EST PLUS ANNONCÉE.
 
       Elle EXISTE au contrat (clause écrite dans /cgu : remboursement intégral
@@ -95,7 +95,19 @@ export default function ReactivationClient() {
 
       Source unique : GARANTIE_30J dans src/lib/verite-commerciale.ts. Y
       passer `prouvee: true` la rallume partout d'un coup.
-      */
+
+        ⚠️ ET UNE LEÇON : ce bloc s'est AFFICHÉ SUR LA PAGE, en production.
+        Un commentaire de bloc posé dans les ENFANTS d'un élément JSX n'est
+        pas un commentaire : c'est du TEXTE. Il lui faut des accolades. Le
+        mien est parti en ligne, échappé en entités HTML, sous les yeux des
+        visiteurs.
+
+        Et deux fois le même piège dans le même bloc : en rédigeant CETTE
+        leçon, j'y avais recopié la séquence qui referme un commentaire — ce
+        qui l'a refermé au milieu d'une phrase. La vérification des types a
+        attrapé le second cas, jamais le premier : un texte affiché est une
+        chaîne parfaitement valide.
+      */}
       <ShieldCheck size={16} style={{ color: C.green }} />
       <span className="text-[13px] font-semibold" style={{ color: C.green }}>
         {garantieAffichable()
