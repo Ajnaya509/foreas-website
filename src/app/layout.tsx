@@ -133,9 +133,39 @@ export default function RootLayout({
           ⚠️ On utilise `display: none` et pas `opacity: 0` : un élément à
           opacité nulle occupe toujours la place et reste dans le flux.
         */}
+        {/*
+          ⚠️ 21/08/2026, SECONDE PASSE — LE TEXTE ÉTAIT LÀ, ET INVISIBLE.
+
+          J'avais annoncé « texte visible 28 → 5 690 caractères » après avoir
+          retiré les frontières d'attente. Ce chiffre comptait le texte PRÉSENT
+          dans le document, pas le texte LISIBLE.
+
+          Mesuré par un vérificateur adverse : sur /revenus, 2 400 des 2 495
+          caractères sont sous un ancêtre à opacité nulle. Sur les dix pages, il
+          ne restait de lisible que le pied de page.
+
+          La cause : les enveloppes d'apparition démarrent à opacité nulle et ne
+          remontent que par JavaScript. Le serveur écrit donc une opacité nulle,
+          et rien ne la relève.
+
+          ⚠️ ET C'ÉTAIT ÉCRIT DANS MA PROPRE MÉMOIRE, le matin même : « après
+          correction la page reste invisible SANS JavaScript — opacité nulle et
+          voile, deux corrections distinctes ». J'ai fait la première et déclaré
+          la seconde faite.
+
+          ⚠️ ET LE COMMENTAIRE LUI-MÊME A DÛ SORTIR DU BLOC CSS : écrit dans le
+          gabarit, il partait entier dans le HTML de chaque page. Deux fois le
+          même réflexe à corriger dans la même journée.
+
+          La règle ne s'applique QUE sans JavaScript : elle ne peut pas casser
+          l'animation de ceux qui l'ont.
+        */}
         <noscript>
           <style>{`
             .voile-de-marque { display: none !important; }
+
+            /* Sans JavaScript, tout ce qui attend une animation reste visible. */
+            [style*="opacity:0"], [style*="opacity: 0"] { opacity: 1 !important; }
             [aria-hidden="true"].fixed.inset-0.z-\\[100\\] { display: none !important; }
           `}</style>
         </noscript>
