@@ -19,9 +19,16 @@
 import { Metadata } from 'next'
 import CheckoutClient from './CheckoutClient'
 
+import { garantieAffichable } from '@/lib/verite-commerciale'
 export const metadata: Metadata = {
   title: 'FOREAS — Démarrer maintenant',
-  description: 'Paiement sécurisé. Garantie 30 jours satisfait ou remboursé.',
+  // ⚠️ 21/08/2026 — la garantie n'est plus annoncée. Le droit existe au contrat
+  // (/cgu), son mécanisme n'est pas prouvé. Voir GARANTIE_30J. Cette page répond
+  // 308 vers /tarifs2 depuis le 20/08, mais sa description partait quand même
+  // dans les aperçus de partage.
+  description: garantieAffichable()
+    ? 'Paiement sécurisé. Garantie 30 jours satisfait ou remboursé.'
+    : 'Paiement sécurisé. Résiliable à tout moment.',
   robots: { index: false, follow: false },
 }
 

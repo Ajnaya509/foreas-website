@@ -586,6 +586,53 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── LA GARANTIE 30 JOURS NE S'ANNONCE PAS SANS SON GARDE ──────────────────
+//
+// ⚠️ 21/08/2026 — CE N'EST PAS UNE PROMESSE INVENTÉE, ET C'EST CE QUI REND LE
+// CAS DIFFICILE. Le droit EXISTE : une clause écrite dans /cgu prévoit le
+// remboursement intégral de la première période, sans justification, sur simple
+// message. Ce qui manque, c'est le mécanisme :
+//   · aucun délai de traitement annoncé — « sans discuter » ne dit pas « sous
+//     combien de jours » ;
+//   · aucun responsable nommé ;
+//   · aucune trace qu'un remboursement ait jamais été traité — ni dans le code
+//     des trois dépôts, ni en base.
+//
+// Une promesse de remboursement qu'on ne peut pas prouver honorer engage plus
+// qu'elle ne rassure : le jour où quelqu'un la réclame et attend, c'est la
+// parole de FOREAS qui tombe.
+//
+// LA RÈGLE : on cesse de la VENDRE, on continue de la DEVOIR. Toute surface
+// commerciale qui la mentionne doit passer par `garantieAffichable()`.
+//
+// EXEMPTÉS, et pour deux raisons opposées :
+//   · /cgu — c'est le CONTRAT. Retirer un droit du contrat en silence serait
+//     pire que de ne pas l'avoir annoncé : un abonné qui le demande l'obtient ;
+//   · verite-commerciale.ts — c'est la source qui décide.
+{
+  const MOTIFS = /30\s*(?:&nbsp;|\s)*jours[^.]{0,40}rembours|rembours[^.]{0,40}30\s*(?:&nbsp;|\s)*jours|satisfait[- ]ou[- ]rembours|garanti[e]?\s*30/i
+  const EXEMPTS = ['app/cgu/', 'lib/verite-commerciale.ts', 'app/mentions-legales/', 'app/confidentialite/']
+  for (const chemin of fichiers(RACINE)) {
+    const relatif = chemin.replace(RACINE + '/', '')
+    if (EXEMPTS.some((e) => relatif.includes(e))) continue
+    const source = readFileSync(chemin, 'utf8')
+    const sansCommentaires = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+    const m = sansCommentaires.match(MOTIFS)
+    if (!m) continue
+    if (sansCommentaires.includes('garantieAffichable(')) continue
+    infractions.push({
+      fichier: relatif,
+      quoi: 'la garantie 30 jours annoncée sans passer par son garde',
+      extrait: m[0].slice(0, 60),
+      pourquoi:
+        "Le droit existe au contrat (/cgu) mais son mécanisme n'est pas prouvé : aucun délai, aucun responsable, aucun remboursement jamais traité. Une promesse qu'on ne peut pas prouver honorer engage plus qu'elle ne rassure. Passe par garantieAffichable() depuis src/lib/verite-commerciale.ts — le jour où les trois manques sont comblés, un seul drapeau la rallume partout.",
+    })
+  }
+}
+
 // ─── L'ACCUEIL DOIT MENER À LA CAISSE ───────────────────────────────────────
 //
 // 🔴 MESURÉ LE 21/08/2026 sur le HTML servi de la page d'accueil :

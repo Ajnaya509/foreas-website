@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { InkGradientButton } from '@/components/ui'
 import { Check, ShieldCheck, Smartphone } from 'lucide-react'
 
+import { garantieAffichable } from '@/lib/verite-commerciale'
 type OS = 'ios' | 'android' | 'other'
 
 /**
@@ -134,7 +135,11 @@ export default function MerciClient() {
           </div>
           <div className="flex items-start gap-2.5 rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <ShieldCheck size={16} className="mt-0.5 text-[#10B981]" />
-            <p className="text-[13px] leading-relaxed text-white/70"><strong className="text-white/90">Garantie 30 jours.</strong> Pas convaincu, tu te fais rembourser sans discuter. Tu risques zéro.</p>
+            {/* ⚠️ 21/08/2026 — voir GARANTIE_30J : le droit existe au contrat, le
+                mécanisme n'est pas prouvé. On ne l'annonce plus. */}
+            <p className="text-[13px] leading-relaxed text-white/70">{garantieAffichable()
+              ? <><strong className="text-white/90">Garantie 30 jours.</strong> Pas convaincu, tu te fais rembourser sans discuter. Tu risques zéro.</>
+              : <><strong className="text-white/90">Résiliable à tout moment.</strong> Depuis ton espace, sans avoir à te justifier.</>}</p>
           </div>
         </div>
 

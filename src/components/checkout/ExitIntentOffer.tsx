@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Clock, ArrowRight } from 'lucide-react'
 import { FORMULES, formaterEuros, resoudreFormule, type FormuleActive } from '@/lib/offre'
 
+import { garantieAffichable } from '@/lib/verite-commerciale'
 const SEEN_KEY = 'foreas_exit20_seen'
 const DEADLINE_KEY = 'foreas_exit20_deadline'
 const WINDOW_MS = 15 * 60 * 1000 // 15 min — vraie fenêtre
@@ -144,7 +145,7 @@ export default function ExitIntentOffer({ onAccept }: { onAccept: () => void }) 
                 </h2>
                 <p className="mt-2.5 text-[14.5px] leading-relaxed text-white/70">
                   Juste pour toi, <strong className="text-white/90">une seule fois</strong>. Tu démarres à <strong className="text-[#F8FAFC] tabular-nums">{prixRemise}</strong> au lieu de <span className="tabular-nums">{prixPlein}</span> {estAnnuel ? 'cette année' : 'ce mois-ci'}.
-                  {estAnnuel ? ' L’année suivante' : ' Le mois suivant'}, tu repasses à <span className="tabular-nums">{prixPlein}</span>. La garantie 30 jours tient toujours.
+                  {estAnnuel ? ' L’année suivante' : ' Le mois suivant'}, tu repasses à <span className="tabular-nums">{prixPlein}</span>.{garantieAffichable() ? ' La garantie 30 jours tient toujours.' : ' Tu résilies quand tu veux.'}
                 </p>
 
                 <div className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}>

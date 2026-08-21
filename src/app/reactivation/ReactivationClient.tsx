@@ -19,6 +19,7 @@ import { TESTIMONIALS } from '@/components/zone/testimonials.data'
 import { PRIX_MENSUEL_CENTIMES, formaterEuros } from '@/lib/offre'
 import { COMMUNAUTE_PHRASES, COMPTA_PHRASES } from '@/lib/verite-commerciale'
 
+import { garantieAffichable } from '@/lib/verite-commerciale'
 const BINATE = TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[1]
 
 /**
@@ -75,9 +76,31 @@ export default function ReactivationClient() {
       className={`inline-flex items-center gap-2 rounded-full px-4 py-2 ${className}`}
       style={{ background: 'rgba(16,185,129,0.10)', border: `1px solid rgba(16,185,129,0.28)` }}
     >
+      /*
+      ⚠️ 21/08/2026 — LA GARANTIE 30 JOURS N'EST PLUS ANNONCÉE.
+
+      Elle EXISTE au contrat (clause écrite dans /cgu : remboursement intégral
+      de la première période, sans justification, sur simple message). Ce qui
+      manque, c'est le mécanisme : aucun délai de traitement annoncé, aucun
+      responsable nommé, et aucune trace qu'un remboursement ait jamais été
+      traité — ni dans le code des trois dépôts, ni en base.
+
+      Une promesse de remboursement qu'on ne peut pas prouver honorer engage
+      plus qu'elle ne rassure : le jour où quelqu'un la réclame et attend,
+      c'est la parole de FOREAS qui tombe.
+
+      ON CESSE DE LA VENDRE. ON CONTINUE DE LA DEVOIR — la clause reste dans
+      les CGU, un abonné qui la demande l'obtient. Retirer un droit du contrat
+      en silence serait pire que de ne pas l'avoir annoncé.
+
+      Source unique : GARANTIE_30J dans src/lib/verite-commerciale.ts. Y
+      passer `prouvee: true` la rallume partout d'un coup.
+      */
       <ShieldCheck size={16} style={{ color: C.green }} />
       <span className="text-[13px] font-semibold" style={{ color: C.green }}>
-        Garanti 30 jours — remboursé, sans question
+        {garantieAffichable()
+          ? 'Garanti 30 jours — remboursé, sans question'
+          : 'Résiliable à tout moment, depuis ton espace'}
       </span>
     </div>
   )
@@ -125,8 +148,11 @@ export default function ReactivationClient() {
             Un an de silence.<br />Voilà pourquoi je reviens te voir.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed" style={{ color: C.text }}>
-            Pas de blabla. Une preuve, une offre, une garantie. Tu juges sur{' '}
-            <strong style={{ color: C.hero }}>30 jours</strong> — pas convaincu, je te rembourse, sans discuter.
+            {garantieAffichable()
+              ? <>Pas de blabla. Une preuve, une offre, une garantie. Tu juges sur{' '}
+                  <strong style={{ color: C.hero }}>30 jours</strong> — pas convaincu, je te rembourse, sans discuter.</>
+              : <>Pas de blabla. Une preuve, une offre, un prix. Tu paies aujourd&apos;hui et tu{' '}
+                  <strong style={{ color: C.hero }}>résilies quand tu veux</strong>, depuis ton espace.</>}
           </p>
         </section>
 
@@ -236,7 +262,9 @@ export default function ReactivationClient() {
               Remplacée par une comparaison de prix, vérifiable par n'importe qui.
             */
             { q: '« C\'est trop cher. »', a: `Moins d'1 € par jour. Le mois entier coûte moins qu'un plein.` },
-            { q: '« Ça marche pas pour moi. »', a: 'Garantie 30 jours, remboursé sans discuter. Tu testes en vrai, tu risques zéro.' },
+            { q: '« Ça marche pas pour moi. »', a: garantieAffichable()
+                ? 'Garantie 30 jours, remboursé sans discuter. Tu testes en vrai, tu risques zéro.'
+                : 'Tu résilies quand tu veux, depuis ton espace, sans avoir à te justifier. Tu testes sur tes vraies courses.' },
             { q: '« J\'ai pas le temps. »', a: '2 minutes pour activer. Après, Ajnaya bosse pendant que tu conduis.' },
           ].map((o) => (
             <div key={o.q} className="rounded-2xl p-4" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
@@ -255,7 +283,7 @@ export default function ReactivationClient() {
         </section>
 
         <p className="mt-10 text-center text-[11px]" style={{ color: C.muted }}>
-          FOREAS — copilote des chauffeurs VTC. Paiement Stripe. Garantie 30 jours satisfait ou remboursé.
+          FOREAS — copilote des chauffeurs VTC. Paiement Stripe.{garantieAffichable() ? ' Garantie 30 jours satisfait ou remboursé.' : ' Résiliable à tout moment.'}
         </p>
       </div>
     </main>

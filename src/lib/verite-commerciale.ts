@@ -227,3 +227,66 @@ export const COMPTA_PHRASES = {
 
 /** Le mot « IA » est banni du site : Ajnaya a un nom, on l'emploie. */
 export const MOT_INTERDIT_IA = 'IA' as const
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * LA GARANTIE 30 JOURS — UNE SEULE SOURCE, ET ELLE SAIT CE QU'ELLE NE SAIT PAS.
+ *
+ * ⚠️ 21/08/2026 — CE N'EST PAS UNE PROMESSE INVENTÉE, ET CE N'EST PAS NON PLUS
+ * UN MÉCANISME PROUVÉ. Les deux à la fois, et c'est justement le problème.
+ *
+ * CE QUI EXISTE, vérifié :
+ *  · une clause écrite dans les CGU (`/cgu`) : remboursement intégral de la
+ *    première période, sans justification, dans les 30 jours suivant le premier
+ *    paiement, sur simple message à l'adresse de contact ;
+ *  · un canal de demande qui fonctionne — le formulaire de contact a été réparé
+ *    le 21/08 et l'envoi est prouvé.
+ *
+ * CE QUI MANQUE, et qui empêche d'appeler ça un mécanisme :
+ *  · AUCUN DÉLAI de traitement annoncé. « Sans discuter » ne dit pas « sous
+ *    combien de jours » ;
+ *  · AUCUN RESPONSABLE nommé ;
+ *  · AUCUNE TRACE qu'un remboursement ait jamais été traité. Aucun chemin de
+ *    remboursement dans le code des trois dépôts, aucune ligne en base.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CE QU'ON FAIT, ET POURQUOI PAS AUTRE CHOSE
+ *
+ * ON ARRÊTE DE L'AFFICHER. Une promesse de remboursement qu'on ne peut pas
+ * prouver honorer engage plus qu'elle ne rassure : le jour où quelqu'un la
+ * réclame et attend, c'est la parole de FOREAS qui tombe, pas une ligne de
+ * texte.
+ *
+ * ON NE LA RETIRE PAS DES CGU. Le contrat est un DROIT du client. Le retirer
+ * silencieusement retirerait ce droit à quelqu'un qui a peut-être payé en
+ * comptant sur lui — ce serait pire que de ne pas l'avoir annoncé. Un abonné
+ * qui la demande l'obtient : elle reste due.
+ *
+ * Autrement dit : on cesse de la VENDRE, on continue de la DEVOIR.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * COMMENT LA RALLUMER — un seul geste, ici, quand les trois manques sont comblés
+ *
+ * Passer `prouvee` à `true` la fait réapparaître partout d'un coup. C'est
+ * volontaire : elle vivait sur SIX surfaces, chacune avec sa propre formulation.
+ * Six endroits à rallumer à la main, c'est cinq occasions d'en oublier un.
+ */
+export const GARANTIE_30J = {
+  /** Le droit existe-t-il au contrat ? Oui — voir /cgu. */
+  auContrat: true,
+  /**
+   * Le mécanisme est-il prouvé ? NON, et tant que c'est non, aucune surface
+   * commerciale ne l'annonce.
+   *
+   * ⏳ Pour passer à `true`, il faut les TROIS : un délai de traitement annoncé,
+   * un responsable nommé, et au moins un remboursement réellement traité.
+   */
+  prouvee: false,
+  /** Ce qui manque, nommé — pour que personne n'ait à le redécouvrir. */
+  manquants: ['délai de traitement', 'responsable nommé', 'preuve d’un traitement réel'],
+} as const
+
+/** Une surface commerciale peut-elle annoncer la garantie ? */
+export function garantieAffichable(): boolean {
+  return GARANTIE_30J.prouvee
+}

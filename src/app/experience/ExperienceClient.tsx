@@ -36,6 +36,7 @@ import StickyFeatures from '@/components/experience/StickyFeatures'
 import CinematicSequence from '@/components/experience/CinematicSequence'
 import VerdictSequence from '@/components/experience/VerdictSequence'
 
+import { garantieAffichable } from '@/lib/verite-commerciale'
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
 // Même pop-up anti-départ que la home — réutilisé tel quel, déjà générique (WhatsApp + garde-fous propres).
@@ -436,8 +437,15 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             <p className="mt-3.5 text-[12px] text-white/50">
               En annuel&nbsp;: <b className="text-[#F5C842] tabular-nums">-30&nbsp;%</b> — 249,99&nbsp;€/an au lieu de 359,88&nbsp;€
             </p>
+            {/*
+              ⚠️ 21/08/2026 — la garantie 30 jours n'est plus annoncée. Elle
+              EXISTE au contrat (/cgu), mais son mécanisme n'est pas prouvé :
+              aucun délai de traitement, aucun responsable, aucune trace qu'un
+              remboursement ait déjà été traité. On cesse de la vendre ; on
+              continue de la devoir. Source : GARANTIE_30J.
+            */}
             <div className="mt-3 inline-flex rounded-full border border-success/40 bg-success/10 px-3 py-1.5 text-[11.5px] font-semibold text-[#34D399]">
-              ✓ Garanti 30 jours — remboursé sans discuter
+              {garantieAffichable() ? '✓ Garanti 30 jours — remboursé sans discuter' : '✓ Résiliable à tout moment, en 1 clic'}
             </div>
 
             <div className="mt-5 flex items-start gap-3 border-t border-dashed border-white/[0.12] pt-5 text-left">
@@ -461,7 +469,9 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           <p className="mb-3 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Questions directes</p>
           {[
             ['Comment tu sais où ça paie ?', 'Ajnaya rassemble tes courses Uber, Bolt et Heetch au même endroit, et croise ça avec ce qui bouge autour de toi — pas avec ce qui s’est passé le mois dernier. Le détail de la recette, on le garde pour nous.'],
-            ['29,99 €, c’est cher ?', 'C’est moins d’1 € par jour. Une bonne course de plus dans le mois et c’est remboursé. Sinon : 30 jours, remboursé.'],
+            ['29,99 €, c’est cher ?', garantieAffichable()
+              ? 'C’est moins d’1 € par jour. Une bonne course de plus dans le mois et c’est remboursé. Sinon : 30 jours, remboursé.'
+              : 'C’est moins d’1 € par jour. Une bonne course de plus dans le mois et c’est rentabilisé. Et tu résilies quand tu veux, en 1 clic.'],
             ['Je peux annuler quand ?', 'Quand tu veux, en 1 clic. Pas d’appel, pas de mail de rétention.'],
             ['Vous allez m’appeler ?', 'Non. Ajnaya te répond sur WhatsApp, c’est tout. Tu écris « stop », elle arrête. Aucun appel sans que tu l’aies demandé.'],
           ].map(([q, a], i) => (

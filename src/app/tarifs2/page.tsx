@@ -15,7 +15,7 @@ import { authUrls } from '@/lib/auth-urls'
 // C'est exactement le mécanisme qui produisait les faux : un chiffre plausible recopié
 // dans un .tsx, plus relié à rien, qui dérive dès que la vraie valeur bouge.
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
-import { PARRAINAGE, PLATEFORMES, COMMUNAUTE } from '@/lib/verite-commerciale'
+import { PARRAINAGE, PLATEFORMES, COMMUNAUTE, garantieAffichable } from '@/lib/verite-commerciale'
 // ── 20/08/2026 — LES CITATIONS VIENNENT DU REGISTRE, PLUS DU FICHIER ────────
 // Mesuré : la parole de la même personne existait en quatre versions dans trois
 // fichiers. Chacune était un raccourci « pour que ça tienne » — et chacune faisait
@@ -370,7 +370,12 @@ function TarifsContent() {
     // vendables aujourd'hui »). Un prospect qui vient chercher la version gratuite ne trouve
     // rien, et repart. Réponse refaite sur ce qui est réellement facturé.
     IMMEDIATE_PAYMENT
-      ? { id: 'faq-carte', q: "Je paie tout de suite ? Et si ça me va pas ?", a: "Oui, tu paies aujourd'hui — et tu es couvert par la garantie 30 jours : pas convaincu, tu te fais rembourser sans discuter, sans question. Tu testes en vrai sur tes courses, tu risques zéro." }
+      // ⚠️ Branche endormie (IMMEDIATE_PAYMENT vaut false), mais elle porterait la
+      // garantie si le drapeau changeait. Elle passe donc par la même source :
+      // une promesse ne doit pas pouvoir se rallumer par effet de bord.
+      ? { id: 'faq-carte', q: "Je paie tout de suite ? Et si ça me va pas ?", a: garantieAffichable()
+          ? "Oui, tu paies aujourd'hui — et tu es couvert par la garantie 30 jours : pas convaincu, tu te fais rembourser sans discuter, sans question. Tu testes en vrai sur tes courses, tu risques zéro."
+          : "Oui, tu paies aujourd'hui. Tu testes en vrai sur tes courses, et tu résilies quand tu veux depuis ton espace, sans avoir à te justifier." }
       : { id: 'faq-carte', q: "Pourquoi une carte est demandée si je ne paie rien ?", a: `Parce que Stripe la garde de côté pour activer ton abonnement APRÈS l'essai — pas avant. 0 € aujourd'hui, 0 € pendant tes ${TRIAL_DAYS} jours. À la fin, l'abonnement démarre tout seul : si tu ne veux pas continuer, tu annules en 1 clic depuis l'app avant la fin de l'essai, et rien n'est débité. On te le dit maintenant plutôt que de te le faire découvrir sur ton relevé.` },
     { id: 'faq-mensuel', q: "Pourquoi mensuel et pas hebdomadaire ?", a: `Parce que ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois, c'est 1 € par jour — une bouteille d'eau. Tu n'as aucun calcul à faire, tu sais exactement ce que tu paies. En annuel, ${formaterEuros(PRIX_ANNUEL_CENTIMES)} : c'est l'ordre de grandeur d'une journée de chiffre d'affaires, posée une fois, pour 365 jours de décisions.` },
     // 14/08/2026 — la cascade N1 25 € / N2 8 € / N3 2 € n'existe nulle part.
@@ -381,7 +386,7 @@ function TarifsContent() {
     // versée. Le dire franchement vaut mieux que de le faire découvrir au premier filleul.
     { id: 'faq-parrainage', q: `${PARRAINAGE.paliers[0].commissionEur}€/filleul à vie, est-ce un piège ?`, a: `Non, et voilà exactement comment ça marche. Tant que ton filleul reste abonné ET que toi aussi, tu touches ${PARRAINAGE.paliers[0].commissionEur} € par mois sur lui. À partir de 15 filleuls, c'est ${PARRAINAGE.paliers[1].commissionEur} €. À partir de 50, c'est ${PARRAINAGE.paliers[2].commissionEur} €. Ce sont des paliers de volume, pas une pyramide : on ne te promet rien sur les filleuls de tes filleuls. Ton filleul, lui, a −${REMISE_PARRAIN_MIN_PCT} % à vie sur le mensuel, jusqu'à −${REMISE_PARRAIN_MAX_PCT} % selon ton palier. Et on est cash : le programme vient d'ouvrir, aucune commission n'a encore été versée. Tu serais dans les premiers.` },
     { id: 'faq-directs', q: "« Clients directs », ça veut dire quoi concrètement ?", a: "Un sticker avec ton QR code dans la voiture, et un mini-site à ton nom (foreas.xyz/ton-prénom). Le client scanne, il réserve avec toi, il te paie. Aucune plateforme au milieu, donc aucune commission prélevée : une course à 25€, c'est 25€ pour toi. Ça ne remplace pas Uber du jour au lendemain — ça se construit course après course, avec les clients qui reviennent." },
-    { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — et c'est toi qui fais le tri, le soir, fatigué. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un tableau de bord de plus. " + (IMMEDIATE_PAYMENT ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : `Et tu as ${TRIAL_DAYS} jours pour te faire ta propre idée sur tes vraies courses, sans rien payer.`) },
+    { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — et c'est toi qui fais le tri, le soir, fatigué. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un tableau de bord de plus. " + (IMMEDIATE_PAYMENT ? (garantieAffichable() ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : "Et tu résilies quand tu veux, depuis ton espace, sans avoir à te justifier.") : `Et tu as ${TRIAL_DAYS} jours pour te faire ta propre idée sur tes vraies courses, sans rien payer.`) },
     { id: 'faq-desactivation', q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme te coupe, tu redistribues ton temps sur les autres en 1 minute. La communauté FOREAS te briefe sur les bons réflexes pour récupérer ton compte." },
     // 14/08/2026 — « downgrade vers Free » promettait une formule gratuite qui n'existe pas
     // (offre.ts : seules `mensuel` et `annuel` sont vendables). Retiré, pas remplacé.
@@ -817,7 +822,9 @@ function TarifsContent() {
             <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>GARANTIE FERME</p>
             <h3 className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-3 leading-tight" style={{ letterSpacing: '-0.025em' }}>
               {IMMEDIATE_PAYMENT
-                ? <>Pas convaincu sous 30 jours&nbsp;?<br />Remboursé, sans discuter.</>
+                ? (garantieAffichable()
+                    ? <>Pas convaincu sous 30&nbsp;jours&nbsp;?<br />Remboursé, sans discuter.</>
+                    : <>Tu changes d&apos;avis&nbsp;?<br />Tu résilies, quand tu veux.</>)
                 : <>{TRIAL_DAYS} jours pour te faire ton avis.<br />Sur tes vraies courses.</>}
             </h3>
             {/* 14/08/2026 — « tu fermes l'app, il n'y a rien à annuler » était faux, et c'est
@@ -828,7 +835,9 @@ function TarifsContent() {
                 ferme l'app en confiance découvre le prélèvement sur son relevé. */}
             <p className="text-white/65 text-sm leading-relaxed">
               {IMMEDIATE_PAYMENT
-                ? <>Tu paies aujourd&apos;hui. Tu testes en vrai, sur tes vraies courses. Pas convaincu sous 30 jours&nbsp;? On te rembourse, sans question. Tu risques zéro. <span className="text-white/80">Point.</span></>
+                ? (garantieAffichable()
+                    ? <>Tu paies aujourd&apos;hui. Tu testes en vrai, sur tes vraies courses. Pas convaincu sous 30&nbsp;jours&nbsp;? On te rembourse, sans question. Tu risques zéro. <span className="text-white/80">Point.</span></>
+                    : <>Tu paies aujourd&apos;hui. Tu testes en vrai, sur tes vraies courses. Et tu résilies quand tu veux, depuis ton espace. <span className="text-white/80">Point.</span></>)
                 : <>0&nbsp;€ aujourd&apos;hui. 0&nbsp;€ pendant {TRIAL_DAYS} jours. À la fin de l&apos;essai, ton abonnement démarre tout seul&nbsp;: si tu ne veux pas continuer, tu annules en 1 clic avant, et rien n&apos;est débité. <span className="text-white/80">On te le dit avant, pas après.</span></>}
             </p>
           </div>

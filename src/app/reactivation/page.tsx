@@ -4,7 +4,9 @@ import ReactivationClient from './ReactivationClient'
 import MesureVue from '@/components/mesure/MesureVue'
 export const metadata: Metadata = {
   title: 'FOREAS — Reprends la main',
-  description: 'Paiement immédiat, garantie 30 jours satisfait ou remboursé. Gagne plus, roule moins.',
+  // La garantie n'est plus annoncée tant que son mécanisme n'est pas prouvé —
+  // voir GARANTIE_30J dans src/lib/verite-commerciale.ts. Elle reste due au contrat.
+  description: 'Paiement immédiat, résiliable à tout moment. Gagne plus, roule moins.',
   robots: { index: false, follow: false }, // page de campagne (lien email) — pas d'indexation
 }
 

@@ -19,6 +19,7 @@ import { InkGradientButton } from '@/components/ui'
 import ExitIntentOffer from '@/components/checkout/ExitIntentOffer'
 import { FORMULES } from '@/lib/offre'
 
+import { garantieAffichable } from '@/lib/verite-commerciale'
 /**
  * Montant à la française : 29.99 → « 29,99 ». Sans ça, un prix décimal s'affichait
  * « 29.99 € » avec un point — repéré en navigateur le 14/08/2026, l'ancien prix
@@ -222,7 +223,10 @@ function CheckoutInner() {
             Plus qu&apos;une étape.
           </h1>
           <p className="mt-3 text-white/70 text-[15px] sm:text-base leading-relaxed">
-            Paiement aujourd&apos;hui — et tu es couvert&nbsp;: <span className="text-[#10B981] font-semibold">30 jours satisfait ou remboursé</span>, sans discuter.
+            {/* ⚠️ 21/08/2026 — la garantie n'est plus annoncée : le droit existe au contrat (/cgu), le mécanisme n'est pas prouvé. Voir GARANTIE_30J. */}
+            {garantieAffichable()
+              ? <>Paiement aujourd&apos;hui — et tu es couvert&nbsp;: <span className="text-[#10B981] font-semibold">30 jours satisfait ou remboursé</span>, sans discuter.</>
+              : <>Paiement aujourd&apos;hui — et tu <span className="text-[#10B981] font-semibold">résilies quand tu veux</span>, depuis ton espace.</>}
           </p>
           {testToken && (
             <div className="mt-4 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5" style={{ background: 'rgba(245,200,66,0.10)', border: '1px solid rgba(245,200,66,0.35)' }}>
@@ -315,7 +319,7 @@ function CheckoutInner() {
 
             <div className="mt-6 flex items-center gap-2.5 rounded-2xl px-3.5 py-3" style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.26)' }}>
               <ShieldCheck size={17} className="text-[#10B981] shrink-0" />
-              <span className="text-[12.5px] font-semibold text-[#10B981] leading-tight">Garanti 30 jours — remboursé, sans question</span>
+              <span className="text-[12.5px] font-semibold text-[#10B981] leading-tight">{garantieAffichable() ? 'Garanti 30 jours — remboursé, sans question' : 'Résiliable à tout moment, depuis ton espace'}</span>
             </div>
             <p className="mt-3 text-[11.5px] leading-relaxed text-white/45">
               Une seule course récupérée dans la semaine, et c&apos;est remboursé. Tu testes en vrai, tu risques zéro.
