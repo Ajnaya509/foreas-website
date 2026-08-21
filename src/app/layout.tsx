@@ -63,8 +63,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'FOREAS — Gagne plus, roule moins. Pour les chauffeurs VTC.',
-  description: 'Ton net réel, commission déduite, avant d\'accepter la course. FOREAS réunit tes courses Uber, Bolt et Heetch. Tape ta zone, vois ce qui paie ce soir.',
-  keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'Heetch', 'revenus', 'Ajnaya', 'net réel VTC', 'Paris'],
+  description: 'Ce qu\'il te reste, ta commission déduite, avant d\'accepter la course. FOREAS réunit tes courses Uber, Bolt et Heetch. Tape ta zone, vois ce qui paie ce soir.',
+  keywords: ['VTC', 'chauffeur', 'Uber', 'Bolt', 'Heetch', 'revenus', 'Ajnaya', 'revenu net VTC', 'Paris'],
   authors: [{ name: 'FOREAS Labs' }],
   // www = domaine réellement servi (foreas.xyz 307-redirige vers www). og:image doit
   // pointer sur www sinon les scrapers (WhatsApp/Facebook) tombent sur la redirection
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://www.foreas.xyz'),
   openGraph: {
     title: 'FOREAS — Gagne plus, roule moins',
-    description: 'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
+    description: 'Les autres acceptent à l\'aveugle. Toi, tu vois ce qu\'il te reste — ta commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
     url: 'https://www.foreas.xyz',
     siteName: 'FOREAS',
     locale: 'fr_FR',
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'FOREAS — Gagne plus, roule moins',
-    description: 'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
+    description: 'Les autres acceptent à l\'aveugle. Toi, tu vois ce qu\'il te reste — ta commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
   },
   robots: {
     index: true,

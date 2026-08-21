@@ -24,11 +24,11 @@ const ExitIntentModal = dynamic(() => import('@/components/home2026/ExitIntentMo
 export const metadata: Metadata = {
   title: 'FOREAS — Gagne plus, roule moins. Pour les chauffeurs VTC.',
   description:
-    'Ton net réel, commission déduite, avant d\'accepter la course. Tarif horaire, demande et pool optimal sur 52 zones VTC. Tape ta zone, vois ce qui paie ce soir.',
+    'Ce qu\'il te reste, ta commission déduite, avant d\'accepter la course. Tarif horaire, demande et pool optimal sur 52 zones VTC. Tape ta zone, vois ce qui paie ce soir.',
   openGraph: {
     title: 'FOREAS — Gagne plus, roule moins',
     description:
-      'Les autres acceptent à l\'aveugle. Toi, tu vois ton net réel — commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
+      'Les autres acceptent à l\'aveugle. Toi, tu vois ce qu\'il te reste — ta commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
     type: 'website',
     locale: 'fr_FR',
     url: 'https://www.foreas.xyz/',
@@ -53,7 +53,7 @@ const JSON_LD = {
       url: canonique('/'),
       name: 'FOREAS — Gagne plus, roule moins',
       description:
-        'FOREAS pour chauffeurs VTC : ton net réel avant d\'accepter, où aller, quand, et combien tu gardes vraiment.',
+        'FOREAS pour chauffeurs VTC : ce qu\'il te reste avant d\'accepter, où aller, quand, et ce que la journée a vraiment donné.',
       inLanguage: 'fr-FR',
       isPartOf: {
         '@type': 'WebSite',
@@ -67,7 +67,7 @@ const JSON_LD = {
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web, iOS, Android, WhatsApp',
       description:
-        'FOREAS pour chauffeurs VTC indépendants — rassemble tes courses Uber, Bolt et Heetch et sort ton net réel, commission déduite, avant que t\'acceptes.',
+        'FOREAS pour chauffeurs VTC indépendants — rassemble tes courses Uber, Bolt et Heetch et affiche ce qu\'il te reste, ta commission déduite, avant que t\'acceptes.',
       offers: {
         '@type': 'Offer',
         price: '0',

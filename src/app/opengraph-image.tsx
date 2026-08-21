@@ -129,7 +129,7 @@ export default async function OpengraphImage() {
               <span>Les autres acceptent à l&apos;aveugle.</span>
               <span style={{ display: 'flex' }}>
                 <span>Toi, tu vois ton{' '}</span>
-                <span style={{ color: '#FFFFFF', fontWeight: 700 }}>net réel</span>
+                <span style={{ color: '#FFFFFF', fontWeight: 700 }}>ce qui te reste</span>
                 <span>{' '}avant.</span>
               </span>
             </div>

@@ -228,7 +228,7 @@ interface Feature { punch: string; detail: string; worth?: string }
 const FEATURES: Feature[] = [
   {
     punch: 'Le vrai prix de la course. Avant de dire oui.',
-    detail: 'Une course tombe : Ajnaya déduit la commission et te sort ton net réel en moins d\'une seconde. Accepte, ou laisse passer.',
+    detail: 'Une course tombe : Ajnaya applique ta commission et t\'affiche ce qu\'il te reste, en moins d\'une seconde. Accepte, ou laisse passer.',
   },
   {
     punch: 'La ville qui paie, en couleurs.',

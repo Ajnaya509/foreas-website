@@ -342,9 +342,9 @@ for (const chemin of fichiers(RACINE)) {
   // Structurel : la VALEUR vient-elle de la source unique ?
   for (const regle of REGLES_STRUCTURELLES) {
     if (regle.concerne.test(affiche) && !regle.exige.test(source)) {
-      infractions.push({
+    infractions.push({
         fichier: chemin,
-        quoi: regle.quoi,
+      quoi: regle.quoi,
         pourquoi: regle.pourquoi,
         extrait: (affiche.match(regle.concerne) || [''])[0],
       })
@@ -613,7 +613,7 @@ for (const chemin of fichiers(RACINE)) {
       infractions.push({
         fichier: 'src/lib/whatsappLink.ts',
         quoi: 'un montant calculé dans un message envoyé au nom du chauffeur',
-        extrait: m[0],
+      extrait: m[0],
         pourquoi:
           "Ce message s'affiche dans la conversation du chauffeur comme s'il l'avait écrit lui-même. Le 21/08/2026, il annonçait 14 € net pendant que la même page affichait 8,71 €. Le message doit porter le montant que le chauffeur a réglé et POSER la question — pas y répondre avec un taux que personne n'a mesuré.",
       })
@@ -704,6 +704,125 @@ for (const chemin of fichiers(RACINE)) {
       })
     }
   }
+}
+
+// ─── AUCUN CALCUL FINANCIER RACONTÉ EN PHRASE ──────────────────────────────
+//
+// 🔴 CETTE RÈGLE VIENT D'UN ÉCHEC RÉPÉTÉ TROIS FOIS DANS LA MÊME JOURNÉE.
+//
+// Le 21/08/2026, j'ai retiré le taux de 25 % du calculateur, puis de cinq champs
+// de /revenus, puis de /aeroport, puis de /optimisation. Après chaque passe,
+// j'ai déclaré la vérité financière fermée.
+//
+// Elle ne l'était pas. Le calcul vivait dans le CORPS DU RÉCIT :
+//
+//     « Une course s'affiche à 25 €. La plateforme prend sa commission —
+//       autour de 25 %. Il te reste 18,75 €. »
+//
+// Mesuré après mes trois corrections : /revenus servait encore 18,75 € quatre
+// fois et 25 % deux fois, en production, pendant que `npm run canon` sortait
+// vert.
+//
+// LA CAUSE, ET ELLE EST STRUCTURELLE : toutes mes règles cherchaient une
+// MULTIPLICATION dans du CODE. Aucune ne refusait la même opération RACONTÉE.
+// Un chiffre écrit en phrase échappe à un motif écrit pour du code.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// CE QUE CETTE RÈGLE REFUSE, ET POURQUOI CHAQUE MOTIF
+//
+//  1. UN TAUX APPROXIMATIF UNIVERSEL — « autour de 25 % », « environ 20 % ».
+//     Une commission dépend de la plateforme, de l'offre, du pays et parfois de
+//     la course. « Autour de » ne rend pas un chiffre inventé acceptable : il
+//     le rend seulement plus difficile à contester.
+//
+//  2. UN MONTANT DÉRIVÉ — « il te reste 18,75 € », « tu touches 14 € ».
+//     C'est le résultat d'un calcul qu'on n'a pas le droit de faire pour
+//     quelqu'un dont on ne connaît ni la commission ni les charges.
+//
+//  3. LA PROMESSE « NET RÉEL ». Un net exige la commission réelle, le carburant,
+//     la distance, la consommation, l'assurance, l'entretien, le véhicule et le
+//     statut fiscal. FOREAS n'en connaît qu'une partie. La formulation exacte de
+//     ce que le produit sait faire est : « ce qu'il te reste, commission
+//     déduite ».
+//
+// ⚠️ CE QU'ELLE NE DOIT PAS BLOQUER : le prix de l'abonnement, un barème de
+// parrainage contractuel, « 0 € débité ». Le critère est simple — un chiffre
+// que FOREAS FIXE est légitime ; un chiffre que FOREAS DEVINE sur l'argent du
+// chauffeur ne l'est pas.
+// Le texte est normalisé AVANT : espaces insécables, entités HTML, échappement
+  // JSON et sauts de ligne sont ramenés à un espace simple. Sans ça, chacun de
+  // ces encodages est un contournement — et deux d'entre eux ont déjà servi
+  // aujourd'hui.
+const normaliser = (t) =>
+    String(t)
+    .replace(/&nbsp;|&#160;|\u00a0/gi, ' ')
+    .replace(/&euro;|&#8364;/gi, '€')
+      .replace(/\\n|\\r|\\t/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+      .replace(/\s+/g, ' ')
+
+const CALCULS = [
+  {
+    motif: /\b(?:autour de|environ|à peu près|approximativement|~)\s*\d{1,2}\s*(?:%|pour cent)/i,
+      quoi: 'un taux approximatif présenté comme universel',
+    },
+    {
+      motif: /\b(?:il te reste|tu touches|tu gardes|il lui reste|tu récupères)\s+(?:environ\s+)?\d+[.,]?\d*\s*€/i,
+      quoi: 'un montant dérivé d’un calcul fait à la place du chauffeur',
+    },
+    {
+      motif: /\bcommission\b[^.!?]{0,30}\b\d{1,2}\s*(?:%|pour cent)/i,
+      quoi: 'un taux de commission chiffré, alors qu’il dépend de la plateforme et de l’offre',
+    },
+    {
+      motif: /\bnet\s+réel\b/i,
+      quoi: 'la promesse d’un « net réel » que le produit ne sait pas calculer',
+  },
+]
+
+/**
+ * Le critère qui sépare le légitime de l'inventé, en une phrase :
+ *
+ *   un chiffre que FOREAS **fixe** est légitime ;
+ *   un chiffre que FOREAS **devine** sur l'argent du chauffeur ne l'est pas.
+ *
+ * « Tu touches 25 € par filleul » est un barème contractuel : FOREAS décide ce
+ * montant et s'y engage. « Il te reste 18,75 € » est une déduction faite à la
+ * place de quelqu'un dont on ne connaît ni la commission ni les charges.
+ *
+ * ⚠️ Sans cette exception, la règle bloquait le barème de parrainage. Un
+ * contrôle qui crie à tort finit désactivé — et c'est pire qu'aucun contrôle.
+ */
+const CONTEXTE_BAREME = /\b(filleul|parrain|parrainage|apport d.affaires|partenaire|commission d.apport)\b/i
+
+const signalerCalcul = (ou, texte) => {
+  const t = normaliser(texte)
+  for (const c of CALCULS) {
+    const m = t.match(c.motif)
+    if (!m) continue
+    // Le barème que FOREAS fixe lui-même n'est pas une déduction inventée.
+    const autour = t.slice(Math.max(0, t.indexOf(m[0]) - 90), t.indexOf(m[0]) + m[0].length + 90)
+    if (CONTEXTE_BAREME.test(autour)) continue
+      infractions.push({
+      fichier: ou,
+      quoi: c.quoi,
+        extrait: m[0],
+      pourquoi:
+        "Un calcul raconté en phrase échappe aux règles qui cherchent du code — c'est exactement ce qui a laissé « autour de 25 %, il te reste 18,75 € » en production après TROIS corrections. Une commission dépend de la plateforme et de l'offre ; un net exige des dépenses que FOREAS ne connaît pas. Dis ce que le produit fait vraiment : « ce qu'il te reste, commission déduite », avec la commission du chauffeur.",
+    })
+    return
+  }
+}
+
+// Le code servi. (La base est passée au même crible plus bas.)
+for (const chemin of fichiers(RACINE)) {
+  const relatif = chemin.replace(RACINE + '/', '')
+  if (relatif.includes('lib/verite-commerciale.ts')) continue
+  const src = readFileSync(chemin, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+    .replace(/^\s*\/\/.*$/gm, ' ')
+  signalerCalcul(relatif, src)
 }
 
 // ─── AUCUN TAUX EN DUR APPLIQUÉ À L'ARGENT D'UN CHAUFFEUR ──────────────────
@@ -972,6 +1091,24 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
       //
       // Cette règle lit la BASE et y cherche les noms du registre. Elle ne
       // s'active que pour les personnes dont l'accord n'est pas signé.
+
+      // ── LE MÊME CRIBLE SUR LE TEXTE DE LA BASE ──────────────────────────
+      //
+      // C'est ICI que « autour de 25 %, il te reste 18,75 € » a survécu à trois
+      // corrections : le calcul n'était pas dans le code, il était raconté dans
+      // le corps du récit, en base.
+      for (const ligne of actives) {
+        signalerCalcul(
+          `landing_pages → ${ligne.topic_slug}`,
+          [
+            ligne.headline, ligne.meta_title, ligne.meta_description,
+            ligne.pattern_interrupt_stat, ligne.epiphany_bridge_story,
+            ligne.boule_de_cristal, ligne.aha_moment, ligne.cta_text,
+            texteDeContenu(ligne.content),
+          ].filter(Boolean).join(' \n '),
+        )
+      }
+
       for (const ligne of actives) {
         const texte = [
           ligne.headline, ligne.meta_title, ligne.meta_description,
