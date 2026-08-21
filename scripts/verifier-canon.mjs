@@ -1242,6 +1242,97 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
   }
 }
 
+// ─── LES COULEURS DU SITE DISENT-ELLES CE QUE DIT LA CHARTE ? ──────────────
+//
+// Le 21/08/2026, `src/design/tokens.ts` portait en en-tête : « Source de vérité :
+// ~/FOREAS-Clean/src/design/tokens.v2.ts ». C'est-à-dire l'APP. Or la charte a
+// désigné `FOREAS-SHARED/tokens.json` comme la source machine qui l'emporte.
+//
+// Le commentaire nommait la mauvaise autorité, et personne ne pouvait le voir :
+// il ne s'exécute pas. Résultat, un jeton avait déjà divergé — `textPrimary`
+// valait `#FFFFFF` alors que la charte a retiré le blanc pur de la palette
+// texte le 06/08. Le jeton n'avait AUCUN usage : c'est précisément pour ça que
+// la dérive a duré. Un jeton mort qui ment reste un jeton qui ment.
+//
+// ⚠️ CETTE RÈGLE NE PEUT PAS TOUJOURS S'EXÉCUTER. Le dossier partagé n'existe
+// pas sur l'hébergeur, et c'est voulu : le site doit se fabriquer sans lui.
+// Alors elle le DIT. Elle ne se tait pas, et elle ne se déclare pas verte.
+// Un contrôle qui saute en silence est pire que pas de contrôle : il rassure.
+
+{
+  const cheminPartage = join(process.env.HOME || '', 'FOREAS-SHARED', 'tokens.json')
+  const cheminLocal = 'src/design/tokens.ts'
+
+  if (!existsSync(cheminPartage)) {
+    console.warn('')
+    console.warn('⚠️  RÈGLE NON EXÉCUTÉE : couleurs du site vs charte partagée.')
+    console.warn(`    ${cheminPartage} est introuvable depuis ici.`)
+    console.warn('    Ce n’est PAS un succès. Les couleurs n’ont pas été comparées.')
+    console.warn('    (Attendu sur l’hébergeur : le dossier partagé n’y est pas déployé.)')
+    console.warn('')
+  } else if (!existsSync(cheminLocal)) {
+    infractions.push({
+      fichier: cheminLocal,
+      quoi: 'le fichier des jetons du site a disparu',
+      extrait: '(fichier absent)',
+      pourquoi: 'sans lui, plus rien ne relie les couleurs du site à la charte.',
+    })
+  } else {
+    const partage = JSON.parse(readFileSync(cheminPartage, 'utf8'))
+    const local = readFileSync(cheminLocal, 'utf8')
+
+    // Ce que la charte fixe, et où ça vit dans les jetons du site.
+    const A_COMPARER = [
+      ['obsidian',      partage?.surfaceBackground?.site],
+      ['obsidianDeep',  partage?.color?.obsidian?.deep],
+      ['obsidianLight', partage?.color?.obsidian?.light],
+      ['cyanElectric',  partage?.color?.accent?.cyanElectric],
+      ['cyanIce',       partage?.color?.accent?.cyanIce],
+      ['violetRoyal',   partage?.color?.accent?.violetRoyal],
+      ['violetDeep',    partage?.color?.accent?.violetDeep],
+      ['goldSubtle',    partage?.color?.accent?.goldSubtle],
+      ['goldRadiant',   partage?.color?.accent?.goldRadiant],
+      ['success',       partage?.color?.semantic?.success],
+      ['warning',       partage?.color?.semantic?.warning],
+      ['danger',        partage?.color?.semantic?.danger],
+      ['textPrimary',   partage?.color?.text?.primary],
+    ]
+
+    let comparees = 0
+    for (const [cle, attendu] of A_COMPARER) {
+      // Une valeur absente de la charte ne prouve rien : on ne la compte pas
+      // comme vérifiée, et on ne l'invente pas non plus.
+      if (typeof attendu !== 'string' || !attendu.startsWith('#')) continue
+
+      const m = local.match(new RegExp(`\\b${cle}:\\s*'([^']+)'`))
+      if (!m) {
+        infractions.push({
+          fichier: cheminLocal,
+          quoi: `la couleur « ${cle} » de la charte n’existe pas dans les jetons du site`,
+          extrait: `charte : ${attendu} · site : absente`,
+          pourquoi: 'un composant qui la cherchera écrira une couleur en dur à la place.',
+        })
+        continue
+      }
+      comparees++
+      if (m[1].toLowerCase() !== attendu.toLowerCase()) {
+        infractions.push({
+          fichier: cheminLocal,
+          quoi: `la couleur « ${cle} » du site contredit la charte`,
+          extrait: `site : ${m[1]} · charte v${partage?.$meta?.version ?? '?'} : ${attendu}`,
+          pourquoi:
+            'la charte est la source machine et l’emporte. Corrige le site, ' +
+            'ou fais d’abord changer tokens.json — jamais l’inverse en silence.',
+        })
+      }
+    }
+
+    console.log(
+      `   couleurs comparées à la charte v${partage?.$meta?.version ?? '?'} : ${comparees}`,
+    )
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {

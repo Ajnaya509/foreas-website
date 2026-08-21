@@ -1,8 +1,26 @@
 /**
  * FOREAS Design Tokens — Site Vitrine
  *
- * Source de vérité : `~/FOREAS-Clean/src/design/tokens.v2.ts`
- * (le système canonical de l'app FOREAS Driver v110, pas le bricolage HomeScreen)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SOURCE MACHINE : FOREAS-SHARED/tokens.json v3.2.0 (07/08/2026).
+ *
+ * ⚠️ 21/08/2026 — CET EN-TÊTE DÉSIGNAIT LA MAUVAISE SOURCE.
+ * Il pointait `FOREAS-Clean/src/design/tokens.v2.ts`, c'est-à-dire l'APP. Or la
+ * charte a désigné `tokens.json` comme source machine unique, et précise qu'en
+ * cas de conflit c'est elle qui gagne. Un commentaire qui nomme la mauvaise
+ * autorité fait diverger sans que personne ne s'en aperçoive.
+ *
+ * ⚠️ ET IL AVAIT DÉJÀ DIVERGÉ : `textPrimary` valait `#FFFFFF` alors que la
+ * charte a acté le 06/08 que **le blanc pur disparaît** de la palette texte
+ * (`#F8FAFC`). Le jeton n'avait aucun usage — c'est pour ça que personne ne l'a
+ * vu. Un jeton mort qui ment reste un jeton qui ment : le jour où quelqu'un
+ * l'utilise, il propage une valeur retirée de la charte.
+ *
+ * ⚠️ CE FICHIER NE PEUT PAS IMPORTER `tokens.json` : ce dossier partagé n'existe
+ * pas sur l'hébergeur. C'est délibéré — le site doit fabriquer sans lui. La
+ * cohérence est vérifiée par une règle de `npm run canon`, qui compare les deux
+ * quand le dossier partagé est là, et le DIT franchement quand il ne l'est pas.
+ * ─────────────────────────────────────────────────────────────────────────────
  *
  * Site2026v43 — Refonte FOREAS-Grade (Apple-grade × Cialdini × Krug × Miller)
  *
@@ -42,7 +60,7 @@ export const PALETTE = {
 
   // Texte — opacités calibrées (WCAG AA validé sur obsidian)
   textHero: '#F8FAFC',                          // 20:1 contrast
-  textPrimary: '#FFFFFF',                       // 20.7:1
+  textPrimary: '#F8FAFC',                       // ivoire — le blanc pur a été retiré de la palette texte (charte §0.5, 06/08)
   textSecondary: 'rgba(255, 255, 255, 0.72)',   // ~14:1
   textTertiary: 'rgba(255, 255, 255, 0.45)',    // ~9:1
   textMuted: 'rgba(255, 255, 255, 0.28)',       // ~5.6:1 — éviter pour critique
