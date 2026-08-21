@@ -172,21 +172,41 @@ export async function sendWelcomeEmail({ email, name, plan, trialEnd, credential
   email: string; name: string; plan: string; trialEnd: string
   /** Renseigné uniquement quand le webhook vient de CRÉER le compte (voir provisionDriverAccount). */
   credentials?: { email: string; password: string } | null
-}) {
+}): Promise<boolean> {
   if (!resend) {
     console.log('[Email] Resend non configuré — email non envoyé à', email)
-    return
+    return false
   }
   try {
-    await resend.emails.send({
+      // ⚠️ 21/08/2026 — CE JOURNAL DISAIT « ENVOYÉ » À CHAQUE ÉCHEC.
+      //
+      // Le client Resend ne lève pas : il résout avec { data: null, error }.
+      // Personne ne déstructurait `error`, donc la ligne suivante s'exécutait
+      // et affirmait l'envoi. Le `catch` était du code mort pour ce cas.
+      //
+      // C'est EXACTEMENT le piège de l'écriture Supabase corrigée le matin —
+      // deux bibliothèques différentes, la même famille. Je l'ai manqué au
+      // premier passage, dans le fichier d'à côté.
+      //
+      // CE QUE ÇA COÛTAIT : le compte du chauffeur est créé, son mot de passe
+      // n'existe QUE dans ce mail, et l'alerte d'échec ne part pas puisque le
+      // provisionnement, lui, a réussi. Un chauffeur payé, sans identifiants,
+      // et personne au courant.
+      const { error } = await resend.emails.send({
       from: 'FOREAS <noreply@foreas.xyz>',
       to: email,
       subject: `Bienvenue ${name ? name.split(' ')[0] : ''} — Ton essai FOREAS est activé`,
       html: buildWelcomeHTML({ name, plan, trialEnd, credentials }),
     })
-    console.log('[Email] Welcome email envoyé à', email)
+      if (error) {
+        console.error(`[Email] ÉCHEC welcome email : ${error.name} — ${error.message}`)
+        return false
+      }
+      console.log('[Email] Welcome email envoyé')
+      return true
   } catch (e) {
     console.error('[Email] Échec envoi welcome email:', e)
+      return false
   }
 }
 

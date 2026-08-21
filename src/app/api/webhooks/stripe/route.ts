@@ -66,14 +66,34 @@ async function upsertSubscriber(data: Record<string, unknown>) {
       .from('subscribers')
       .upsert(data, { onConflict: 'stripe_subscription_id' })
     if (error) {
-      // Pas d'adresse e-mail dans le journal : l'identifiant Stripe suffit à
-      // retrouver la ligne, et il n'est pas une donnée personnelle.
+      // ⚠️ 21/08/2026, SECONDE PASSE — ICI, LE `return` PERDAIT LE PAIEMENT.
+      //
+      // Le matin, j'ai corrigé le journal qui mentait : il annonçait
+      // « sauvegardé » à chaque échec. Mais j'ai laissé un `return`. La
+      // fonction ne rend rien, l'appelant ne peut pas savoir, et le webhook
+      // répondait 200 — donc Stripe ne rejouait JAMAIS.
+      //
+      // C'est la même panne que celle du matin, déplacée d'un cran : au lieu
+      // de mentir dans le journal, elle se taisait dans la valeur de retour.
+      //
+      // DÉCLENCHEUR RÉEL, pas hypothétique : la table porte aussi un index
+      // unique sur `stripe_customer_id`, que `onConflict:
+      // 'stripe_subscription_id'` ne couvre pas. Un second abonnement du même
+      // client rend 23505 → chauffeur débité, aucune ligne, aucune alerte.
+      //
+      // On LÈVE. Le rattrapage libère la réservation et rend 500 : Stripe
+      // rejoue, et quelqu'un finit par voir l'erreur.
+      //
+      // Pas d'adresse e-mail dans le journal : l'identifiant Stripe suffit.
       console.error(`[webhook] ÉCHEC écriture subscriber (${data.stripe_subscription_id ?? 'sans id'}) : ${error.code} ${error.message}`)
-      return
+      throw new Error(`subscriber non écrit : ${error.code}`)
     }
     console.log('[webhook] subscriber enregistré :', data.stripe_subscription_id ?? 'sans id')
   } catch (e) {
-    console.error('[webhook] Erreur Supabase:', e)
+      // ⚠️ On RELANCE. Un `catch` qui absorbe ici annulerait le `throw`
+      // ci-dessus : l'appelant croirait de nouveau que tout va bien.
+      console.error('[webhook] Erreur Supabase:', e)
+      throw e
   }
 }
 
@@ -359,7 +379,7 @@ export async function POST(request: Request) {
           city,
         })
 
-        await sendWelcomeEmail({
+        const mailParti = await sendWelcomeEmail({
           email: session.customer_details.email,
           name: session.customer_details.name || '',
           plan: planInfo.name,
@@ -374,6 +394,22 @@ export async function POST(request: Request) {
         })
 
         // Un paiement encaissé sans compte créé ne doit JAMAIS rester silencieux.
+        // ⚠️ 21/08/2026 — UN CHAUFFEUR PAYÉ POUVAIT NE JAMAIS RECEVOIR SES
+        // IDENTIFIANTS, SANS QUE PERSONNE NE LE SACHE.
+        //
+        // Son mot de passe n'existe QUE dans ce mail. Et l'alerte ci-dessous
+        // ne partait pas, puisqu'elle ne regarde que le PROVISIONNEMENT —
+        // lequel avait réussi. L'envoi, lui, échouait en silence.
+        //
+        // ⚠️ ON N'ÉCHOUE PAS LE WEBHOOK POUR AUTANT. Un incident chez
+        // l'expéditeur de courrier ne doit pas devenir une perte de paiement :
+        // on alerte, et le paiement reste enregistré.
+        if (!mailParti && provision.status === 'created') {
+          await sendProvisionFailureAlert({
+            email: session.customer_details?.email ?? 'inconnu',
+            reason: `compte créé mais e-mail de bienvenue NON envoyé (abonnement ${(session.subscription as string) ?? 'inconnu'}) — le chauffeur n’a pas ses identifiants`,
+          })
+        }
         if (provision.status === 'failed' || provision.status === 'skipped') {
           await sendProvisionFailureAlert({
             email: session.customer_details.email,
