@@ -19,7 +19,39 @@ const ONE_YEAR_SEC = 60 * 60 * 24 * 365
 const REF_COOKIE = 'foreas_partner_ref'
 const THIRTY_DAYS_SEC = 60 * 60 * 24 * 30
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 21/08/2026 — SIX CONSOLES ÉTAIENT SERVIES À N'IMPORTE QUI.
+//
+// /dashboard/{driver,partner,admin} et leurs jumeaux /509 répondaient 200 sans
+// aucune vérification. Mesuré dans un vrai navigateur, la console
+// d'administration affichait QUATRE PERSONNES FABRIQUÉES : « Camille D. »,
+// « Sofia R. », « Thomas B. », « Yanis K. ».
+//
+// Le HTML servi, lui, était presque vide — les fausses lignes n'arrivent
+// qu'après hydratation. C'est pourquoi ni un `curl`, ni le « noindex » posé sur
+// la page ne révélaient quoi que ce soit : Google ne les voit pas, un humain si.
+// Regarder le HTML servi ne suffit pas ; il faut regarder l'écran.
+//
+// ⚠️ CE N'EST PAS UNE PORTE D'AUTHENTIFICATION QU'ON POSE ICI, ET C'EST VOULU.
+// Ouvrir une vraie session mènerait sur du décor, et chaque essai brûlerait un
+// lien magique à usage unique. Tant que ces pages montrent des données
+// inventées, la bonne réponse est de ne pas les montrer du tout.
+//
+// La connexion et le retour d'authentification restent ouverts : ce sont les
+// seules portes qui mènent quelque part.
+// ─────────────────────────────────────────────────────────────────────────────
+const CONSOLES_EN_DECOR = /^\/(?:509\/)?dashboard(?:\/|$)/
+const PORTES_LEGITIMES = /^\/(?:509\/)?dashboard\/(?:login|auth(?:\/|$))/
+
 export function middleware(request: NextRequest) {
+  const chemin = request.nextUrl.pathname
+  if (CONSOLES_EN_DECOR.test(chemin) && !PORTES_LEGITIMES.test(chemin)) {
+    const vers = request.nextUrl.clone()
+    vers.pathname = '/tarifs2'
+    vers.search = ''
+    return NextResponse.redirect(vers, 307)
+  }
+
   const res = NextResponse.next()
   if (!request.cookies.get(VID_COOKIE)) {
     res.cookies.set(VID_COOKIE, crypto.randomUUID(), {
