@@ -8,7 +8,18 @@ import GrainOverlay from '@/components/GrainOverlay'
 
 // Widget chat flottant (présent sur TOUTES les pages) → code-split : sort du bundle
 // initial pour ne pas peser sur le 1er rendu. Se charge en chunk séparé après le paint.
-const AjnayaWidget = dynamic(() => import('@/components/AjnayaWidget'))
+/**
+ * ⚠️ 22/08/2026 — LE WIDGET TRAVAILLAIT SUR L'ACCUEIL POUR NE RIEN AFFICHER.
+ *
+ * Il se retire lui-même de `/` (ligne 731 : `if (pathname === '/') return null`),
+ * mais en React les crochets s'exécutent AVANT le premier `return` : 27 effets,
+ * écouteurs et minuteries montaient quand même, depuis un fichier de 48 988 o.
+ *
+ * La décision de route vit désormais dans `PorteWidgetAjnaya`, un composant
+ * minuscule. `dynamic()` ne télécharge qu'au premier RENDU réel : placé sous la
+ * condition, le code du widget n'est plus demandé du tout sur l'accueil.
+ */
+const PorteWidgetAjnaya = dynamic(() => import('@/components/PorteWidgetAjnaya'))
 import { ConsentBanner } from '@/components/ConsentBanner'
 import { TikTokPixel } from '@/components/TikTokPixel'
 import { MetaPixel } from '@/components/MetaPixel'
@@ -205,7 +216,7 @@ export default function RootLayout({
         {children}
         <DemarreurMesure />
         <GrainOverlay />
-        <AjnayaWidget />
+        <PorteWidgetAjnaya />
         <ConsentBanner />
         <Analytics />
         <SpeedInsights />

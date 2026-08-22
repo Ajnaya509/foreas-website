@@ -1086,6 +1086,116 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── EMPREINTE ET WIDGET : NI CHARGÉS NI EXÉCUTÉS SANS RAISON ───────────────
+//
+// ⚠️ 22/08/2026 — DEUX TRAVAUX INVISIBLES, MESURÉS SUR LA FABRICATION.
+//
+// 1. `AjnayaWidget` était monté par le gabarit général et se retirait lui-même
+//    de l'accueil, ligne 731 : `if (pathname === '/') return null`.
+//    **Un composant qui rend `null` a déjà tout fait** : en React les crochets
+//    s'exécutent AVANT le premier `return`. Mesuré : 27 déclarations d'effets,
+//    d'écouteurs et de minuteries au-dessus de cette ligne, dans un fichier de
+//    48 988 octets. Sur l'accueil il téléchargeait son code, montait ses états
+//    et attachait ses écouteurs — pour ne rien afficher. Et l'accueil a déjà ses
+//    deux portes : `LivePhone` et `AjnayaConversationModal`.
+//
+// 2. `zoneFingerprint.ts` importait `@fingerprintjs/fingerprintjs` en statique.
+//    Le morceau `1474-….js` fait 33 578 octets bruts et partait au premier
+//    chargement. Le commentaire du fichier disait lui-même « pour conformité
+//    CNIL stricte, prévoir un consent banner (pas inclus MVP) » — le bandeau
+//    existe depuis longtemps, ce code n'y avait jamais été branché. Et trois
+//    appelants sur cinq ne vérifiaient rien avant de calculer l'empreinte.
+{
+  const MODULE_EMPREINTE = 'src/lib/zoneFingerprint.ts'
+  const PORTE_WIDGET = 'src/components/PorteWidgetAjnaya.tsx'
+
+  const fichiersSrc = []
+  const marcher = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const c = join(d, e.name)
+      if (e.isDirectory()) { if (e.name !== 'node_modules') marcher(c); continue }
+      if (['.ts', '.tsx'].includes(extname(e.name))) fichiersSrc.push(c)
+    }
+  }
+  if (existsSync('src')) marcher('src')
+
+  for (const chemin of fichiersSrc) {
+    const code = sansCommentaires(readFileSync(chemin, 'utf8'))
+
+    if (/^\s*import\s+[^\n]*from\s+['"]@fingerprintjs\//m.test(code)) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'import STATIQUE de FingerprintJS',
+        extrait: "import … from '@fingerprintjs/fingerprintjs'",
+        pourquoi:
+          '33 578 octets entrent alors dans le premier chargement, et le calcul ' +
+          'd’une empreinte du terminal est un traceur soumis à accord préalable. ' +
+          'Le chargement dynamique vit dans ' + MODULE_EMPREINTE + ', une seule fois.',
+      })
+    }
+
+    if (/import\(\s*['"]@fingerprintjs\//.test(code) && chemin !== MODULE_EMPREINTE) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'un second point de chargement de FingerprintJS',
+        extrait: "import('@fingerprintjs/…')",
+        pourquoi:
+          'deux points de chargement, c’est deux agents et deux empreintes possibles. ' +
+          'Le chargement vit à un seul endroit : ' + MODULE_EMPREINTE + '.',
+      })
+    }
+
+    // Le widget flottant ne se monte que derrière sa porte de route.
+    if (/from\s+['"]@\/components\/AjnayaWidget['"]|import\(\s*['"]@\/components\/AjnayaWidget['"]\s*\)/.test(code)
+        && chemin !== PORTE_WIDGET) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'le widget Ajnaya est monté hors de sa porte de route',
+        extrait: "import … '@/components/AjnayaWidget'",
+        pourquoi:
+          'monté sans condition, il télécharge 48 988 octets et attache 27 effets ' +
+          'sur des pages qui ont déjà leur propre porte vers Ajnaya. Passe par ' +
+          PORTE_WIDGET + ' : `dynamic()` ne charge qu’au premier RENDU réel.',
+      })
+    }
+  }
+
+  // Le module d'empreinte doit rester conditionné à l'accord.
+  if (existsSync(MODULE_EMPREINTE)) {
+    const m = sansCommentaires(readFileSync(MODULE_EMPREINTE, 'utf8'))
+    for (const [motif, quoi] of [
+      [/hasTrackingConsent\s*\(\s*\)/, 'le module d’empreinte ne lit plus le consentement'],
+      [/import\(\s*['"]@fingerprintjs\//, 'le chargement dynamique a disparu du module d’empreinte'],
+    ]) {
+      if (!motif.test(m)) {
+        infractions.push({
+          fichier: MODULE_EMPREINTE,
+          quoi,
+          extrait: String(motif),
+          pourquoi:
+            'sans l’un des deux, l’empreinte repart dans le premier chargement, ou se ' +
+            'calcule avant que le visiteur ait répondu au bandeau.',
+        })
+      }
+    }
+  }
+
+  // La porte du widget doit rester une porte.
+  if (existsSync(PORTE_WIDGET)) {
+    const g = sansCommentaires(readFileSync(PORTE_WIDGET, 'utf8'))
+    if (!/usePathname\s*\(\s*\)/.test(g) || !/return null/.test(g)) {
+      infractions.push({
+        fichier: PORTE_WIDGET,
+        quoi: 'la porte du widget ne filtre plus par route',
+        extrait: 'usePathname() ou `return null` absent',
+        pourquoi:
+          'sans le filtre, le widget revient sur l’accueil : 48 988 octets et ' +
+          '27 effets, pour ne rien afficher.',
+      })
+    }
+  }
+}
+
 // ─── AUCUNE MESURE TIERCE AVANT LE CONSENTEMENT ─────────────────────────────
 //
 // ⚠️ 22/08/2026 — RETARDER `init()` NE RETARDE PAS LE TÉLÉCHARGEMENT.
