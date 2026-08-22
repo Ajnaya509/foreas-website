@@ -529,7 +529,27 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       />
       <div
         inert={!ctaVisible || undefined}
-        className={`fixed inset-x-4 z-50 flex items-end gap-2.5 transition-all duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${ctaVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
+        // ⚠️ `transition-[opacity,transform]` ET NON `transition-all` — C'EST LA
+        // VRAIE CAUSE, TROUVÉE APRÈS DEUX FAUSSES.
+        //
+        // Avec `transition-all`, `bottom` devient une propriété ANIMÉE. Quand la
+        // variable du bandeau arrive après le montage, le navigateur démarre une
+        // transition 16px → 137px. Mais cette barre est à `opacity: 0` tant
+        // qu'on n'a pas assez défilé : **l'animation n'avance jamais**, et la
+        // valeur calculée reste bloquée à son point de départ.
+        //
+        // Prouvé en production, sur l'élément lui-même :
+        //   transition: all 0.3s  → bottom = 16px
+        //   transition: none      → bottom = 137px  (immédiatement)
+        // Et un div neuf portant la MÊME déclaration calculait déjà 137px.
+        //
+        // ⚠️ J'ai d'abord accusé `max()`, puis `env()`. Les deux étaient de vrais
+        // pièges, mais aucun n'était CE bug. Trois causes plausibles pour un même
+        // symptôme : seule la mesure qui ISOLE une variable à la fois tranche.
+        //
+        // On n'anime donc que ce qui doit l'être : l'opacité et le déplacement.
+        // `bottom` prend sa valeur tout de suite, visible ou non.
+        className={`fixed inset-x-4 z-50 flex items-end gap-2.5 transition-[opacity,transform] duration-300 md:inset-x-auto md:left-1/2 md:w-full md:max-w-md md:-translate-x-1/2 ${ctaVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
         // ⚠️ 21/08/2026 — CE BOUTON ÉTAIT ENTIÈREMENT RECOUVERT PAR LE BANDEAU
         // DE CONSENTEMENT au premier passage, donc pour TOUS les nouveaux
         // visiteurs. `--hauteur-bandeau-consentement` est publiée par
