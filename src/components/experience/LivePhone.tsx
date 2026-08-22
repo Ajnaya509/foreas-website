@@ -28,7 +28,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MessageCircle, Send } from 'lucide-react'
-import posthog from 'posthog-js'
 import { streamAjnayaChat, StreamUnavailableError } from '@/lib/ajnayaStream'
 import { getSessionId, getDevice } from '@/lib/ajnaya-analytics'
 import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
@@ -37,6 +36,7 @@ import { readVisitState, recordSearch } from '@/lib/sarcasticVisits'
 import { useTypewriter } from '@/hooks/useTypewriter'
 import { hasTrackingConsent } from '@/lib/consent'
 import PhoneFrame from './PhoneFrame'
+import { mesureCapture } from '@/lib/mesureProduit'
 
 interface Msg { role: 'user' | 'ajnaya'; text: string }
 interface LivePhoneProps { geoCity?: string | null }
@@ -183,7 +183,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
     const isFirstTurn = exchanges === 0
     setInput('')
     setMessages((prev) => [...prev, { role: 'user', text }])
-    try { posthog.capture('experience_phone_message_sent', { turn: exchanges + 1, device: getDevice(), first_turn: isFirstTurn }) } catch { /* noop */ }
+    try { mesureCapture('experience_phone_message_sent', { turn: exchanges + 1, device: getDevice(), first_turn: isFirstTurn }) } catch { /* noop */ }
     setTyping(true)
 
     // 1er échange = la question forcée sur la zone → on va chercher la VRAIE donnée avant de répondre.
@@ -447,7 +447,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => { if (!waOpened) { setWaOpened(true); try { posthog.capture('experience_phone_wa_clicked', { exchanges, has_handoff_token: !!waHref }) } catch { /* noop */ } } }}
+              onClick={() => { if (!waOpened) { setWaOpened(true); try { mesureCapture('experience_phone_wa_clicked', { exchanges, has_handoff_token: !!waHref }) } catch { /* noop */ } } }}
               className="mt-2 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-success to-[#34D399] py-3 text-[13.5px] font-extrabold text-white"
               style={{ boxShadow: '0 10px 30px -10px rgba(16,185,129,.5)' }}
             >

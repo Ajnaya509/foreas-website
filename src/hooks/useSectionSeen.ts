@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import posthog from 'posthog-js'
+import { mesureCapture } from '@/lib/mesureProduit'
 
 /**
  * useSectionSeen — mesure PAR SECTION (base de conversion). Renvoie une ref à poser sur la
@@ -28,7 +28,7 @@ export function useSectionSeen<T extends HTMLElement = HTMLElement>(section: str
       const dwellMs = Math.round(performance.now() - enteredAt)
       enteredAt = 0
       if (dwellMs > 300) {
-        try { posthog.capture('experience_section_dwell', { section, order, dwellMs }) } catch { /* noop */ }
+        try { mesureCapture('experience_section_dwell', { section, order, dwellMs }) } catch { /* noop */ }
       }
     }
 
@@ -38,7 +38,7 @@ export function useSectionSeen<T extends HTMLElement = HTMLElement>(section: str
           if (e.isIntersecting && e.intersectionRatio >= 0.5) {
             if (!seen) {
               seen = true
-              try { posthog.capture('experience_section_viewed', { section, order }) } catch { /* noop */ }
+              try { mesureCapture('experience_section_viewed', { section, order }) } catch { /* noop */ }
             }
             enteredAt = performance.now()
           } else {

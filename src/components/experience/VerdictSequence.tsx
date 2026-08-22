@@ -22,7 +22,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useTransform, useMotionValueEvent, type MotionValue } from 'framer-motion'
-import posthog from 'posthog-js'
 import PhoneFrame from './PhoneFrame'
 import { useSectionSeen } from '@/hooks/useSectionSeen'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
@@ -30,6 +29,7 @@ import {
   useScrubbedVideo, useScrollTriggeredClip, useSectionActive, useNearbyPreload,
   useMutedVideoRef, useAudioUnlocked, unlockAudio,
 } from '@/hooks/useCinemaVideo'
+import { mesureCapture } from '@/lib/mesureProduit'
 
 const V = '/videos/experience'
 
@@ -165,7 +165,7 @@ function MobileVerdict() {
 
   const handleUnlock = useCallback(() => {
     unlockAudio(refuseRef.current)
-    try { posthog.capture('experience_sound_unlocked', { scene: 'verdict' }) } catch { /* noop */ }
+    try { mesureCapture('experience_sound_unlocked', { scene: 'verdict' }) } catch { /* noop */ }
   }, [refuseRef])
 
   // h-[400svh] sur la section (piste de scroll figée — la progression scrubée ne doit jamais
@@ -302,7 +302,7 @@ function DesktopVerdict() {
 
   const handleUnlock = useCallback(() => {
     unlockAudio(refuseRef.current)
-    try { posthog.capture('experience_sound_unlocked', { scene: 'verdict' }) } catch { /* noop */ }
+    try { mesureCapture('experience_sound_unlocked', { scene: 'verdict' }) } catch { /* noop */ }
   }, [refuseRef])
 
   return (

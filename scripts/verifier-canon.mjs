@@ -1086,6 +1086,100 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── AUCUNE MESURE TIERCE AVANT LE CONSENTEMENT ─────────────────────────────
+//
+// ⚠️ 22/08/2026 — RETARDER `init()` NE RETARDE PAS LE TÉLÉCHARGEMENT.
+//
+// La v153 avait repoussé `posthog.init()` après le chargement de la page, et
+// mon compte rendu a présenté ça comme un gain. Mesuré ensuite dans un vrai
+// Chrome, sur la production v157, avec AUCUN consentement enregistré :
+//
+//   eu-assets.i.posthog.com/array/phc_…                    ← la bibliothèque
+//   eu-assets.i.posthog.com/static/surveys.js
+//   eu-assets.i.posthog.com/static/dead-clicks-autocapture.js
+//   eu-assets.i.posthog.com/static/exception-autocapture.js
+//   eu-assets.i.posthog.com/static/web-vitals.js
+//
+// CINQ fichiers, chez un tiers, avant que le visiteur ait répondu au bandeau.
+// Ce n'est pas qu'une question de poids : c'est une requête qui n'aurait pas dû
+// partir. `opt_out_capturing_by_default` empêche l'ENVOI d'événements ; il
+// n'empêche pas le TÉLÉCHARGEMENT.
+//
+// La cause : `import posthog from 'posthog-js'` en haut de SEPT fichiers. Un
+// import statique entre dans le paquet de départ, que la fonction soit appelée
+// ou non. Aucune ruse dans le corps du composant n'y change quoi que ce soit.
+//
+// Cette règle interdit le retour de cet import. Le seul `import('posthog-js')`
+// autorisé est dynamique, dans `src/lib/mesureProduit.ts`, derrière le
+// consentement.
+{
+  const SEUL_AUTORISE = 'src/lib/mesureProduit.ts'
+  const fichiersSrc = []
+  const marcher = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const c = join(d, e.name)
+      if (e.isDirectory()) { if (e.name !== 'node_modules') marcher(c); continue }
+      if (['.ts', '.tsx'].includes(extname(e.name))) fichiersSrc.push(c)
+    }
+  }
+  if (existsSync('src')) marcher('src')
+
+  for (const chemin of fichiersSrc) {
+    const code = sansCommentaires(readFileSync(chemin, 'utf8'))
+
+    if (/^\s*import\s+[^\n]*from\s+['"]posthog-js/m.test(code)) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'import STATIQUE de posthog-js',
+        extrait: "import … from 'posthog-js'",
+        pourquoi:
+          'un import statique entre dans le paquet de départ et part chez un TIERS ' +
+          'avant toute réponse au bandeau de consentement. Passe par ' +
+          '`mesureCapture` / `mesureIdentify` / `mesureRegister` depuis ' +
+          '`@/lib/mesureProduit` : le chargement y est dynamique et conditionné.',
+      })
+    }
+
+    if (/import\(\s*['"]posthog-js['"]\s*\)/.test(code) && chemin !== SEUL_AUTORISE) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'un second point de chargement de posthog-js',
+        extrait: "import('posthog-js')",
+        pourquoi:
+          'deux points de chargement, c’est deux initialisations possibles et une ' +
+          'double mesure. Le chargement vit à un seul endroit : ' + SEUL_AUTORISE + '.',
+      })
+    }
+  }
+
+  // Le module de mesure doit rester conditionné au consentement.
+  if (existsSync(SEUL_AUTORISE)) {
+    const m = sansCommentaires(readFileSync(SEUL_AUTORISE, 'utf8'))
+    for (const [motif, quoi] of [
+      [/hasTrackingConsent\s*\(\s*\)/, 'le module de mesure ne lit plus le consentement'],
+      [/import\(\s*['"]posthog-js['"]\s*\)/, 'le chargement dynamique a disparu du module de mesure'],
+    ]) {
+      if (!motif.test(m)) {
+        infractions.push({
+          fichier: SEUL_AUTORISE,
+          quoi,
+          extrait: String(motif),
+          pourquoi:
+            'sans l’un des deux, la bibliothèque repart chez un tiers avant que le ' +
+            'visiteur ait répondu — exactement le défaut mesuré le 22/08.',
+        })
+      }
+    }
+  } else {
+    infractions.push({
+      fichier: SEUL_AUTORISE,
+      quoi: 'le module de mesure a disparu',
+      extrait: 'fichier absent',
+      pourquoi: 'les composants l’appellent : sans lui, plus aucune mesure produit.',
+    })
+  }
+}
+
 // ─── LES SORTIES WHATSAPP PASSENT TOUTES PAR `/wa` ──────────────────────────
 //
 // ⚠️ 22/08/2026 — CETTE RÈGLE A CHANGÉ D'OBJET, PAS DE CAMP.

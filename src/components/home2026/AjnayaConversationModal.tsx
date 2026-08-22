@@ -9,7 +9,7 @@ import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { expandPoolCode } from '@/lib/expandPoolCode'
 import { useOverlayLock } from '@/lib/overlayStore'
-import posthog from 'posthog-js'
+import { mesureCapture, mesureIdentify, mesureRegister } from '@/lib/mesureProduit'
 
 /**
  * AjnayaConversationModal — Pieuvre Brain + ElevenLabs v3 (Site2026v73)
@@ -583,7 +583,7 @@ export default function AjnayaConversationModal({
       .then((r) => {
         setVisitorId(r.visitorId)
         // Relie les events PostHog à notre badge (le répertoire d'identité).
-        try { posthog.register({ foreas_visitor_id: r.visitorId }) } catch { /* noop */ }
+        try { mesureRegister({ foreas_visitor_id: r.visitorId }) } catch { /* noop */ }
       })
       .catch(() => {})
 
@@ -708,7 +708,7 @@ export default function AjnayaConversationModal({
         })
       } catch { /* silencieux */ }
       // Tunnel natif PostHog (funnels + replay rattachés à la personne)
-      try { posthog.capture('home_modal_zone_searched', { turn: currentTurn, zone: message }) } catch { /* noop */ }
+      try { mesureCapture('home_modal_zone_searched', { turn: currentTurn, zone: message }) } catch { /* noop */ }
 
       try {
         const res = await fetch('/api/ajnaya/home-modal', {
@@ -742,7 +742,7 @@ export default function AjnayaConversationModal({
         // Persist identity_id pour tracking cross-turn + lien PostHog (= le répertoire)
         if (data.identity_id) {
           setIdentityId(data.identity_id)
-          try { posthog.identify(data.identity_id) } catch { /* noop */ }
+          try { mesureIdentify(data.identity_id) } catch { /* noop */ }
         }
 
         // Zone data
@@ -1065,7 +1065,7 @@ export default function AjnayaConversationModal({
                           })
                           // KPI ultime côté PostHog (funnel + replay de qui a cliqué)
                           try {
-                            posthog.capture('home_modal_wa_clicked', {
+                            mesureCapture('home_modal_wa_clicked', {
                               turn,
                               zone: zoneData?.zone_match,
                               zone_category: modalZoneCategory,

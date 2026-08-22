@@ -10,12 +10,12 @@ import GrainOverlay from '@/components/GrainOverlay'
 // initial pour ne pas peser sur le 1er rendu. Se charge en chunk séparé après le paint.
 const AjnayaWidget = dynamic(() => import('@/components/AjnayaWidget'))
 import { ConsentBanner } from '@/components/ConsentBanner'
-import { PostHogProvider } from '@/components/PostHogProvider'
 import { TikTokPixel } from '@/components/TikTokPixel'
 import { MetaPixel } from '@/components/MetaPixel'
 import IdentityObserver from '@/components/IdentityObserver'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import DemarreurMesure from '@/components/DemarreurMesure'
 
 // Site2026v50 — Configuration finale typographique :
 // • Inter (next/font/google) : remplace Montserrat sur body + UI + h1-h6 réguliers
@@ -194,7 +194,16 @@ export default function RootLayout({
           `}</style>
         </noscript>
         <Preloader />
-        <PostHogProvider>{children}</PostHogProvider>
+        {/*
+          ⚠️ 22/08/2026 — LE FOURNISSEUR REACT POSTHOG A ÉTÉ RETIRÉ.
+          Il ne fournissait rien : aucun `usePostHog`, aucun `PostHogFeature`,
+          aucun `useFeatureFlag` dans le dépôt. `posthog-js/react` n'était
+          importé que par lui. Il ne restait que le démarrage — et ce démarrage
+          embarquait la bibliothèque dans le paquet de départ, où elle partait
+          chez un tiers AVANT toute réponse au bandeau.
+        */}
+        {children}
+        <DemarreurMesure />
         <GrainOverlay />
         <AjnayaWidget />
         <ConsentBanner />

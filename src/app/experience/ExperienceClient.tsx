@@ -12,7 +12,7 @@
  * à scrubber — cf. recap).
  *
  * Design : tokens réels (tailwind.config.ts), pas d'approximation. Copy : copy-atomic (tutoiement,
- * chiffres honnêtes, zéro promesse non prouvée). Tracking : posthog.capture (même convention que
+ * chiffres honnêtes, zéro promesse non prouvée). Tracking : mesureCapture(même convention que
  * home_modal_*).
  */
 
@@ -20,7 +20,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, MotionConfig } from 'framer-motion'
-import posthog from 'posthog-js'
 import { MessageCircle, MapPin, ArrowRight } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
 import LivePhone, { orderZonesByCity, TRIAL_INTENT_MESSAGE } from '@/components/experience/LivePhone'
@@ -39,6 +38,7 @@ import VerdictSequence from '@/components/experience/VerdictSequence'
 
 import { garantieAffichable } from '@/lib/verite-commerciale'
 import HomeAppStores from '@/components/home2026/HomeAppStores'
+import { mesureCapture } from '@/lib/mesureProduit'
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
 // Même pop-up anti-départ que la home — réutilisé tel quel, déjà générique (WhatsApp + garde-fous propres).
@@ -200,7 +200,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   const openModal = (zone?: string) => {
     setModalZone(zone || '')
     setModalOpen(true)
-    try { posthog.capture('experience_desktop_modal_opened', { zone: zone || null }) } catch { /* noop */ }
+    try { mesureCapture('experience_desktop_modal_opened', { zone: zone || null }) } catch { /* noop */ }
   }
 
   /**
@@ -215,7 +215,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
    *          puis LivePhone envoie ce même message (CustomEvent `foreas:trial-intent`).
    */
   const handleCtaClick = () => {
-    try { posthog.capture('experience_sticky_cta_clicked', { mode: isMobile ? 'mobile_trial' : 'desktop_trial', intent: 'free_trial' }) } catch { /* noop */ }
+    try { mesureCapture('experience_sticky_cta_clicked', { mode: isMobile ? 'mobile_trial' : 'desktop_trial', intent: 'free_trial' }) } catch { /* noop */ }
     if (!isMobile) { openModal(TRIAL_INTENT_MESSAGE); return }
     const hero = document.getElementById('hero')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -230,7 +230,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   }
 
   useEffect(() => {
-    try { posthog.capture('experience_page_view') } catch { /* noop */ }
+    try { mesureCapture('experience_page_view') } catch { /* noop */ }
   }, [])
 
   // CTA persistant : apparaît quand la 1ʳᵉ feature (séquence cinéma) a été VUE — avant, il n'a

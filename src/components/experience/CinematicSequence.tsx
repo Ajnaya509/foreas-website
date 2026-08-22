@@ -13,13 +13,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useTransform, useMotionValueEvent, type MotionValue } from 'framer-motion'
-import posthog from 'posthog-js'
 import PhoneFrame from './PhoneFrame'
 import { useSectionSeen } from '@/hooks/useSectionSeen'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
 import {
   useScrubbedVideo, useScrollTriggeredClip, useSectionActive, useNearbyPreload, useMutedVideoRef,
 } from '@/hooks/useCinemaVideo'
+import { mesureCapture } from '@/lib/mesureProduit'
 
 const V = '/videos/experience'
 const VINTAGE = 'sepia(.12) contrast(1.12) saturate(.72) brightness(.88) hue-rotate(-4deg)'
@@ -147,7 +147,7 @@ function MobileSequence() {
     // scène la plus lourde (vidéo scrub + clip + grain), jank injecté au moment du payoff.
     if (on && !payoffFiredRef.current) {
       payoffFiredRef.current = true
-      try { posthog.capture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle', variant: 'mobile' }) } catch { /* noop */ }
+      try { mesureCapture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle', variant: 'mobile' }) } catch { /* noop */ }
     }
   })
 
@@ -258,7 +258,7 @@ function DesktopSequence() {
     setMockupOn((prev) => (prev === on ? prev : on))
     if (on && !payoffFiredRef.current) {
       payoffFiredRef.current = true
-      try { posthog.capture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle' }) } catch { /* noop */ }
+      try { mesureCapture('experience_cinematic_payoff_viewed', { scene: 'alerte_controle' }) } catch { /* noop */ }
     }
   })
 
