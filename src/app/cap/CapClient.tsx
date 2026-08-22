@@ -1,5 +1,24 @@
 'use client'
 
+/**
+ * ⚠️ 22/08/2026 — CETTE PAGE VOUVOYAIT DES CHAUFFEURS.
+ *
+ * `/cap` accueille quelqu'un arrivé par un lien de parrainage : c'est un
+ * CHAUFFEUR, pas un client passager ni un partenaire B2B. Or elle comptait 21
+ * occurrences de « vous / votre / vos » contre 6 de tutoiement, alors que `/`,
+ * `/tarifs2` et les pages SEO tutoient toutes.
+ *
+ * La règle FOREAS est stable et documentée : **Ajnaya vouvoie les clients,
+ * tutoie les chauffeurs.** Un chauffeur qui arrive par le lien d'un collègue et
+ * se fait vouvoyer sent immédiatement qu'il a changé d'interlocuteur — sur la
+ * page dont le seul but est de le mettre en confiance.
+ *
+ * ⚠️ SEULES LES PHRASES ADRESSÉES AU CHAUFFEUR ONT ÉTÉ CHANGÉES. Le
+ * vouvoiement destiné aux passagers, s'il en reste ailleurs sur le site, n'est
+ * pas concerné : ce n'est pas une correction de style, c'est une correction
+ * d'interlocuteur.
+ */
+
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -82,15 +101,15 @@ const ANNUEL_PAR_MOIS_CENTIMES = Math.round(PRIX_ANNUEL_CENTIMES / 12)
 // URSSAF : formulation imposée par le garde-fou légal (ordonnance du 19 sept. 1945, art. 20) —
 // FOREAS calcule ce qui sera dû, FOREAS ne met rien de côté et n'est pas expert-comptable.
 const INCLUS = [
-  `Vos courses ${PLATEFORMES.reellementVues.join(', ')} au même endroit`,
+  `Tes courses ${PLATEFORMES.reellementVues.join(', ')} au même endroit`,
   'La carte des zones',
   'Ajnaya, à la voix ou au clavier',
-  'Le net de la course, calculé avant que vous acceptiez',
+  'Le net de la course, calculé avant que t’acceptes',
   // Formulation impersonnelle volontaire : FOREAS calcule ce qui sera dû. FOREAS ne met
   // rien de côté (aucun compte de cantonnement n'existe) et n'est pas expert-comptable.
   `${COMPTA_PHRASES.titre} : ce qui sera dû, calculé au fil des courses`,
-  'Vos clients directs, sans commission — votre site à votre nom',
-  `Parrainage : ${PARRAINAGE.paliers[0].commissionEur} € par chauffeur que vous amenez`,
+  'Tes clients directs, sans commission — ton site à ton nom',
+  `Parrainage : ${PARRAINAGE.paliers[0].commissionEur} € par chauffeur que tu amènes`,
 ]
 
 const PLANS = [
@@ -323,7 +342,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 avant/après à comparer. Ce qui reste, et qui est vrai : Ajnaya dit où se poser. */}
             {discount ? (
               <>
-                <span className="text-white">Vous ne roulez plus au hasard.</span>
+                <span className="text-white">Tu ne roules plus au hasard.</span>
                 <br />
                 <span
                   style={{
@@ -332,13 +351,13 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  Ajnaya vous dit où vous poser —{' '}
+                  Ajnaya te dit où te poser —{' '}
                   <span className="whitespace-nowrap">-{discountPct}% offerts</span>
                 </span>
               </>
             ) : (
               <>
-                <span className="text-white">Vous ne roulez plus au hasard.</span>
+                <span className="text-white">Tu ne roules plus au hasard.</span>
                 <br />
                 <span
                   style={{
@@ -347,7 +366,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  Ajnaya vous dit où vous poser
+                  Ajnaya te dit où te poser
                 </span>
               </>
             )}
@@ -367,8 +386,8 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 vraiment : conseiller une zone, et calculer le net avant d'accepter. */}
             {partner?.landing_message ||
               (discount
-                ? `${partnerName} vous offre ${discountPct}% de réduction pendant ${discountMonths} mois. Ajnaya vous conseille une zone et calcule ce que la course vous laisse vraiment, avant que vous acceptiez.`
-                : `Ajnaya vous conseille une zone et calcule ce que la course vous laisse vraiment, avant que vous acceptiez. ${ESSAI_JOURS} jours d’essai, 0 € prélevé.`)}
+                ? `${partnerName} t’offre ${discountPct}% de réduction pendant ${discountMonths} mois. Ajnaya te conseille une zone et calcule ce que la course te laisse vraiment, avant que t’acceptes.`
+                : `Ajnaya te conseille une zone et calcule ce que la course te laisse vraiment, avant que t’acceptes. ${ESSAI_JOURS} jours d’essai, 0 € prélevé.`)}
           </motion.p>
 
           {/* Discount banner */}
@@ -505,7 +524,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
               {/* « Choisissez votre plan » n'a plus d'objet : il n'y a qu'un abonnement,
                   au mois ou à l'année (src/lib/offre.ts). C'est aussi ce que répond /tarifs2. */}
               {discount
-                ? `Votre offre exclusive — -${discountPct}% pendant ${discountMonths} mois`
+                ? `Ton offre exclusive — -${discountPct}% pendant ${discountMonths} mois`
                 : 'Un seul abonnement, tout est dedans'}
             </motion.h2>
             <motion.p
@@ -546,7 +565,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 partenaire valide, donc sans aucune réduction. Elle est maintenant conditionnée
                 au cas où la remise existe réellement (coupon Stripe `foreas_ref_{pct}`). */}
             {discountPct > 0
-              ? 'Réduction appliquée automatiquement via votre code partenaire. Annulation sans frais à tout moment.'
+              ? 'Réduction appliquée automatiquement via ton code partenaire. Annulation sans frais à tout moment.'
               : 'Annulation sans frais à tout moment, en un clic.'}
           </motion.p>
         </div>
@@ -656,8 +675,8 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 est créé dès l'inscription : il faut l'annuler, ce n'est pas « rien à faire ». */}
             <p className="font-body text-sm text-white/50 mb-7">
               {discount
-                ? `Profitez de votre -${discountPct}% pendant ${discountMonths} mois via ${partnerName}.`
-                : `${ESSAI_JOURS} jours d’essai. Carte demandée, 0 € prélevé. Vous annulez en un clic avant la fin, vous n’êtes pas débité.`}
+                ? `Profite de ton -${discountPct}% pendant ${discountMonths} mois via ${partnerName}.`
+                : `${ESSAI_JOURS} jours d’essai. Carte demandée, 0 € prélevé. Tu annules en un clic avant la fin, tu n’es pas débité.`}
             </p>
             <Link
               href={`/tarifs2${referralCode ? `?ref=${referralCode}` : ''}`}

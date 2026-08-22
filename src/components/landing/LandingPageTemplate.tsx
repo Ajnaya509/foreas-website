@@ -205,6 +205,11 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LandingPageTemplate({ content }: { content: LandingContent }) {
+  // ⚠️ 22/08 — `useReducedMotion` était lu dans `FadeIn` (ligne 191) mais PAS
+  // ici. La flèche de défilement bouclait donc à l'infini même pour quelqu'un
+  // qui a coupé les animations. Deux composants du même fichier, deux
+  // comportements — le genre d'écart qu'on ne voit qu'en le cherchant.
+  const prefersReduced = useReducedMotion()
   const { topic_slug, content: c } = content
   const { trackCTAClick, trackFAQClick } = useLandingTracking(topic_slug)
   const [showStickyCtA, setShowStickyCta] = useState(false)
@@ -263,11 +268,18 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           </Link>
         </FadeIn>
 
-        {/* Scroll arrow */}
+        {/* ⚠️ 22/08/2026 — CETTE FLÈCHE BOUGEAIT À L'INFINI, MÊME ANIMATIONS COUPÉES.
+            `useReducedMotion` était importé et lu ligne 192, et cette animation
+            ne le consultait pas. Un mouvement perpétuel en bas de l'écran, sur
+            les DIX pages en série, pour quelqu'un qui a explicitement demandé
+            qu'on arrête de bouger.
+            Elle est aussi `aria-hidden` : c'est une indication visuelle, pas une
+            information — un lecteur d'écran n'a rien à en faire. */}
         <motion.div
+          aria-hidden
           className="absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-600"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
+          animate={prefersReduced ? undefined : { y: [0, 8, 0] }}
+          transition={prefersReduced ? undefined : { repeat: Infinity, duration: 2 }}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10 14l-6-6h12l-6 6z" />
@@ -505,11 +517,20 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
         recouvrirait sinon ces liens.
       */}
       <footer className="border-t border-white/[0.06] px-4 py-8 pb-28 md:pb-8 text-center">
-        <nav aria-label="Liens légaux" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/55">
-          <Link href="/cgu" className="hover:text-white/80 transition-colors">Conditions générales</Link>
-          <Link href="/confidentialite" className="hover:text-white/80 transition-colors">Confidentialité</Link>
-          <Link href="/mentions-legales" className="hover:text-white/80 transition-colors">Mentions légales</Link>
-          <Link href="/contact" className="hover:text-white/80 transition-colors">Contact</Link>
+        {/* ⚠️ 22/08/2026 — ZONE TACTILE : `min-h-[44px]`, PAS UNE ZONE ÉTENDUE.
+            Ces liens mesuraient ~16 px de haut. Sur un téléphone, dans une
+            voiture, ça se traduit par des clics qui ratent.
+            ⚠️ La première idée était un pseudo-élément de 44 px centré, qui
+            n'aurait rien changé au dessin. Mesuré : ils sont espacés de 20 px
+            (`gap-x-5`). Deux zones de 44 px se seraient CHEVAUCHÉES, et le
+            mauvais lien aurait reçu le clic — un correctif d'accessibilité qui
+            casse l'accessibilité. La hauteur minimale suffit : la largeur de
+            ces textes dépasse déjà 44 px. */}
+        <nav aria-label="Liens légaux" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-white/55">
+          <Link href="/cgu" className="inline-flex min-h-[44px] items-center hover:text-white/80 transition-colors">Conditions générales</Link>
+          <Link href="/confidentialite" className="inline-flex min-h-[44px] items-center hover:text-white/80 transition-colors">Confidentialité</Link>
+          <Link href="/mentions-legales" className="inline-flex min-h-[44px] items-center hover:text-white/80 transition-colors">Mentions légales</Link>
+          <Link href="/contact" className="inline-flex min-h-[44px] items-center hover:text-white/80 transition-colors">Contact</Link>
         </nav>
         <p className="mt-4 text-[11px] text-white/35">FOREAS — copilote des chauffeurs VTC.</p>
       </footer>
