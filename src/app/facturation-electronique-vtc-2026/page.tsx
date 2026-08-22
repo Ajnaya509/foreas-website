@@ -186,7 +186,7 @@ export default function FacturationElectroniqueVTC2026() {
             </div>
             <h1
               className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] mb-6"
-              style={{ fontFamily: 'Genos, sans-serif' }}
+              style={{ fontFamily: 'var(--font-genos), sans-serif' }}
             >
               La facturation électronique devient obligatoire.
               <br />
@@ -231,7 +231,7 @@ export default function FacturationElectroniqueVTC2026() {
           <div className="mx-auto max-w-4xl">
             <h2
               className="text-3xl md:text-4xl font-black tracking-tight mb-2"
-              style={{ fontFamily: 'Genos, sans-serif' }}
+              style={{ fontFamily: 'var(--font-genos), sans-serif' }}
             >
               Le calendrier officiel DGFiP
             </h2>
@@ -296,7 +296,7 @@ export default function FacturationElectroniqueVTC2026() {
           <div className="mx-auto max-w-4xl">
             <h2
               className="text-3xl md:text-4xl font-black tracking-tight mb-12"
-              style={{ fontFamily: 'Genos, sans-serif' }}
+              style={{ fontFamily: 'var(--font-genos), sans-serif' }}
             >
               Ce que FOREAS fait déjà, et ce qu&apos;on branche pour septembre
             </h2>
@@ -378,7 +378,7 @@ export default function FacturationElectroniqueVTC2026() {
           <div className="mx-auto max-w-4xl">
             <h2
               className="text-3xl md:text-4xl font-black tracking-tight mb-12"
-              style={{ fontFamily: 'Genos, sans-serif' }}
+              style={{ fontFamily: 'var(--font-genos), sans-serif' }}
             >
               Questions fréquentes
             </h2>
@@ -456,7 +456,7 @@ export default function FacturationElectroniqueVTC2026() {
           <div className="mx-auto max-w-3xl text-center">
             <h2
               className="text-3xl md:text-5xl font-black tracking-tight mb-6"
-              style={{ fontFamily: 'Genos, sans-serif' }}
+              style={{ fontFamily: 'var(--font-genos), sans-serif' }}
             >
               {/* FAC-03 — « 4 mois avant l'échéance » : vrai à la rédaction (21/04/2026),
                   faux depuis. Le 14/08/2026 il restait 18 jours, soit 0,59 mois. Recalculé

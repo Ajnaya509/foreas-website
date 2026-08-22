@@ -87,10 +87,18 @@ export default function Preloader() {
   return (
     <AnimatePresence>
       {isLoading && (
+        /*
+         * ⚠️ 22/08/2026 — `initial={{ opacity: 1 }}` ÉCRASAIT L'ANIMATION CSS.
+         *
+         * Framer Motion écrit `initial` en style EN LIGNE dans le HTML servi. Un
+         * `style="opacity:1"` bat toujours une règle de feuille de style : le fondu
+         * posé dans `globals.css` n'aurait jamais été visible.
+         *
+         * Framer ne pilote plus l'opacité de ce voile. Le CSS s'en charge dès la
+         * lecture de la feuille de style, sans attendre une ligne de JavaScript.
+         * Framer ne fait plus que démonter le nœud, après coup.
+         */
         <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           // Décor pur : rien à annoncer à un lecteur d'écran, et rien à cliquer.
           aria-hidden="true"
           // ⚠️ 21/08/2026 — SANS JAVASCRIPT, CE VOILE NE PARTAIT JAMAIS.

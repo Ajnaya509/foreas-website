@@ -224,21 +224,101 @@ export function useNearbyPreload(
   useEffect(() => {
     const el = sectionRef.current
     if (!el) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        const e = entries[entries.length - 1]
-        if (e.isIntersecting && !loaded.current) {
-          loaded.current = true
-          videoRefs.forEach((r) => {
-            const v = r.current
-            if (v && v.preload !== 'auto') { v.preload = 'auto'; v.load() }
-          })
-        }
-      },
-      { rootMargin: '900px 0px' },
-    )
-    io.observe(el)
-    return () => io.disconnect()
+    /**
+     * ⚠️ 22/08/2026 — CE « PRÉCHARGEMENT À L'APPROCHE » PARTAIT AU CHARGEMENT.
+     *
+     * Mesure Lighthouse (vrai navigateur, mobile) sur la production v152 : la
+     * page d'accueil téléchargeait 1,5 Mo de vidéo AVANT le premier écran —
+     * `hesitation.scrub.mp4` (1 100 Ko), `coach-accepte.play.mp4` (358 Ko) et
+     * `coach-refuse.play.mp4` (103 Ko).
+     *
+     * Les balises portent pourtant TOUTES `preload="none"`. C'est CE crochet qui
+     * les réveille : un observateur avec `rootMargin: 900px` se déclenche
+     * immédiatement sur un écran de téléphone (~640 px de haut), parce qu'une
+     * section juste sous la ligne de flottaison est déjà « à l'approche » au tout
+     * premier calcul. Le commentaire du crochet promettait « jamais au chargement
+     * de la page » — c'était exactement ce qu'il faisait.
+     *
+     * ⚠️ Ce mégaoctet et demi ne coûtait pas que des octets : il occupait la
+     * bande passante pendant que le navigateur avait besoin du JavaScript pour
+     * afficher le premier écran.
+     *
+     * Correction : l'observateur n'est ARMÉ qu'une fois la page chargée, au
+     * premier moment de repos, et la marge passe à 400 px. Quelqu'un qui descend
+     * très vite arrive avant l'armement : la vidéo se charge alors au moment de
+     * jouer — un peu plus tard, jamais cassée.
+     */
+    let io: IntersectionObserver | null = null
+    let annule = false
+
+    const armer = () => {
+      if (annule) return
+      io = new IntersectionObserver(
+        (entries) => {
+          const e = entries[entries.length - 1]
+          if (e.isIntersecting && !loaded.current) {
+            loaded.current = true
+            videoRefs.forEach((r) => {
+              const v = r.current
+              if (v && v.preload !== 'auto') { v.preload = 'auto'; v.load() }
+            })
+          }
+        },
+        { rootMargin: '400px 0px' },
+      )
+      io.observe(el)
+    }
+
+    /**
+     * ⚠️ 22/08/2026 — J'AVAIS MIS `requestIdleCallback` ICI, ET C'ÉTAIT UN PIÈGE.
+     *
+     * Il n'existe pas sur Safari (repli prévu), mais surtout : **il ne se
+     * déclenche pas du tout quand l'onglet est en arrière-plan**, timeout
+     * compris. Mon épreuve au navigateur ne pouvait donc rien prouver — même
+     * famille que `requestAnimationFrame` gelé.
+     *
+     * Or à ce point du code, le visiteur VIENT de faire défiler : il est devant
+     * son écran, il n'y a plus rien à attendre. Un simple report d'un tour de
+     * boucle suffit, il marche partout, et il est vérifiable.
+     */
+    const auRepos = (fn: () => void) => window.setTimeout(fn, 0)
+
+    /**
+     * ⚠️ ET ON ATTEND UN PREMIER DÉFILEMENT.
+     *
+     * Repousser après le chargement enlevait le poids du chemin critique, mais
+     * pas de la facture : Lighthouse mesurait encore 1,5 Mo de vidéo sur une
+     * visite où PERSONNE n'a fait défiler la page. Les sections cinéma sont
+     * juste sous la ligne de flottaison : une marge de 400 px les déclare « à
+     * l'approche » sans que le visiteur ait bougé.
+     *
+     * Quelqu'un qui lit le premier écran et repart ne paie donc plus rien. Celui
+     * qui descend déclenche l'observateur au premier pixel de défilement, bien
+     * avant d'arriver sur la section : le préchargement garde tout son sens.
+     */
+    let scrolle = false
+    const auPremierDefilement = () => {
+      if (scrolle) return
+      scrolle = true
+      window.removeEventListener('scroll', auPremierDefilement)
+      auRepos(armer)
+    }
+
+    const brancher = () => {
+      if (annule) return
+      // Déjà descendu avant que le crochet soit prêt (rechargement à mi-page).
+      if (window.scrollY > 0) { auPremierDefilement(); return }
+      window.addEventListener('scroll', auPremierDefilement, { passive: true })
+    }
+
+    if (document.readyState === 'complete') brancher()
+    else window.addEventListener('load', brancher, { once: true })
+
+    return () => {
+      annule = true
+      window.removeEventListener('scroll', auPremierDefilement)
+      io?.disconnect()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionRef])
 }

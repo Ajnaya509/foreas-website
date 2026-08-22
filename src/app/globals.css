@@ -232,54 +232,30 @@ html { scroll-behavior: smooth; }
 
 
 
-/* Genos — Local fonts (config IDENTIQUE à Site2026v35 — restaurée v53) */
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-VariableFont_wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
+/*
+ * ⚠️ 22/08/2026 — GENOS SE TÉLÉCHARGEAIT DEUX FOIS SUR CHAQUE PAGE.
+ *
+ * Mesure Lighthouse sur la production v152, réseau réel :
+ *
+ *   /_next/static/media/d14b157025a12626-s.p.ttf   81 Ko  ← next/font/local
+ *   /fonts/Genos-Italic-VariableFont_wght.ttf      81 Ko  ← ces @font-face
+ *   /_next/static/media/99c95f14d963b598-s.p.ttf   75 Ko  ← next/font/local
+ *   /fonts/Genos-VariableFont_wght.ttf             75 Ko  ← ces @font-face
+ *
+ * Les MÊMES deux fichiers, servis par deux chemins. 156 Ko payés pour rien, sur
+ * chaque page, par chaque visiteur.
+ *
+ * `next/font/local` (src/app/layout.tsx) est la déclaration qui reste : elle
+ * précharge, elle est auto-hébergée, et elle expose `--font-genos`.
+ *
+ * ⚠️ CES SIX BLOCS NE POUVAIENT PAS ÊTRE SIMPLEMENT SUPPRIMÉS. Une trentaine
+ * d'endroits écrivent `font-family: 'Genos'` en clair — dans ce fichier et en
+ * style en ligne. Sans les @font-face, ils seraient tombés EN SILENCE sur
+ * `system-ui` : une dégradation visuelle invisible en fabrication, sur toutes
+ * les pages en série. La famille est donc redirigée vers la variable, une fois
+ * pour toutes, ci-dessous.
+ */
 
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-Italic-VariableFont_wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-Italic.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Genos';
-  src: url('/fonts/Genos-BoldItalic.ttf') format('truetype');
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
 
 :root {
   /* ─── FOREAS Design System v2 — Tokens canoniques ───
@@ -562,7 +538,7 @@ p, .prose, .text-prose {
 
 /* ── Headings — Genos par défaut (config IDENTIQUE à Site2026v35) ── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Genos', system-ui, sans-serif;
+  font-family: var(--font-genos), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -570,13 +546,13 @@ h1, h2, h3, h4, h5, h6 {
 /* ─── Typography Classes — config IDENTIQUE Site2026v35 ─── */
 .font-title,
 .font-display {
-  font-family: 'Genos', system-ui, sans-serif;
+  font-family: var(--font-genos), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .font-subtitle {
-  font-family: 'Genos', system-ui, sans-serif;
+  font-family: var(--font-genos), system-ui, sans-serif;
   font-style: italic;
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -585,7 +561,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Aliases v51 (DepthBackground/GlassPanel preservés) — pointent vers Genos */
 .font-display-genos,
 .font-title-genos {
-  font-family: 'Genos', system-ui, sans-serif;
+  font-family: var(--font-genos), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -706,7 +682,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Tagline italic style */
 .tagline {
-  font-family: 'Genos', system-ui, sans-serif;
+  font-family: var(--font-genos), system-ui, sans-serif;
   font-style: italic;
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -724,4 +700,51 @@ h1, h2, h3, h4, h5, h6 {
 
 .animate-gradient-x {
   animation: gradient-x 2s ease infinite;
+}
+
+/*
+ * ⚠️ 22/08/2026 — LE VOILE DE MARQUE ÉTAIT TOUT LE LCP DU SITE.
+ *
+ * Mesure Lighthouse (vrai navigateur, mobile) sur la production v152 :
+ *
+ *   LCP 6,5 s — dont 5 736 ms de « render delay », 0 ms de chargement
+ *
+ * Le voile est OPAQUE, plein écran, et rendu par le serveur. Sa disparition
+ * dépendait d'un effet React : il fallait attendre que tout le JavaScript soit
+ * téléchargé, analysé et hydraté, PUIS 900 ms, PUIS 400 ms de fondu. Sur un
+ * téléphone bridé, l'hydratation arrive vers 3–4 s : le premier écran restait
+ * noir jusque-là, pour CHAQUE nouveau visiteur.
+ *
+ * ⚠️ La durée écrite dans le code (900 ms) n'était donc pas la durée vécue.
+ * Elle ne commençait à courir qu'après l'hydratation.
+ *
+ * Le fondu est maintenant piloté par le CSS : il démarre dès que la feuille de
+ * style est lue, sans attendre une seule ligne de JavaScript. Le composant React
+ * garde sa logique (déjà-vu de la session, mouvement réduit) et démonte le nœud
+ * ensuite — ce qui ne se voit pas, puisqu'il est déjà transparent et qu'il porte
+ * `pointer-events: none` depuis le début.
+ */
+@keyframes voile-de-marque-sortie {
+  0%,
+  69% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.voile-de-marque {
+  animation: voile-de-marque-sortie 1300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animations refusées : aucun voile, jamais. Le contenu est là tout de suite. */
+@media (prefers-reduced-motion: reduce) {
+  .voile-de-marque {
+    animation: none;
+    opacity: 0;
+    visibility: hidden;
+  }
 }

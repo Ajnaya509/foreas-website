@@ -254,7 +254,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
             FOREAS Driver
           </p>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-[#00D4FF] leading-tight mb-6 max-w-3xl"
-            style={{ fontFamily: 'Genos, sans-serif' }}>
+            style={{ fontFamily: 'var(--font-genos), sans-serif' }}>
             {c.hero_stat}
           </h1>
           <p className="text-gray-400 text-sm mb-10 max-w-xs mx-auto">
@@ -370,7 +370,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
       <section className="px-4 py-20 max-w-2xl mx-auto text-center">
         <FadeIn>
           <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-4">Dans 30 jours</p>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-8" style={{ fontFamily: 'Genos, sans-serif' }}>
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-8" style={{ fontFamily: 'var(--font-genos), sans-serif' }}>
             {c.projection_intro}
           </h2>
           <ul className="space-y-4 text-left max-w-sm mx-auto">
@@ -391,7 +391,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
         <FadeIn>
           <div className="rounded-2xl border border-[#8C52FF]/40 bg-[#8C52FF]/5 p-8 text-center">
             <p className="text-xs uppercase tracking-[0.25em] text-[#8C52FF] mb-4">Ce que fait FOREAS</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4" style={{ fontFamily: 'Genos, sans-serif' }}>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4" style={{ fontFamily: 'var(--font-genos), sans-serif' }}>
               {c.aha_headline}
             </h2>
             <p className="text-gray-400 text-base leading-relaxed">
@@ -475,7 +475,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
             <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-2 text-center">
               Avant de te décider
             </p>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-8 text-center" style={{ fontFamily: 'Genos, sans-serif' }}>
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-8 text-center" style={{ fontFamily: 'var(--font-genos), sans-serif' }}>
               Ce que tu te demandes probablement
             </h2>
             <div>
@@ -499,7 +499,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           {c.inaction_cost && (
             <p className="text-white/55 text-xs mb-4 max-w-sm mx-auto italic">{c.inaction_cost}</p>
           )}
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4 max-w-lg mx-auto" style={{ fontFamily: 'Genos, sans-serif' }}>
+          <h2 className="text-3xl md:text-4xl font-black text-white mb-4 max-w-lg mx-auto" style={{ fontFamily: 'var(--font-genos), sans-serif' }}>
             {c.cta_headline}
           </h2>
           <p className="text-gray-400 text-sm mb-8 max-w-sm mx-auto">{c.cta_guarantee}</p>

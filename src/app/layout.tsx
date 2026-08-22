@@ -46,6 +46,20 @@ const genos = localFont({
   ],
   variable: '--font-genos',
   display: 'swap',
+  /**
+   * ⚠️ 22/08/2026 — J'AI ESSAYÉ `preload: false` ICI, ET ÇA A EMPIRÉ.
+   *
+   * Raisonnement de départ : Genos (154 Ko) n'écrit aucun texte mesuré, elle ne
+   * devrait pas voler de la bande passante au premier écran.
+   *
+   * Mesuré : LCP identique (5,2 s) et **FCP dégradé de 1,2 s à 2,1 s**. Sans
+   * préchargement, le navigateur ne découvre la police qu'en calculant les
+   * styles — donc plus tard, et au pire moment. Elle se télécharge quand même :
+   * on a perdu la priorité sans rien gagner.
+   *
+   * → Annulé. Une idée de performance qui se tient sur le papier doit être
+   * MESURÉE avant d'être gardée.
+   */
   preload: true,
 })
 

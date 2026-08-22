@@ -14,12 +14,12 @@ export default function GoDesktopPage() {
       <div className="text-center max-w-sm w-full">
         {/* Logo text */}
         <div className="mb-6">
-          <span className="text-2xl font-bold tracking-widest text-white" style={{ fontFamily: 'Genos, sans-serif' }}>
+          <span className="text-2xl font-bold tracking-widest text-white" style={{ fontFamily: 'var(--font-genos), sans-serif' }}>
             FOREAS
           </span>
         </div>
 
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Genos, sans-serif' }}>
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2" style={{ fontFamily: 'var(--font-genos), sans-serif' }}>
           Télécharge FOREAS Driver
         </h1>
         <p className="text-gray-400 text-sm mb-8">

@@ -51,9 +51,32 @@ const reveal = {
   transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const },
 }
 
-// Entrée immédiate (pas whileInView — le hero est au-dessus de la ligne de flottaison)
+/**
+ * ⚠️ 22/08/2026 — LE PREMIER ÉCRAN ÉTAIT SERVI INVISIBLE. C'ÉTAIT TOUT LE LCP.
+ *
+ * Mesure Lighthouse (vrai navigateur, mobile) sur la production v152 :
+ *
+ *   LCP 6,5 s — dont 5 736 ms de « render delay », 0 ms de chargement
+ *   élément le plus grand : la bulle de bienvenue d'Ajnaya
+ *
+ * Framer Motion écrit `initial` en style EN LIGNE dans le HTML servi. Le HTML
+ * portait donc `style="opacity:0"` sur le bloc du hero ET sur celui du
+ * téléphone. Le texte était bien là — **il était invisible jusqu'à ce que le
+ * JavaScript s'hydrate et joue l'animation.**
+ *
+ * Chrome ne compte pas un élément à `opacity: 0` : le LCP attendait
+ * l'hydratation, elle-même retardée par 1,5 Mo de vidéo (voir `useCinemaVideo`).
+ *
+ * ⚠️ CE QUI M'AURAIT TROMPÉ : le commentaire d'origine disait « entrée
+ * immédiate, le hero est au-dessus de la ligne de flottaison ». C'était vrai
+ * pour l'INTENTION et faux pour l'EFFET : `animate` ne part que côté navigateur.
+ *
+ * Correction : **l'opacité reste à 1**, l'entrée ne joue plus que sur la
+ * translation. `transform` n'empêche pas Chrome de voir l'élément — le mouvement
+ * est conservé, le retard disparaît.
+ */
 const heroReveal = {
-  initial: { opacity: 0, y: 14 },
+  initial: { opacity: 1, y: 14 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
 }
@@ -399,7 +422,15 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           </p>
         </motion.div>
 
-        <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.15 }} className="relative mt-16 sm:mt-8 md:mt-10">
+        {/*
+          ⚠️ 22/08/2026 — CE BLOC PORTE L'ÉLÉMENT LE PLUS GRAND DE LA PAGE.
+          Il utilisait `reveal` (déclenché par l'observateur de défilement) AVEC
+          un délai de 0,15 s. Résultat : le téléphone — donc la bulle d'Ajnaya —
+          restait à `opacity: 0` jusqu'à l'hydratation PUIS l'observateur PUIS le
+          délai. Il est au-dessus de la ligne de flottaison : il ne doit rien
+          attendre du tout.
+        */}
+        <motion.div {...heroReveal} transition={{ ...heroReveal.transition, delay: 0.1 }} className="relative mt-16 sm:mt-8 md:mt-10">
           {/* Bascule en CSS (pas un ternaire React) : les deux branches sont TOUJOURS montées,
               cf. commentaire de DesktopZoneSearch plus haut — élimine le flash "desktop puis
               mobile" au premier paint et laisse chaque re-render (typewriter desktop) confiné à
