@@ -255,7 +255,13 @@ function buildSystemPrompt(
 ) {
   const pageContextMap: Record<string, string> = {
     '/chauffeurs': 'Page chauffeurs VTC — le visiteur explore les avantages pour un chauffeur indépendant.',
-    '/': 'Page B2B — le visiteur est probablement un gestionnaire de flotte, hôtelier ou partenaire.',
+    // ⚠️ 22/08/2026 — DISAIT « Page B2B … gestionnaire de flotte, hôtelier ».
+    // C'était vrai de l'ancienne home ivoire. Depuis que le téléphone vivant
+    // EST l'accueil, le visiteur de `/` est un CHAUFFEUR venu écrire sa zone.
+    // Ajnaya l'accueillait donc en le prenant pour un gestionnaire de flotte.
+    // ⚠️ Cette description vit à DEUX endroits — ici et dans le jumeau — et
+    // les deux servent. Corriger l'un seul laissait Ajnaya schizophrène.
+    '/': 'Page d’accueil « téléphone vivant » — le visiteur ÉCRIT SA ZONE et teste le VRAI chat Ajnaya, en direct, sans compte. C’est un CHAUFFEUR VTC, pas un gestionnaire de flotte. Intention forte : il est venu pour te parler.',
     '/partenaires': 'Page partenaires fleet — le visiteur gère une flotte VTC.',
     '/tarifs2': 'Page tarifs — le visiteur regarde activement les prix. IL EST CHAUD.',
     '/technologie': 'Page technologie — le visiteur s\'intéresse au fonctionnement technique.',

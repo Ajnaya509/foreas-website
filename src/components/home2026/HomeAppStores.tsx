@@ -3,6 +3,7 @@
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 import { useLienOffre } from '@/hooks/useLienOffre'
 import { mesurer } from '@/lib/mesure'
+import type { Intention } from '@/lib/mesure'
 
 /**
  * FOREAS — L'APP, DEPUIS L'ACCUEIL.
@@ -49,12 +50,27 @@ import { mesurer } from '@/lib/mesure'
  * qu'un total les mélangerait et rendrait impossible la seule question qui
  * compte ensuite : « les gens veulent-ils l'app, ou l'abonnement ? »
  */
-export default function HomeAppStores() {
+/**
+ * ⚠️ 22/08/2026 — `page` ET `intention` ÉTAIENT ÉCRITS EN DUR.
+ *
+ * Le composant supposait vivre sur l'accueil ivoire, avec l'intention
+ * « general ». Depuis que l'accueil est le parcours Ajnaya, ces deux valeurs
+ * mentaient : un clic boutique depuis la nouvelle home aurait été compté comme
+ * venant d'un visiteur « général », effaçant l'information qui compte — il
+ * venait de parler à Ajnaya.
+ *
+ * Les valeurs par défaut restent celles d'avant : monter ce composant ailleurs
+ * ne change rien tant qu'on ne précise pas.
+ */
+export default function HomeAppStores({
+  page = '/',
+  intention = 'general',
+}: { page?: string; intention?: Intention } = {}) {
   // L'attribution (origine, campagne, code parrain) est portée par ce lien.
-  const lienOffre = useLienOffre('general')
+  const lienOffre = useLienOffre(intention)
 
   const compter = (ou: 'apple' | 'google' | 'auto') =>
-    mesurer('StoreClick', { page: '/', intention: 'general', promesse: ou })
+    mesurer('StoreClick', { page, intention, promesse: ou })
 
   return (
     <section className="relative py-14 sm:py-20 px-4">
@@ -81,7 +97,7 @@ export default function HomeAppStores() {
           </a>
           <a
             href={lienOffre}
-            onClick={() => mesurer('PrimaryCTAClick', { page: '/', intention: 'general', promesse: 'offre_depuis_bloc_app' })}
+            onClick={() => mesurer('PrimaryCTAClick', { page, intention, promesse: 'offre_depuis_bloc_app' })}
             className="inline-flex items-center justify-center rounded-2xl border border-white/12 px-6 py-3.5 font-body text-sm font-semibold text-[#F8FAFC]/85 transition-colors active:bg-white/5"
           >
             Voir ce que ça coûte
@@ -126,7 +142,7 @@ export default function HomeAppStores() {
 
           <a
             href={lienOffre}
-            onClick={() => mesurer('PrimaryCTAClick', { page: '/', intention: 'general', promesse: 'offre_depuis_bloc_app' })}
+            onClick={() => mesurer('PrimaryCTAClick', { page, intention, promesse: 'offre_depuis_bloc_app' })}
             className="font-body text-sm text-[#00D4FF]/85 underline-offset-4 transition-colors hover:text-[#00D4FF] hover:underline"
           >
             Voir ce que ça coûte

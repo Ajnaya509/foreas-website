@@ -662,6 +662,32 @@ console.log('\n── L\'accueil propose-t-il l\'app ? ──')
 // Cette règle lit le TEXTE SERVI : si un titre de preuve apparaît, un nom du
 // registre doit apparaître aussi. Aucune analyse de code ne pourrait le voir —
 // les trois gardes existaient bel et bien.
+// ─── L'ANCIENNE ADRESSE REDIRIGE-T-ELLE, ET SANS PERDRE L'ATTRIBUTION ? ────
+//
+// 22/08/2026 — `/experience` est devenu l'accueil. L'ancienne adresse doit
+// rediriger en PERMANENT, en UN SEUL SAUT, et conserver toute la requête.
+//
+// ⚠️ CE CONTRÔLE NE SUIT PAS LA REDIRECTION, ET C'EST TOUT L'INTÉRÊT.
+// Un appel qui suit automatiquement reçoit 200 et déclare tout vert sans avoir
+// jamais vu le 308 ni sa destination. Il validerait aussi bien une redirection
+// correcte qu'une chaîne de trois sauts qui perd `utm_source` en route.
+// On lit donc le statut et l'en-tête `Location` sans bouger, puis on teste la
+// destination séparément.
+console.log('\n── L\'ancienne adresse /experience ──')
+{
+  try {
+    const r = await joindre(`${BASE}/experience?utm_source=controle&ref=ABC`, { redirect: 'manual' })
+    const dest = r.headers.get('location') || ''
+    dire(r.status === 308 || r.status === 301, `statut ${r.status}, attendu 308 (permanent)`)
+    dire(dest.includes('utm_source=controle'), `destination conserve utm_source : ${dest.slice(0, 70)}`)
+    dire(dest.includes('ref=ABC'), 'destination conserve le code parrain')
+    const chemin = dest.startsWith('http') ? new URL(dest).pathname : dest.split('?')[0]
+    dire(chemin === '/', `destination = ${chemin}, attendu /`)
+  } catch (e) {
+    direOuInjoignable(e, '/experience')
+  }
+}
+
 console.log('\n── Un titre de preuve sociale sans preuve ──')
 {
   const TITRES = [

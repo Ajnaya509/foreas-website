@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MessageCircle } from 'lucide-react'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
+import { temoignagePubliable } from '@/lib/consentements'
 
 interface Entry { driver: string; city: string; initial: string; accent: 'violet' | 'cyan' | 'rose' | 'gold' }
 
@@ -52,14 +53,32 @@ interface Entry { driver: string; city: string; initial: string; accent: 'violet
  * Source : src/components/zone/testimonials.data.ts · socle de vérité :
  * FOREAS-SHARED/VERITE_COMMERCIALE_2026-08-14.md
  */
-const ENTRIES: Entry[] = [
-  { driver: 'Haitham B.', city: 'Paris', initial: 'H', accent: 'violet' },
-  { driver: 'Binate A.', city: 'Marne-la-Vallée', initial: 'B', accent: 'gold' },
-  { driver: 'Zefi K.', city: 'Marne-la-Vallée', initial: 'Z', accent: 'cyan' },
-  { driver: 'Dragan P.', city: 'Paris', initial: 'D', accent: 'violet' },
-  { driver: 'Hadietou', city: 'banlieue parisienne', initial: 'H', accent: 'rose' },
-  { driver: 'Nikolic N.', city: 'Paris', initial: 'N', accent: 'cyan' },
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ 22/08/2026 — CE COMPOSANT NOMMAIT SIX PERSONNES RÉELLES SANS ACCORD.
+//
+// Six noms, six villes, et la phrase « a filmé son témoignage » — c'est-à-dire
+// un FAIT rapporté sur une personne identifiable. Les six accords du registre
+// (`src/lib/consentements.ts`) sont au statut « en attente ».
+//
+// ⚠️ UN NOM ET UNE VILLE SONT DÉJÀ UNE PREUVE PERSONNELLE. Les corrections
+// précédentes visaient les CITATIONS ; celle-ci passait entre les mailles parce
+// qu'elle ne cite personne — elle se contente de dire qui a filmé, et où il
+// roule. C'est exactement le même registre, et ça devenait la PAGE D'ACCUEIL.
+//
+// La liste est désormais filtrée personne par personne contre le registre. Tant
+// que rien n'est signé, elle est vide et le composant ne rend rien. Le jour où
+// un accord passe à « approuvé », cette personne — et elle seule — réapparaît.
+// ─────────────────────────────────────────────────────────────────────────────
+const TOUS: (Entry & { registre: string })[] = [
+  { registre: 'haitham',  driver: 'Haitham B.', city: 'Paris', initial: 'H', accent: 'violet' },
+  { registre: 'binate',   driver: 'Binate A.', city: 'Marne-la-Vallée', initial: 'B', accent: 'gold' },
+  { registre: 'zefi',     driver: 'Zefi K.', city: 'Marne-la-Vallée', initial: 'Z', accent: 'cyan' },
+  { registre: 'dragan',   driver: 'Dragan P.', city: 'Paris', initial: 'D', accent: 'violet' },
+  { registre: 'hadietou', driver: 'Hadietou', city: 'banlieue parisienne', initial: 'H', accent: 'rose' },
+  { registre: 'nikolic',  driver: 'Nikolic N.', city: 'Paris', initial: 'N', accent: 'cyan' },
 ]
+
+const ENTRIES: Entry[] = TOUS.filter((e) => temoignagePubliable(e.registre))
 
 const ACCENT: Record<Entry['accent'], { ring: string; bg: string }> = {
   violet: { ring: 'rgba(140,82,255,0.30)', bg: 'linear-gradient(135deg,#8C52FF,#6C3CE0)' },
@@ -78,6 +97,9 @@ function pickNext(prev: number | null, len: number): number {
 }
 
 export default function ExperiencePhoneToasts() {
+  // Aucun accord signé → aucune notification. Pas de titre, pas d'espace, rien.
+  if (ENTRIES.length === 0) return null
+
   const reduced = useReducedMotion()
   const [idx, setIdx] = useState<number | null>(null)
   const [dismissed, setDismissed] = useState(false)

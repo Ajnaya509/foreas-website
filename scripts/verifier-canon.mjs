@@ -1086,11 +1086,40 @@ for (const chemin of fichiers(RACINE)) {
     const page = readFileSync(accueil, 'utf8')
 
     // Les composants réellement montés, lus dans le JSX de l'accueil.
-    const montes = [...page.matchAll(/<([A-Z][A-Za-z0-9]*)\b/g)].map((m) => m[1])
-    const sources = [page]
-    for (const nom of new Set(montes)) {
+    // ⚠️ 22/08/2026 — CETTE RÈGLE NE REGARDAIT QU'UN SEUL NIVEAU.
+    //
+    // Elle listait les composants montés DANS `page.tsx` et s'arrêtait là.
+    // Tant que l'accueil montait quinze blocs à plat, ça suffisait. Le jour où
+    // l'accueil est devenu UN SEUL composant qui monte tout le reste, elle n'a
+    // plus vu que deux noms — et a déclaré qu'aucun chemin ne menait à la caisse.
+    //
+    // ⚠️ ET ELLE AVAIT RAISON SUR LE FOND : le bouton principal du nouvel
+    // accueil mène à WhatsApp, pas à l'offre. C'est ce qui a motivé l'ajout du
+    // bloc « l'app + voir ce que ça coûte ». Elle a donc attrapé une vraie
+    // régression ET révélé sa propre myopie dans le même passage.
+    //
+    // On descend maintenant de DEUX niveaux. Pas plus : au-delà on lirait tout
+    // le dépôt, et la règle ne prouverait plus rien de précis.
+    const nomsMontes = (src) => [...src.matchAll(/<([A-Z][A-Za-z0-9]*)\b/g)].map((m) => m[1])
+    const sourceDe = (nom) => {
       for (const chemin of fichiers(RACINE)) {
-        if (chemin.endsWith(`/${nom}.tsx`)) sources.push(readFileSync(chemin, 'utf8'))
+        if (chemin.endsWith(`/${nom}.tsx`)) return readFileSync(chemin, 'utf8')
+      }
+      return null
+    }
+    const montes = nomsMontes(page)
+    const sources = [page]
+    const vus = new Set()
+    for (const nom of new Set(montes)) {
+      if (vus.has(nom)) continue
+      const src = sourceDe(nom)
+      if (!src) continue
+      vus.add(nom)
+      sources.push(src)
+      for (const enfant of new Set(nomsMontes(src))) {
+        if (vus.has(enfant)) continue
+        const s2 = sourceDe(enfant)
+        if (s2) { vus.add(enfant); sources.push(s2) }
       }
     }
 

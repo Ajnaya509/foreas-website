@@ -723,7 +723,12 @@ export default function AjnayaWidget() {
 
   // /experience : le téléphone vivant EST le chat — la bulle flottante ferait doublon
   // et recouvre le CTA sticky de la page (bug Fable 5). Après tous les hooks (Rules of Hooks).
-  if (pathname === '/experience') return null
+  // ⚠️ 22/08/2026 — CE GARDE VISAIT `/experience`, QUI N'EXISTE PLUS.
+  // Le téléphone vivant EST le chat : laisser aussi la bulle flottante ferait
+  // DEUX conversations Ajnaya sur le même écran. Depuis que ce contenu est
+  // l'accueil, c'est `/` qu'il faut exclure — sinon la page d'entrée du site
+  // aurait affiché les deux.
+  if (pathname === '/') return null
 
   return (
     <>

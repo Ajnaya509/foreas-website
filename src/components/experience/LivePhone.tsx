@@ -205,7 +205,8 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
       sessionId,
       identityId,
       visitor_id: visitorId,
-      pageSource: '/experience',
+      // 22/08 — le téléphone vivant est désormais servi depuis l'accueil.
+      pageSource: '/',
       scrollSection: 'live_phone',
       heatScore: 20, // quelqu'un qui teste le vrai chat = intention forte
       messageCount: exchanges + 1,
@@ -309,8 +310,8 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
               last_messages: messages.slice(-6).map((m) => ({ role: m.role, text: m.text })),
               intent: 'experience_phone_continue',
               heat_score: 20,
-              url_pre_landing: '/experience',
-              prompt_for_next_canal: `Salut ! Tu testais Ajnaya en direct sur foreas.xyz/experience. Je reprends pile où on en était.${lastAjnaya ? ` On parlait de : "${lastAjnaya.slice(0, 80)}"` : ''}`,
+              url_pre_landing: '/',
+              prompt_for_next_canal: `Salut ! Tu testais Ajnaya en direct sur foreas.xyz. Je reprends pile où on en était.${lastAjnaya ? ` On parlait de : "${lastAjnaya.slice(0, 80)}"` : ''}`,
             },
           }),
         })

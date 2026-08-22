@@ -115,6 +115,16 @@ export default function RootLayout({
         {/* Genos chargée via next/font/local (variable --font-genos) */}
       </head>
       <body className="bg-foreas-obsidian text-text-primary antialiased font-sans">
+        {/* ⚠️ 22/08/2026 — AUCUNE PAGE DU SITE N'AVAIT DE LIEN D'ACCÈS DIRECT.
+            Au clavier, il fallait traverser tout l'en-tête — logo, cinq liens,
+            bouton d'essai — avant d'atteindre le contenu, sur CHAQUE page.
+            Invisible tant qu'il n'a pas le focus, parfaitement visible ensuite. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10000] focus:rounded-xl focus:bg-[#00D4FF] focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-[#05070F] focus:outline-none focus:ring-4 focus:ring-[#00D4FF]/35"
+        >
+          Aller au contenu
+        </a>
         {/* Tracking pixels — chargement conditionnel au consentement RGPD */}
         <TikTokPixel />
         <MetaPixel />

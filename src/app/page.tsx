@@ -1,42 +1,60 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { URL_SITE, canonique } from '@/lib/site'
 import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS } from '@/lib/offre'
-import dynamic from 'next/dynamic'
-// ─── Above-the-fold (critique pour le 1er rendu) : statique ───
 import MesureVue from '@/components/mesure/MesureVue'
-import HomeHeaderCream from '@/components/home2026/HomeHeaderCream'
-import HomeHeroCream from '@/components/home2026/HomeHeroCream'
-import HomeProofStrip from '@/components/home2026/HomeProofStrip'
-import HomeAppStores from '@/components/home2026/HomeAppStores'
-import HomeBigDomino from '@/components/home2026/HomeBigDomino'
+import ExperienceClient from './experience/ExperienceClient'
 
-// ─── Below-the-fold : code-split (SSR conservé pour le SEO, JS client à la demande) ───
-// → allège fortement le bundle initial = 1er rendu mobile ultra-rapide.
-const ZoneMechanismVisual = dynamic(() => import('@/components/zone/ZoneMechanismVisual'))
-const ZoneSocialProof = dynamic(() => import('@/components/zone/ZoneSocialProof')) // Mux vidéo + embla (le + lourd)
-const ZonePainCalculator = dynamic(() => import('@/components/zone/ZonePainCalculator'))
-const ZonePlanTimeline = dynamic(() => import('@/components/zone/ZonePlanTimeline'))
-const ZoneCapPartnerCTA = dynamic(() => import('@/components/zone/ZoneCapPartnerCTA'))
-const ZoneFinalCTAWithPS = dynamic(() => import('@/components/zone/ZoneFinalCTAWithPS'))
-const Footer = dynamic(() => import('@/components/Footer'))
-// Overlays non critiques (timés / sur interaction) → chargés à la demande
-const LiveSocialProofToasts = dynamic(() => import('@/components/home2026/LiveSocialProofToasts'))
-const ExitIntentModal = dynamic(() => import('@/components/home2026/ExitIntentModal'))
-
+/**
+ * FOREAS — L'ACCUEIL.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 22/08/2026 — CETTE PAGE EST DEVENUE LE PARCOURS « TÉLÉPHONE VIVANT ».
+ *
+ * Décision Chandler : le contenu qui vivait sur `/experience` devient l'accueil.
+ * L'ancienne home ivoire sort du chemin public — elle n'est ni republiée
+ * ailleurs, ni fusionnée ici. L'historique du dépôt suffit comme retour arrière.
+ *
+ * ⚠️ CE N'EST PAS UN DÉPLACEMENT DE PIXELS. Le contenu Experience était relié à
+ * son ancienne adresse par SIX fils, écrits en dur à six endroits différents :
+ *   · `MesureVue page="/experience"` — la vue comptée ;
+ *   · `LivePhone` → `pageSource` et `url_pre_landing` — la reprise WhatsApp ;
+ *   · le texte de reprise qui cite « foreas.xyz/experience » à voix haute ;
+ *   · `ajnayaChatCore` et l'API de chat — deux descriptions concurrentes du
+ *     contexte de la page, dont une qui décrivait `/` comme une page B2B ;
+ *   · `AjnayaWidget` — la bulle flottante masquée sur la seule route Experience ;
+ *   · `PARCOURS` — le manifeste des cinq parcours.
+ * Basculer l'affichage sans les suivre aurait cassé la mesure, la reprise de
+ * conversation, et fait apparaître DEUX chats sur la même page.
+ *
+ * ⚠️ `robots: noindex` A ÉTÉ RETIRÉ. Il était posé « tant que les sections sont
+ * des placeholders », et la checklist de bascule était écrite dans l'ancien
+ * fichier. Une page d'accueil non indexable est une porte d'entrée invisible.
+ *
+ * ⚠️ LA VILLE EST LUE CÔTÉ SERVEUR (`x-vercel-ip-city`), sans permission ni
+ * appel réseau : elle ne fait que biaiser l'ordre des zones proposées. Repli
+ * immédiat et honnête si l'en-tête manque — jamais d'écran d'attente, jamais de
+ * service tiers pour deviner.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 export const metadata: Metadata = {
-  title: 'FOREAS — Gagne plus, roule moins. Pour les chauffeurs VTC.',
+  title: 'FOREAS — Discute avec Ajnaya. Gagne plus, roule moins.',
   description:
-    'Ce qu\'il te reste, ta commission déduite, avant d\'accepter la course. Tarif horaire, demande et pool optimal sur 52 zones VTC. Tape ta zone, vois ce qui paie ce soir.',
+    "Écris ta zone, Ajnaya te répond en direct. Ce qu'il te reste, ta commission déduite, avant d'accepter la course. Uber, Bolt, Heetch au même endroit.",
+  alternates: { canonical: canonique('/') },
   openGraph: {
-    title: 'FOREAS — Gagne plus, roule moins',
+    title: 'FOREAS — Discute avec Ajnaya',
     description:
-      'Les autres acceptent à l\'aveugle. Toi, tu vois ce qu\'il te reste — ta commission déduite — avant d\'accepter. Uber, Bolt, Heetch au même endroit.',
+      "Pas une démo : le vrai chat qui aide les chauffeurs VTC à savoir où ça paie ce soir. Tape ta zone, vois par toi-même.",
     type: 'website',
     locale: 'fr_FR',
-    url: 'https://www.foreas.xyz/',
+    url: canonique('/'),
   },
-  alternates: {
-    canonical: canonique('/'),
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FOREAS — Discute avec Ajnaya',
+    description:
+      "Écris ta zone, Ajnaya te répond en direct. Gratuitement, sans compte.",
   },
 }
 
@@ -104,94 +122,24 @@ const JSON_LD = {
   ],
 }
 
-/**
- * Home `/` — Page d'acquisition principale chauffeur B2C
- *
- * Architecture (Site2026v68) :
- *  1. Hero CRÈME (rupture chaleur humaine) avec barre de recherche
- *     → tap → modal Ajnaya conversationnel 3-tours → push WhatsApp
- *  2. Big Domino (transition cinématique crème → noir absolu)
- *     "247 chauffeurs FOREAS savent où aller ce soir. Vous, vous tâtonnez encore ?"
- *  3. Section Mécanisme Ajnaya (CAPTE / ANALYSE / PARLE)
- *  4. Carrousel témoignages vidéo Mux (6 chauffeurs swipe + auto-play)
- *  5. Section Douleur (calculator commission Uber)
- *  6. Section Plan en 3 étapes (Miller SB7)
- *  7. Section CAP partenaires (variant warm)
- *  8. Final CTA + PS Halbert signé Chandler
- *
- * + Bouton flottant <AjnayaFloatingBubble /> présent partout au scroll
- *
- * L'ancienne home B2B est préservée à `/professionnels` (mockups intacts).
- */
-export default function HomePage() {
+export default async function AccueilPage() {
+  // Fail-open : sans en-tête (dev local, hôte non-Vercel), ordre national par défaut.
+  const h = await headers()
+  const geoCity = h.get('x-vercel-ip-city') || null
+
   return (
-    <main
-      className="min-h-screen overflow-x-hidden"
-      style={{ backgroundColor: 'var(--bg-cream-warm)' }}
-    >
+    <>
       <script
         type="application/ld+json"
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-
-      {/* Header crème transparent → glass au scroll */}
-      {/* La vue de l'accueil se compte enfin. Sans elle, aucun taux de
-          conversion n'est calculable : on connaissait les abonnements, jamais
-          le nombre de personnes passées devant. */}
-      <MesureVue page="/" intention="general" audience="chauffeur" />
-      <HomeHeaderCream />
-
-      {/* SECTION 1 — Hero crème + barre de recherche → modal Ajnaya */}
-      <HomeHeroCream />
-
-      {/* SECTION 1.5 — Mini-band preuve sociale (anti-objection chauffeur méfiant) */}
-      <HomeProofStrip />
-
-      {/* SECTION 2 — Big Domino transition crème → noir */}
-      <HomeBigDomino />
-
-      {/* À partir d'ici : tout est sur fond noir Apple absolu */}
-      <div className="bg-black text-[#F8FAFC]">
-        {/* SECTION 3 — Mécanisme Ajnaya */}
-        <ZoneMechanismVisual />
-
-        {/* SECTION 4 — Carrousel témoignages vidéo Mux (6 chauffeurs) */}
-        <ZoneSocialProof />
-
-        {/* SECTION 5 — Douleur (commission Uber calculator) */}
-        <ZonePainCalculator />
-
-        {/* SECTION 6 — Plan en 3 étapes Miller SB7 */}
-        <ZonePlanTimeline />
-
-        {/* SECTION 7 — CAP partenaires variant warm */}
-        <ZoneCapPartnerCTA />
-
-        {/* SECTION 8 — Final CTA + PS signature humaine */}
-        {/* ⚠️ 21/08/2026 — L'ACCUEIL NE PROPOSAIT PAS L'APP.
-            Mesuré : ni « App Store », ni « Google Play », ni « télécharger »
-            dans le texte servi de `/`. Le seul bloc qui la proposait vivait sur
-            `/509`. Les deux fiches répondent 200 depuis des semaines : l'app
-            était publiée, et introuvable depuis la porte d'entrée du site.
-            Placé AVANT l'appel final : quelqu'un qui descend jusqu'ici a lu
-            l'argument, et doit pouvoir choisir entre installer et voir le prix. */}
-        <HomeAppStores />
-
-        <ZoneFinalCTAWithPS />
-
-        <Footer />
-      </div>
-
-      {/* AjnayaFloatingBubble désactivée Site2026v74 — focus sur funnel hero unique
-          Ré-activer en uncommentant l'import + la ligne ci-dessous quand on aura
-          décidé d'une stratégie scroll-aware (afficher SEULEMENT après le hero,
-          masquer si modal déjà ouvert ou WhatsApp déjà cliqué). */}
-      {/* <AjnayaFloatingBubble /> */}
-
-      {/* ─── Marketing UX (Site2026v77) ───────────────────────────────────── */}
-      <LiveSocialProofToasts />
-      {/* Exit-intent : mouseleave top (desktop) + back button (universel) */}
-      <ExitIntentModal />
-    </main>
+      {/* ⚠️ La vue est comptée sous « / », pas sous l'ancienne adresse. Les
+          événements `experience_*` gardent leurs noms — la continuité historique
+          vaut plus qu'un renommage cosmétique — mais ils portent la route
+          canonique dans leurs propriétés. */}
+      <MesureVue page="/" intention="ajnaya" audience="chauffeur" />
+      <ExperienceClient geoCity={geoCity} />
+    </>
   )
 }

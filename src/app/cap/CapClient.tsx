@@ -278,7 +278,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
   const partnerName = partner?.company_name || 'Un partenaire FOREAS'
 
   return (
-    <main className="min-h-screen bg-black text-white overflow-x-hidden">
+    <main id="main-content" className="min-h-screen bg-black text-white overflow-x-hidden">
       <Header />
 
       {/* ── Hero ──────────────────────────────────────────────────────────────── */}

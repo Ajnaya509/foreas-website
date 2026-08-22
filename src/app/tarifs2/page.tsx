@@ -419,8 +419,12 @@ function TarifsContent() {
     { id: 'faq-annulation', q: "Et si je veux arrêter dans 3 mois ?", a: "Tu cliques 'Annuler', tu confirmes, c'est annulé. Pas de relance, pas de mail manipulateur, pas d'appel. Sans engagement = sans engagement. Tu gardes l'accès jusqu'à la fin de la période déjà payée." },
   ]
 
+  // ⚠️ 22/08/2026 — LA PAGE DU PRIX N'AVAIT AUCUN REPÈRE PRINCIPAL.
+  // Sans `<main>`, aucun lecteur d'écran ne peut sauter la navigation, et le
+  // lien « Aller au contenu » n'a nulle part où atterrir. Sur la page qui vend,
+  // ça revient à obliger quelqu'un à réécouter tout le menu avant le prix.
   return (
-    <div className="min-h-screen bg-black text-[#F8FAFC] overflow-x-hidden">
+    <main id="main-content" className="min-h-screen bg-black text-[#F8FAFC] overflow-x-hidden">
       {isSuccess && (
         <motion.div initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-600 to-emerald-500 py-4 px-5 text-center shadow-xl">
           <p className="text-white font-semibold text-sm">🎉 Bienvenue ! Ton abonnement est actif. Télécharge l'app.</p>
@@ -970,7 +974,7 @@ function TarifsContent() {
         {flowState === 'bridge' && selectedPlan && <TrialBridge planName={selectedPlan.name} onConfirm={confirmCheckout} onClose={closeAll} />}
         {flowState === 'checkout' && selectedPlan && <CheckoutModal planId={selectedPlan.id} billing={billing} onClose={closeAll} />}
       </AnimatePresence>
-    </div>
+    </main>
   )
 }
 

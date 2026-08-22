@@ -37,6 +37,7 @@ import CinematicSequence from '@/components/experience/CinematicSequence'
 import VerdictSequence from '@/components/experience/VerdictSequence'
 
 import { garantieAffichable } from '@/lib/verite-commerciale'
+import HomeAppStores from '@/components/home2026/HomeAppStores'
 // Même modale que la home (HomeHeroCream.tsx) — pas une réinvention. Chandler : "je veux la même".
 const AjnayaConversationModal = dynamic(() => import('@/components/home2026/AjnayaConversationModal'), { ssr: false })
 // Même pop-up anti-départ que la home — réutilisé tel quel, déjà générique (WhatsApp + garde-fous propres).
@@ -275,6 +276,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         éléments qui ne se connaissent pas se recouvraient. Le décor (vidéo plein cadre) peut
         passer dessous, jamais le contenu. */}
     <main
+      id="main-content"
       className="relative min-h-screen overflow-x-clip bg-foreas-obsidian text-[#F8FAFC]"
       // hyphens none : Safari iOS coupait les mots en fin de ligne — « ton numé-ro »,
       // « What-sApp » (vus dans le simulateur). Sur des textes courts et centrés la césure
@@ -535,6 +537,19 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       <ExperiencePhoneToasts />
 
       {/* ═══ Pop-up anti-départ — même composant que la home ═══ */}
+      {/* ⚠️ 22/08/2026 — CETTE PAGE EST DEVENUE L'ACCUEIL, ET ELLE NE MENAIT
+          NI À LA CAISSE, NI AUX BOUTIQUES.
+
+          `npm run canon` l'a signalé immédiatement : « aucun chemin de l'accueil
+          vers la page de paiement ». La règle existait depuis des semaines pour
+          l'ancienne home ; elle a attrapé la régression au moment exact où le
+          contenu a changé de porte. C'est le genre de garde qui paie son écriture.
+
+          Le bloc porte `page="/"` et l'intention `ajnaya` : un clic boutique
+          depuis ici doit rester attribué à quelqu'un qui venait de PARLER à
+          Ajnaya, pas à un visiteur « général ». */}
+      <HomeAppStores page="/" intention="ajnaya" />
+
       <ExitIntentModal />
 
       {/* ═══ CTA persistant — bord-à-bord mobile, pilule centrée à md: (les translate-x/y Tailwind

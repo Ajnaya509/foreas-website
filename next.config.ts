@@ -36,6 +36,19 @@ const nextConfig: NextConfig = {
       { source: '/partenaires', destination: '/professionnels', permanent: true },
       { source: '/entreprises', destination: '/professionnels', permanent: true },
       { source: '/2', destination: '/', permanent: true },
+      // ⚠️ 22/08/2026 — /experience EST DEVENU L'ACCUEIL.
+      //
+      // Le contenu « téléphone vivant » a été promu sur `/` (décision Chandler).
+      // L'ancienne adresse redirige en PERMANENT et en UN SEUL SAUT. Next
+      // conserve la chaîne de requête : `/experience?utm_source=x&ref=ABC`
+      // arrive sur `/?utm_source=x&ref=ABC` — campagne et parrainage survivent.
+      //
+      // ⚠️ CETTE LIGNE VA DANS LA LISTE EXISTANTE, PAS DANS UN SECOND
+      // `redirects()`. Premier jet : j'en ai déclaré un deuxième dans le même
+      // objet. TypeScript a crié « Duplicate identifier » — mais en JavaScript
+      // pur, la seconde déclaration aurait SILENCIEUSEMENT écrasé les cinq
+      // redirections précédentes, dont /tarifs et /checkout.
+      { source: '/experience', destination: '/', permanent: true },
       // 20/08/2026 — /checkout redirige vers /tarifs2 : UN SEUL chemin commercial.
       //
       // Cette page avait sa propre grille (97 € / Elite 247 €) pendant que /tarifs2

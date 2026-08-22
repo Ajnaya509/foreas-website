@@ -221,8 +221,19 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
 
   const ctaHref = c.cta_target || `/go/${topic_slug}`
 
+  // ⚠️ 22/08/2026 — CETTE PAGE N'AVAIT AUCUN REPÈRE PRINCIPAL.
+  //
+  // Sans `<main>`, un lecteur d'écran n'a aucun moyen de sauter la navigation,
+  // et le lien « Aller au contenu » du gabarit global n'a nulle part où atterrir.
+  // Un `<div>` ne remplace pas un repère : il n'annonce rien.
+  //
+  // Corrigé ici, donc sur les DIX pages en série d'un seul geste.
+  //
+  // ⚠️ Et ce commentaire est en JavaScript, pas en JSX : un `{/* */}` placé
+  // entre `return (` et l'élément racine devient un SECOND enfant, et React
+  // n'accepte qu'une racine. Premier jet, quatre erreurs de syntaxe.
   return (
-    <div className="bg-[#050508] text-white min-h-screen overflow-x-hidden">
+    <main id="main-content" className="bg-[#050508] text-white min-h-screen overflow-x-hidden">
 
       {/* ── SECTION 1 — PATTERN INTERRUPT ─────────────────────────────────── */}
       <section className="min-h-screen flex flex-col items-center justify-center px-4 py-20 text-center relative">
@@ -502,6 +513,6 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
         </nav>
         <p className="mt-4 text-[11px] text-white/35">FOREAS — copilote des chauffeurs VTC.</p>
       </footer>
-    </div>
+    </main>
   )
 }

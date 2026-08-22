@@ -110,7 +110,10 @@ export const PARCOURS: readonly Parcours[] = [
   {
     id: 'ajnaya',
     question: 'Encore une appli qui va me sortir des graphiques.',
-    pageMere: '/experience',
+    // 22/08 — le parcours Ajnaya part désormais de l'accueil : `/experience`
+    // redirige vers `/`. Laisser l'ancienne adresse ici aurait fait échouer la
+    // règle de canon qui vérifie que chaque page mère répond.
+    pageMere: '/',
     pagesSecondaires: ['/technologie'],
     promesse: 'Une conversation, pas un tableau de bord de plus.',
     preuve:

@@ -45,13 +45,42 @@ const WA_NUMBER = '33780732216'
 const WA_TEXT = encodeURIComponent(
   'Salut Ajnaya, je veux mon audit zone perso. (depuis exit-intent)'
 )
-const WA_URL = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}&utm_source=exit_intent`
+// ⚠️ 22/08/2026 — CETTE ADRESSE ÉTAIT FIGÉE, DONC AVEUGLE.
+//
+// Elle portait `utm_source=exit_intent` en dur — ce qui ÉCRASE la vraie origine
+// du visiteur. Quelqu'un arrivé par une campagne, ou par un lien de parrainage,
+// perdait son attribution au moment précis où il basculait sur WhatsApp : le
+// seul endroit où l'on aurait pu savoir d'où il venait.
+//
+// L'adresse est désormais construite à l'ouverture, via le propriétaire commun
+// de la reprise, en conservant `utm_*` et `ref`.
+const WA_URL_REPLI = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`
 
 interface ExitIntentModalProps {
   disabled?: boolean
 }
 
 export default function ExitIntentModal({ disabled = false }: ExitIntentModalProps) {
+  // ⚠️ 22/08 — CONSTRUIT À L'OUVERTURE, PAS UNE CONSTANTE DE MODULE.
+  //
+  // Une constante figée au chargement du fichier ne peut pas connaître l'origine
+  // du visiteur. On lit donc la vraie adresse au moment où la sortie s'affiche,
+  // et on reporte `utm_*` et `ref` sur le lien WhatsApp. Sans ça, le seul moment
+  // où quelqu'un bascule vers un humain est aussi celui où l'on perd sa trace.
+  const lienWhatsApp = (() => {
+    if (typeof window === 'undefined') return WA_URL_REPLI
+    const p = new URLSearchParams(window.location.search)
+    const garde = new URLSearchParams()
+    for (const [k, v] of p) {
+      if (k.startsWith('utm_') || k === 'ref' || k === 'partner') garde.set(k, v)
+    }
+    // On ne pose `exit_intent` que si aucune origine réelle n'existe : une
+    // origine mesurée vaut mieux qu'une étiquette interne qui l'écrase.
+    if (!garde.has('utm_source')) garde.set('utm_source', 'exit_intent')
+    const q = garde.toString()
+    return q ? `${WA_URL_REPLI}&${q}` : WA_URL_REPLI
+  })()
+
   const [open, setOpen] = useState(false)
   const [armed, setArmed] = useState(false)
   useOverlayLock(open)
@@ -135,8 +164,16 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
 
     const onPopState = () => {
       if (triggeredRef.current) return
-      // Re-push pour empêcher la 2e occurrence d'aussi déclencher
-      try { window.history.pushState({ foreasExitTrap: true }, '') } catch { /* ignore */ }
+      // ⚠️ 22/08/2026 — LE RE-PUSH A ÉTÉ RETIRÉ : IL PIÉGEAIT LE BOUTON RETOUR.
+      //
+      // L'ancien code repoussait un état factice à CHAQUE retour arrière. Le
+      // visiteur pouvait appuyer sur Retour dix fois : il restait sur la page.
+      // Un site dont on ne peut pas sortir n'est pas persuasif, il est hostile —
+      // et c'était sur ce qui est devenu la PAGE D'ACCUEIL.
+      //
+      // On capture le PREMIER retour (l'état factice posé au montage l'absorbe),
+      // on montre la sortie une fois, et on laisse le second retour partir
+      // normalement. `triggeredRef` garantit qu'on ne rejoue jamais.
       triggerOpen('back_button')
     }
     window.addEventListener('popstate', onPopState)
@@ -272,7 +309,7 @@ export default function ExitIntentModal({ disabled = false }: ExitIntentModalPro
               </p>
 
               <a
-                href={WA_URL}
+                href={lienWhatsApp}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleWaClick}
