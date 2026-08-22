@@ -1086,6 +1086,92 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── AUCUNE PROMESSE DE REPRISE TANT QU'ELLE N'EST PAS PROUVÉE ──────────────
+//
+// ⚠️ 23/08/2026 — LE SITE ANNONÇAIT UNE REPRISE QUI N'A JAMAIS EU LIEU.
+//
+// Sur l'accueil, à l'instant précis où le chauffeur décide de continuer, le
+// téléphone vivant affichait : « Elle reprend là où tu t'es arrêté. »
+//
+// Mesuré en production le 23/08 :
+//
+//   handoff_tokens, target_canal = 'whatsapp'
+//     émis : 8 (21/04 → 14/08) · consommés : 0 · expirés sans usage : 8
+//   pieuvre_conversations : 5 793 · citant un de ces billets : 0
+//   voie de repli « (réf …) » depuis v151 : 29 conversations, 0 référence
+//
+// Le site émet bien un billet. Mais `claim-handoff` est documenté « Called by
+// the FOREAS Driver app » : c'est l'APP qui le réclame. Le premier message
+// WhatsApp est un UUID brut que personne ne lit.
+//
+// ⚠️ LE BOUTON RESTE — c'est le chemin principal de FOREAS. Seule la phrase
+// tombe. Cette règle empêche qu'elle revienne par distraction.
+{
+  const MOTS = [
+    /reprend\s+(là\s+où|pile\s+où|l[àa]-o[ùu])/i,
+    /reprends\s+(là\s+où|pile\s+où)/i,
+    /elle\s+se\s+souvient/i,
+    /ta\s+conversation\s+te\s+suit/i,
+    /(la\s+)?m[êe]me\s+conversation\s+(continue|suit)/i,
+  ]
+
+  const fichiersSrc = []
+  const marcher = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const c = join(d, e.name)
+      if (e.isDirectory()) { if (e.name !== 'node_modules') marcher(c); continue }
+      if (['.ts', '.tsx'].includes(extname(e.name))) fichiersSrc.push(c)
+    }
+  }
+  if (existsSync('src')) marcher('src')
+
+  // Le drapeau de vérité doit exister et rester à `false` tant que rien n'est prouvé.
+  const VERITE = 'src/lib/verite-commerciale.ts'
+  let autorise = false
+  if (existsSync(VERITE)) {
+    const v = readFileSync(VERITE, 'utf8')
+    if (!/REPRISE_WHATSAPP/.test(v)) {
+      infractions.push({
+        fichier: VERITE,
+        quoi: 'le drapeau de vérité sur la reprise WhatsApp a disparu',
+        extrait: 'REPRISE_WHATSAPP absent',
+        pourquoi:
+          'sans lui, plus rien ne retient la promesse. Elle était affichée pendant ' +
+          'quatre mois alors que 8 billets sur 8 expiraient sans être lus.',
+      })
+    }
+    autorise = /prouvee:\s*true/.test(sansCommentaires(v))
+  }
+
+  if (!autorise) {
+    for (const chemin of fichiersSrc) {
+      // Les routes serveur composent le message que la Pieuvre DIRA une fois la
+      // couture réparée : ce n'est pas une promesse affichée au chauffeur.
+      if (chemin.startsWith('src/app/api/')) continue
+      if (chemin === VERITE) continue
+      const code = sansCommentaires(readFileSync(chemin, 'utf8'))
+      for (const motif of MOTS) {
+        const m = code.match(motif)
+        if (!m) continue
+        // `prompt_for_next_canal` est un texte destiné au cerveau, pas à l'écran.
+        const ligne = code.split('\n').find((l) => motif.test(l)) || ''
+        if (/prompt_for_next_canal/.test(ligne)) continue
+        infractions.push({
+          fichier: chemin,
+          quoi: 'une promesse de reprise de conversation est affichée',
+          extrait: m[0],
+          pourquoi:
+            'mesuré le 23/08 : 8 billets WhatsApp émis, 0 consommé, 5 793 ' +
+            'conversations dont aucune ne cite un billet. La reprise n’a jamais eu ' +
+            'lieu. Garde le BOUTON, retire la PHRASE — et repose `REPRISE_WHATSAPP.prouvee` ' +
+            'à `true` seulement quand le flux entrant WhatsApp réclamera le billet.',
+        })
+        break
+      }
+    }
+  }
+}
+
 // ─── EMPREINTE ET WIDGET : NI CHARGÉS NI EXÉCUTÉS SANS RAISON ───────────────
 //
 // ⚠️ 22/08/2026 — DEUX TRAVAUX INVISIBLES, MESURÉS SUR LA FABRICATION.

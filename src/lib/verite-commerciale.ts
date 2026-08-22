@@ -320,3 +320,44 @@ export const GARANTIE_30J = {
 export function garantieAffichable(): boolean {
   return GARANTIE_30J.prouvee
 }
+
+/**
+ * LA REPRISE DE CONVERSATION SITE → WHATSAPP.
+ *
+ * ⚠️ MESURÉE LE 23/08/2026 EN PRODUCTION. ELLE N'A JAMAIS EU LIEU.
+ *
+ *   handoff_tokens, target_canal = 'whatsapp'
+ *     émis               : 8      (du 21/04/2026 au 14/08/2026)
+ *     consommés          : 0
+ *     expirés sans usage : 8
+ *
+ *   pieuvre_conversations                    : 5 793
+ *   conversations citant un de ces 8 billets : 0
+ *   événements WhatsApp citant un billet     : 0
+ *
+ *   voie de repli, référence « (réf …) », depuis la v151 :
+ *     29 conversations, 0 portant une référence
+ *
+ * Le site émet bien un billet. `claim-handoff` existe — mais sa documentation
+ * dit « Called by the FOREAS Driver app » : c'est l'APP qui le réclame, pas
+ * WhatsApp. Le premier message WhatsApp est un UUID brut que personne ne lit.
+ *
+ * ⚠️ CE QUE ÇA CHANGE POUR LES TEXTES DU SITE : aucune surface ne doit annoncer
+ * que la conversation « reprend », « se souvient » ou « continue » sur WhatsApp.
+ * Le BOUTON reste — c'est le chemin principal. Seule la promesse tombe.
+ *
+ * Rebasculer ce drapeau à `true` le jour où le flux entrant WhatsApp réclame
+ * réellement le billet, et pas avant. Voir
+ * `BRIEF_PIEUVRE_CONTINUITE_SITE_WHATSAPP_V1_2026-08-23.md`.
+ */
+export const REPRISE_WHATSAPP = {
+  prouvee: false,
+  mesureeLe: '2026-08-23',
+  billetsEmis: 8,
+  billetsConsommes: 0,
+} as const
+
+/** Une surface peut-elle annoncer que la conversation reprend sur WhatsApp ? */
+export function repriseWhatsAppAffichable(): boolean {
+  return REPRISE_WHATSAPP.prouvee
+}

@@ -109,6 +109,18 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
   const [messages, setMessages] = useState<Msg[]>([{ role: 'ajnaya', text: WELCOME }])
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
+  /**
+   * ⚠️ 23/08/2026 — LE BADGE « EN DIRECT » PULSAIT EN PERMANENCE.
+   *
+   * Il clignotait au chargement, pendant la lecture, entre deux messages —
+   * indépendamment de ce qu'Ajnaya faisait. Un point vert qui bat sans arrêt
+   * n'informe de rien : il décore. Et il affirme une présence continue qui
+   * n'existe pas.
+   *
+   * L'écran d'Ajnaya dans l'app montre un ÉTAT. Le jumeau Web fait pareil :
+   * trois états, tous liés à un événement réel du composant.
+   */
+  const [enPanne, setEnPanne] = useState(false)
   const [exchanges, setExchanges] = useState(0)
   const [identityId, setIdentityId] = useState<string | null>(null)
   const [visitorId, setVisitorId] = useState<string | null>(null)
@@ -184,6 +196,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
     setInput('')
     setMessages((prev) => [...prev, { role: 'user', text }])
     try { mesureCapture('experience_phone_message_sent', { turn: exchanges + 1, device: getDevice(), first_turn: isFirstTurn }) } catch { /* noop */ }
+    setEnPanne(false)
     setTyping(true)
 
     // 1er échange = la question forcée sur la zone → on va chercher la VRAIE donnée avant de répondre.
@@ -271,6 +284,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
       }, ac.signal)
     } catch (err) {
       if (!(err instanceof StreamUnavailableError)) throw err
+      setEnPanne(true)
       setFinalText("Petit souci de connexion — écris-moi directement sur WhatsApp, je réponds là-bas.")
     } finally {
       setTyping(false)
@@ -361,9 +375,25 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
           <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2.5">
             <span className="h-[26px] w-[26px] flex-none rounded-full bg-gradient-to-br from-accent-purple to-accent-cyan" aria-hidden />
             <b className="text-[13px] text-[#F8FAFC]">Ajnaya</b>
-            <span className="flex items-center gap-1 text-[10px] font-medium text-success">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden />
-              en direct
+            {/*
+              L'état est ANNONCÉ (`role="status"`) : quelqu'un qui écoute la page entend
+              « Ajnaya réfléchit » au lieu de deviner un point vert. Le point ne bat que
+              pendant la réflexion — sinon il est fixe. Et la couleur n'est jamais le seul
+              signal : le mot est écrit à côté.
+            */}
+            <span
+              role="status"
+              className={`flex items-center gap-1 text-[10px] font-medium ${
+                enPanne ? 'text-warning' : typing ? 'text-accent-cyan' : 'text-success'
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 flex-none rounded-full ${
+                  enPanne ? 'bg-warning' : typing ? 'animate-pulse bg-accent-cyan' : 'bg-success'
+                }`}
+                aria-hidden
+              />
+              {enPanne ? 'hors ligne' : typing ? 'réfléchit' : 'prête'}
             </span>
           </div>
 
@@ -457,7 +487,35 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
           )}
           {showWa && (
             <p className="mt-1.5 text-center text-[10.5px] font-medium text-text-tertiary">
-              Elle reprend là où tu t&apos;es arrêté. Tu écris « stop », elle arrête.
+            {/*
+              ⚠️ 23/08/2026 — CETTE PHRASE ÉTAIT FAUSSE, ET MESURÉE COMME TELLE.
+            
+              Elle annonçait « Elle reprend là où tu t'es arrêté ». Interrogation de
+              la base de production, le 23/08 :
+            
+                handoff_tokens, target_canal = whatsapp
+                  émis               : 8      (du 21/04 au 14/08)
+                  consommés          : 0
+                  expirés sans usage : 8
+            
+                pieuvre_conversations                       : 5 793
+                conversations citant un de ces 8 billets    : 0
+                événements WhatsApp citant un billet        : 0
+            
+                depuis la v151 (référence « (réf …) ») :
+                  29 conversations, 0 portant une référence
+            
+              **La reprise n'a jamais eu lieu, sur aucune des deux voies, en quatre
+              mois.** Le site l'annonçait pourtant comme acquise, à l'instant précis
+              où le chauffeur décide de continuer.
+            
+              ⚠️ LE BOUTON RESTE. C'est le chemin principal de FOREAS. Ce qui change,
+              c'est la phrase : elle ne promet plus que ce qui est vrai aujourd'hui.
+            
+              Rétablir la promesse le jour où la Pieuvre consommera vraiment le
+              billet. Voir BRIEF_PIEUVRE_CONTINUITE_SITE_WHATSAPP_V1.
+            */}
+              Elle répond tout de suite. Tu écris « stop », elle arrête.
             </p>
           )}
         </div>
