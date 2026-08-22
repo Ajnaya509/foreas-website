@@ -1,5 +1,20 @@
 
 /**
+ * ⚠️ 22/08/2026 — SECONDE PASSE : J'AVAIS VIDÉ LA CITATION, PAS L'IDENTITÉ.
+ *
+ * Première correction : seul `quoteShort` avait été vidé. Mesure sur la
+ * production APRÈS déploiement : le fichier JavaScript portait toujours
+ * `name:"Binate A.", context:"Marne-la-Vallée · 5 ans · Tesla"` — et un champ
+ * `profile` décrivant l'ORIGINE ETHNIQUE d'une personne.
+ *
+ * Un nom, une ville, une ancienneté et une origine sont une identité complète.
+ * Vider la citation et laisser le reste, c'est protéger la phrase et publier la
+ * personne.
+ *
+ * ⚠️ Ce qui m'a trompé : j'ai cherché les appels à `citationDe()` et traité ce
+ * qu'ils remplissaient. Les autres champs étaient des chaînes littérales, sans
+ * appel de fonction — invisibles à cette recherche.
+ *
  * ⚠️ 22/08/2026 — LES DONNÉES PERSONNELLES ONT ÉTÉ RETIRÉES DE CE FICHIER CLIENT.
  *
  * Mesuré sur la production : deux fichiers JavaScript de l'accueil (90 539 et
@@ -73,12 +88,12 @@ const TOUS: readonly Testimonial[] = [
     order: 1,
     playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
     assetId: 'A01xv6vnjzy7W2cYNFJLXZu9g4mRUbvdqYKyf9CulHRU',
-    name: 'Haitham B.',
-    context: 'Paris · 7 ans VTC',
-    profile: 'Chauffeur indépendant maghrébin · pivot identification persona',
+    name: '',
+    context: '',
+    profile: '',
     registre: 'haitham',
     quoteShort: '',
-    gainBadge: 'Liberté + lien',
+    gainBadge: '',
     detail: '7 ans · Paris',
     posterTimeSec: 3,
     teaserRange: { startSec: 5, endSec: 18 },
@@ -91,12 +106,12 @@ const TOUS: readonly Testimonial[] = [
     order: 2,
     playbackId: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
     assetId: '6nQGxaDK00IFLHD39mhm0042qxb00RO8D4FKuL01cqv00Zo8',
-    name: 'Binate A.',
-    context: 'Marne-la-Vallée · 5 ans · Tesla',
-    profile: 'Chauffeur Tesla · clientèle privée Disneyland · profil aspirationnel',
+    name: '',
+    context: '',
+    profile: '',
     registre: 'binate',
     quoteShort: '',
-    gainBadge: '+30 % revenus',
+    gainBadge: '',
     detail: 'Tesla · Disneyland',
     posterTimeSec: 4,
     teaserRange: { startSec: 60, endSec: 75 },
@@ -110,12 +125,12 @@ const TOUS: readonly Testimonial[] = [
     playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
     assetId: 'X64eWdtN87Nv6kw01YnsOMJIEy00jjG02FhjcXRk9v01yZ4',
     // 20/08 — base : « Zefi Kitengue ». « Zephy » était une faute.
-    name: 'Zefi K.',
-    context: 'Marne-la-Vallée · ex-cadre Paris',
-    profile: 'Reconversion cadre → chauffeur · Disneyland · service haut de gamme',
+    name: '',
+    context: '',
+    profile: '',
     registre: 'zefi',
     quoteShort: '',
-    gainBadge: 'Indépendance',
+    gainBadge: '',
     detail: 'Reconversion · Disneyland',
     posterTimeSec: 3,
     moodTags: ['élégance', 'engagement', 'passion'],
@@ -127,12 +142,12 @@ const TOUS: readonly Testimonial[] = [
     order: 4,
     playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
     assetId: 'VbJPdHPYe02GzXimwVnRo4Ttdj00y4ceZS4oxnxkpf9T4',
-    name: 'Dragan P.',
-    context: 'Paris · 9 ans VTC',
-    profile: 'Europe de l\'Est · 49 ans · costume · 2 ans FOREAS',
+    name: '',
+    context: '',
+    profile: '',
     registre: 'dragan',
     quoteShort: '',
-    gainBadge: '2 ans, il reste',
+    gainBadge: '',
     detail: '9 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,
     moodTags: ['sérénité', 'confiance', 'fidélité'],
@@ -148,12 +163,12 @@ const TOUS: readonly Testimonial[] = [
     order: 5,
     playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
     assetId: 'YYMmJsmfWYqhSB2wylK7Tr3IDOrEqMhXE015O02uCttgA',
-    name: 'Hadietou',
-    context: 'Banlieue parisienne · 9 ans VTC',
-    profile: 'Banlieue parisienne · 35 ans · indépendant',
+    name: '',
+    context: '',
+    profile: '',
     registre: 'hadietou',
     quoteShort: '',
-    gainBadge: 'Il recommande',
+    gainBadge: '',
     detail: 'Indépendant · 9 ans VTC',
     posterTimeSec: 3,
     moodTags: ['réassurance', 'accompagnement', 'recommandation'],
@@ -168,12 +183,12 @@ const TOUS: readonly Testimonial[] = [
     order: 6,
     playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
     assetId: 'uoJMU5tY5JoLokZN5xjOGAZX4lvWtBxoQBgkW02ub3vQ',
-    name: 'Nikolic N.',
-    context: 'Paris · 10 ans VTC',
-    profile: 'Europe de l\'Est · 52 ans · costume · 2 ans FOREAS',
+    name: '',
+    context: '',
+    profile: '',
     registre: 'nikolic',
     quoteShort: '',
-    gainBadge: '2 ans, il reste',
+    gainBadge: '',
     detail: '10 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,
     moodTags: ['pérennité', 'écoute', 'loyauté'],

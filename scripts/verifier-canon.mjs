@@ -2027,6 +2027,61 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
     }
     if (existsSync('src')) explorer('src')
 
+    // ── ET AUCUN NOM ÉCRIT EN DUR DANS UN COMPOSANT CLIENT ──────────────────
+    //
+    // ⚠️ 22/08/2026, SECONDE PASSE — L'IMPORT N'ÉTAIT QUE LA MOITIÉ DU PROBLÈME.
+    //
+    // Après avoir coupé l'import du registre, j'ai re-mesuré la production : les
+    // noms étaient TOUJOURS dans le paquet JavaScript. Quatre autres sources :
+    //   · `testimonials.data.ts` — `name`, `context`, et un champ `profile`
+    //     décrivant l'ORIGINE ETHNIQUE et l'ÂGE de personnes réelles ;
+    //   · `Testimonials.tsx` — sa propre liste de noms et de villes ;
+    //   · trois composants faisant `TESTIMONIALS.find(t => t.name.startsWith('…'))`.
+    //
+    // ⚠️ CE QUI M'AVAIT TROMPÉ : j'avais cherché les APPELS à `citationDe()` et
+    // vidé ce qu'ils remplissaient. Les autres champs étaient des chaînes
+    // littérales, sans appel de fonction — invisibles à cette recherche.
+    //
+    // Vider la citation et laisser le nom, la ville, l'âge et l'origine, c'est
+    // protéger la phrase et publier la personne.
+    // ⚠️ On relit le registre ici : la constante `prive` est déclarée plus bas
+    // dans ce bloc, et y accéder avant son initialisation lève une erreur.
+    // Repéré en exécutant la règle — pas en la relisant.
+    const registrePourNoms = readFileSync(PRIVE, 'utf8')
+    const noms = [...registrePourNoms.matchAll(/personne:\s*'([^']+)'/g)].map((m) => m[1])
+      .flatMap((n) => [n, n.split(' ')[0]])
+      .filter((n) => n.length >= 4)
+    const nomsUniques = [...new Set(noms)]
+
+    for (const chemin of (existsSync('src') ? (() => {
+      const out = []
+      const marcher = (d) => {
+        for (const e of readdirSync(d, { withFileTypes: true })) {
+          const c = join(d, e.name)
+          if (e.isDirectory()) { if (e.name !== 'node_modules') marcher(c); continue }
+          if (['.ts', '.tsx'].includes(extname(e.name))) out.push(c)
+        }
+      }
+      marcher('src')
+      return out
+    })() : [])) {
+      if (chemin.endsWith('consentements.prive.ts')) continue
+      const brut = readFileSync(chemin, 'utf8')
+      if (!/^\s*['"]use client['"]/m.test(brut.slice(0, 400))) continue
+      const code = sansCommentaires(brut)
+      const dedans = nomsUniques.filter((n) => code.includes(n))
+      if (dedans.length === 0) continue
+      infractions.push({
+        fichier: chemin,
+        quoi: `${dedans.length} nom(s) du registre écrit(s) en dur dans un composant CLIENT`,
+        extrait: dedans.slice(0, 3).join(', '),
+        pourquoi:
+          'une chaîne écrite dans un composant client part dans le paquet JavaScript, ' +
+          'téléchargé par CHAQUE visiteur — que le composant l’affiche ou non. Un garde ' +
+          'protège l’écran, jamais le réseau. Le nom doit venir du serveur, en propriété.',
+      })
+    }
+
     for (const f of fautifs) {
       infractions.push({
         fichier: f,

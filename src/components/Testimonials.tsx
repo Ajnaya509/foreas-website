@@ -88,9 +88,9 @@ const TESTIMONIALS: Testimonial[] = [
   {
     id: 1,
     // FAUX : affiché « Binate ». Base : driver_name = 'Binaté'.
-    name: 'Binaté',
+    name: '',
     // FAUX : affiché « Paris ». Base : driver_city = 'Disneyland / Marne-la-Vallée'.
-    city: 'Marne-la-Vallée',
+    city: '',
     since: 'Chauffeur VTC',
     // FAUX : « 7 apps en 1 écran ». Aucune trace de 7 plateformes nulle part
     // (rides → 4 valeurs, pieuvre_rides → 4 valeurs), et il n'a jamais parlé
@@ -107,9 +107,9 @@ const TESTIMONIALS: Testimonial[] = [
   {
     id: 2,
     // FAUX : affiché « Kitenge ». Base : driver_name = 'Zefi Kitengue'.
-    name: 'Zefi K.',
+    name: '',
     // FAUX : affiché « Paris ». Base : driver_city = 'Disneyland / Marne-la-Vallée'.
-    city: 'Marne-la-Vallée',
+    city: '',
     since: 'Chauffeur VTC',
     // FAUX : « 0 course à vide visée » est une promesse produit posée sur son
     // visage. Sa fiche l'interdit noir sur blanc (transcript_summary) : « il parle
@@ -125,8 +125,8 @@ const TESTIMONIALS: Testimonial[] = [
   },
   {
     id: 3,
-    name: 'Haitham',
-    city: 'Île-de-France',
+    name: '',
+    city: '',
     since: 'Chauffeur VTC',
     // FAUX : « -40 % temps mort ». Aucune fiche Haitham dans
     // pieuvre_closer_testimonials, 0 ligne dans drivers, et rides ne porte aucun
@@ -142,8 +142,8 @@ const TESTIMONIALS: Testimonial[] = [
   },
   {
     id: 4,
-    name: 'Nikolic',
-    city: 'Paris',
+    name: '',
+    city: '',
     since: 'Chauffeur VTC',
     // FAUX : « +28 % courses/jour ». Aucune fiche Nikolic, 0 ligne dans drivers,
     // et rides ne contient que 18 courses tous chauffeurs confondus : il n'existe
@@ -158,10 +158,10 @@ const TESTIMONIALS: Testimonial[] = [
   },
   {
     id: 5,
-    name: 'Hadietou',
+    name: '',
     // FAUX : affiché « Paris ». Ses propos filmés le situent en banlieue
     // parisienne, pas dans Paris.
-    city: 'Île-de-France',
+    city: '',
     since: 'Chauffeur VTC',
     // FAUX : « +22 % revenus nets ». Aucune fiche Hadietou, et rides porte
     // fare_amount / driver_earnings mais AUCUNE charge : un revenu « net » n'est
@@ -177,8 +177,8 @@ const TESTIMONIALS: Testimonial[] = [
   },
   {
     id: 6,
-    name: 'Dragan',
-    city: 'Île-de-France',
+    name: '',
+    city: '',
     since: 'Chauffeur VTC',
     // FAUX : « -35 % km à vide ». Un km à vide se mesure par télémétrie : rides ne
     // porte que distance_km (course chargée), aucune trace GPS entre deux courses.

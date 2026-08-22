@@ -69,7 +69,11 @@ const heroReveal = {
  * sur une page qui aurait planté au premier chargement. Un vert de compilateur
  * n'est pas une preuve d'exécution.
  */
-const BINATE = TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[0]
+const BINATE = TESTIMONIALS[0]
+// ⚠️ 22/08 — cherchait `t.name.startsWith('Binate')`. Le nom d'une personne
+// réelle, écrit en dur dans un composant client : la chaîne partait dans le
+// paquet JavaScript, même quand la liste filtrée était vide. On prend la
+// première entrée AUTORISÉE, sans nommer personne.
 
 /**
  * DesktopZoneSearch — barre de recherche desktop du hero, extraite en sous-composant.

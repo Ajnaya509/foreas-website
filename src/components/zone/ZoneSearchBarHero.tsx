@@ -295,7 +295,7 @@ export default function ZoneSearchBarHero() {
                 Pas moi qui le dis. Lui.
               </p>
               <TestimonialVideoCard
-                testimonial={TESTIMONIALS.find((t) => t.name.startsWith('Binate')) ?? TESTIMONIALS[0]}
+                testimonial={TESTIMONIALS[0]}
                 showQuote
               />
             </div>
