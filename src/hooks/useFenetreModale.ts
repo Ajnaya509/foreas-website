@@ -76,7 +76,7 @@ export function useFenetreModale(
         racine.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ),
-      ).filter((e) => e.offsetParent !== null || e === document.activeElement)
+      ).filter((e) => e.getClientRects().length > 0 || e === document.activeElement)
     }
 
     const auClavier = (e: KeyboardEvent) => {
@@ -110,22 +110,53 @@ export function useFenetreModale(
 
     document.addEventListener('keydown', auClavier, true)
 
-    // Le focus initial est posé au tour suivant : le panneau doit être monté.
-    const t = window.setTimeout(() => {
+    /**
+     * ⚠️ 22/08/2026, SECONDE PASSE — DEUX DÉFAUTS TROUVÉS PAR UN VRAI NAVIGATEUR.
+     *
+     * Épreuve au clavier (puppeteer, Chrome réel, page visible) sur la modale
+     * Ajnaya : elle s'ouvrait à la touche Entrée, Échap la fermait, le focus
+     * revenait à l'ouvreur — **mais le focus n'entrait jamais dedans**, et le
+     * piège ne tenait pas. La fenêtre de paiement, elle, passait les 7 contrôles.
+     *
+     * DÉFAUT 1 — `offsetParent !== null` EXCLUAIT TOUT.
+     * `offsetParent` vaut `null` pour tout élément dont un ancêtre est en
+     * `position: fixed` — ce qui est le cas de TOUTE fenêtre modale. Mon filtre
+     * « garder ce qui est visible » supprimait donc la totalité des éléments
+     * focalisables. `getClientRects()` mesure la géométrie réelle et ne se laisse
+     * pas piéger par le positionnement.
+     *
+     * DÉFAUT 2 — UN SEUL ESSAI, AU TOUR SUIVANT.
+     * `AjnayaConversationModal` est chargée à la demande et montée dans une
+     * animation de présence : sa référence peut ne pas être encore posée au tour
+     * suivant. La fenêtre de paiement, montée directement, arrivait à temps —
+     * d'où un contrôle vert d'un côté et rouge de l'autre. On réessaie sur
+     * plusieurs images plutôt que de parier sur une seule.
+     */
+    let essais = 0
+    let frame = 0
+    const placerLeFocus = () => {
       const racine = panneau.current
-      if (!racine) return
-      // Décision 3 : on ne reprend pas un focus déjà pris à l'intérieur.
-      if (racine.contains(document.activeElement)) return
-      const liste = focalisables()
-      if (liste.length > 0) liste[0].focus()
-      else {
-        racine.setAttribute('tabindex', '-1')
-        racine.focus()
+      if (racine) {
+        // Décision 3 : on ne reprend pas un focus déjà pris à l'intérieur.
+        if (racine.contains(document.activeElement)) return
+        const liste = focalisables()
+        if (liste.length > 0) {
+          liste[0].focus()
+          return
+        }
+        if (racine.getClientRects().length > 0) {
+          racine.setAttribute('tabindex', '-1')
+          racine.focus()
+          return
+        }
       }
-    }, 0)
+      if (++essais < 30) frame = window.requestAnimationFrame(placerLeFocus)
+    }
+    const t = window.setTimeout(placerLeFocus, 0)
 
     return () => {
       window.clearTimeout(t)
+      window.cancelAnimationFrame(frame)
       document.removeEventListener('keydown', auClavier, true)
       // Rendu à l'ouvreur — s'il est encore là. Un ouvreur démonté (c'est le cas
       // du bouton flottant d'Ajnaya, retiré à l'ouverture) laisserait le curseur

@@ -92,7 +92,7 @@ export default function Header() {
           {/* Logo — Genos signature */}
           <Link
             href="/"
-            className={`flex items-center group ${focusRing}`}
+            className={`inline-flex min-h-[44px] items-center group ${focusRing}`}
             aria-label="FOREAS — Retour à l'accueil"
           >
             <span className="font-title text-2xl lg:text-[28px] font-semibold tracking-wider text-text-primary">

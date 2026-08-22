@@ -428,7 +428,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={exchanges === 0 ? (input ? 'Ta zone…' : animatedPlaceholder) : 'Écris ici…'}
                 aria-label="Écrire à Ajnaya"
-                className="min-w-0 flex-1 bg-transparent px-2 text-[13px] text-[#F8FAFC] placeholder:text-text-tertiary outline-none"
+                className="min-h-[44px] min-w-0 flex-1 bg-transparent px-2 text-[13px] text-[#F8FAFC] placeholder:text-text-tertiary outline-none"
               />
               <button
                 type="submit"

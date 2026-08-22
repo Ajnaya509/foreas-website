@@ -342,7 +342,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       {/* header — le fond (blur/gradient) reste plein-largeur, le contenu se recentre à md: */}
       <header className="sticky top-0 z-40 backdrop-blur-md" style={{ background: 'linear-gradient(180deg, rgba(6,6,16,.92), rgba(6,6,16,.5) 80%, transparent)' }}>
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 md:px-8">
-          <Link href="/" aria-label="FOREAS — Accueil">
+          <Link href="/" aria-label="FOREAS — Accueil" className="inline-flex min-h-[44px] min-w-[44px] items-center">
             <ForeasLogo variant="mini" className="h-6 w-auto text-[#F8FAFC]" />
           </Link>
           <a href={waHaut} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center rounded-full border border-white/[0.14] bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-bold transition active:scale-[0.96] active:bg-white/[0.09]">
