@@ -924,6 +924,7 @@ export default function AjnayaConversationModal({
               }}
               role="dialog"
               aria-modal="true"
+              ref={panneauModale}
               aria-label="Conversation avec Ajnaya"
             >
 
