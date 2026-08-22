@@ -118,7 +118,7 @@ export default function HomeAppStores({
           <a
             href={lienOffre}
             onClick={() => mesurer('PrimaryCTAClick', { page, intention, promesse: 'offre_depuis_bloc_app' })}
-            className="inline-flex items-center justify-center rounded-2xl border border-white/12 px-6 py-3.5 font-body text-sm font-semibold text-[#F8FAFC]/85 transition-colors active:bg-white/5"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-white/12 px-6 py-3.5 font-body text-sm font-semibold text-[#F8FAFC]/85 transition-colors active:bg-white/5"
           >
             Voir ce que ça coûte
           </a>
@@ -163,7 +163,7 @@ export default function HomeAppStores({
           <a
             href={lienOffre}
             onClick={() => mesurer('PrimaryCTAClick', { page, intention, promesse: 'offre_depuis_bloc_app' })}
-            className="font-body text-sm text-[#00D4FF]/85 underline-offset-4 transition-colors hover:text-[#00D4FF] hover:underline"
+            className="inline-flex min-h-[44px] items-center font-body text-sm text-[#00D4FF]/85 underline-offset-4 transition-colors hover:text-[#00D4FF] hover:underline"
           >
             Voir ce que ça coûte
           </a>

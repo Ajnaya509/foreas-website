@@ -143,14 +143,14 @@ function DesktopZoneSearch({ geoCity, onSubmit }: { geoCity?: string | null; onS
             onChange={(e) => setValue(e.target.value)}
             placeholder={value ? 'Ta zone…' : animatedPlaceholder}
             aria-label="Ta zone"
-            className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none"
+            className="min-h-[44px] min-w-0 flex-1 bg-transparent text-base font-medium text-[#F8FAFC] placeholder-white/30 outline-none"
           />
           <button
             type="submit"
             disabled={!value.trim()}
-            className="flex flex-none items-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-purple-deep px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            className="flex min-h-[44px] flex-none items-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-purple-deep px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
           >
-            Discuter <ArrowRight className="h-4 w-4" />
+            Discuter <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </form>
       </div>
@@ -161,7 +161,7 @@ function DesktopZoneSearch({ geoCity, onSubmit }: { geoCity?: string | null; onS
             key={z}
             type="button"
             onClick={() => onSubmit(z)}
-            className="rounded-full border border-white/[0.10] bg-white/[0.03] px-3 py-1.5 text-[12.5px] text-white/70 transition hover:border-white/[0.20] hover:bg-white/[0.06] active:scale-[0.97] active:bg-white/[0.09]"
+            className="inline-flex min-h-[44px] items-center rounded-full border border-white/[0.10] bg-white/[0.03] px-3 py-1.5 text-[12.5px] text-white/70 transition hover:border-white/[0.20] hover:bg-white/[0.06] active:scale-[0.97] active:bg-white/[0.09]"
           >
             {z}
           </button>
