@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { X, Send, MapPin, TrendingUp, TrendingDown, Volume2, MessageCircle, VolumeX } from 'lucide-react'
 import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
+import { useFenetreModale } from '@/hooks/useFenetreModale'
 import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { expandPoolCode } from '@/lib/expandPoolCode'
@@ -485,6 +486,16 @@ export default function AjnayaConversationModal({
 }: AjnayaConversationModalProps) {
   // Masque le widget flottant "A" tant que cette modale plein écran est ouverte.
   useOverlayLock(isOpen)
+  /**
+   * ⚠️ 22/08/2026 — CETTE FENÊTRE DÉCLARAIT `aria-modal="true"` SANS RIEN TENIR.
+   *
+   * Ni Échap, ni piège de focus, ni retour du focus à l'ouvreur. Une promesse
+   * d'accessibilité que le code ne remplit pas est PIRE qu'un silence : les
+   * outils d'assistance la croient et annoncent au lecteur qu'il est enfermé
+   * dans la fenêtre, alors que son curseur est resté derrière le voile.
+   */
+  const panneauModale = useRef<HTMLDivElement>(null)
+  useFenetreModale(isOpen, onClose, panneauModale)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState(initialZone)
@@ -966,7 +977,7 @@ export default function AjnayaConversationModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-2 rounded-full transition-colors hover:bg-black/[0.06] active:scale-95"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full transition-colors hover:bg-black/[0.06] active:scale-95"
                   aria-label="Fermer"
                   style={{ color: '#6e6e73' }}
                 >

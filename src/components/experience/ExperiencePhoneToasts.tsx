@@ -209,7 +209,7 @@ export default function ExperiencePhoneToasts() {
               <p className="min-w-0 flex-1 text-[12.5px] leading-tight text-white/60">
                 <span className="font-bold text-[#F8FAFC]">{e.driver}</span> a filmé son témoignage
               </p>
-              <button type="button" onClick={dismiss} aria-label="Fermer" className="self-start -mr-1 -mt-1 w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
+              <button type="button" onClick={dismiss} aria-label="Fermer" className="self-start -mr-2 -mt-2 min-h-[44px] min-w-[44px] rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>

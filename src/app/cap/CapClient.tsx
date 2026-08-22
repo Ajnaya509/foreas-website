@@ -20,7 +20,7 @@
  */
 
 import { useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, MotionConfig } from 'framer-motion'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -296,7 +296,22 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
   const isValidCode = !!partner
   const partnerName = partner?.company_name || 'Un partenaire FOREAS'
 
+  /**
+   * ⚠️ 22/08/2026 — LA PRÉFÉRENCE « MOUVEMENT RÉDUIT » N'ÉTAIT PAS RESPECTÉE.
+   *
+   * La règle globale de `globals.css` ne pilote que quatre propriétés purement
+   * CSS. Or framer-motion écrit `transform` et `opacity` en style EN LIGNE,
+   * image par image : le CSS ne le voit jamais passer. Quelqu'un qui a demandé
+   * l'arrêt des animations les recevait quand même.
+   *
+   * ⚠️ Et ce commentaire vit ICI, pas entre `return (` et la racine : là-bas,
+   * un commentaire JSX compte comme un SECOND enfant et casse la compilation.
+   * Erreur déjà faite ce matin, refaite à l'instant — puis une troisième fois
+   * en écrivant la séquence de fermeture de commentaire DANS ce commentaire,
+   * ce qui l'a terminé au milieu d'une phrase.
+   */
   return (
+    <MotionConfig reducedMotion="user">
     <main id="main-content" className="min-h-screen bg-black text-white overflow-x-hidden">
       <Header />
 
@@ -451,7 +466,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
             Déjà chauffeur FOREAS ?{' '}
             <a
               href={loginWithNext('driver', '/driver')}
-              className="text-[#00D4FF]/60 hover:text-[#00D4FF] transition-colors duration-150 underline-offset-2 hover:underline"
+              className="inline-flex min-h-[44px] items-center text-[#00D4FF]/60 hover:text-[#00D4FF] transition-colors duration-150 underline-offset-2 hover:underline"
             >
               Mon espace chauffeur
             </a>
@@ -700,5 +715,6 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
 
       <Footer />
     </main>
+    </MotionConfig>
   )
 }

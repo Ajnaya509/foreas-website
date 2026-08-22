@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 
 import { temoignagePubliableParNom } from '@/lib/consentements'
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -266,6 +267,35 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           >
             {c.cta_button_label || 'Essayer gratuitement →'}
           </Link>
+          {/*
+            ⚠️ 22/08/2026 — CES DIX PAGES N'OFFRAIENT AUCUN MOYEN DE PARLER À AJNAYA.
+            Mesuré sur le HTML servi de /revenus : zéro `wa.me`, zéro `/wa`. Les trois
+            boutons menaient à `/go/<sujet>`, qui redirige vers la caisse sur ordinateur.
+            Autrement dit : quelqu'un arrivé par une recherche, qui découvre FOREAS à
+            l'instant, n'avait que le paiement devant lui.
+
+            Le parcours FOREAS est : Ajnaya → discussion → WhatsApp → paiement QUAND le
+            chauffeur est convaincu. Une page d'atterrissage est exactement l'endroit où
+            la conviction n'existe pas encore.
+
+            Ce lien reste SECOND visuellement — l'action principale ne change pas. Il
+            ouvre simplement la porte qui manquait.
+          */}
+          <p className="mt-4">
+            <a
+              href={lienPassageWhatsApp({
+                section: 'final',
+                page: `/${topic_slug}`,
+                intention: 'ajnaya',
+                emplacement: 'atterrissage_hero',
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center gap-2 font-body text-sm text-white/60 underline-offset-4 transition-colors hover:text-[#00D4FF] hover:underline"
+            >
+              Ou pose ta question à Ajnaya d&apos;abord
+            </a>
+          </p>
         </FadeIn>
 
         {/* ⚠️ 22/08/2026 — CETTE FLÈCHE BOUGEAIT À L'INFINI, MÊME ANIMATIONS COUPÉES.
@@ -489,8 +519,23 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
       </section>
 
       {/* ── STICKY CTA MOBILE ─────────────────────────────────────────────── */}
+        {/*
+          ⚠️ 22/08/2026 — LE BANDEAU DE CONSENTEMENT RECOUVRAIT CE BOUTON.
+          Les deux sont collés à `bottom-0`. Le bandeau est opaque et en
+          `z-[9999]`, celui-ci en `z-40` : il passait dessous. Et le bandeau ne
+          s'affiche QUE pour qui n'a pas encore répondu — c'est-à-dire pour
+          TOUT nouveau visiteur mobile, exactement ceux qu'on veut convertir.
+          `--consent-banner-h` est déjà publiée sur la racine par ConsentBanner ;
+          elle vaut 0 dès qu'il disparaît. Posée en style EN LIGNE et non en
+          classe Tailwind : le commentaire de ConsentBanner note qu'une valeur
+          arbitraire en className ne se recalculait pas de façon fiable après
+          hydratation.
+        */}
       {showStickyCtA && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden px-4 pb-4 pt-2 bg-gradient-to-t from-[#050508] to-transparent">
+        <div
+          className="fixed left-0 right-0 z-40 md:hidden px-4 pb-4 pt-2 bg-gradient-to-t from-[#050508] to-transparent"
+          style={{ bottom: 'var(--consent-banner-h, 0px)' }}
+        >
           <Link
             href={ctaHref}
             onClick={trackCTAClick}

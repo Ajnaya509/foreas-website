@@ -130,7 +130,13 @@ export default function Header() {
             >
               <span className="underline-grow">Mon espace</span>
             </a>
-            <InkGradientButton as="link" href="/tarifs2" size="sm">
+            {/*
+              ⚠️ 22/08/2026 — CE BOUTON FAISAIT 40 px, SES DEUX VOISINS 44.
+              `size="sm"` vaut `h-10`. On change CET APPEL, jamais `sizeStyles` :
+              33 fichiers en dépendent, et les agrandir tous déplacerait des
+              mises en page qui n'ont rien demandé.
+            */}
+            <InkGradientButton as="link" href="/tarifs2" size="md">
               Essai gratuit
             </InkGradientButton>
           </div>

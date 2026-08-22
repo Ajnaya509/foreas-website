@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
+import { X, Check } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { trackInitiateCheckout } from '@/lib/tracking'
 import { mesurer } from '@/lib/mesure'
+import { useFenetreModale } from '@/hooks/useFenetreModale'
 import { authUrls } from '@/lib/auth-urls'
 // 14/08/2026 — les montants et la durée d'essai ne sont plus écrits à la main dans cette
 // page. Ils viennent des DEUX sources uniques : offre.ts (ce qu'on facture) et
@@ -63,13 +65,26 @@ function formatDateFR(d: Date): string {
  * n'en réparer qu'un.
  */
 
+/**
+ * ⚠️ 22/08/2026 — RIEN NE DISAIT SI LA RÉPONSE ÉTAIT OUVERTE.
+ *
+ * Le seul indicateur était le signe « + » qui pivote : purement visuel. Quelqu'un
+ * qui écoute la page n'entendait jamais que la question était dépliée — ni que
+ * le texte qui suit est sa réponse.
+ */
 function FaqItem({ q, a, id }: { q: string; a: string; id?: string }) {
   const [open, setOpen] = useState(false)
+  const idReponse = `${id ?? q.slice(0, 24).replace(/\W+/g, '-')}-reponse`
   return (
     <div id={id} className="border-b border-white/10">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex justify-between items-center py-5 text-left gap-4 group">
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-controls={idReponse}
+        className="w-full flex justify-between items-center py-5 text-left gap-4 group"
+      >
         <span className="text-white/90 font-medium text-sm sm:text-base group-hover:text-white transition-colors">{q}</span>
-        <span className={`text-violet-400 text-xl transition-transform flex-shrink-0 ${open ? 'rotate-45' : ''}`}>+</span>
+        <span aria-hidden="true" className={`text-violet-400 text-xl transition-transform flex-shrink-0 ${open ? 'rotate-45' : ''}`}>+</span>
       </button>
       <AnimatePresence>
         {open && (
@@ -101,7 +116,20 @@ function FaqItem({ q, a, id }: { q: string; a: string; id?: string }) {
 const IMMEDIATE_PAYMENT = false
 
 // ─── Trial Bridge ────────────────────────────────────────────────────────────
+/**
+ * ⚠️ 22/08/2026 — CETTE FENÊTRE N'AVAIT AUCUNE SORTIE AU CLAVIER.
+ *
+ * Ni Échap, ni piège de focus, ni retour du focus à l'ouvreur, ni `role`.
+ * Quelqu'un qui navigue au clavier ouvrait la fenêtre de paiement et son
+ * curseur restait sur le bouton qu'il venait de quitter — DERRIÈRE un voile
+ * plein écran. Il tabulait dans une page qu'il ne voyait plus.
+ *
+ * Voir `src/hooks/useFenetreModale.ts` : le même correctif sert aux trois
+ * fenêtres du site.
+ */
 function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onConfirm: () => void; onClose: () => void }) {
+  const panneau = useRef<HTMLDivElement>(null)
+  useFenetreModale(true, onClose, panneau)
   const trialEnd = getTrialEndDate()
   const trialDays = TRIAL_DAYS
 
@@ -118,13 +146,13 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-md bg-black border border-blue-500/30 rounded-2xl overflow-hidden shadow-2xl">
+      <motion.div ref={panneau} role="dialog" aria-modal="true" aria-labelledby="titre-essai" initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-md bg-black border border-blue-500/30 rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-blue-500/10 bg-gradient-to-r from-blue-900/30 to-transparent">
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-violet-500/30"><span className="text-sm font-black text-white">F</span><div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-black" /></div>
-            <div><p className="text-white font-bold text-sm">FOREAS {planName}</p><p className="text-blue-300 text-xs font-medium">Paiement sécurisé · Transparent</p></div>
+            <div><p id="titre-essai" className="text-white font-bold text-sm">FOREAS {planName}</p><p className="text-blue-300 text-xs font-medium">Paiement sécurisé · Transparent</p></div>
           </div>
-          <button onClick={onClose} className="text-white/55 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
+          <button onClick={onClose} aria-label="Fermer" className="text-white/55 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-white/10"><X className="h-4 w-4" aria-hidden="true" /></button>
         </div>
         <div className="px-5 pt-5 pb-6">
           <div className="space-y-0 mb-6">
@@ -162,7 +190,10 @@ function TrialBridge({ planName, onConfirm, onClose }: { planName: string; onCon
 }
 
 // ─── Checkout Modal ──────────────────────────────────────────────────────────
+/** ⚠️ 22/08/2026 — même correction clavier que `TrialBridge` (voir plus haut). */
 function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 'monthly' | 'annual'; onClose: () => void }) {
+  const panneau = useRef<HTMLDivElement>(null)
+  useFenetreModale(true, onClose, panneau)
   const trialEnd = getTrialEndDate()
   const fetchClientSecret = useCallback(async () => {
     const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: `${planId}_${billing}`, mode: 'embedded', immediate: IMMEDIATE_PAYMENT }) })
@@ -172,13 +203,13 @@ function CheckoutModal({ planId, billing, onClose }: { planId: string; billing: 
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-xl bg-black border border-violet-500/30 rounded-2xl overflow-hidden shadow-2xl" style={{ maxHeight: '90vh' }}>
+      <motion.div ref={panneau} role="dialog" aria-modal="true" aria-labelledby="titre-coordonnees" initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-xl bg-black border border-violet-500/30 rounded-2xl overflow-hidden shadow-2xl" style={{ maxHeight: '90vh' }}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-violet-900/30 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center"><span className="text-[10px] font-bold text-white">F</span></div>
-            <div><p className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">{IMMEDIATE_PAYMENT && garantieAffichable() ? 'Paiement aujourd\'hui · garanti 30 jours remboursé' : `0€ débité · Premier débit le ${formatDateFR(trialEnd)}`}</p></div>
+            <div><p id="titre-coordonnees" className="text-white font-semibold text-sm">FOREAS — Coordonnées</p><p className="text-green-400 text-xs font-medium">{IMMEDIATE_PAYMENT && garantieAffichable() ? 'Paiement aujourd\'hui · garanti 30 jours remboursé' : `0€ débité · Premier débit le ${formatDateFR(trialEnd)}`}</p></div>
           </div>
-          <button onClick={onClose} className="text-white/55 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">×</button>
+          <button onClick={onClose} aria-label="Fermer" className="text-white/55 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-white/10"><X className="h-4 w-4" aria-hidden="true" /></button>
         </div>
         <div className="flex items-center justify-center gap-4 px-5 py-2.5 bg-green-500/5 border-b border-green-500/10">
           {/* 14/08/2026 — « Remboursement 30j » s'affichait dans les DEUX modes, y compris en
@@ -548,6 +579,7 @@ function TarifsContent() {
       <div className="flex items-center justify-center gap-4 mb-10 px-4">
         <button
           onClick={() => setBilling('monthly')}
+          aria-pressed={billing === 'monthly'}
           className={`text-sm font-semibold px-4 py-2 rounded-xl transition-all ${billing === 'monthly' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}
         >
           Mensuel
@@ -555,12 +587,15 @@ function TarifsContent() {
         <button
           onClick={() => setBilling(c => c === 'monthly' ? 'annual' : 'monthly')}
           className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${billing === 'annual' ? 'bg-violet-500' : 'bg-white/20'}`}
-          aria-label="Basculer annuel/mensuel"
+          role="switch"
+          aria-checked={billing === 'annual'}
+          aria-label="Facturation annuelle"
         >
           <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${billing === 'annual' ? 'translate-x-6' : ''}`} />
         </button>
         <button
           onClick={() => setBilling('annual')}
+          aria-pressed={billing === 'annual'}
           className={`text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${billing === 'annual' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
         >
           Annuel
@@ -980,6 +1015,22 @@ function TarifsContent() {
   )
 }
 
+/**
+ * ⚠️ 22/08/2026 — LA PAGE DE PAIEMENT IGNORAIT LE « MOUVEMENT RÉDUIT ».
+ *
+ * La règle globale de `globals.css` ne pilote que des propriétés purement CSS.
+ * framer-motion écrit `transform` et `opacity` en style EN LIGNE, image par
+ * image : le CSS ne le voit jamais passer. Quatre blocs de cette page animaient
+ * quand même, dont le tunnel d'achat lui-même.
+ *
+ * `reducedMotion="user"` posé à la racine couvre TOUT ce que la page monte, y
+ * compris les deux fenêtres de paiement. Rien ne change pour qui n'a pas activé
+ * la préférence.
+ */
 export default function Tarifs2Page() {
-  return <TarifsContent />
+  return (
+    <MotionConfig reducedMotion="user">
+      <TarifsContent />
+    </MotionConfig>
+  )
 }

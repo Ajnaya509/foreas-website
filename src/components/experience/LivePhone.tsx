@@ -403,7 +403,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
                     key={z}
                     type="button"
                     onClick={() => handleSend(z)}
-                    className="rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1.5 text-[11.5px] text-white/80 active:scale-[0.97]"
+                    className="inline-flex min-h-[44px] items-center rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1.5 text-[11.5px] text-white/80 active:scale-[0.97]"
                   >
                     {z}
                   </button>
@@ -434,7 +434,7 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
                 type="submit"
                 disabled={!input.trim()}
                 aria-label="Envoyer"
-                className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#00D4FF] via-[#00BCE5] to-[#0096B8] text-foreas-obsidian disabled:opacity-40"
+                className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#00D4FF] via-[#00BCE5] to-[#0096B8] text-foreas-obsidian disabled:opacity-40"
               >
                 <Send size={14} strokeWidth={2.5} />
               </button>

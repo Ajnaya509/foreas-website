@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, MotionConfig } from 'framer-motion'
 import posthog from 'posthog-js'
 import { MessageCircle, MapPin, ArrowRight } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
@@ -284,6 +284,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   const heroMobileClearance = Math.min(Math.max(bannerH, 0), 60)
 
   return (
+    <MotionConfig reducedMotion="user">
     <SmoothScroll>
     {/* overflow-x-CLIP (pas hidden) : `hidden` crée un conteneur de scroll qui empêche
         position:sticky des sections features de coller. `clip` masque le débord sans conteneur
@@ -321,7 +322,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           <Link href="/" aria-label="FOREAS — Accueil">
             <ForeasLogo variant="mini" className="h-6 w-auto text-[#F8FAFC]" />
           </Link>
-          <a href={waHaut} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/[0.14] bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-bold transition active:scale-[0.96] active:bg-white/[0.09]">
+          <a href={waHaut} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center rounded-full border border-white/[0.14] bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-bold transition active:scale-[0.96] active:bg-white/[0.09]">
             WhatsApp
           </a>
         </div>
@@ -534,8 +535,8 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
             ['Je peux annuler quand ?', 'Quand tu veux, en 1 clic. Pas d’appel, pas de mail de rétention.'],
             ['Vous allez m’appeler ?', 'Non. Ajnaya te répond sur WhatsApp, c’est tout. Tu écris « stop », elle arrête. Aucun appel sans que tu l’aies demandé.'],
           ].map(([q, a], i) => (
-            <details key={i} className="border-b border-white/[0.08] py-3.5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[14px] font-bold marker:content-none">
+            <details key={i} className="border-b border-white/[0.08]">
+              <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 py-3.5 text-[14px] font-bold marker:content-none">
                 {q}
                 <span className="text-accent-cyan" aria-hidden>+</span>
               </summary>
@@ -567,7 +568,17 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           Le bloc porte `page="/"` et l'intention `ajnaya` : un clic boutique
           depuis ici doit rester attribué à quelqu'un qui venait de PARLER à
           Ajnaya, pas à un visiteur « général ». */}
-      <HomeAppStores page="/" intention="ajnaya" discret />
+      {/*
+          ⚠️ 22/08/2026 — LA BARRE FIXE RECOUVRAIT LES DEUX SORTIES DE CE BLOC.
+          C'est le dernier bloc en flux de la page ; la barre collante est en
+          `position: fixed` et ne prend aucune place. Ses boutons « installer
+          l'app » et « voir ce que ça coûte » disparaissaient dessous.
+          La marge est posée ICI, pas dans le composant : il est aussi monté sur
+          des pages sans barre fixe, où cette réserve serait un trou.
+        */}
+        <div style={{ paddingBottom: 'var(--cta-clearance)' }}>
+          <HomeAppStores page="/" intention="ajnaya" discret />
+        </div>
 
       <ExitIntentModal />
 
@@ -700,5 +711,6 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
       </div>
     </main>
     </SmoothScroll>
+    </MotionConfig>
   )
 }
