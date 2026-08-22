@@ -1847,6 +1847,79 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
   }
 }
 
+// ─── CE QUE LE GABARIT PARCOURT DOIT ÊTRE UNE LISTE ────────────────────────
+//
+// 🔴 21/08/2026 — HUIT VERSIONS DE SUITE ONT ÉCHOUÉ À LA MISE EN LIGNE À CAUSE
+// D'UNE SEULE VIRGULE DE TYPE.
+//
+// En corrigeant un texte de /charges, j'ai écrit en SQL :
+//     jsonb_set(content, '{faq_items}', to_jsonb( replace(content->>'faq_items', …) ))
+//
+// `content->>'faq_items'` rend le tableau SOUS FORME DE TEXTE, et `to_jsonb`
+// d'un texte fabrique une CHAÎNE JSON — pas un tableau. La fiche portait donc
+// une chaîne là où le gabarit appelle `.map()`.
+//
+// Résultat : `TypeError: c.faq_items.map is not a function` au pré-rendu, la
+// fabrication s'arrête, et Vercel refuse TOUTES les versions suivantes. Huit
+// commits poussés par-dessus une fabrication déjà cassée.
+//
+// ⚠️ ET CE QUI M'A AVEUGLÉ : je vérifiais la fabrication en cherchant
+// « Compiled successfully » dans la sortie. Cette ligne s'affiche AVANT le
+// pré-rendu. Je lisais un vert qui parlait d'une étape antérieure à celle qui
+// échouait. **Le seul verdict d'une fabrication est son code de sortie.**
+//
+// Cette règle attrape la cause AVANT la fabrication, en une seconde, et dit
+// quelle fiche et quel champ. La fabrication, elle, coûte une minute et ne
+// nomme la page qu'à la fin.
+
+{
+  const CHAMPS_LISTES = ['after_items', 'before_items', 'faq_items', 'projection_items']
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const cle =
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !cle) {
+    console.warn('')
+    console.warn('  ⚠️  RÈGLE NON EXÉCUTÉE : forme des listes des pages en série.')
+    console.warn('      Pas d’accès en lecture à la base depuis ici. Ce n’est PAS un succès.')
+    console.warn('')
+  } else {
+    try {
+      const r = await fetch(`${url}/rest/v1/landing_pages?select=topic_slug,active,content`, {
+        headers: { apikey: cle, Authorization: `Bearer ${cle}` },
+      })
+      const lignes = await r.json()
+      if (!Array.isArray(lignes) || lignes.length === 0) {
+        console.warn('  ⚠️  RÈGLE NON EXÉCUTÉE : aucune page lue. Ce n’est PAS un succès.')
+      } else {
+        let verifies = 0
+        for (const ligne of lignes) {
+          const contenu = ligne?.content
+          if (!contenu || typeof contenu !== 'object') continue
+          for (const champ of CHAMPS_LISTES) {
+            if (!(champ in contenu)) continue
+            verifies++
+            if (Array.isArray(contenu[champ])) continue
+            infractions.push({
+              fichier: `landing_pages → ${ligne.topic_slug}`,
+              quoi: `« ${champ} » n’est pas une liste (${typeof contenu[champ]})`,
+              extrait: String(contenu[champ]).slice(0, 70),
+              pourquoi:
+                'le gabarit appelle `.map()` dessus. Une chaîne au lieu d’une liste fait ' +
+                'échouer le PRÉ-RENDU — pas la compilation — donc la mise en ligne entière. ' +
+                '⚠️ En SQL, `to_jsonb(content->>\'champ\')` fabrique une CHAÎNE. Pour garder ' +
+                'une liste : `(content->>\'champ\')::jsonb`.',
+            })
+          }
+        }
+        console.log(`   listes des pages en série vérifiées : ${verifies}`)
+      }
+    } catch {
+      console.warn('  ⚠️  base injoignable — règle NON exécutée. Ce n’est pas un succès.')
+    }
+  }
+}
+
 // ─── Verdict ────────────────────────────────────────────────────────────────
 
 if (infractions.length === 0) {
