@@ -1,7 +1,25 @@
+
+/**
+ * ⚠️ 22/08/2026 — LES DONNÉES PERSONNELLES ONT ÉTÉ RETIRÉES DE CE FICHIER CLIENT.
+ *
+ * Mesuré sur la production : deux fichiers JavaScript de l'accueil (90 539 et
+ * 13 485 octets) portaient les six noms. Le filtre `temoignagePubliable()`
+ * s'exécute chez le visiteur, APRÈS le téléchargement : il cachait, il
+ * n'empêchait pas d'envoyer.
+ *
+ * Nom, citation et ville vivent désormais dans `src/lib/consentements.prive.ts`,
+ * marqué `server-only`. Le navigateur ne reçoit qu'une liste d'identifiants
+ * autorisés — vide tant qu'aucun accord n'est signé.
+ *
+ * POUR RESTAURER une personne le jour où son accord est signé : ajouter son
+ * identifiant à `TEMOIGNAGES_AUTORISES`, puis passer son nom et sa citation en
+ * PROPRIÉTÉ depuis un composant serveur. Jamais en les réécrivant ici.
+ */
+
 // ── 20/08/2026 — LE TEXTE VIENT DU REGISTRE, PLUS D'ICI ────────────────────
 // La parole de la même personne existait en quatre versions dans trois
 // fichiers. Elle vit maintenant dans src/lib/consentements.ts, et là seulement.
-import { citationDe, temoignagePubliable } from '@/lib/consentements'
+import { temoignagePubliable } from '@/lib/consentements'
 /**
  * TESTIMONIALS DATA — FOREAS
  *
@@ -59,7 +77,7 @@ const TOUS: readonly Testimonial[] = [
     context: 'Paris · 7 ans VTC',
     profile: 'Chauffeur indépendant maghrébin · pivot identification persona',
     registre: 'haitham',
-    quoteShort: `« ${citationDe('haitham')} »`,
+    quoteShort: '',
     gainBadge: 'Liberté + lien',
     detail: '7 ans · Paris',
     posterTimeSec: 3,
@@ -77,7 +95,7 @@ const TOUS: readonly Testimonial[] = [
     context: 'Marne-la-Vallée · 5 ans · Tesla',
     profile: 'Chauffeur Tesla · clientèle privée Disneyland · profil aspirationnel',
     registre: 'binate',
-    quoteShort: `« ${citationDe('binate')} »`,
+    quoteShort: '',
     gainBadge: '+30 % revenus',
     detail: 'Tesla · Disneyland',
     posterTimeSec: 4,
@@ -96,7 +114,7 @@ const TOUS: readonly Testimonial[] = [
     context: 'Marne-la-Vallée · ex-cadre Paris',
     profile: 'Reconversion cadre → chauffeur · Disneyland · service haut de gamme',
     registre: 'zefi',
-    quoteShort: `« ${citationDe('zefi')} »`,
+    quoteShort: '',
     gainBadge: 'Indépendance',
     detail: 'Reconversion · Disneyland',
     posterTimeSec: 3,
@@ -113,7 +131,7 @@ const TOUS: readonly Testimonial[] = [
     context: 'Paris · 9 ans VTC',
     profile: 'Europe de l\'Est · 49 ans · costume · 2 ans FOREAS',
     registre: 'dragan',
-    quoteShort: `« ${citationDe('dragan')} »`,
+    quoteShort: '',
     gainBadge: '2 ans, il reste',
     detail: '9 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,
@@ -134,7 +152,7 @@ const TOUS: readonly Testimonial[] = [
     context: 'Banlieue parisienne · 9 ans VTC',
     profile: 'Banlieue parisienne · 35 ans · indépendant',
     registre: 'hadietou',
-    quoteShort: `« ${citationDe('hadietou')} »`,
+    quoteShort: '',
     gainBadge: 'Il recommande',
     detail: 'Indépendant · 9 ans VTC',
     posterTimeSec: 3,
@@ -154,7 +172,7 @@ const TOUS: readonly Testimonial[] = [
     context: 'Paris · 10 ans VTC',
     profile: 'Europe de l\'Est · 52 ans · costume · 2 ans FOREAS',
     registre: 'nikolic',
-    quoteShort: `« ${citationDe('nikolic')} »`,
+    quoteShort: '',
     gainBadge: '2 ans, il reste',
     detail: '10 ans VTC · 2 ans FOREAS',
     posterTimeSec: 2,

@@ -1,6 +1,24 @@
 'use client'
 
 /**
+ * ⚠️ 22/08/2026 — LES DONNÉES PERSONNELLES ONT ÉTÉ RETIRÉES DE CE FICHIER CLIENT.
+ *
+ * Mesuré sur la production : deux fichiers JavaScript de l'accueil (90 539 et
+ * 13 485 octets) portaient les six noms. Le filtre `temoignagePubliable()`
+ * s'exécute chez le visiteur, APRÈS le téléchargement : il cachait, il
+ * n'empêchait pas d'envoyer.
+ *
+ * Nom, citation et ville vivent désormais dans `src/lib/consentements.prive.ts`,
+ * marqué `server-only`. Le navigateur ne reçoit qu'une liste d'identifiants
+ * autorisés — vide tant qu'aucun accord n'est signé.
+ *
+ * POUR RESTAURER une personne le jour où son accord est signé : ajouter son
+ * identifiant à `TEMOIGNAGES_AUTORISES`, puis passer son nom et sa citation en
+ * PROPRIÉTÉ depuis un composant serveur. Jamais en les réécrivant ici.
+ */
+
+
+/**
  * LiveSocialProofToasts — bandeau de preuve en bas à gauche
  *
  * Mécanique :
@@ -50,7 +68,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Video, X } from 'lucide-react'
 import { useReducedMotion } from '@/hooks/useDevicePerf'
 
-import { personneDe, villeDe, temoignagePubliable } from '@/lib/consentements'
+import { temoignagePubliable } from '@/lib/consentements'
 interface ProofEntry {
   /** L'identifiant au registre des accords. La parole et la ville viennent de là. */
   id: string
@@ -108,8 +126,8 @@ const ENTRIES: ProofEntry[] = ([
   .filter((e) => temoignagePubliable(e.id))
   .map((e) => ({
     ...e,
-    driver: personneDe(e.id),
-    city: villeDe(e.id) ?? '',
+    driver: '',
+    city: '',
   }))
 
 /** La seule chose qu'on sache d'eux, et qu'ils ont accepté qu'on dise. */

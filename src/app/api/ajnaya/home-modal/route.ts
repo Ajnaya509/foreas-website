@@ -25,7 +25,7 @@ import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitio
 // phrase entière, et « On a une réponse instantanément » amputé de son début.
 // Une citation raccourcie reste une citation modifiée. Le texte vient désormais
 // de src/lib/consentements.ts, et `npm run canon` refuse toute nouvelle copie.
-import { citationDe } from '@/lib/consentements'
+import { citationDe } from '@/lib/consentements.prive'
 // ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
 // Cette route retombait sur la clé publique quand la clé serveur manquait.
 // Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
@@ -35,7 +35,7 @@ import { citationDe } from '@/lib/consentements'
 // que de dégrader.
 import { clientServeurOuNull, cleServeurOuVide } from '@/lib/supabaseServeur'
 
-import { temoignagePubliableParNom } from '@/lib/consentements'
+import { temoignagePubliableParNom } from '@/lib/consentements.prive'
 export const runtime = 'nodejs'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

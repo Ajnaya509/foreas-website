@@ -1,6 +1,24 @@
 'use client'
 
 /**
+ * ⚠️ 22/08/2026 — LES DONNÉES PERSONNELLES ONT ÉTÉ RETIRÉES DE CE FICHIER CLIENT.
+ *
+ * Mesuré sur la production : deux fichiers JavaScript de l'accueil (90 539 et
+ * 13 485 octets) portaient les six noms. Le filtre `temoignagePubliable()`
+ * s'exécute chez le visiteur, APRÈS le téléchargement : il cachait, il
+ * n'empêchait pas d'envoyer.
+ *
+ * Nom, citation et ville vivent désormais dans `src/lib/consentements.prive.ts`,
+ * marqué `server-only`. Le navigateur ne reçoit qu'une liste d'identifiants
+ * autorisés — vide tant qu'aucun accord n'est signé.
+ *
+ * POUR RESTAURER une personne le jour où son accord est signé : ajouter son
+ * identifiant à `TEMOIGNAGES_AUTORISES`, puis passer son nom et sa citation en
+ * PROPRIÉTÉ depuis un composant serveur. Jamais en les réécrivant ici.
+ */
+
+
+/**
  * ExperiencePhoneToasts — bulles "vient de parler à Ajnaya sur WhatsApp" en bas-gauche.
  * Même mécanique que CheckoutProofToasts (Provely-style, preuve sociale Cialdini), thème
  * réorienté vers WhatsApp puisque /experience pousse à continuer là-bas.
@@ -70,12 +88,12 @@ interface Entry { driver: string; city: string; initial: string; accent: 'violet
 // un accord passe à « approuvé », cette personne — et elle seule — réapparaît.
 // ─────────────────────────────────────────────────────────────────────────────
 const TOUS: (Entry & { registre: string })[] = [
-  { registre: 'haitham',  driver: 'Haitham B.', city: 'Paris', initial: 'H', accent: 'violet' },
-  { registre: 'binate',   driver: 'Binate A.', city: 'Marne-la-Vallée', initial: 'B', accent: 'gold' },
-  { registre: 'zefi',     driver: 'Zefi K.', city: 'Marne-la-Vallée', initial: 'Z', accent: 'cyan' },
-  { registre: 'dragan',   driver: 'Dragan P.', city: 'Paris', initial: 'D', accent: 'violet' },
-  { registre: 'hadietou', driver: 'Hadietou', city: 'banlieue parisienne', initial: 'H', accent: 'rose' },
-  { registre: 'nikolic',  driver: 'Nikolic N.', city: 'Paris', initial: 'N', accent: 'cyan' },
+  { registre: 'haitham', driver: '', city: '', initial: 'H', accent: 'violet' },
+  { registre: 'binate', driver: '', city: '', initial: 'B', accent: 'gold' },
+  { registre: 'zefi', driver: '', city: '', initial: 'Z', accent: 'cyan' },
+  { registre: 'dragan', driver: '', city: '', initial: 'D', accent: 'violet' },
+  { registre: 'hadietou', driver: '', city: '', initial: 'H', accent: 'rose' },
+  { registre: 'nikolic', driver: '', city: '', initial: 'N', accent: 'cyan' },
 ]
 
 const ENTRIES: Entry[] = TOUS.filter((e) => temoignagePubliable(e.registre))

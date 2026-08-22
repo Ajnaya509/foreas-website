@@ -35,7 +35,7 @@ import {
 } from '@/lib/offre'
 import { PLATEFORMES, PARRAINAGE, COMPTA_PHRASES } from '@/lib/verite-commerciale'
 
-import { citationDe, personneDe, villeDe, temoignagePubliable } from '@/lib/consentements'
+import { temoignagePubliable } from '@/lib/consentements'
 
 /**
  * Les témoignages que cette page a le DROIT d'afficher.
@@ -56,9 +56,9 @@ const TEMOIGNAGES_CAP = [
 ]
   .filter(({ id }) => temoignagePubliable(id))
   .map(({ id, detail }) => ({
-    name: personneDe(id),
-    city: villeDe(id) ?? '',
-    quote: '« ' + citationDe(id) + ' »',
+    name: '',
+    city: '',
+    quote: '',
     detail,
   }))
 // ─── Types ────────────────────────────────────────────────────────────────────

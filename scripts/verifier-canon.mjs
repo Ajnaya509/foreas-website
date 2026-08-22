@@ -39,7 +39,7 @@ const RACINE = 'src'
 // Une liste recopiée finirait par oublier la septième personne du jour où on
 // l'ajoute, et la règle deviendrait aveugle précisément sur le cas neuf.
 const REGISTRE_NOMS = (() => {
-  const src = readFileSync(join(RACINE, 'lib/consentements.ts'), 'utf8')
+  const src = readFileSync(join(RACINE, 'lib/consentements.prive.ts'), 'utf8')
   return [...src.matchAll(/personne:\s*'([^']+)'/g)]
     .map((m) => m[1].split(/[\s.]/)[0])
     .filter((n) => n.length > 3)
@@ -312,6 +312,17 @@ const REGLES = [
 
 // ─── Fichiers du canon : eux CITENT les interdits pour les définir ──────────
 const EXEMPTS = [
+  // ⚠️ 22/08/2026 — LE REGISTRE A CHANGÉ DE NOM, ET SON EXEMPTION AUSSI.
+  //
+  // `lib/consentements.ts` est devenu `lib/consentements.prive.ts` (marqué
+  // `server-only`) pour que les noms et citations cessent de partir dans le
+  // paquet JavaScript. Le fichier était exempté sous son ancien nom : après le
+  // renommage, la règle « pas de citation écrite en dur » s'est mise à accuser
+  // LE REGISTRE LUI-MÊME — c'est-à-dire l'endroit où ces citations DOIVENT être.
+  //
+  // Une exemption écrite par chemin survit mal à un renommage. Elle crie fort,
+  // au moins : une exemption qui se serait tue aurait laissé passer autre chose.
+  'lib/consentements.prive.ts',
   'lib/verite-commerciale.ts',
   'lib/offre.ts',
   'lib/provenance.ts',
@@ -427,7 +438,7 @@ const REGLES_STRUCTURELLES = [
     // bord (données de démonstration, autre personne) — une règle qui crie à
     // tort finit désactivée, donc ne protège plus rien.
     concerne: /(quote|citation|témoignage)[^\n]{0,80}(Haitham|Binate|Binaté|Zephy|Dragan|Hadietou|Nikolic)|(Haitham|Binate|Binaté|Zephy|Dragan|Hadietou|Nikolic)[^\n]{0,80}«/,
-    exige: /consentements|testimonials\.data/,
+    exige: /consentements(\.prive)?|testimonials\.data/,
     quoi: 'une parole attribuée à un chauffeur filmé, hors de sa source',
     pourquoi:
       "La citation d'une personne nommée vient de src/components/zone/testimonials.data.ts (verbatim de la vidéo) ou passe par le registre src/lib/consentements.ts. La réécrire ailleurs, même « pour raccourcir », produit une phrase qu'elle n'a pas prononcée — c'est exactement ce qui est arrivé à Dragan P. le 14/08.",
@@ -501,7 +512,7 @@ for (const chemin of fichiers(RACINE)) {
   let reg = null
   try {
     dat = readFileSync('src/components/zone/testimonials.data.ts', 'utf8')
-    reg = readFileSync('src/lib/consentements.ts', 'utf8')
+    reg = readFileSync('src/lib/consentements.prive.ts', 'utf8')
   } catch {
     // Un des deux fichiers a disparu : c'est en soi une infraction, signalée plus bas.
   }
@@ -547,7 +558,7 @@ for (const chemin of fichiers(RACINE)) {
 {
   let reg = null
   try {
-    reg = readFileSync('src/lib/consentements.ts', 'utf8')
+    reg = readFileSync('src/lib/consentements.prive.ts', 'utf8')
   } catch {
     /* l'absence du registre est déjà signalée par la règle précédente */
   }
@@ -562,7 +573,15 @@ for (const chemin of fichiers(RACINE)) {
       fragments.push({ court: texte.slice(0, 28), complet: texte })
     }
     for (const chemin of fichiers(RACINE)) {
+      // ⚠️ 22/08/2026 — LE REGISTRE A ÉTÉ RENOMMÉ, CETTE EXCLUSION NON.
+      // `consentements.ts` est devenu `consentements.prive.ts` (server-only)
+      // pour que les citations cessent de partir dans le paquet JavaScript.
+      // Cette ligne visait l'ancien nom : la règle s'est mise à accuser LE
+      // REGISTRE, c'est-à-dire le seul endroit où ces citations doivent être.
+      // On garde les deux : le jour où quelqu'un recrée l'ancien fichier, il ne
+      // doit pas devenir une faille silencieuse.
       if (chemin.endsWith('src/lib/consentements.ts')) continue
+      if (chemin.endsWith('src/lib/consentements.prive.ts')) continue
       // ⚠️ 21/08/2026 — LES COMMENTAIRES SONT RETIRÉS AVANT LA RECHERCHE.
       //
       // Cette règle s'est déclenchée sur une note qui CITAIT un fragment pour
@@ -1647,7 +1666,7 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
   let surveilles = 0
   for (const f of fichiers) {
     // Le registre lui-même définit les deux : il n'est pas son propre appelant.
-    if (f.endsWith('consentements.ts')) continue
+    if (f.endsWith('consentements.ts') || f.endsWith('consentements.prive.ts')) continue
     const brut = readFileSync(f, 'utf8')
     if (!brut.includes("lib/consentements") && !brut.includes("'./consentements'")) continue
 
@@ -1961,6 +1980,99 @@ console.log('\n── Le texte des pages fabriquées en série (base de données
       }
     } catch {
       console.warn('  ⚠️  base injoignable — règle NON exécutée. Ce n’est pas un succès.')
+    }
+  }
+}
+
+// ─── LE NAVIGATEUR NE DOIT JAMAIS RECEVOIR UN NOM SANS ACCORD ──────────────
+//
+// 🔴 22/08/2026 — MESURÉ SUR LA PRODUCTION : deux fichiers JavaScript de la page
+// d'accueil, 90 539 et 13 485 octets, contenaient LES SIX NOMS du registre.
+// Chaque visiteur les téléchargeait.
+//
+// L'écran était propre. Je l'avais vérifié trois fois — v128, v144, v145.
+//
+// ⚠️ LA CAUSE : les trois corrections filtraient à l'AFFICHAGE.
+// `TOUS.filter(temoignagePubliable)` s'exécute chez le visiteur, APRÈS le
+// téléchargement. Le filtre cachait ; il n'empêchait pas d'envoyer.
+//
+// **J'ai corrigé trois fois ce qui est VU. Jamais ce qui est ENVOYÉ.**
+//
+// Cette règle vérifie les DEUX moitiés de la séparation :
+//   1. aucun composant client n'importe le registre privé ;
+//   2. la liste d'identifiants autorisée côté client correspond exactement aux
+//      accords « approuve » du registre privé — ni plus (on publierait sans
+//      accord), ni moins (on cacherait quelqu'un qui a signé).
+
+{
+  const CLIENT = 'src/lib/consentements.ts'
+  const PRIVE = 'src/lib/consentements.prive.ts'
+
+  if (!existsSync(CLIENT) || !existsSync(PRIVE)) {
+    console.warn('  ⚠️  RÈGLE NON EXÉCUTÉE : les deux moitiés du registre sont introuvables.')
+  } else {
+    // 1. Aucun composant client ne doit importer le registre privé.
+    const fautifs = []
+    const explorer = (dossier) => {
+      for (const e of readdirSync(dossier, { withFileTypes: true })) {
+        const chemin = join(dossier, e.name)
+        if (e.isDirectory()) { if (e.name !== 'node_modules') explorer(chemin); continue }
+        if (!['.ts', '.tsx'].includes(extname(e.name))) continue
+        if (chemin.endsWith('consentements.prive.ts')) continue
+        const brut = readFileSync(chemin, 'utf8')
+        const estClient = /^\s*['"]use client['"]/m.test(brut.slice(0, 400))
+        const importePrive = /from\s+['"][^'"]*consentements\.prive['"]/.test(sansCommentaires(brut))
+        if (estClient && importePrive) fautifs.push(chemin)
+      }
+    }
+    if (existsSync('src')) explorer('src')
+
+    for (const f of fautifs) {
+      infractions.push({
+        fichier: f,
+        quoi: 'un composant CLIENT importe le registre privé des accords',
+        extrait: "import … from '@/lib/consentements.prive'",
+        pourquoi:
+          'ce registre porte le nom, la citation et la ville de personnes réelles. ' +
+          'Importé côté client, il part dans le paquet JavaScript et se retrouve ' +
+          'téléchargé par chaque visiteur — accord ou pas. `server-only` fait déjà ' +
+          'échouer la fabrication ; cette règle le dit plus tôt et plus clairement.',
+      })
+    }
+
+    // 2. Les deux listes doivent dire la même chose.
+    const prive = readFileSync(PRIVE, 'utf8')
+    const approuves = [...prive.matchAll(/id:\s*'([a-z]+)'[\s\S]{0,900}?statut:\s*'approuve'/g)]
+      .map((m) => m[1])
+    const client = sansCommentaires(readFileSync(CLIENT, 'utf8'))
+    const m = client.match(/TEMOIGNAGES_AUTORISES[^=]*=\s*\[([^\]]*)\]/)
+    const declares = m ? [...m[1].matchAll(/'([a-z]+)'/g)].map((x) => x[1]) : []
+
+    const enTrop = declares.filter((d) => !approuves.includes(d))
+    const oublies = approuves.filter((a) => !declares.includes(a))
+
+    console.log(
+      `   accords : ${approuves.length} approuvé(s) au registre, ${declares.length} autorisé(s) côté client`,
+    )
+
+    if (enTrop.length > 0) {
+      infractions.push({
+        fichier: CLIENT,
+        quoi: `${enTrop.length} identifiant(s) autorisé(s) côté client SANS accord approuvé`,
+        extrait: enTrop.join(', '),
+        pourquoi:
+          'le site montrerait quelqu’un qui n’a pas signé. C’est le sens même du registre.',
+      })
+    }
+    if (oublies.length > 0) {
+      infractions.push({
+        fichier: CLIENT,
+        quoi: `${oublies.length} accord(s) signé(s) que le site cache encore`,
+        extrait: oublies.join(', '),
+        pourquoi:
+          'quelqu’un a donné son accord et reste invisible. Ce n’est pas grave pour lui, ' +
+          'mais c’est une preuve sociale perdue — et le signe que les deux listes dérivent.',
+      })
     }
   }
 }

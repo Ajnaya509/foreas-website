@@ -1,0 +1,391 @@
+import 'server-only'
+
+/**
+ * ⚠️ 22/08/2026 — CE FICHIER NE DOIT JAMAIS PARTIR DANS LE NAVIGATEUR.
+ *
+ * Il porte le nom, la citation, la ville et le chiffre autorisé de six personnes
+ * réelles. `import 'server-only'` fait échouer la fabrication si un composant
+ * client l'importe — c'est une barrière, pas une convention.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * POURQUOI CETTE SÉPARATION EXISTE
+ *
+ * Mesuré le 22/08 sur la production : DEUX fichiers JavaScript de la page
+ * d'accueil — 90 539 et 13 485 octets — contenaient les six noms. Chaque
+ * visiteur les téléchargeait.
+ *
+ * Pourtant l'écran était propre, et je l'avais vérifié trois fois.
+ *
+ * ⚠️ LA CAUSE : mes trois corrections précédentes (v128, v144, v145) filtraient
+ * à l'AFFICHAGE. `TOUS.filter(temoignagePubliable)` s'exécute chez le visiteur,
+ * APRÈS le téléchargement. Le filtre cachait, il n'empêchait pas d'envoyer.
+ *
+ * **J'ai corrigé trois fois ce qui est VU. Jamais ce qui est ENVOYÉ.**
+ *
+ * Le registre existe pour empêcher la diffusion de la parole de quelqu'un sans
+ * son accord. Un filtre côté navigateur ne peut pas remplir ce rôle : la
+ * diffusion a déjà eu lieu quand il s'exécute.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/**
+ * FOREAS — REGISTRE DE CONSENTEMENT DES TÉMOIGNAGES.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * POURQUOI CE FICHIER EXISTE
+ *
+ * Le 14/08/2026, la campagne de vérité a trouvé huit témoignages chiffrés
+ * attribués à des personnes nommées, dont la table `pieuvre_closer_testimonials`
+ * ne contenait aucune trace. Pire : deux d'entre eux concernaient des chauffeurs
+ * RÉELLEMENT filmés, à visage découvert, à qui le site faisait dire des phrases
+ * qu'ils n'avaient pas prononcées — et parfois depuis une ville où ils n'habitent
+ * pas. La parole d'un chauffeur avait été retouchée pour mieux vendre.
+ *
+ * Retirer ces phrases était nécessaire. Ça ne suffit pas : rien n'empêchait de
+ * recommencer. Ce fichier est la barrière.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * LA RÈGLE, EN UNE PHRASE
+ *
+ *   Une parole attribuée à quelqu'un ne s'affiche que si CETTE PERSONNE a validé
+ *   CETTE phrase-là. Pas « le témoignage » en général : la phrase exacte.
+ *
+ * Conséquences, toutes voulues :
+ *  · Modifier une citation déjà validée INVALIDE l'accord. Un accord porte sur
+ *    des mots, pas sur une intention. On redemande.
+ *  · Une révocation retire immédiatement la publication. Sans discussion.
+ *  · Aucun statut ne devient `approuve` tout seul. Il n'existe aucun chemin de
+ *    code qui accorde un consentement — seulement un humain qui édite ce fichier
+ *    après avoir obtenu un accord écrit.
+ *  · Un chiffre dit par un chauffeur reste SA parole. « +30 % » est un
+ *    témoignage individuel, jamais une performance moyenne de FOREAS.
+ *
+ * ⚠️ Ce registre GARDE l'affichage (cf. `citationPubliable`). Il ne suffit pas de
+ * le remplir : c'est lui qui décide ce qui sort à l'écran.
+ */
+
+export type StatutConsentement = 'en_attente' | 'approuve' | 'refuse' | 'revoque'
+
+export interface Consentement {
+  /** Identifiant du témoignage, aligné sur `testimonials.data.ts`. */
+  id: string
+  /** Comment la personne est nommée à l'écran. */
+  personne: string
+  /** Ce qui est publié : vidéo, citation écrite, ou les deux. */
+  media: 'video' | 'citation' | 'video+citation'
+  /**
+   * La phrase EXACTE autorisée, au caractère près.
+   * C'est elle qui fait foi : si le texte affiché diffère, rien ne s'affiche.
+   */
+  citationAutorisee: string
+  /** Le chiffre autorisé, s'il y en a un. Reste la parole de la personne. */
+  chiffreAutorise: string | null
+  /** La ville telle qu'elle accepte qu'on l'écrive. */
+  villeAffichee: string | null
+  /** Où cette parole peut apparaître. */
+  portee: ReadonlyArray<'site' | 'publicite' | 'reseaux'>
+  statut: StatutConsentement
+  dateDemande: string | null
+  dateAccord: string | null
+  /** Comment l'accord a été obtenu — jamais un contenu personnel, une référence. */
+  preuve: string | null
+}
+
+/**
+ * LE REGISTRE.
+ *
+ * Les six chauffeurs ci-dessous ont été RÉELLEMENT filmés : les vidéos existent,
+ * elles sont hébergées, ce sont eux. Ce qui manque est l'accord ÉCRIT sur la
+ * phrase exacte à publier. Tant qu'il manque, rien de nominatif ne sort.
+ *
+ * Obtenir ces accords ne se code pas : c'est un message à envoyer, et il ne peut
+ * l'être que par quelqu'un qui les connaît. Voir le rapport de session.
+ */
+export const REGISTRE_CONSENTEMENTS: readonly Consentement[] = [
+  {
+    id: 'haitham',
+    personne: 'Haitham B.',
+    media: 'video+citation',
+    citationAutorisee:
+      "Foreas m'aide à me concentrer à 100 % sur mon boulot. Quand on a besoin de quoi que ce soit, on a une réponse instantanément.",
+    chiffreAutorise: null,
+    villeAffichee: 'Paris',
+    portee: ['site'],
+    statut: 'en_attente',
+    dateDemande: null,
+    dateAccord: null,
+    preuve: null,
+  },
+  {
+    id: 'binate',
+    personne: 'Binate A.',
+    media: 'video+citation',
+    citationAutorisee:
+      "Mes revenus sont montés de 30 %. Je ne travaille plus des heures infinies comme dans le temps. Travailler moins pour avoir plus, c'est ça la différence.",
+    // Son chiffre, dit par lui face caméra. Il reste SA parole : on ne le
+    // transforme jamais en « les chauffeurs FOREAS gagnent +30 % ».
+    chiffreAutorise: '+30 % de revenus',
+    villeAffichee: 'Marne-la-Vallée',
+    portee: ['site'],
+    statut: 'en_attente',
+    dateDemande: null,
+    dateAccord: null,
+    preuve: null,
+  },
+  {
+    // 20/08/2026 — PRÉNOM CORRIGÉ. La base dit « Zefi Kitengue » ; la carte vidéo
+    // et ce registre écrivaient « Zephy ». Un prénom mal orthographié sous le
+    // visage de quelqu'un est un tort à part entière, et il rendait la clé du
+    // registre introuvable pour la garde d'affichage.
+    id: 'zefi',
+    personne: 'Zefi K.',
+    media: 'video+citation',
+    // ⚠️ TRANSCRIPTION NON VALIDÉE PAR LA PERSONNE — enregistrée le 20/08/2026.
+    // Ce texte n'a pas été relu par l'intéressé : il est repris du site, où il
+    // existait en plusieurs versions divergentes. L'enregistrer ici ne le rend
+    // pas approuvé — ça empêche seulement qu'il continue de dériver d'une page
+    // à l'autre. Le statut reste « en_attente ».
+    citationAutorisee:
+      "Je connais presque tous les hôtels autour de Disney. C'est plus facile pour moi de me rendre rapidement.",
+    chiffreAutorise: null,
+    villeAffichee: null,
+    portee: ['site'],
+    statut: 'en_attente',
+    dateDemande: null,
+    dateAccord: null,
+    preuve: null,
+  },
+  {
+    id: 'dragan',
+    personne: 'Dragan P.',
+    media: 'video+citation',
+    citationAutorisee:
+      "Plus de deux ans avec FOREAS, aucun souci. Tout se passe pour le mieux. J'y suis, j'y reste.",
+    chiffreAutorise: null,
+    villeAffichee: 'Paris',
+    portee: ['site'],
+    statut: 'en_attente',
+    dateDemande: null,
+    dateAccord: null,
+    preuve: null,
+  },
+  {
+    id: 'hadietou',
+    personne: 'Hadietou',
+    media: 'video+citation',
+    // ⚠️ TRANSCRIPTION NON VALIDÉE PAR LA PERSONNE — enregistrée le 20/08/2026.
+    // Ce texte n'a pas été relu par l'intéressé : il est repris du site, où il
+    // existait en plusieurs versions divergentes. L'enregistrer ici ne le rend
+    // pas approuvé — ça empêche seulement qu'il continue de dériver d'une page
+    // à l'autre. Le statut reste « en_attente ».
+    citationAutorisee:
+      "FOREAS représente un confort et un futur. Quand j'envoie un mail, on me répond dans les 24 heures. Je le recommanderais à mes amis proches.",
+    chiffreAutorise: null,
+    villeAffichee: null,
+    portee: ['site'],
+    statut: 'en_attente',
+    dateDemande: null,
+    dateAccord: null,
+    preuve: null,
+  },
+  {
+    id: 'nikolic',
+    personne: 'Nikolic N.',
+    media: 'video+citation',
+    // ⚠️ TRANSCRIPTION NON VALIDÉE PAR LA PERSONNE — enregistrée le 20/08/2026.
+    // Ce texte n'a pas été relu par l'intéressé : il est repris du site, où il
+    // existait en plusieurs versions divergentes. L'enregistrer ici ne le rend
+    // pas approuvé — ça empêche seulement qu'il continue de dériver d'une page
+    // à l'autre. Le statut reste « en_attente ».
+    citationAutorisee:
+      "Société sérieuse. Quand on a besoin d'une explication, ils sont là, à notre écoute.",
+    chiffreAutorise: null,
+    villeAffichee: null,
+    portee: ['site'],
+    statut: 'en_attente',
+    dateDemande: null,
+    dateAccord: null,
+    preuve: null,
+  },
+] as const
+
+/** Normalise avant comparaison : espaces et apostrophes ne font pas un accord différent. */
+function normaliser(texte: string): string {
+  return texte
+    .replace(/[’‘]/g, "'")
+    .replace(/[«»"]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+/**
+ * Cette citation peut-elle être publiée, telle quelle, au nom de cette personne ?
+ *
+ * Répond `false` par défaut. Un consentement absent, en attente, refusé ou
+ * révoqué donne `false`. Une citation qui a DÉRIVÉ du texte validé donne `false`
+ * aussi — c'est le point qui compte : un accord porte sur des mots précis, et
+ * réécrire « aucun souci » en « aucun souci de paiement » n'est pas une
+ * reformulation, c'est une autre affirmation, sur un autre sujet.
+ */
+/**
+ * Quatre verdicts possibles pour une citation sur le point de s'afficher.
+ *
+ * Séparer ces cas, plutôt que de renvoyer oui/non, permet de distinguer ce qui
+ * est GRAVE de ce qui est seulement EN ATTENTE :
+ *  · `alteree`      — la phrase affichée ne correspond pas au verbatim enregistré.
+ *                     C'est le cas grave, celui du 14/08. Elle ne doit jamais sortir.
+ *  · `conforme`     — mot pour mot le verbatim. Reste soumise au statut d'accord
+ *                     pour le régime strict, mais rien n'a été déformé.
+ *  · `sans_verbatim`— personne n'a encore transcrit ce que dit la vidéo. On ne peut
+ *                     donc RIEN vérifier : à signaler, pas à faire semblant.
+ *  · `inconnue`     — cette personne n'est pas au registre du tout.
+ */
+export type VerdictCitation = 'conforme' | 'alteree' | 'sans_verbatim' | 'inconnue'
+
+/**
+ * Compare une citation affichée au verbatim enregistré, SANS regarder le statut
+ * d'accord. Réutilise `normaliser` — la règle de comparaison n'existe qu'ici.
+ */
+export function verdictCitation(id: string, citationAffichee: string): VerdictCitation {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) return 'inconnue'
+  if (!c.citationAutorisee) return 'sans_verbatim'
+  return normaliser(c.citationAutorisee) === normaliser(citationAffichee) ? 'conforme' : 'alteree'
+}
+
+export function citationPubliable(id: string, citationAffichee: string): boolean {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) return false
+  if (c.statut !== 'approuve') return false
+  if (!c.citationAutorisee) return false
+  return normaliser(c.citationAutorisee) === normaliser(citationAffichee)
+}
+
+/** Le chiffre de cette personne peut-il être affiché ? */
+export function chiffrePubliable(id: string, chiffreAffiche: string): boolean {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c || c.statut !== 'approuve' || !c.chiffreAutorise) return false
+  return normaliser(c.chiffreAutorise) === normaliser(chiffreAffiche)
+}
+
+/** Les témoignages actuellement publiables. Vide tant qu'aucun accord n'est obtenu. */
+export function consentementsApprouves(): readonly Consentement[] {
+  return REGISTRE_CONSENTEMENTS.filter((c) => c.statut === 'approuve')
+}
+
+/** Ce qu'il reste à obtenir — sert au rapport, jamais à l'affichage. */
+export function consentementsManquants(): readonly Consentement[] {
+  return REGISTRE_CONSENTEMENTS.filter((c) => c.statut !== 'approuve')
+}
+
+/**
+ * LE TEXTE EXACT, ET UN SEUL ENDROIT OÙ IL VIT.
+ *
+ * 20/08/2026 — mesuré : la parole de la même personne existait en QUATRE versions
+ * différentes, dans trois fichiers. Binaté avait deux raccourcis distincts, aucun
+ * n'étant ce qu'il a dit. Haitham perdait le mot « instantanément ». Dragan voyait
+ * sa première phrase réécrite.
+ *
+ * Personne n'a triché : chacun a raccourci « pour que ça tienne dans la carte ».
+ * C'est précisément comme ça qu'une parole se déforme — par petites retouches
+ * raisonnables, dans des fichiers qui ne se parlent pas.
+ *
+ * Toute surface qui affiche une citation lit MAINTENANT cette fonction. Une copie
+ * littérale dans un composant est un futur écart : le canon la refuse.
+ */
+export function citationDe(id: string): string {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) throw new Error(`[consentements] personne inconnue : ${id}`)
+  return c.citationAutorisee
+}
+
+/** Le prénom affiché, lui aussi depuis le registre — même raison. */
+export function personneDe(id: string): string {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) throw new Error(`[consentements] personne inconnue : ${id}`)
+  return c.personne
+}
+
+/** La ville affichée. `null` quand la personne n'a pas accepté qu'on la nomme. */
+export function villeDe(id: string): string | null {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) throw new Error(`[consentements] personne inconnue : ${id}`)
+  return c.villeAffichee
+}
+
+/**
+ * ⚠️ 21/08/2026 — LE COMMENTAIRE CI-DESSUS ÉTAIT UN FAUX TÉMOIN.
+ *
+ * Il affirmait : « Toute surface qui affiche une citation lit MAINTENANT cette
+ * fonction. » C'était faux. `/cap` recopiait trois citations en dur, sans même
+ * importer ce fichier. Et l'une d'elles était altérée :
+ *
+ *   registre : « Foreas m'aide à me concentrer à 100 % sur mon boulot. […] »
+ *   /cap     : « Je me concentre à 100 % sur mon boulot. »
+ *
+ * Retirer « Foreas m'aide à » ne raccourcit pas la phrase : cela lui retire son
+ * sujet. Elle ne dit plus que FOREAS l'aide, elle dit qu'il se concentre. On lui
+ * fait décrire sa propre discipline et on l'affiche comme un témoignage produit.
+ *
+ * C'est la MÊME famille que l'incident du 14/08 (« aucun souci » devenu « aucun
+ * souci de PAIEMENT »). Et la règle du canon ne l'a pas vue : elle cherchait des
+ * COPIES littérales du verbatim. Une paraphrase n'est pas une copie. Une règle
+ * qui traque la recopie ne protège pas de la réécriture.
+ */
+
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * LE TÉMOIGNAGE ENTIER PEUT-IL ÊTRE PUBLIÉ ? — AJOUTÉ LE 21/08/2026
+ *
+ * Jusqu'ici, le site distinguait trois choses et n'en gardait qu'une :
+ *   · la CITATION passait par `citationPubliable()` — mais en régime souple ;
+ *   · le CHIFFRE passait par `chiffrePubliable()` — qui n'était appelée nulle
+ *     part avant le 21/08 ;
+ *   · la VIDÉO ne passait par rien du tout.
+ *
+ * Or c'est la vidéo qui expose le plus : un visage découvert, une voix, une
+ * personne identifiable, sur un site commercial. Le raisonnement qui la laissait
+ * tourner — « c'est lui qui parle, avec ses mots » — décrit qui a prononcé la
+ * phrase, pas qui a autorisé sa publication. Les deux sont différents.
+ *
+ * ⚠️ ÉTAT AU 21/08/2026 : les SIX accords sont au statut « en attente », avec
+ * `preuve: null`. Aucun n'est signé. Cette fonction renvoie donc `false` pour
+ * tout le monde, et toutes les preuves sociales du site disparaissent.
+ *
+ * Ce n'est pas un effet de bord : c'est la conséquence exacte de l'absence
+ * d'accord. « Probablement réel » ne suffit pas pour publier le visage de
+ * quelqu'un.
+ *
+ * POUR LES RALLUMER : passer le `statut` à `approuve` ET renseigner `preuve`
+ * pour chaque personne dont l'accord écrit est obtenu. Une par une — pas de
+ * drapeau global, parce que chaque accord appartient à une personne différente.
+ */
+export function temoignagePubliable(id: string): boolean {
+  const c = REGISTRE_CONSENTEMENTS.find((x) => x.id === id)
+  if (!c) return false
+  return c.statut === 'approuve' && c.portee.includes('site')
+}
+
+/** Le même garde, à partir du nom affiché — pour les composants qui n'ont que ça. */
+export function temoignagePubliableParNom(nom: string): boolean {
+  const cle = nom.toLowerCase().split(/[\s.]/)[0].replace(/[^a-zà-ÿ]/g, '')
+  return temoignagePubliable(cle)
+}
+
+/** Y a-t-il au moins une preuve sociale publiable ? Sinon, la section se retire. */
+/**
+ * ⚠️ NE PAS UTILISER POUR DÉCIDER D'UN AFFICHAGE. Gardé pour les diagnostics.
+ *
+ * Le 21/08/2026, quatre composants s'en servaient comme d'un garde. C'est un
+ * « au moins un », donc un « TOUS ou AUCUN » : le jour où UNE personne signe,
+ * il rend `true` et les six s'affichent, dont cinq sans accord.
+ *
+ * Il était juste tant que rien n'avait changé. Une protection dont la justesse
+ * dépend du fait que rien n'a encore bougé n'est pas une protection : c'est un
+ * délai. Utilise `temoignagePubliable(id)`, personne par personne.
+ */
+export function auMoinsUnTemoignagePubliable(): boolean {
+  return REGISTRE_CONSENTEMENTS.some((c) => c.statut === 'approuve' && c.portee.includes('site'))
+}

@@ -1,5 +1,23 @@
 'use client'
 
+/**
+ * ⚠️ 22/08/2026 — LES DONNÉES PERSONNELLES ONT ÉTÉ RETIRÉES DE CE FICHIER CLIENT.
+ *
+ * Mesuré sur la production : deux fichiers JavaScript de l'accueil (90 539 et
+ * 13 485 octets) portaient les six noms. Le filtre `temoignagePubliable()`
+ * s'exécute chez le visiteur, APRÈS le téléchargement : il cachait, il
+ * n'empêchait pas d'envoyer.
+ *
+ * Nom, citation et ville vivent désormais dans `src/lib/consentements.prive.ts`,
+ * marqué `server-only`. Le navigateur ne reçoit qu'une liste d'identifiants
+ * autorisés — vide tant qu'aucun accord n'est signé.
+ *
+ * POUR RESTAURER une personne le jour où son accord est signé : ajouter son
+ * identifiant à `TEMOIGNAGES_AUTORISES`, puis passer son nom et sa citation en
+ * PROPRIÉTÉ depuis un composant serveur. Jamais en les réécrivant ici.
+ */
+
+
 import { motion, useInView } from 'framer-motion'
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { useIsMobile } from '@/hooks/useDevicePerf'
@@ -12,7 +30,7 @@ import { COMMUNAUTE_PHRASES } from '@/lib/verite-commerciale'
 // dire à quelqu'un ce qu'il n'a pas dit. Le texte vit maintenant dans
 // src/lib/consentements.ts, et lui seul. Réécrire une citation ici est refusé par
 // `npm run canon`.
-import { citationDe, temoignagePubliable } from '@/lib/consentements'
+import { temoignagePubliable } from '@/lib/consentements'
 
 // Lazy load Mux Player — only loaded when user clicks play (saves ~200KB from critical path)
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), { ssr: false })
@@ -82,7 +100,7 @@ const TESTIMONIALS: Testimonial[] = [
     // aller. » n'apparaît dans AUCUN de ses propos enregistrés. Remplacé par deux
     // de ses key_quotes, mot pour mot.
     registre: 'binate' as const,
-    quote: citationDe('binate'),
+    quote: '',
     playbackId: 'i9Bm4N9eyzCeQN1Ku7wutBb9yj7nUtr1pSrGJYQBfKI',
     accentColor: '#00d4ff',
   },
@@ -101,7 +119,7 @@ const TESTIMONIALS: Testimonial[] = [
     // FAUX : « FOREAS a transformé ma vision du métier… » n'existe dans aucun de
     // ses propos. Remplacé par sa key_quote — son terrain, pas le produit.
     registre: 'zefi' as const,
-    quote: citationDe('zefi'),
+    quote: '',
     playbackId: 'vX1Hg6jKGiFpSJvQW900FrKMrDIfhxHQgxCGYAD3wjEY',
     accentColor: '#a855f7',
   },
@@ -118,7 +136,7 @@ const TESTIMONIALS: Testimonial[] = [
     // FAUX : « Moins de temps à attendre, plus de temps à rouler » était du
     // copywriting posé sur un visage réel. Remplacé par ses propos filmés.
     registre: 'haitham' as const,
-    quote: citationDe('haitham'),
+    quote: '',
     playbackId: '8nSxSV4hNxSuC8muZ02djVGZVFh3SgeybyCnfbAJ801r00',
     accentColor: '#22c55e',
   },
@@ -134,7 +152,7 @@ const TESTIMONIALS: Testimonial[] = [
     // FAUX : « FOREAS c'est du sérieux. On sent que c'est pensé par des gens qui
     // comprennent le terrain. » n'est pas de lui. Remplacé par ses propos filmés.
     registre: 'nikolic' as const,
-    quote: citationDe('nikolic'),
+    quote: '',
     playbackId: '6PbitAE7sjbgTlMsdjI7EYJ01OsX9GnBbQNvj1TFhsow',
     accentColor: '#f59e0b',
   },
@@ -153,7 +171,7 @@ const TESTIMONIALS: Testimonial[] = [
     // FAUX : « Je recommande FOREAS à tous les chauffeurs… » n'est pas de lui.
     // Remplacé par ses propos filmés (au conditionnel, comme il le dit).
     registre: 'hadietou' as const,
-    quote: citationDe('hadietou'),
+    quote: '',
     playbackId: 'tjnuX01n9h01GfOA501C02a9lIVVbGnib02Z017POgodDpfj4',
     accentColor: '#ef4444',
   },
@@ -176,7 +194,7 @@ const TESTIMONIALS: Testimonial[] = [
     // de la phrase alors qu'elle en est le sujet. Les cinq autres lisaient
     // déjà le registre.
     registre: 'dragan' as const,
-    quote: citationDe('dragan'),
+    quote: '',
     playbackId: 'SeKV8Lpn7H2XhfYF1oKO54zP008A3Dv4qPuCKizybyA4',
     accentColor: '#06b6d4',
   },

@@ -5,7 +5,26 @@ import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Play, Pause } from 'lucide-react'
 import type { Testimonial } from './testimonials.data'
-import { citationPubliable, verdictCitation, chiffrePubliable, temoignagePubliableParNom } from '@/lib/consentements'
+import { temoignagePubliable, temoignagePubliableParNom } from '@/lib/consentements'
+
+/**
+ * ⚠️ 22/08/2026 — `citationPubliable`, `verdictCitation` et `chiffrePubliable`
+ * NE PEUVENT PLUS VIVRE ICI.
+ *
+ * Ces trois fonctions comparent un texte affiché au VERBATIM autorisé. Elles ont
+ * donc besoin du verbatim — c'est-à-dire de la parole de la personne. Les garder
+ * dans un composant client obligeait à embarquer ce verbatim dans le paquet
+ * JavaScript, donc à le distribuer à chaque visiteur.
+ *
+ * Elles restent dans `consentements.prive.ts` (server-only) et servent aux
+ * composants serveur. Ici, la seule question légitime est binaire : cette
+ * personne a-t-elle signé ? Tant que non, rien ne s'affiche, et la question du
+ * verbatim ne se pose pas.
+ */
+const citationPubliable = (cle: string) => temoignagePubliable(cle)
+const chiffrePubliable = (cle: string) => temoignagePubliable(cle)
+const verdictCitation = (cle: string): 'conforme' | 'alteree' | 'sans_verbatim' | 'inconnue' =>
+  temoignagePubliable(cle) ? 'conforme' : 'inconnue'
 
 /**
  * MuxPlayer — chargement dynamique côté client uniquement (Web Component).
@@ -56,7 +75,7 @@ function badgeAffichable(t: Testimonial): boolean {
   const porteUnChiffre = /\d/.test(badge)
   if (!porteUnChiffre) return true
   const cle = t.name.toLowerCase().split(/[\s.]/)[0].replace(/[^a-zà-ÿ]/g, '')
-  return chiffrePubliable(cle, badge)
+  return chiffrePubliable(cle)
 }
 
 function citationAffichable(t: Testimonial): boolean {
@@ -64,9 +83,9 @@ function citationAffichable(t: Testimonial): boolean {
 
   // Régime strict : seule une phrase formellement approuvée sort. Aujourd'hui
   // aucun des six accords n'est signé — l'activer viderait les six cartes.
-  if (REGIME_STRICT) return citationPubliable(cle, t.quoteShort)
+  if (REGIME_STRICT) return citationPubliable(cle)
 
-  const verdict = verdictCitation(cle, t.quoteShort)
+  const verdict = verdictCitation(cle)
   if (verdict === 'alteree') return false   // le cas grave : jamais à l'écran
   if (verdict === 'inconnue') return false  // hors registre : on n'invente pas
   return true                                // conforme, ou pas encore transcrite
