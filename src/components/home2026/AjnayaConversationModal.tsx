@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { X, Send, MapPin, TrendingUp, TrendingDown, Volume2, MessageCircle, VolumeX } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { recordSearch } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { expandPoolCode } from '@/lib/expandPoolCode'
@@ -839,11 +839,24 @@ export default function AjnayaConversationModal({
     [callModal]
   )
 
-  const waUrl = buildWAUrl({
+  /**
+   * ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
+   *
+   * L'identifiant de conversation reste la référence envoyée dans le message :
+   * il relie WhatsApp à la discussion que le chauffeur vient d'avoir, ce qui vaut
+   * mieux que son appareil. Le passage enregistre en plus le badge appareil dans
+   * l'événement, donc la jointure existe des deux côtés.
+   *
+   * Ce qui change : le clic est compté côté serveur, y compris sans JavaScript,
+   * et l'origine (campagne, parrain) est relue dans le `Referer`.
+   */
+  const waUrl = lienPassageWhatsApp({
     section: 'hero_zone',
     zone: zoneData?.zone_match ?? inputValue,
-    // Raccordement modal ↔ WhatsApp : la Pieuvre retrouve la session web du prospect.
-    ref: sessionId,
+    sessionConversation: sessionId,
+    page: '/',
+    intention: 'zones',
+    emplacement: 'modale_ajnaya',
   })
 
   const showWACTA = turn >= 2 && !isLoading

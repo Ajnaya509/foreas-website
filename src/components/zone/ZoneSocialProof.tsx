@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { COMMUNAUTE } from '@/lib/verite-commerciale'
 import TestimonialCarousel from './TestimonialCarousel'
 
@@ -29,7 +29,12 @@ export default function ZoneSocialProof() {
     }
   }
 
-  const waUrl = buildWAUrl({ section: 'social_proof' })
+  // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
+  // Le lien servi ne porte plus d'adresse `wa.me` : le badge appareil (cookie
+  // `httpOnly`) fuitait dans le HTML, et 9 boutons sur 11 partaient sans référence
+  // et sans comptage. Le serveur lit le cookie au clic, compte, compose le message
+  // et redirige. Voir `src/app/wa/route.ts`.
+  const waUrl = lienPassageWhatsApp({ section: 'social_proof', page: '/ou-ca-paie', intention: 'communaute', emplacement: 'preuve_sociale' })
 
   // 🔴 21/08/2026 — CETTE SECTION AFFIRMAIT UN CONSENTEMENT QUE LE REGISTRE NIE.
   //

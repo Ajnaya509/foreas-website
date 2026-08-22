@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Satellite, Brain, MessageSquare, ArrowRight, MessageCircle } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { PLATEFORMES_PHRASES } from '@/lib/verite-commerciale'
 
 /**
@@ -22,7 +22,12 @@ export default function ZoneMechanismVisual() {
     }
   }
 
-  const waUrl = buildWAUrl({ section: 'mechanism' })
+  // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
+  // Le lien servi ne porte plus d'adresse `wa.me` : le badge appareil (cookie
+  // `httpOnly`) fuitait dans le HTML, et 9 boutons sur 11 partaient sans référence
+  // et sans comptage. Le serveur lit le cookie au clic, compte, compose le message
+  // et redirige. Voir `src/app/wa/route.ts`.
+  const waUrl = lienPassageWhatsApp({ section: 'mechanism', page: '/ou-ca-paie', intention: 'ajnaya', emplacement: 'mecanisme' })
 
   return (
     <section className="relative py-16 sm:py-24 px-4 border-y border-white/[0.06]">

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 
 /**
  * ZonePlanTimeline — Section 5 plan en 3 étapes (Miller StoryBrand SB7)
@@ -20,7 +20,12 @@ export default function ZonePlanTimeline() {
     }
   }
 
-  const waUrl = buildWAUrl({ section: 'plan' })
+  // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
+  // Le lien servi ne porte plus d'adresse `wa.me` : le badge appareil (cookie
+  // `httpOnly`) fuitait dans le HTML, et 9 boutons sur 11 partaient sans référence
+  // et sans comptage. Le serveur lit le cookie au clic, compte, compose le message
+  // et redirige. Voir `src/app/wa/route.ts`.
+  const waUrl = lienPassageWhatsApp({ section: 'plan', page: '/ou-ca-paie', intention: 'ajnaya', emplacement: 'plan_3_etapes' })
 
   return (
     <section className="relative py-16 sm:py-24 px-4">

@@ -29,7 +29,7 @@ import { useTypewriter } from '@/hooks/useTypewriter'
 import TestimonialVideoCard from '@/components/zone/TestimonialVideoCard'
 import { TESTIMONIALS } from '@/components/zone/testimonials.data'
 import { InkGradientButton } from '@/components/ui'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { mesurer } from '@/lib/mesure'
 import { useIsMobile } from '@/hooks/useDevicePerf'
 import SmoothScroll from '@/components/experience/SmoothScroll'
@@ -149,40 +149,27 @@ function DesktopZoneSearch({ geoCity, onSubmit }: { geoCity?: string | null; onS
   )
 }
 
-interface ExperienceClientProps {
-  geoCity?: string | null
-  /** Badge appareil `foreas_vid` lu côté serveur (httpOnly, illisible d'ici).
-   *  C'est la clé qui relie ce que la personne a vu sur le site à ce qu'elle
-   *  écrit ensuite sur WhatsApp. Voir le commentaire dans `src/app/page.tsx`. */
-  refVisite?: string | null
-}
+interface ExperienceClientProps { geoCity?: string | null }
 
-export default function ExperienceClient({ geoCity, refVisite }: ExperienceClientProps) {
+export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
   const [showCta, setShowCta] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalZone, setModalZone] = useState('')
   // `ref` n'est ajouté que s'il existe vraiment : `undefined` laisse le message
   // exactement tel qu'il était. Pas de valeur inventée.
-  const waFinal = buildWAUrl({ section: 'final', ref: refVisite ?? undefined })
-
   /**
-   * ⚠️ CES DEUX SORTIES N'ÉTAIENT PAS COMPTÉES.
+   * ⚠️ 22/08/2026, SECONDE PASSE — LE LIEN NE PORTE PLUS L'ADRESSE WHATSAPP.
    *
-   * Le chemin principal du site — celui par lequel la conviction se construit —
-   * n'apparaissait dans aucune mesure. On savait combien de gens allaient vers
-   * la caisse, jamais combien allaient parler à Ajnaya.
+   * La v150 servait `https://wa.me/…?text=…(réf <badge appareil>)`. Le badge
+   * (cookie `httpOnly`) se retrouvait donc EN CLAIR dans le HTML, 3 fois. Le
+   * lien pointe maintenant vers `/wa` : le serveur lit le cookie au clic,
+   * compte, compose le message et redirige.
    *
-   * `mesurer` joint l'origine complète (campagne, support, parrain) lue dans
-   * l'adresse, et `/api/mesure` l'écrit avec le même badge appareil que celui
-   * parti dans le message. Les deux bouts portent enfin la même clé.
+   * Le comptage côté navigateur a disparu avec lui — sinon chaque clic aurait
+   * compté deux fois.
    */
-  const compterWhatsApp = (ou: string) =>
-    mesurer('WhatsAppClick', {
-      page: '/',
-      intention: 'ajnaya',
-      audience: 'chauffeur',
-      promesse: ou,
-    })
+  const waHaut = lienPassageWhatsApp({ section: 'final', page: '/', intention: 'ajnaya', emplacement: 'barre_haute' })
+  const waCollante = lienPassageWhatsApp({ section: 'final', page: '/', intention: 'ajnaya', emplacement: 'barre_collante' })
   // Desktop (≥768px, seuil aligné sur les breakpoints md: de la page) : la modale de la home
   // (AjnayaConversationModal) remplace le mockup téléphone — le format phone-frame ne doit
   // exister QUE sur mobile (retour Chandler explicite).
@@ -334,7 +321,7 @@ export default function ExperienceClient({ geoCity, refVisite }: ExperienceClien
           <Link href="/" aria-label="FOREAS — Accueil">
             <ForeasLogo variant="mini" className="h-6 w-auto text-[#F8FAFC]" />
           </Link>
-          <a href={waFinal} onClick={() => compterWhatsApp('barre_haute')} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/[0.14] bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-bold transition active:scale-[0.96] active:bg-white/[0.09]">
+          <a href={waHaut} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/[0.14] bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-bold transition active:scale-[0.96] active:bg-white/[0.09]">
             WhatsApp
           </a>
         </div>
@@ -701,8 +688,7 @@ export default function ExperienceClient({ geoCity, refVisite }: ExperienceClien
           </motion.div>
         </div>
         <a
-          href={waFinal}
-          onClick={() => compterWhatsApp('barre_collante')}
+          href={waCollante}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Parler à Ajnaya sur WhatsApp"

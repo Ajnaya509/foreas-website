@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, MessageCircle, ArrowRight } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { useOverlayLock } from '@/lib/overlayStore'
 import { authUrls } from '@/lib/auth-urls'
 import { useLienOffre } from '@/hooks/useLienOffre'
@@ -42,9 +42,23 @@ export default function HomeHeaderCream() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // L'action principale mène à l'offre. WhatsApp reste, en second.
+  // ⚠️ 22/08/2026 — CE COMMENTAIRE DISAIT L'INVERSE DU PARCOURS RÉEL.
+  //
+  // Il affirmait « l'action principale mène à l'offre, WhatsApp reste en second ».
+  // Le parcours FOREAS est : Ajnaya → discussion → WhatsApp → paiement quand le
+  // chauffeur est convaincu. **WhatsApp est le chemin principal.** Le paiement
+  // direct sert celui qui a DÉJÀ décidé.
+  //
+  // Cet en-tête est celui de la surface Ivoire (campagnes), où le visiteur arrive
+  // déjà informé. La disposition ne change pas ici — mais la phrase qui la
+  // justifiait était fausse, et c'est elle qu'aurait lue le prochain développeur.
   const urlOffre = useLienOffre('general')
-  const urlWhatsApp = buildWAUrl({ section: 'final' })
+  // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
+  // Le lien servi ne porte plus d'adresse `wa.me` : le badge appareil (cookie
+  // `httpOnly`) fuitait dans le HTML, et 9 boutons sur 11 partaient sans référence
+  // et sans comptage. Le serveur lit le cookie au clic, compte, compose le message
+  // et redirige. Voir `src/app/wa/route.ts`.
+  const urlWhatsApp = lienPassageWhatsApp({ section: 'final', page: '/', intention: 'general', emplacement: 'entete' })
 
   function clicPrincipal(emplacement: string) {
     mesurer('PrimaryCTAClick', {
@@ -56,13 +70,18 @@ export default function HomeHeaderCream() {
     })
   }
 
-  function clicWhatsApp(emplacement: string) {
-    mesurer('WhatsAppClick', {
-      page: '/',
-      intention: 'general',
-      audience: 'chauffeur',
-      detail: { emplacement },
-    })
+  /**
+   * ⚠️ 22/08/2026 — LE COMPTAGE A ÉTÉ RETIRÉ D'ICI, PAS SUPPRIMÉ.
+   *
+   * Le lien passe désormais par `/wa`, et c'est le serveur qui compte
+   * (`src/app/wa/route.ts`). Garder AUSSI cet appel ferait compter chaque
+   * clic DEUX fois. Un compteur qui double est pire qu'un compteur absent :
+   * il inspire confiance.
+   *
+   * La fonction reste, vide, pour ne pas toucher à ses appelants.
+   */
+  function clicWhatsApp(_emplacement: string) {
+    /* compté côté serveur, dans /wa */
   }
 
   return (

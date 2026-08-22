@@ -31,7 +31,7 @@ import { MessageCircle, Send } from 'lucide-react'
 import posthog from 'posthog-js'
 import { streamAjnayaChat, StreamUnavailableError } from '@/lib/ajnayaStream'
 import { getSessionId, getDevice } from '@/lib/ajnaya-analytics'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import { readVisitState, recordSearch } from '@/lib/sarcasticVisits'
 import { useTypewriter } from '@/hooks/useTypewriter'
@@ -323,8 +323,27 @@ export default function LivePhone({ geoCity }: LivePhoneProps) {
     return () => { cancelled = true }
   }, [showWa, identityId, waHref, messages])
 
-  // Repli honnête tant que le billet n'est pas résolu (identity pas encore connue) — jamais d'écran figé.
-  const waUrl = waHref || buildWAUrl({ section: 'experience_phone', ref: sessionId })
+  /**
+   * Repli honnête tant que le billet n'est pas résolu (identité pas encore
+   * connue) — jamais d'écran figé.
+   *
+   * ⚠️ 22/08/2026 — `waHref` RESTE PRIORITAIRE, ET C'EST IMPORTANT.
+   *
+   * `waHref` est un lien délivré par le serveur (`/api/app/issue-handoff`) qui
+   * porte l'état complet de la conversation. Il vaut mieux que tout ce que ce
+   * composant pourrait fabriquer. On ne le remplace pas : on améliore seulement
+   * le REPLI, qui passe désormais par `/wa` — clic compté côté serveur, origine
+   * relue dans le `Referer`, badge appareil enregistré sans jamais être servi.
+   */
+  const waUrl =
+    waHref ||
+    lienPassageWhatsApp({
+      section: 'experience_phone',
+      sessionConversation: sessionId,
+      page: '/',
+      intention: 'ajnaya',
+      emplacement: 'telephone_vivant',
+    })
 
   return (
     // Même cadre que les scènes cinéma et les 4 features (PhoneFrame, aspect-[430/902]) — avant

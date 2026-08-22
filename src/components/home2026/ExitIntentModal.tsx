@@ -27,6 +27,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X, Sparkles, ArrowRight } from 'lucide-react'
 import { haptic } from '@/lib/haptic'
@@ -54,32 +55,36 @@ const WA_TEXT = encodeURIComponent(
 //
 // L'adresse est désormais construite à l'ouverture, via le propriétaire commun
 // de la reprise, en conservant `utm_*` et `ref`.
-const WA_URL_REPLI = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`
 
 interface ExitIntentModalProps {
   disabled?: boolean
 }
 
 export default function ExitIntentModal({ disabled = false }: ExitIntentModalProps) {
-  // ⚠️ 22/08 — CONSTRUIT À L'OUVERTURE, PAS UNE CONSTANTE DE MODULE.
-  //
-  // Une constante figée au chargement du fichier ne peut pas connaître l'origine
-  // du visiteur. On lit donc la vraie adresse au moment où la sortie s'affiche,
-  // et on reporte `utm_*` et `ref` sur le lien WhatsApp. Sans ça, le seul moment
-  // où quelqu'un bascule vers un humain est aussi celui où l'on perd sa trace.
-  const lienWhatsApp = (() => {
-    if (typeof window === 'undefined') return WA_URL_REPLI
-    const p = new URLSearchParams(window.location.search)
-    const garde = new URLSearchParams()
-    for (const [k, v] of p) {
-      if (k.startsWith('utm_') || k === 'ref' || k === 'partner') garde.set(k, v)
-    }
-    // On ne pose `exit_intent` que si aucune origine réelle n'existe : une
-    // origine mesurée vaut mieux qu'une étiquette interne qui l'écrase.
-    if (!garde.has('utm_source')) garde.set('utm_source', 'exit_intent')
-    const q = garde.toString()
-    return q ? `${WA_URL_REPLI}&${q}` : WA_URL_REPLI
-  })()
+  /**
+   * ⚠️ 22/08/2026, SECONDE PASSE — DEUX DÉFAUTS DANS MA PROPRE CORRECTION.
+   *
+   * Ce bloc lisait `window.location.search` pour reporter `utm_*` et `ref` sur
+   * le lien WhatsApp. Deux problèmes que je n'avais pas vus :
+   *
+   *  1. IL RENDAIT DEUX ADRESSES DIFFÉRENTES. Sur le serveur, `window` n'existe
+   *     pas : la fonction renvoyait le lien nu. Dans le navigateur, elle en
+   *     renvoyait un autre. React compare les deux et signale un désaccord —
+   *     et sans JavaScript, l'origine était perdue de toute façon.
+   *
+   *  2. LES PARAMÈTRES ÉTAIENT COLLÉS APRÈS `?text=`. WhatsApp ignore ce qu'il
+   *     ne connaît pas : `&utm_source=…` ne servait à personne.
+   *
+   * Le lien pointe maintenant vers `/wa`. Le serveur relit l'origine dans le
+   * `Referer` — même résultat, sans JavaScript, sans désaccord, et le badge
+   * appareil ne quitte jamais le serveur.
+   */
+  const lienWhatsApp = lienPassageWhatsApp({
+    section: 'final',
+    page: '/',
+    intention: 'general',
+    emplacement: 'intention_de_sortie',
+  })
 
   const [open, setOpen] = useState(false)
   const [armed, setArmed] = useState(false)

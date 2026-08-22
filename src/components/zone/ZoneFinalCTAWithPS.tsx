@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import Link from 'next/link'
 import { useLienOffre } from '@/hooks/useLienOffre'
 import { ESSAI_JOURS } from '@/lib/offre'
@@ -24,12 +24,15 @@ export default function ZoneFinalCTAWithPS() {
     // Meta n'est pas configuré (`meta_conversions` : 0 ligne), donc `fbq`
     // n'existe pas et la condition était toujours fausse. Autrement dit : le
     // seul chemin de sortie du site n'était compté nulle part.
-    mesurer('WhatsAppClick', {
-      page: '/',
-      intention: 'general',
-      audience: 'chauffeur',
-      detail: { emplacement: 'cta-final' },
-    })
+    // ⚠️ 22/08/2026 — LE COMPTAGE A ÉTÉ RETIRÉ D'ICI, PAS SUPPRIMÉ.
+    //
+    // Le lien passe désormais par `/wa`, et c'est le serveur qui compte
+    // (`src/app/wa/route.ts`). Garder AUSSI cet appel ferait compter chaque clic
+    // DEUX fois. Un compteur qui double est pire qu'un compteur absent : il
+    // inspire confiance.
+    //
+    // Ce que le passage serveur compte en plus : les clics sans JavaScript, et
+    // la référence `foreas_vid` que le navigateur ne peut pas lire.
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('trackCustom', 'WhatsAppLinkClicked', {
         section: 'final',
@@ -37,7 +40,12 @@ export default function ZoneFinalCTAWithPS() {
     }
   }
 
-  const waUrl = buildWAUrl({ section: 'final' })
+  // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
+  // Le lien servi ne porte plus d'adresse `wa.me` : le badge appareil (cookie
+  // `httpOnly`) fuitait dans le HTML, et 9 boutons sur 11 partaient sans référence
+  // et sans comptage. Le serveur lit le cookie au clic, compte, compose le message
+  // et redirige. Voir `src/app/wa/route.ts`.
+  const waUrl = lienPassageWhatsApp({ section: 'final', page: '/ou-ca-paie', intention: 'general', emplacement: 'cta_final' })
   const urlOffre = useLienOffre('general')
 
   const clicPrincipal = () => {

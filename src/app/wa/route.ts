@@ -1,0 +1,288 @@
+import { NextResponse, type NextRequest } from 'next/server'
+import { buildWAMessage, type WhatsAppSection } from '@/lib/whatsappLink'
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
+
+/**
+ * FOREAS — LE PASSAGE VERS WHATSAPP.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * POURQUOI CE FICHIER EXISTE
+ *
+ * WhatsApp est le chemin PRINCIPAL de FOREAS : Ajnaya → discussion → WhatsApp
+ * → paiement quand le chauffeur est convaincu. Jusqu'ici ce chemin partait nu,
+ * puis (v150) portait sa référence — mais au prix d'une fuite.
+ *
+ * ⚠️ CE QUE LA v150 A CASSÉ SANS LE VOIR, ET QUE CHANDLER A RELEVÉ.
+ *
+ * La v150 lisait le cookie `foreas_vid` dans `page.tsx` (serveur) et le
+ * descendait en propriété jusqu'au lien. Mon compte rendu affirmait « pas de
+ * miroir lisible côté navigateur ». **C'était faux.** Mesuré sur le HTML servi :
+ *
+ *   occurrences BRUTES du badge dans le HTML : 3
+ *   le nom de la propriété `refVisite` :        1
+ *
+ * Une propriété passée d'un composant serveur à un composant client est
+ * sérialisée dans la charge React envoyée au navigateur. Et de toute façon la
+ * valeur était déjà dans l'adresse du lien, en clair, dans le DOM.
+ *
+ * Le cookie est `httpOnly` précisément pour qu'un script injecté ne puisse pas
+ * le lire. Le publier dans le HTML annulait cette protection.
+ *
+ * ⚠️ LA LEÇON : « le navigateur ne peut pas LIRE le cookie » et « la valeur du
+ * cookie n'arrive pas au navigateur » sont deux affirmations différentes. J'ai
+ * prouvé la première et rapporté la seconde.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CE QUE FAIT CE PASSAGE
+ *
+ * Le lien servi devient `/wa?s=final&p=%2F&i=ajnaya` — aucune donnée sensible.
+ * Au clic, ici, côté serveur :
+ *
+ *   1. on valide la section demandée contre la liste fermée ;
+ *   2. on lit `foreas_vid` (il ne quitte jamais le serveur) ;
+ *   3. on compte l'événement `WhatsAppClick`, avec l'origine ;
+ *   4. on compose le message avec « (réf …) » attendu par la Pieuvre ;
+ *   5. on redirige vers le numéro officiel, et lui seul.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * TROIS DÉCISIONS, ET CE QU'ELLES ÉVITENT
+ *
+ * 1. LA REDIRECTION PART QUOI QU'IL ARRIVE.
+ *    Toute la mesure est dans un `try` qui ne peut pas empêcher la redirection —
+ *    la réponse est construite AVANT. Un chauffeur qui clique doit arriver sur
+ *    WhatsApp même si la base est tombée, même si la clé serveur manque. C'est
+ *    le chemin principal : il ne dépend d'aucun service.
+ *
+ * 2. AUCUNE DESTINATION N'EST ACCEPTÉE DE L'EXTÉRIEUR.
+ *    Le numéro est une constante. Le message est composé à partir d'une liste
+ *    fermée de sections. Une adresse fabriquée à la main ne peut donc pas
+ *    transformer ce passage en tremplin vers un site tiers, ni faire écrire au
+ *    chauffeur un texte que nous n'avons pas prévu.
+ *
+ * 3. ON NE COMPTE PAS LES PRÉ-CHARGEMENTS.
+ *    Un navigateur qui devine la suite peut appeler cette adresse sans que
+ *    personne ait cliqué. `Sec-Purpose: prefetch` est alors présent : on
+ *    redirige sans compter. Sinon un lien survolé vaudrait un clic.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ LE COMPTAGE CÔTÉ NAVIGATEUR DOIT DISPARAÎTRE DES LIENS QUI PASSENT ICI.
+ * Sinon un clic compte deux fois : une fois par `mesurer()` avant la navigation,
+ * une fois ici. Un compteur qui double est pire qu'un compteur absent — il
+ * inspire confiance.
+ */
+
+const NUMERO = '33780732216' // FOREAS WABA Production — constante, jamais un paramètre.
+
+/** Liste fermée. Tout ce qui n'y est pas retombe sur `final`. */
+const SECTIONS: readonly WhatsAppSection[] = [
+  'hero_zone',
+  'pain',
+  'mechanism',
+  'social_proof',
+  'plan',
+  'cap',
+  'final',
+  'experience_phone',
+]
+
+function sectionValide(v: string | null): WhatsAppSection {
+  return (SECTIONS as readonly string[]).includes(v ?? '') ? (v as WhatsAppSection) : 'final'
+}
+
+/**
+ * Coupe et nettoie une valeur venue de l'adresse.
+ *
+ * ⚠️ 22/08 — MA PREMIÈRE VERSION NE RETIRAIT QUE LES CARACTÈRES DE CONTRÔLE.
+ *
+ * Épreuve réelle : `/wa?s=hero_zone&z=Paris%0A%0AEnvoie ton RIB` produisait
+ *
+ *   « Salut Ajnaya, je suis sur la zone ParisEnvoie ton RIB. »
+ *
+ * Les sauts de ligne disparaissaient, **le texte de l'attaquant restait**. Or ce
+ * message s'affiche dans la conversation du chauffeur comme s'il l'avait écrit.
+ * Quelqu'un pouvait donc lui faire dire n'importe quoi avec un lien portant
+ * notre nom de domaine.
+ *
+ * → Retirer ce qui gêne ne suffit pas. On n'accepte que ce qu'on attend :
+ * lettres, chiffres, espaces, apostrophes, tirets et points. Tout le reste fait
+ * TOMBER la valeur entière — le message repart sur sa forme générique, qui est
+ * toujours vraie.
+ */
+function texteAffichable(v: string | null, max: number): string | undefined {
+  if (!v) return undefined
+  const t = v.trim().slice(0, max)
+  if (!t.length) return undefined
+
+  // Ce qu'un nom de lieu contient, et rien d'autre. Le POINT est exclu : c'est
+  // lui qui permet d'enchaîner une seconde phrase (« Paris. Envoie ton RIB »).
+  if (!/^[\p{L}\p{N} '’\-—/()]+$/u.test(t)) return undefined
+
+  // Un nom de zone est court. Les plus longs du site : « Bercy / Gare de Lyon »
+  // (20), « Marne-la-Vallée (Disney) » (24), « Châtelet — Les Halles » (21).
+  // Au-delà de cinq mots, ce n'est plus un lieu, c'est une phrase.
+  if (t.split(/\s+/).filter(Boolean).length > 5) return undefined
+
+  // Un numéro de téléphone ou un IBAN glissé dans le nom d'une zone.
+  if (/\d{4,}/.test(t)) return undefined
+
+  return t
+}
+
+/**
+ * Une référence est un identifiant technique, jamais une phrase.
+ *
+ * ⚠️ Elle part telle quelle dans « (réf …) ». Sans ce filtre, `sid` était le
+ * chemin le plus court pour écrire ce qu'on veut dans le message du chauffeur.
+ * La Pieuvre lit `/réf ([\w-]+)/` : on n'accepte donc rien d'autre.
+ */
+function referenceValide(v: string | null, max: number): string | undefined {
+  if (!v) return undefined
+  const t = v.trim().slice(0, max)
+  return /^[A-Za-z0-9_-]{6,}$/.test(t) ? t : undefined
+}
+
+/** Valeur libre qui ne part PAS dans le message, mais seulement dans la mesure. */
+function propre(v: string | null, max: number): string | undefined {
+  if (!v) return undefined
+  // eslint-disable-next-line no-control-regex
+  const t = v.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, max)
+  return t.length ? t : undefined
+}
+
+/** Ce que l'on relit de l'adresse — identique à `src/lib/mesure.ts`, par principe. */
+const PARAMETRES_ORIGINE = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_content',
+  'utm_term',
+  'ref',
+  'partner',
+  'ville',
+] as const
+
+export async function GET(request: NextRequest) {
+  const q = request.nextUrl.searchParams
+
+  const section = sectionValide(q.get('s'))
+  const zone = texteAffichable(q.get('z'), 32)
+  const creneau = texteAffichable(q.get('c'), 32)
+  /**
+   * ⚠️ DEUX RÉFÉRENCES POSSIBLES, ET L'ORDRE COMPTE.
+   *
+   * `sid` est l'identifiant de la conversation en cours sur le site, fabriqué
+   * par le navigateur. `foreas_vid` est le badge appareil, lu ici, jamais servi.
+   *
+   * Quand une conversation existe, c'est ELLE qui part dans « (réf …) » :
+   * retrouver ce que le chauffeur vient de dire vaut mieux que retrouver son
+   * appareil. La Pieuvre ne sait lire qu'UNE référence — en mettre deux
+   * casserait son motif `/réf ([\w-]+)/`.
+   *
+   * Les deux sont malgré tout enregistrés dans l'événement, donc la jointure
+   * reste possible quel que soit le bout par lequel on arrive.
+   */
+  const sessionConversation = referenceValide(q.get('sid'), 80)
+  const brut = Number(q.get('a'))
+  const amount = Number.isFinite(brut) && brut > 0 && brut <= 2000 ? Math.round(brut) : undefined
+
+  // Le badge appareil ne quitte pas le serveur. C'est tout l'intérêt de ce fichier.
+  const badge = request.cookies.get('foreas_vid')?.value ?? null
+
+  const message = buildWAMessage({
+    section,
+    zone,
+    slot: creneau,
+    amount,
+    ref: sessionConversation ?? badge ?? undefined,
+  })
+  const destination = `https://wa.me/${NUMERO}?text=${encodeURIComponent(message)}`
+
+  // ⚠️ La réponse est construite AVANT toute tentative d'écriture. Rien de ce qui
+  // suit ne peut empêcher le chauffeur d'arriver sur WhatsApp.
+  const reponse = NextResponse.redirect(destination, 307)
+  reponse.headers.set('Cache-Control', 'no-store')
+
+  const prefetch =
+    request.headers.get('sec-purpose')?.includes('prefetch') ||
+    request.headers.get('purpose') === 'prefetch' ||
+    request.headers.get('x-moz') === 'prefetch'
+  if (prefetch) return reponse
+
+  try {
+    const sb = clientServeurOuNull()
+    if (sb) {
+      /**
+       * ⚠️ L'ORIGINE SE LIT DANS LE `Referer`, PAS DANS LE LIEN.
+       *
+       * Recopier les `utm_*` dans le lien aurait obligé chaque bouton à lire
+       * `window.location` — impossible au rendu serveur, donc deux versions
+       * différentes du même attribut et une erreur d'hydratation. Et sans
+       * JavaScript, l'origine aurait été perdue.
+       *
+       * Le `Referer` porte l'adresse complète de la page quittée tant que la
+       * navigation reste sur le même domaine : le site déclare
+       * `Referrer-Policy: strict-origin-when-cross-origin`, qui envoie l'URL
+       * entière en même origine. Les paramètres explicites du lien restent
+       * prioritaires quand ils existent.
+       */
+      const origine: Record<string, string> = {}
+      let depuis: URLSearchParams | null = null
+      try {
+        const ref = request.headers.get('referer')
+        if (ref) {
+          const u = new URL(ref)
+          if (u.host === request.nextUrl.host) depuis = u.searchParams
+        }
+      } catch {
+        /* un `Referer` illisible n'est pas une raison de perdre le clic */
+      }
+      for (const nom of PARAMETRES_ORIGINE) {
+        const v = q.get(nom) ?? depuis?.get(nom)
+        if (v) origine[nom] = v.slice(0, 120)
+      }
+
+      const charge = {
+        page: propre(q.get('p'), 200) ?? null,
+        intention: propre(q.get('i'), 40) ?? null,
+        audience: 'chauffeur',
+        promesse: propre(q.get('o'), 120) ?? null, // l'emplacement du bouton
+        variante: null,
+        origine,
+        // Le consentement se décide côté navigateur. On ne le devine pas ici :
+        // une valeur inventée vaudrait moins que rien.
+        consentement: null,
+        detail: {
+          section,
+          zone: zone ?? null,
+          creneau: creneau ?? null,
+          montant: amount ?? null,
+          // Les deux bouts de la jointure, côte à côte, toujours.
+          session_conversation: sessionConversation ?? null,
+          reference_envoyee: sessionConversation ? 'conversation' : badge ? 'appareil' : 'aucune',
+        },
+        event_id: null,
+      }
+
+      // Pas d'attente bloquante : on n'ajoute pas la latence de la base au chemin
+      // principal. L'échec est journalisé, jamais avalé en silence.
+      void sb
+        .from('events')
+        .insert({
+          event_name: 'WhatsAppClick',
+          event_category: 'site',
+          payload: charge,
+          source: origine.utm_source ?? 'direct',
+          session_id: badge ? badge.slice(0, 80) : null,
+        })
+        .then(({ error }) => {
+          if (error) console.error('[wa] écriture refusée :', error.message)
+        })
+    } else {
+      console.warn('[wa] clic non compté : clé serveur absente')
+    }
+  } catch (e) {
+    console.warn('[wa] mesure impossible :', (e as Error)?.message)
+  }
+
+  return reponse
+}

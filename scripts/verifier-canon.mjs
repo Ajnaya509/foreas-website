@@ -1086,76 +1086,148 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
-// ─── LES SORTIES WHATSAPP DE L'ACCUEIL : RATTACHÉES ET COMPTÉES ─────────────
+// ─── LES SORTIES WHATSAPP PASSENT TOUTES PAR `/wa` ──────────────────────────
 //
-// ⚠️ 22/08/2026 — LE CHEMIN PRINCIPAL PARTAIT NU.
+// ⚠️ 22/08/2026 — CETTE RÈGLE A CHANGÉ D'OBJET, PAS DE CAMP.
 //
-// Le parcours FOREAS est : Ajnaya → discussion → WhatsApp → paiement quand le
-// chauffeur est convaincu. WhatsApp est le chemin PRINCIPAL. Or les deux liens
-// WhatsApp servis sur l'accueil étaient exactement :
+// Version v150 : elle exigeait que `page.tsx` lise le cookie `foreas_vid` et le
+// descende jusqu'au lien, pour que le message WhatsApp porte « (réf …) ».
+// Elle mesurait la bonne chose — et elle a correctement échoué le jour où
+// l'architecture a changé. C'est ce qu'on attend d'une règle.
 //
-//   https://wa.me/33780732216?text=Salut%20Ajnaya.%20Je%20démarre…
+// ⚠️ POURQUOI L'ARCHITECTURE A CHANGÉ : LA v150 FUITAIT.
 //
-// Rien d'autre. Un chauffeur venu d'une publicité arrivait chez Ajnaya en
-// parfait inconnu : ni la campagne, ni la page, ni le parrain. Et aucun
-// compteur ne voyait passer ce clic — on savait combien de gens allaient vers
-// la caisse, jamais combien allaient parler à Ajnaya.
+// Chandler a demandé la preuve, pas le commentaire. Mesuré sur le HTML servi :
 //
-// ⚠️ LE MÉCANISME EXISTAIT DEPUIS LE DÉBUT. `buildWAUrl` accepte `ref` et son
-// propre commentaire dit mot pour mot : « Sans lui, le prospect arrive sur
-// WhatsApp en parfait inconnu. » Deux sites d'appel sur douze le fournissaient.
+//   occurrences BRUTES du badge appareil dans le HTML : 3
+//   le nom de la propriété `refVisite` dans la charge : 1
 //
-// ⚠️ ET LA CLÉ NE POUVAIT PAS VENIR DU NAVIGATEUR. La bonne clé est le cookie
-// `foreas_vid` — c'est LUI que /api/mesure écrit dans `events.session_id`, à
-// côté de l'origine. Il est `httpOnly` : seul un composant SERVEUR peut le lire.
+// Une propriété passée d'un composant serveur à un composant client est
+// sérialisée dans la charge React. Et la valeur était de toute façon en clair
+// dans l'adresse du lien. Le cookie est `httpOnly` précisément pour qu'un script
+// injecté ne puisse pas le lire ; le publier annulait cette protection.
 //
-// ⚠️ CE QUE CETTE RÈGLE NE COUVRE PAS, ET IL FAUT LE DIRE : les dix autres
-// sites d'appel (pages zone, widget, calculateur) restent sans référence. Chaque
-// page doit faire descendre la clé elle-même. Ce n'est pas fait, et ce n'est pas
-// prétendu fait.
+// Mon rapport disait « pas de miroir lisible côté navigateur ». J'avais prouvé
+// que le navigateur ne peut pas LIRE LE COOKIE, et rapporté que la VALEUR
+// n'arrivait pas au navigateur. Deux affirmations différentes.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// CE QUE LA RÈGLE EXIGE MAINTENANT, ET POURQUOI CHAQUE POINT EXISTE
+//
+// 1. Aucun composant ne sert d'adresse `wa.me` : elles portent la référence, donc
+//    la fuite. Tout passe par `/wa`, où le cookie reste côté serveur.
+// 2. Le passage lit bien le cookie et redirige vers le numéro officiel.
+// 3. Aucun composant ne compte `WhatsAppClick` côté navigateur : le passage
+//    compte déjà. Deux comptages pour un clic est pire qu'aucun — ça inspire
+//    confiance.
+// 4. Le badge n'est plus descendu en propriété depuis un composant serveur.
 {
-  const pageAccueil = sansCommentaires(readFileSync('src/app/page.tsx', 'utf8'))
-  const clientAccueil = sansCommentaires(
-    readFileSync('src/app/experience/ExperienceClient.tsx', 'utf8')
-  )
+  const CLIENTS_AUTORISES = new Set([
+    'src/lib/whatsappLink.ts',       // le constructeur de message, appelé par /wa
+    'src/app/wa/route.ts',           // le passage lui-même
+    'src/lib/passageWhatsApp.ts',    // le constructeur de lien vers /wa
+  ])
 
-  if (!/cookies\(\)[\s\S]{0,120}foreas_vid/.test(pageAccueil)) {
-    infractions.push({
-      fichier: 'src/app/page.tsx',
-      quoi: "l'accueil ne lit plus le badge appareil côté serveur",
-      extrait: "cookies().get('foreas_vid') absent",
-      pourquoi:
-        'sans lui le message WhatsApp repart sans référence et le chauffeur arrive ' +
-        'chez Ajnaya en inconnu. Le cookie est httpOnly : le navigateur ne peut pas ' +
-        'le lire, la lecture DOIT rester côté serveur.',
-    })
+  const tousLesFichiers = []
+  const marcher = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const c = join(d, e.name)
+      if (e.isDirectory()) { if (e.name !== 'node_modules') marcher(c); continue }
+      if (['.ts', '.tsx'].includes(extname(e.name))) tousLesFichiers.push(c)
+    }
+  }
+  if (existsSync('src')) marcher('src')
+
+  for (const chemin of tousLesFichiers) {
+    if (CLIENTS_AUTORISES.has(chemin)) continue
+    if (chemin.startsWith('src/app/api/')) continue // les routes serveur lisent le cookie chez elles
+    const code = sansCommentaires(readFileSync(chemin, 'utf8'))
+
+    if (/wa\.me\//.test(code)) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'une adresse WhatsApp est construite hors du passage `/wa`',
+        extrait: 'wa.me/ écrit dans ce fichier',
+        pourquoi:
+          'un lien `wa.me` servi dans le HTML doit porter sa référence pour être ' +
+          'rattachable — donc publier le badge appareil, cookie `httpOnly`, en clair ' +
+          'dans le DOM. Passe par `lienPassageWhatsApp()` : le serveur lit le cookie ' +
+          'au clic, il ne quitte jamais le serveur.',
+      })
+    }
+
+    if (/buildWAUrl\s*\(/.test(code)) {
+      infractions.push({
+        fichier: chemin,
+        quoi: '`buildWAUrl()` appelé hors du passage `/wa`',
+        extrait: 'buildWAUrl(',
+        pourquoi:
+          'ce constructeur rend une adresse `wa.me` complète, qui ne peut être ' +
+          'rattachée qu’en publiant une référence dans le HTML. Utilise ' +
+          '`lienPassageWhatsApp()` depuis `src/lib/passageWhatsApp.ts`.',
+      })
+    }
+
+    if (/mesurer\(\s*['"]WhatsAppClick['"]/.test(code)) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'un clic WhatsApp est compté côté navigateur, alors que `/wa` le compte déjà',
+        extrait: "mesurer('WhatsAppClick'",
+        pourquoi:
+          'chaque clic serait compté DEUX fois. Un compteur qui double est pire ' +
+          'qu’un compteur absent : il inspire confiance. Le passage compte pour ' +
+          'tout le monde, y compris sans JavaScript.',
+      })
+    }
+
+    // Le badge ne redescend plus en propriété vers un composant navigateur.
+    if (/foreas_vid/.test(code) && !chemin.endsWith('middleware.ts') && !chemin.endsWith('identityGate.ts')) {
+      infractions.push({
+        fichier: chemin,
+        quoi: 'le badge appareil est manipulé hors du serveur',
+        extrait: 'foreas_vid',
+        pourquoi:
+          'ce cookie est `httpOnly` pour qu’un script injecté ne puisse pas le lire. ' +
+          'Le passer à un composant navigateur le sérialise dans la charge React et ' +
+          'annule cette protection. Mesuré le 22/08 : 3 occurrences en clair dans le HTML.',
+      })
+    }
   }
 
-  if (!/buildWAUrl\(\{[^}]*ref:/.test(clientAccueil)) {
+  // Le passage doit exister et faire ce qu'il promet.
+  const CHEMIN_WA = 'src/app/wa/route.ts'
+  if (!existsSync(CHEMIN_WA)) {
     infractions.push({
-      fichier: 'src/app/experience/ExperienceClient.tsx',
-      quoi: "la sortie WhatsApp de l'accueil ne porte plus de référence",
-      extrait: 'buildWAUrl sans `ref`',
+      fichier: CHEMIN_WA,
+      quoi: 'le passage WhatsApp a disparu',
+      extrait: 'fichier absent',
       pourquoi:
-        "la Pieuvre lit « (réf …) » en regex et retrouve dans `events` d'où vient " +
-        "la personne. Sans elle, ce lien perd 100 % de l'attribution du chemin PRINCIPAL.",
+        'sans lui, tous les liens `/wa` du site mènent à une page introuvable — le ' +
+        'chemin PRINCIPAL de FOREAS serait coupé.',
     })
-  }
-
-  const liens = (clientAccueil.match(/href=\{waFinal\}/g) || []).length
-  const comptes = (clientAccueil.match(/onClick=\{\(\) => compterWhatsApp\(/g) || []).length
-  if (liens > comptes) {
-    infractions.push({
-      fichier: 'src/app/experience/ExperienceClient.tsx',
-      quoi: `${liens} sortie(s) WhatsApp, ${comptes} comptée(s)`,
-      extrait: 'href={waFinal} sans onClick={() => compterWhatsApp(…)}',
-      pourquoi:
-        "un chemin qu'on ne compte pas est un chemin qu'on finit par supprimer " +
-        '« parce qu’il ne sert à rien ». C’est le chemin principal.',
-    })
+  } else {
+    const wa = sansCommentaires(readFileSync(CHEMIN_WA, 'utf8'))
+    const attendus = [
+      [/cookies\.get\(['"]foreas_vid['"]\)/, 'le passage ne lit plus le badge appareil'],
+      [/NextResponse\.redirect\(/, 'le passage ne redirige plus vers WhatsApp'],
+      [/event_name:\s*['"]WhatsAppClick['"]/, 'le passage ne compte plus le clic'],
+      [/33780732216/, 'le numéro officiel a disparu du passage'],
+    ]
+    for (const [motif, quoi] of attendus) {
+      if (!motif.test(wa)) {
+        infractions.push({
+          fichier: CHEMIN_WA,
+          quoi,
+          extrait: String(motif),
+          pourquoi:
+            'le passage est le seul chemin vers WhatsApp pour tout le site. Chacune ' +
+            'de ces quatre choses est indispensable : lire la référence, compter, ' +
+            'viser le bon numéro, et surtout REDIRIGER quoi qu’il arrive.',
+        })
+      }
+    }
   }
 }
-
 
 // ─── L'ACCUEIL DOIT MENER À LA CAISSE ───────────────────────────────────────
 //

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle, AlertTriangle } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 
 /**
  * ZonePainCalculator — la section « ce qui te reste vraiment ».
@@ -86,7 +86,12 @@ export default function ZonePainCalculator() {
     }
   }
 
-  const waUrl = buildWAUrl({ section: 'pain', amount: grossFare })
+  // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
+  // Le lien servi ne porte plus d'adresse `wa.me` : le badge appareil (cookie
+  // `httpOnly`) fuitait dans le HTML, et 9 boutons sur 11 partaient sans référence
+  // et sans comptage. Le serveur lit le cookie au clic, compte, compose le message
+  // et redirige. Voir `src/app/wa/route.ts`.
+  const waUrl = lienPassageWhatsApp({ section: 'pain', montant: grossFare, page: '/ou-ca-paie', intention: 'rentabilite', emplacement: 'calculateur' })
 
   return (
     <section className="relative py-16 sm:py-24 px-4 border-y border-white/[0.06]">

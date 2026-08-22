@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { ArrowRight, MessageCircle, MapPin } from 'lucide-react'
-import { buildWAUrl } from '@/lib/whatsappLink'
+import { lienPassageWhatsApp } from '@/lib/passageWhatsApp'
 import { ETIQUETTE_PROVENANCE, EXPLICATION_PROVENANCE, type Provenance } from '@/lib/provenance'
 import type { SarcasmLevel } from '@/lib/sarcasticVisits'
 
@@ -54,7 +54,14 @@ export default function ZoneSearchResultCard({
 }: ZoneSearchResultCardProps) {
   // ─── Cas SANS DONNÉES : on ne montre PAS de chiffre inventé → on bascule WhatsApp ────
   if (!stats.has_data) {
-    const waUrl = buildWAUrl({ section: 'hero_zone', zone: stats.zone_match })
+    // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa` (voir src/app/wa/route.ts).
+    const waUrl = lienPassageWhatsApp({
+      section: 'hero_zone',
+      zone: stats.zone_match,
+      page: '/ou-ca-paie',
+      intention: 'zones',
+      emplacement: 'resultat_sans_donnee',
+    })
 
     return (
       <motion.div
@@ -114,10 +121,14 @@ export default function ZoneSearchResultCard({
   }
 
   // ─── Cas AVEC DONNÉES RÉELLES (≥5 courses) : chiffre roi honnête ──────────────────
-  const waUrl = buildWAUrl({
+  // ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa` (voir src/app/wa/route.ts).
+  const waUrl = lienPassageWhatsApp({
     section: 'hero_zone',
     zone: stats.zone_match,
-    slot: 'pour ce soir',
+    creneau: 'pour ce soir',
+    page: '/ou-ca-paie',
+    intention: 'zones',
+    emplacement: 'resultat_avec_donnee',
   })
 
   return (
