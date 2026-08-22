@@ -111,6 +111,45 @@ export function useFenetreModale(
     document.addEventListener('keydown', auClavier, true)
 
     /**
+     * ⚠️ 22/08/2026, TROISIÈME PASSE — LE FOCUS ENTRAIT PUIS REPARTAIT.
+     *
+     * Journal des changements de focus dans un vrai navigateur, modale Ajnaya :
+     *
+     *   4958 ms  focusin   INPUT
+     *   5340 ms  focusout  INPUT      → puis plus rien, curseur sur <body>
+     *
+     * La modale place elle-même le curseur dans son champ de saisie. Ma
+     * « décision 3 » (ne pas reprendre un focus déjà pris) faisait donc
+     * exactement ce qu'il fallait — puis le champ le perdait, et personne ne le
+     * rattrapait. Le curseur finissait sur le corps du document, derrière un
+     * voile plein écran, exactement le défaut que ce crochet devait supprimer.
+     *
+     * ⚠️ Placer le focus UNE FOIS ne suffit pas : il faut le RETENIR tant que la
+     * fenêtre est ouverte. Un piège qui ne se referme qu'à la touche Tab laisse
+     * passer tout ce qui déplace le curseur autrement.
+     *
+     * On ne ramène rien quand le curseur part vers `null` ou vers le corps du
+     * document au moment du démontage : le nettoyage s'en charge déjà, et se
+     * battre avec lui ferait clignoter le focus.
+     */
+    const auDepartDuFocus = (e: FocusEvent) => {
+      const racine = panneau.current
+      if (!racine) return
+      const arrivee = e.relatedTarget as HTMLElement | null
+      if (arrivee && racine.contains(arrivee)) return
+      // Le curseur quitte la fenêtre : on le ramène au tour suivant, une fois que
+      // le navigateur a fini de le déplacer.
+      window.setTimeout(() => {
+        const r2 = panneau.current
+        if (!r2 || !r2.isConnected) return
+        if (r2.contains(document.activeElement)) return
+        const liste = focalisables()
+        if (liste.length > 0) liste[0].focus()
+      }, 0)
+    }
+    document.addEventListener('focusout', auDepartDuFocus, true)
+
+    /**
      * ⚠️ 22/08/2026, SECONDE PASSE — DEUX DÉFAUTS TROUVÉS PAR UN VRAI NAVIGATEUR.
      *
      * Épreuve au clavier (puppeteer, Chrome réel, page visible) sur la modale
@@ -158,6 +197,7 @@ export function useFenetreModale(
       window.clearTimeout(t)
       window.cancelAnimationFrame(frame)
       document.removeEventListener('keydown', auClavier, true)
+      document.removeEventListener('focusout', auDepartDuFocus, true)
       // Rendu à l'ouvreur — s'il est encore là. Un ouvreur démonté (c'est le cas
       // du bouton flottant d'Ajnaya, retiré à l'ouverture) laisserait le curseur
       // nulle part : on ne force alors rien plutôt que de le poser au hasard.
