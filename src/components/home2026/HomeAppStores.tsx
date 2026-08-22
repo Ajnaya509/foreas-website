@@ -46,6 +46,21 @@ import type { Intention } from '@/lib/mesure'
  * existait dans `src/lib/mesure.ts`, aucun fichier ne l'émettait. C'est son
  * premier site d'appel.
  *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ 22/08/2026 — CE BLOC N'EST PAS L'ACTION PRINCIPALE, ET C'EST DÉLIBÉRÉ.
+ *
+ * Le parcours FOREAS est : Ajnaya → discussion → WhatsApp → paiement quand le
+ * chauffeur est convaincu. **WhatsApp est le chemin principal.** Sur l'accueil,
+ * il est porté par une barre FIXE, visible en permanence.
+ *
+ * Ce bloc-ci défile avec la page et sert deux autres publics : celui qui veut
+ * l'app tout de suite, et celui qui a déjà décidé et cherche le prix. Il ne doit
+ * jamais rivaliser visuellement avec la barre WhatsApp.
+ *
+ * D'où l'option `discret` : le bouton passe du cyan plein au contour. Deux
+ * boutons cyan pleins sur le même écran, c'est deux vedettes — donc aucune.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
  * Les trois sorties sont comptées séparément — Apple, Google, l'offre — parce
  * qu'un total les mélangerait et rendrait impossible la seule question qui
  * compte ensuite : « les gens veulent-ils l'app, ou l'abonnement ? »
@@ -65,7 +80,8 @@ import type { Intention } from '@/lib/mesure'
 export default function HomeAppStores({
   page = '/',
   intention = 'general',
-}: { page?: string; intention?: Intention } = {}) {
+  discret = false,
+}: { page?: string; intention?: Intention; discret?: boolean } = {}) {
   // L'attribution (origine, campagne, code parrain) est portée par ce lien.
   const lienOffre = useLienOffre(intention)
 
@@ -91,7 +107,11 @@ export default function HomeAppStores({
           <a
             href="/go"
             onClick={() => compter('auto')}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#00D4FF] px-6 py-4 font-body text-base font-bold text-[#05070F] transition-transform active:scale-[0.98]"
+            className={
+              discret
+                ? 'inline-flex items-center justify-center gap-2 rounded-2xl border border-[#00D4FF]/35 px-6 py-4 font-body text-base font-semibold text-[#00D4FF] transition-colors active:bg-[#00D4FF]/10'
+                : 'inline-flex items-center justify-center gap-2 rounded-2xl bg-[#00D4FF] px-6 py-4 font-body text-base font-bold text-[#05070F] transition-transform active:scale-[0.98]'
+            }
           >
             Installer l&apos;app
           </a>

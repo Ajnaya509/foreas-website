@@ -1093,10 +1093,20 @@ for (const chemin of fichiers(RACINE)) {
     // l'accueil est devenu UN SEUL composant qui monte tout le reste, elle n'a
     // plus vu que deux noms — et a déclaré qu'aucun chemin ne menait à la caisse.
     //
-    // ⚠️ ET ELLE AVAIT RAISON SUR LE FOND : le bouton principal du nouvel
-    // accueil mène à WhatsApp, pas à l'offre. C'est ce qui a motivé l'ajout du
-    // bloc « l'app + voir ce que ça coûte ». Elle a donc attrapé une vraie
-    // régression ET révélé sa propre myopie dans le même passage.
+    // ⚠️ CE QU'ELLE A VRAIMENT ATTRAPÉ, ET CE QU'ELLE N'A PAS DIT.
+    //
+    // Elle a signalé que le nouvel accueil n'offrait AUCUN chemin vers la caisse.
+    // C'était juste : un chauffeur déjà décidé n'avait pas de porte. D'où le bloc
+    // « l'app + voir ce que ça coûte ».
+    //
+    // Mais son message ajoutait « WhatsApp doit être secondaire », et ça, c'était
+    // FAUX. Le parcours FOREAS est : Ajnaya → discussion → WhatsApp → paiement
+    // quand le chauffeur est convaincu. WhatsApp est le chemin PRINCIPAL ; c'est
+    // là que la conviction se fait. Corrigé le 22/08 sur intervention de Chandler.
+    //
+    // Une règle qui mesure la bonne chose peut quand même enseigner la mauvaise
+    // doctrine dans son message d'erreur — et c'est ce message que lira le
+    // prochain développeur pressé.
     //
     // On descend maintenant de DEUX niveaux. Pas plus : au-delà on lirait tout
     // le dépôt, et la règle ne prouverait plus rien de précis.
@@ -1142,7 +1152,13 @@ for (const chemin of fichiers(RACINE)) {
         quoi: "aucun chemin de l'accueil vers la page de paiement",
         extrait: `${montes.length} composants montés, aucun ne mène à /tarifs2`,
         pourquoi:
-          "Le 21/08/2026, l'accueil offrait six sorties WhatsApp et zéro lien vers /tarifs2 : un visiteur décidé ne pouvait pas payer. WhatsApp a sa place — en action secondaire, pour aider à décider. L'action principale doit mener à l'offre.",
+          "⚠️ 22/08/2026 — CETTE RÈGLE AFFIRMAIT UNE DOCTRINE FAUSSE, ET CHANDLER L'A CORRIGÉE.\n" +
+            "Elle disait : « WhatsApp a sa place — en action SECONDAIRE. L'action principale doit mener à l'offre. »\n" +
+            "C'est l'inverse du parcours réel. Le chemin FOREAS est : Ajnaya → discussion → WhatsApp → paiement QUAND le chauffeur est convaincu.\n" +
+            "WhatsApp est l'action PRINCIPALE : c'est là que la conviction se construit. Le paiement direct reste visible, mais il sert celui qui a déjà décidé.\n" +
+            "\n" +
+            "Ce que cette règle vérifie donc — et rien de plus : qu'un chauffeur DÉJÀ DÉCIDÉ trouve un chemin vers la caisse sans avoir à passer par WhatsApp.\n" +
+            "Elle ne dit RIEN sur la hiérarchie des deux. Elle n'a jamais autorisé, et n'autorisera jamais, à remplacer un accès WhatsApp par un lien vers l'offre.",
       })
     }
   }

@@ -548,7 +548,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           Le bloc porte `page="/"` et l'intention `ajnaya` : un clic boutique
           depuis ici doit rester attribué à quelqu'un qui venait de PARLER à
           Ajnaya, pas à un visiteur « général ». */}
-      <HomeAppStores page="/" intention="ajnaya" />
+      <HomeAppStores page="/" intention="ajnaya" discret />
 
       <ExitIntentModal />
 

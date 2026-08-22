@@ -579,7 +579,7 @@ console.log('\n── Aucun calcul financier raconté ──')
 // les deux ne prouvent pas la même chose : le canon lit le DÉPÔT, cette porte
 // lit ce que la PRODUCTION sert réellement. Une leçon déjà payée : un garde qui
 // lit le dépôt ne dit rien de ce qui tourne.
-console.log('\n── L\'accueil mène-t-il à la caisse ? ──')
+console.log('\n── Les deux sorties de l\'accueil : WhatsApp et la caisse ──')
 {
   const html = corps['/'] ?? ''
   // ⚠️ Un contrôle qui lit un corps JAMAIS CHARGÉ conclurait « 0 lien » alors
@@ -591,8 +591,23 @@ console.log('\n── L\'accueil mène-t-il à la caisse ? ──')
   } else {
   const versLaCaisse = (html.match(/tarifs2/g) ?? []).length
   const versWhatsApp = (html.match(/wa\.me|api\.whatsapp/g) ?? []).length
-  dire(versLaCaisse > 0, `accueil → ${versLaCaisse} lien(s) vers /tarifs2 (il en faut au moins 1)`)
-  console.log(`     ℹ️  et ${versWhatsApp} lien(s) WhatsApp — normal, c'est l'aide à la décision.`)
+
+  // ⚠️ 22/08/2026 — CE CONTRÔLE NE SURVEILLAIT QUE LA CAISSE.
+  //
+  // Il comptait les liens WhatsApp « pour information » et ne protégeait que le
+  // chemin vers /tarifs2. Or le parcours FOREAS est :
+  //     Ajnaya → discussion → WhatsApp → paiement quand le chauffeur est convaincu.
+  //
+  // **WhatsApp est le chemin PRINCIPAL**, celui où la conviction se construit.
+  // Le paiement direct est la porte de celui qui a DÉJÀ décidé — nécessaire,
+  // mais second dans le temps.
+  //
+  // Un contrôle qui ne surveille qu'une des deux sorties finit par autoriser
+  // qu'on sacrifie l'autre : il suffit qu'un jour quelqu'un « simplifie » la page
+  // pour que WhatsApp disparaisse sans qu'aucun voyant ne s'allume.
+  // Les deux sont désormais exigées, séparément.
+  dire(versLaCaisse > 0, `accueil → ${versLaCaisse} chemin(s) vers /tarifs2 — pour qui a déjà décidé`)
+  dire(versWhatsApp > 0, `accueil → ${versWhatsApp} chemin(s) WhatsApp — le parcours principal`)
   }
 }
 
