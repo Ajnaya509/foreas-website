@@ -547,10 +547,23 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         // Le retrait du `max()` coûte quelques pixels sur les appareils sans
         // zone sûre — un prix négligeable pour un bouton qui redevient
         // cliquable.
-        style={{
-          bottom:
-            'calc(16px + env(safe-area-inset-bottom, 0px) + var(--hauteur-bandeau-consentement, 0px))',
-        }}
+        // ⚠️ NI `max()`, NI `env()` DANS CE CALCUL — DEUX LEÇONS PAYÉES.
+        //
+        // 1ʳᵉ version : calc(max(16px, env(…)) + var(…)) → rendait 16px.
+        // 2ᵉ version : calc(16px + env(…) + var(…))      → rendait 16px AUSSI,
+        //   et je ne l'ai vu qu'EN PRODUCTION. En local j'avais prouvé le calcul
+        //   avec un test SANS env(), puis réintroduit env() en supposant que ça
+        //   tenait. **Prouver une variante et livrer l'autre ne prouve rien.**
+        //
+        // Dans les deux cas, l'échec est SILENCIEUX : pas d'erreur, pas de
+        // déclaration ignorée, juste le terme `var()` qui disparaît du calcul.
+        // Mesuré en production : la variable valait bien 121px, `bottom`
+        // calculait 16px, et le style en ligne était exactement celui écrit ici.
+        //
+        // La zone sûre de l'appareil n'est pas perdue : le bandeau applique
+        // déjà la sienne dans son propre `padding-bottom`, et quand il est
+        // absent on retombe sur les 16px d'origine.
+        style={{ bottom: 'calc(16px + var(--hauteur-bandeau-consentement, 0px))' }}
       >
         {/* Le CTA « pulse » (demande Chandler) : un seul glow violet qui respire à 1.8s DERRIÈRE
             le bouton (R1 : jamais empilé ; famille « Ajnaya vit », exception documentée). */}
