@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { URL_SITE, canonique } from '@/lib/site'
 import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS } from '@/lib/offre'
 import MesureVue from '@/components/mesure/MesureVue'
@@ -127,6 +127,37 @@ export default async function AccueilPage() {
   const h = await headers()
   const geoCity = h.get('x-vercel-ip-city') || null
 
+  /**
+   * ⚠️ 22/08/2026 — LES DEUX SORTIES WHATSAPP DE L'ACCUEIL PARTAIENT NUES.
+   *
+   * WhatsApp est le chemin PRINCIPAL de FOREAS : Ajnaya → discussion → WhatsApp
+   * → paiement quand le chauffeur est convaincu. Or le lien servi était :
+   *
+   *   https://wa.me/33780732216?text=Salut%20Ajnaya.%20Je%20démarre…
+   *
+   * Rien d'autre. Un chauffeur venu d'une publicité arrivait chez Ajnaya en
+   * parfait inconnu : ni la campagne, ni la page, ni le parrain.
+   *
+   * ⚠️ LE MÉCANISME EXISTAIT DÉJÀ, ET PERSONNE NE LE FOURNISSAIT.
+   * `buildWAUrl` accepte une option `ref` depuis le début. Son commentaire dit
+   * mot pour mot : « Sans lui, le prospect arrive sur WhatsApp en parfait
+   * inconnu. » Deux sites d'appel sur douze la passaient.
+   *
+   * ⚠️ ET LA CLÉ NE POUVAIT PAS VENIR DU NAVIGATEUR.
+   * La bonne clé est `foreas_vid`, le badge appareil posé par le middleware —
+   * c'est LUI que `/api/mesure` écrit dans `events.session_id`, à côté de
+   * l'origine (campagne, parrain, page). Mais il est `httpOnly` : le JavaScript
+   * de la page ne peut pas le lire. D'où la lecture ici, côté serveur, et la
+   * descente en propriété.
+   *
+   * Résultat : le message WhatsApp porte « (réf <badge>) », la Pieuvre le lit en
+   * `/réf ([\w-]+)/` et retrouve dans `events` d'où vient la personne.
+   *
+   * Si le cookie manque, `null` — le lien reste identique à avant. On n'invente
+   * pas de valeur : une référence fabriquée pointerait vers la mauvaise visite.
+   */
+  const badgeAppareil = (await cookies()).get('foreas_vid')?.value ?? null
+
   return (
     <>
       <script
@@ -139,7 +170,7 @@ export default async function AccueilPage() {
           vaut plus qu'un renommage cosmétique — mais ils portent la route
           canonique dans leurs propriétés. */}
       <MesureVue page="/" intention="ajnaya" audience="chauffeur" />
-      <ExperienceClient geoCity={geoCity} />
+      <ExperienceClient geoCity={geoCity} refVisite={badgeAppareil} />
     </>
   )
 }

@@ -1086,6 +1086,77 @@ for (const chemin of fichiers(RACINE)) {
   }
 }
 
+// ─── LES SORTIES WHATSAPP DE L'ACCUEIL : RATTACHÉES ET COMPTÉES ─────────────
+//
+// ⚠️ 22/08/2026 — LE CHEMIN PRINCIPAL PARTAIT NU.
+//
+// Le parcours FOREAS est : Ajnaya → discussion → WhatsApp → paiement quand le
+// chauffeur est convaincu. WhatsApp est le chemin PRINCIPAL. Or les deux liens
+// WhatsApp servis sur l'accueil étaient exactement :
+//
+//   https://wa.me/33780732216?text=Salut%20Ajnaya.%20Je%20démarre…
+//
+// Rien d'autre. Un chauffeur venu d'une publicité arrivait chez Ajnaya en
+// parfait inconnu : ni la campagne, ni la page, ni le parrain. Et aucun
+// compteur ne voyait passer ce clic — on savait combien de gens allaient vers
+// la caisse, jamais combien allaient parler à Ajnaya.
+//
+// ⚠️ LE MÉCANISME EXISTAIT DEPUIS LE DÉBUT. `buildWAUrl` accepte `ref` et son
+// propre commentaire dit mot pour mot : « Sans lui, le prospect arrive sur
+// WhatsApp en parfait inconnu. » Deux sites d'appel sur douze le fournissaient.
+//
+// ⚠️ ET LA CLÉ NE POUVAIT PAS VENIR DU NAVIGATEUR. La bonne clé est le cookie
+// `foreas_vid` — c'est LUI que /api/mesure écrit dans `events.session_id`, à
+// côté de l'origine. Il est `httpOnly` : seul un composant SERVEUR peut le lire.
+//
+// ⚠️ CE QUE CETTE RÈGLE NE COUVRE PAS, ET IL FAUT LE DIRE : les dix autres
+// sites d'appel (pages zone, widget, calculateur) restent sans référence. Chaque
+// page doit faire descendre la clé elle-même. Ce n'est pas fait, et ce n'est pas
+// prétendu fait.
+{
+  const pageAccueil = sansCommentaires(readFileSync('src/app/page.tsx', 'utf8'))
+  const clientAccueil = sansCommentaires(
+    readFileSync('src/app/experience/ExperienceClient.tsx', 'utf8')
+  )
+
+  if (!/cookies\(\)[\s\S]{0,120}foreas_vid/.test(pageAccueil)) {
+    infractions.push({
+      fichier: 'src/app/page.tsx',
+      quoi: "l'accueil ne lit plus le badge appareil côté serveur",
+      extrait: "cookies().get('foreas_vid') absent",
+      pourquoi:
+        'sans lui le message WhatsApp repart sans référence et le chauffeur arrive ' +
+        'chez Ajnaya en inconnu. Le cookie est httpOnly : le navigateur ne peut pas ' +
+        'le lire, la lecture DOIT rester côté serveur.',
+    })
+  }
+
+  if (!/buildWAUrl\(\{[^}]*ref:/.test(clientAccueil)) {
+    infractions.push({
+      fichier: 'src/app/experience/ExperienceClient.tsx',
+      quoi: "la sortie WhatsApp de l'accueil ne porte plus de référence",
+      extrait: 'buildWAUrl sans `ref`',
+      pourquoi:
+        "la Pieuvre lit « (réf …) » en regex et retrouve dans `events` d'où vient " +
+        "la personne. Sans elle, ce lien perd 100 % de l'attribution du chemin PRINCIPAL.",
+    })
+  }
+
+  const liens = (clientAccueil.match(/href=\{waFinal\}/g) || []).length
+  const comptes = (clientAccueil.match(/onClick=\{\(\) => compterWhatsApp\(/g) || []).length
+  if (liens > comptes) {
+    infractions.push({
+      fichier: 'src/app/experience/ExperienceClient.tsx',
+      quoi: `${liens} sortie(s) WhatsApp, ${comptes} comptée(s)`,
+      extrait: 'href={waFinal} sans onClick={() => compterWhatsApp(…)}',
+      pourquoi:
+        "un chemin qu'on ne compte pas est un chemin qu'on finit par supprimer " +
+        '« parce qu’il ne sert à rien ». C’est le chemin principal.',
+    })
+  }
+}
+
+
 // ─── L'ACCUEIL DOIT MENER À LA CAISSE ───────────────────────────────────────
 //
 // 🔴 MESURÉ LE 21/08/2026 sur le HTML servi de la page d'accueil :

@@ -30,6 +30,7 @@ import TestimonialVideoCard from '@/components/zone/TestimonialVideoCard'
 import { TESTIMONIALS } from '@/components/zone/testimonials.data'
 import { InkGradientButton } from '@/components/ui'
 import { buildWAUrl } from '@/lib/whatsappLink'
+import { mesurer } from '@/lib/mesure'
 import { useIsMobile } from '@/hooks/useDevicePerf'
 import SmoothScroll from '@/components/experience/SmoothScroll'
 import StickyFeatures from '@/components/experience/StickyFeatures'
@@ -148,13 +149,40 @@ function DesktopZoneSearch({ geoCity, onSubmit }: { geoCity?: string | null; onS
   )
 }
 
-interface ExperienceClientProps { geoCity?: string | null }
+interface ExperienceClientProps {
+  geoCity?: string | null
+  /** Badge appareil `foreas_vid` lu côté serveur (httpOnly, illisible d'ici).
+   *  C'est la clé qui relie ce que la personne a vu sur le site à ce qu'elle
+   *  écrit ensuite sur WhatsApp. Voir le commentaire dans `src/app/page.tsx`. */
+  refVisite?: string | null
+}
 
-export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
+export default function ExperienceClient({ geoCity, refVisite }: ExperienceClientProps) {
   const [showCta, setShowCta] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalZone, setModalZone] = useState('')
-  const waFinal = buildWAUrl({ section: 'final' })
+  // `ref` n'est ajouté que s'il existe vraiment : `undefined` laisse le message
+  // exactement tel qu'il était. Pas de valeur inventée.
+  const waFinal = buildWAUrl({ section: 'final', ref: refVisite ?? undefined })
+
+  /**
+   * ⚠️ CES DEUX SORTIES N'ÉTAIENT PAS COMPTÉES.
+   *
+   * Le chemin principal du site — celui par lequel la conviction se construit —
+   * n'apparaissait dans aucune mesure. On savait combien de gens allaient vers
+   * la caisse, jamais combien allaient parler à Ajnaya.
+   *
+   * `mesurer` joint l'origine complète (campagne, support, parrain) lue dans
+   * l'adresse, et `/api/mesure` l'écrit avec le même badge appareil que celui
+   * parti dans le message. Les deux bouts portent enfin la même clé.
+   */
+  const compterWhatsApp = (ou: string) =>
+    mesurer('WhatsAppClick', {
+      page: '/',
+      intention: 'ajnaya',
+      audience: 'chauffeur',
+      promesse: ou,
+    })
   // Desktop (≥768px, seuil aligné sur les breakpoints md: de la page) : la modale de la home
   // (AjnayaConversationModal) remplace le mockup téléphone — le format phone-frame ne doit
   // exister QUE sur mobile (retour Chandler explicite).
@@ -306,7 +334,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
           <Link href="/" aria-label="FOREAS — Accueil">
             <ForeasLogo variant="mini" className="h-6 w-auto text-[#F8FAFC]" />
           </Link>
-          <a href={waFinal} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/[0.14] bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-bold transition active:scale-[0.96] active:bg-white/[0.09]">
+          <a href={waFinal} onClick={() => compterWhatsApp('barre_haute')} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/[0.14] bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-bold transition active:scale-[0.96] active:bg-white/[0.09]">
             WhatsApp
           </a>
         </div>
@@ -674,9 +702,10 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         </div>
         <a
           href={waFinal}
+          onClick={() => compterWhatsApp('barre_collante')}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="WhatsApp"
+          aria-label="Parler à Ajnaya sur WhatsApp"
           className="flex h-14 w-14 flex-none items-center justify-center rounded-xl border border-white/[0.14] transition active:scale-[0.96]"
           style={{ background: 'rgba(10,12,20,.92)' }}
         >
