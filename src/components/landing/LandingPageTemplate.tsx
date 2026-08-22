@@ -353,13 +353,30 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           gras sans contexte. Un chiffre affiché ainsi se lit comme une promesse FOREAS ;
           en le rattachant à "témoignage vidéo", il redevient ce qu'il est réellement —
           la parole d'un chauffeur filmé, pas une garantie de résultat. */}
+      {/* ⚠️ 22/08/2026 — CE TITRE S'AFFICHAIT AU-DESSUS DU VIDE, SUR LES DIX PAGES.
+
+          Le filtre `temoignagePubliableParNom` était bien là — mais posé sur la
+          LISTE, pas sur la SECTION. Les six accords étant « en attente », le
+          filtre vidait la liste et laissait « Leurs mots, en vidéo » suivi
+          immédiatement de « Voir l'offre → ».
+
+          Mesuré en production sur /revenus et /aeroport : la promesse était
+          servie, la preuve absente. Sur dix pages indexables à la fois.
+
+          On calcule d'abord, on affiche ensuite. */}
+      {(() => {
+        const autorises = (c.proof_items ?? []).filter((proof) =>
+          temoignagePubliableParNom(proof.name),
+        )
+        if (autorises.length === 0) return null
+        return (
       <section className="px-4 py-20 max-w-2xl mx-auto">
         <FadeIn>
           <p className="text-xs uppercase tracking-[0.25em] text-white/55 mb-8 text-center">
             Leurs mots, en vidéo
           </p>
           <div className="space-y-4">
-            {c.proof_items.filter((proof) => temoignagePubliableParNom(proof.name)).map((proof, i) => (
+            {autorises.map((proof, i) => (
               <FadeIn key={i} delay={i * 0.08}>
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
                   <div>
@@ -376,6 +393,8 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           </div>
         </FadeIn>
       </section>
+        )
+      })()}
 
       {/* ── SECTION 6.b — CTA INTERMÉDIAIRE ───────────────────────────────── */}
       {/* Juste après la preuve sociale = le point de température maximale du parcours

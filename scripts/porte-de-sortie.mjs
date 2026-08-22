@@ -639,6 +639,58 @@ console.log('\n── L\'accueil propose-t-il l\'app ? ──')
   }
 }
 
+// ─── AUCUN TITRE DE PREUVE SOCIALE AU-DESSUS DU VIDE ───────────────────────
+//
+// 🔴 MESURÉ LE 22/08/2026, SUR TROIS SURFACES À LA FOIS.
+//
+// Les six accords de témoignage sont « en attente », donc toutes les listes de
+// preuve sont vides. Mais les TITRES, eux, continuaient d'être servis :
+//   · /experience  → « PAS MOI QUI LE DIS. EUX. » — section de 112 px, rien
+//                    dedans, ni carte ni vidéo ;
+//   · /tarifs2     → « 3 des 6 chauffeurs qu'on a filmés » au-dessus d'une
+//                    grille vide — pire : un nombre PRÉCIS de preuves absentes ;
+//   · les 10 pages SEO → « Leurs mots, en vidéo » suivi de « Voir l'offre → ».
+//
+// ⚠️ POURQUOI LES TROIS ONT SURVÉCU AUX CORRECTIONS DE LA VEILLE : le garde
+// avait été posé sur le CONTENU (la carte, la liste), jamais sur le CONTENEUR.
+// Un demi-correctif sur une preuve sociale laisse toujours la PROMESSE derrière.
+//
+// C'est pire qu'une section absente. Le visiteur lit une promesse de preuve puis
+// regarde un trou : soit le site paraît cassé, soit il paraît cacher quelque
+// chose. Les deux coûtent exactement la confiance qu'on essayait de gagner là.
+//
+// Cette règle lit le TEXTE SERVI : si un titre de preuve apparaît, un nom du
+// registre doit apparaître aussi. Aucune analyse de code ne pourrait le voir —
+// les trois gardes existaient bel et bien.
+console.log('\n── Un titre de preuve sociale sans preuve ──')
+{
+  const TITRES = [
+    'Pas moi qui le dis',
+    'Leurs mots, en vidéo',
+    'chauffeurs qu’on a filmés',
+    "chauffeurs qu'on a filmés",
+  ]
+  const NOMS = ['Binate', 'Binaté', 'Dragan', 'Haitham', 'Zefi', 'Nikolic', 'Hadietou']
+
+  let examinees = 0
+  let vides = 0
+  for (const [chemin, html] of Object.entries(corps)) {
+    if (!html) continue
+    examinees++
+    const texte = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')
+    const titre = TITRES.find((t) => texte.includes(t))
+    if (!titre) continue
+    const preuve = NOMS.some((n) => texte.includes(n))
+    if (!preuve) {
+      vides++
+      dire(false, `${chemin} → titre « ${titre} » servi SANS aucun nom du registre`)
+    }
+  }
+  if (vides === 0) {
+    console.log(`  ✅ ${examinees} page(s) lue(s) — aucun titre de preuve au-dessus du vide`)
+  }
+}
+
 console.log('\n── Le message envoyé au nom du chauffeur ──')
 {
   for (const page of ['/', '/ou-ca-paie']) {

@@ -423,13 +423,39 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         <StickyFeatures isMobile={isMobile} />
       </section>
 
-      {/* ═══ PREUVE — vraie vidéo Binaté (source unique testimonials.data.ts) ═══ */}
-      <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
-        <div className="mx-auto max-w-md md:max-w-xl">
-          <p className="mb-4 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Pas moi qui le dis. Eux.</p>
-          {BINATE && (<TestimonialVideoCard testimonial={BINATE} showQuote />)}
-        </div>
-      </motion.section>
+      {/* ═══ PREUVE — vraie vidéo Binaté (source unique testimonials.data.ts) ═══
+
+          ⚠️ 22/08/2026 — CETTE SECTION AFFICHAIT UN TITRE AU-DESSUS DU VIDE.
+
+          Le 21/08, j'ai filtré les témoignages à la source : tant que les six
+          accords sont « en attente », `TESTIMONIALS` est vide et `BINATE` vaut
+          `undefined`. J'avais alors ajouté un garde `{BINATE && (…)}` — mais
+          UNIQUEMENT autour de la carte. Le titre, lui, restait rendu.
+
+          Mesuré en production : une section de 112 px contenant
+          « PAS MOI QUI LE DIS. EUX. » et **rien d'autre**. Aucune carte, aucune
+          vidéo, deux enfants visibles.
+
+          C'est pire qu'une absence de section. Un visiteur lit une promesse de
+          preuve, puis regarde un trou : soit le site paraît cassé, soit il
+          paraît cacher quelque chose. Les deux coûtent la confiance qu'on
+          essayait justement de gagner ici.
+
+          ⚠️ LA LEÇON : un demi-correctif sur une preuve sociale laisse toujours
+          la PROMESSE derrière. Le garde va sur le conteneur, jamais sur le seul
+          contenu. C'est le même piège que j'ai déjà refermé dans /cap et dans
+          Testimonials.tsx — troisième fois pour cette famille.
+
+          Le jour où un accord passe à « approuvé », la section revient toute
+          seule, avec cette personne et elle seule. ═══ */}
+      {BINATE && (
+        <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">
+          <div className="mx-auto max-w-md md:max-w-xl">
+            <p className="mb-4 text-[10px] font-extrabold uppercase text-accent-cyan" style={{ letterSpacing: '.22em' }}>Pas moi qui le dis. Eux.</p>
+            <TestimonialVideoCard testimonial={BINATE} showQuote />
+          </div>
+        </motion.section>
+      )}
 
       {/* ═══ OFFRE — 29,99€/mois ═══ */}
       <motion.section {...reveal} className="relative z-10 border-t border-white/[0.05] px-5 py-10 md:py-14">

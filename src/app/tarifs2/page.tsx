@@ -802,7 +802,14 @@ function TarifsContent() {
                 découvert (src/components/zone/testimonials.data.ts). */}
             <p className="text-[#00D4FF]/85 text-[10px] font-extrabold uppercase mb-3" style={{ letterSpacing: '0.28em' }}>VRAIS CHAUFFEURS · FILMÉS À VISAGE DÉCOUVERT</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F8FAFC] mb-3" style={{ letterSpacing: '-0.03em' }}>Pas des promesses. Des visages.</h2>
-            <p className="text-white/55">3 des {COMMUNAUTE.temoignagesVideoReels} chauffeurs qu&apos;on a filmés. Leurs mots, pas les nôtres.</p>
+            {/* ⚠️ 22/08/2026 — CETTE PHRASE ANNONÇAIT TROIS VISAGES ET N'EN MONTRAIT AUCUN.
+                Les six accords sont « en attente », donc la grille en dessous est
+                vide. Le texte, lui, promettait « 3 des 6 chauffeurs qu'on a filmés ».
+                Annoncer un nombre précis de preuves qu'on ne montre pas est pire
+                qu'une section vide : c'est vérifiable en un coup d'œil, et faux. */}
+            <p className="text-white/55">
+              {COMMUNAUTE.temoignagesVideoReels} chauffeurs filmés à visage découvert. Leurs accords écrits sont en cours&nbsp;: leurs mots reviendront ici dès qu&apos;ils seront signés.
+            </p>
           </div>
           <div className="grid sm:grid-cols-3 gap-5">
             {/* 14/08/2026 — les trois témoignages affichés ici étaient inventés, chiffres compris.
