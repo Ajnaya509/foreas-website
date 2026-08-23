@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'crypto'
 
 export const runtime = 'nodejs'
 
@@ -42,6 +43,28 @@ export async function POST(req: NextRequest) {
         ? body.target_canal.trim()
         : null
 
+    /**
+     * ⚠️ 23/08/2026 — LE BILLET N'ÉTAIT RELIÉ À PERSONNE.
+     *
+     * Le nœud n8n envoie `phone_e164` depuis toujours. Cette route contenait
+     * ZÉRO occurrence du mot « phone » : le numéro était transmis puis jeté.
+     *
+     * Le billet reste un jeton AU PORTEUR — il voyage dans un lien
+     * `wa.me/...?text=<uuid>`, c'est sa nature, on ne peut pas la changer. Mais
+     * on peut enregistrer QUI l'a réclamé, pour qu'un vol laisse une trace au
+     * lieu d'être invisible.
+     *
+     * On garde une EMPREINTE tronquée, jamais le numéro : un numéro en clair
+     * dans une table de jetons serait une donnée personnelle de plus à
+     * protéger, pour un gain nul. On veut savoir « est-ce le même porteur ? »,
+     * pas « qui est-ce ».
+     */
+    const porteurBrut =
+      typeof body?.phone_e164 === 'string' ? body.phone_e164.trim() : ''
+    const porteurHash = porteurBrut
+      ? createHash('sha256').update(porteurBrut).digest('hex').slice(0, 16)
+      : null
+
     if (!token || typeof token !== 'string') {
       return NextResponse.json({ error: 'missing_token' }, { status: 400 })
     }
@@ -80,9 +103,42 @@ export async function POST(req: NextRequest) {
      * ce retour, et lui seul, qui prouve qu'on a gagné la course.
      * ══════════════════════════════════════════════════════════════════════
      */
+    /**
+     * ══════════════════════════════════════════════════════════════════════
+     * 23/08/2026 — LE GARDE-CANAL TENAIT À UN CHAMP QU'IL SUFFISAIT D'OMETTRE.
+     *
+     * Trouvé par relecture adverse, et PROUVÉ : un billet `target_canal='app'`
+     * a été consommé depuis une machine tierce en n'envoyant simplement PAS
+     * `target_canal`. Le garde ne coûtait à l'attaquant qu'un champ à retirer.
+     *
+     * On le rend OBLIGATOIRE — mais seulement là où on peut le rendre
+     * obligatoire sans rien casser :
+     *
+     *   billet `app`      → déclaration facultative. C'est le chemin historique
+     *                       de l'App, le SEUL qui ait déjà consommé un billet
+     *                       en production. L'exiger casserait ce qui marche.
+     *   billet AUTRE      → déclaration OBLIGATOIRE et exacte, sinon 409.
+     *
+     * Un billet WhatsApp ne peut donc plus être réclamé par un appelant qui se
+     * tait. La direction qui compte est fermée ; l'autre attend que l'App
+     * envoie son canal, et ce jour-là la garde devient totale.
+     * ══════════════════════════════════════════════════════════════════════
+     */
+    const { data: cible } = await supabase
+      .from('handoff_tokens')
+      .select('target_canal')
+      .eq('token', token)
+      .maybeSingle()
+
+    if (cible && cible.target_canal !== 'app' && canalDemande !== cible.target_canal) {
+      // On ne dit PAS quel canal était attendu : ce serait donner à un appelant
+      // qui tâtonne l'information qui lui manque.
+      return NextResponse.json({ error: 'token_wrong_canal' }, { status: 409 })
+    }
+
     let requete = supabase
       .from('handoff_tokens')
-      .update({ used_at: maintenant, used_from_ip: clientIp })
+      .update({ used_at: maintenant, used_from_ip: clientIp, used_by_hash: porteurHash })
       .eq('token', token)
       .is('used_at', null)       // pas déjà consommé
       .is('revoked_at', null)    // pas révoqué
