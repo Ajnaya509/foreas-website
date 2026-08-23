@@ -450,11 +450,19 @@ export default function AjnayaWidget() {
           }),
         })
         if (captureRes.ok) {
-          const captureData = await captureRes.json()
-          if (captureData.identity_id) {
-            capturedIdentityId = captureData.identity_id
-            setIdentityId(captureData.identity_id)
-          }
+          // ── 23/08 v2 — LA CAPTURE NE REND PLUS L'IDENTITÉ ────────────────
+          // `/api/identity/capture` renvoyait `identity_id`, `is_known` et
+          // `merged` au navigateur À PARTIR D'UN NUMÉRO SIMPLEMENT TAPÉ.
+          // Taper le numéro de quelqu'un ne prouve rien — c'est le geste exact
+          // de l'attaquant. La route ne répond donc plus que « c'est fait ».
+          //
+          // On retombe sur l'identité que le flux de conversation a déjà
+          // résolue côté serveur (`onMeta`). Si elle n'existe pas encore, on
+          // n'invente rien : le bouton WhatsApp garde son lien de repli, et le
+          // passage se créera au prochain échange. Un passage manquant ne coûte
+          // aujourd'hui aucun contexte — un passage `UNBOUND` n'en porte pas.
+          await captureRes.json().catch(() => ({}))
+          if (identityId) capturedIdentityId = identityId
         }
 
         // 3. Issue WhatsApp handoff — build wa.me URL carrying conversation state

@@ -208,13 +208,24 @@ export async function POST(request: NextRequest) {
       console.warn('[identity/capture] Meta CAPI Lead fail:', (err as Error).message)
     })
 
-    return NextResponse.json({
-      ok: true,
-      identity_id,
-      merged,
-      is_known: resolved.is_known,
-      user_type: resolved.user_type ?? null,
-    })
+    // ── 23/08 v2 — UN TÉLÉPHONE SAISI N'EST PAS UNE PREUVE DE POSSESSION ─────
+    // Cette route rendait `identity_id`, `merged`, `is_known` et `user_type`
+    // AU NAVIGATEUR, à partir d'un numéro simplement TAPÉ. Or taper le numéro
+    // de quelqu'un ne prouve rien : c'est même le geste exact de l'attaquant.
+    //
+    // Conséquences réelles fermées ici :
+    //   · un oracle — « ce numéro est-il connu de FOREAS ? » ;
+    //   · une identité interne posée entre les mains d'un client public ;
+    //   · `is_known`, qui dit d'une victime qu'elle existe.
+    //
+    // Le site n'a besoin que de savoir si la capture a fonctionné. Le reste
+    // vit côté serveur, où il est vérifiable.
+    //
+    // ⚠️ La capture reste utile : le prospect est bien enregistré et la
+    // mémoire de canal écrite. C'est la RÉVÉLATION qui s'arrête, pas la
+    // collecte — et aucune mémoire privée ne s'ouvre avant preuve de
+    // possession du numéro (voir le contrat de passage v2).
+    return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('[identity/capture] Error:', (error as Error).message)
     return NextResponse.json({ error: 'capture_failed' }, { status: 500 })

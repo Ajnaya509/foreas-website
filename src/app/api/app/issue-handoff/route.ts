@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 // 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
@@ -34,6 +35,32 @@ export const runtime = 'nodejs'
  *   webFallback: string            // https://foreas.xyz/go?deeplink=<uuid>
  * }
  */
+/**
+ * ── 23/08 v2 — LE TEXTE N'EST PLUS UNE AUTORITÉ ──────────────────────────────
+ *
+ * Un message `wa.me` est un TEXTE DU CHAUFFEUR : il peut le modifier, le
+ * raccourcir, l'effacer. Aucun code placé dedans ne peut devenir invisible ni
+ * ineffaçable. Le code court d'hier n'était donc qu'un UUID plus joli.
+ *
+ * La liaison se prouve désormais CÔTÉ SERVEUR, par le numéro entrant — et un
+ * numéro simplement SAISI ne prouve rien : n'importe qui peut taper celui d'un
+ * autre. Un passage n'est donc `BOUND` que si le serveur peut le PROUVER.
+ * Sinon il reste `UNBOUND` : il n'ouvre aucune mémoire privée, jamais.
+ *
+ * C'est ce qui rend inerte l'attaque la plus simple : inscrire le numéro d'une
+ * victime, puis attendre qu'elle écrive.
+ */
+function hmacNumero(e164: string): { hmac: string; version: number } | null {
+  const secret = process.env.PASSAGE_HMAC_SECRET || process.env.OBSERVE_HMAC_SALT || ''
+  // Pas de secret = pas d'empreinte. On ne retombe JAMAIS sur un SHA simple :
+  // 15 chiffres se parcourent en entier, un hachage nu ne protège rien.
+  if (!secret) return null
+  return {
+    hmac: crypto.createHmac('sha256', secret).update(e164).digest('hex'),
+    version: Number(process.env.PASSAGE_HMAC_VERSION || 1),
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -42,11 +69,13 @@ export async function POST(req: NextRequest) {
       state,
       source_canal = 'widget',
       target_canal = 'app',
+      phone_e164,
     } = body as {
       identity_id?: string
       state?: Record<string, unknown>
       source_canal?: string
       target_canal?: string
+      phone_e164?: string
     }
 
     if (!identity_id || typeof identity_id !== 'string') {
@@ -111,6 +140,13 @@ export async function POST(req: NextRequest) {
           : "Dis-moi ce que tu cherches, on reprend ici."
     }
 
+    // Le numéro visé, s'il a été saisi. Normalisé puis empreinté côté serveur :
+    // il n'est jamais stocké en clair, et l'empreinte reste une donnée personnelle.
+    const numeroVise = typeof phone_e164 === 'string' && /^\+\d{8,15}$/.test(phone_e164.trim())
+      ? phone_e164.trim()
+      : null
+    const empreinte = numeroVise ? hmacNumero(numeroVise) : null
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -123,6 +159,22 @@ export async function POST(req: NextRequest) {
         source_canal,
         target_canal,
         state: resolvedState,
+        // ── LA LIAISON N'EST PAS DÉCLARÉE, ELLE EST PROUVÉE ──────────────────
+        // Cette route est appelée DEPUIS LE NAVIGATEUR. Rien de ce qu'elle
+        // reçoit ne peut donc valoir preuve — pas même le numéro. Un passage
+        // né ici est TOUJOURS `UNBOUND`, et un passage `UNBOUND` n'ouvre
+        // aucune mémoire privée, jamais.
+        //
+        // C'est ce qui rend inerte l'attaque la plus simple : inscrire le
+        // numéro d'une victime puis attendre qu'elle écrive à Ajnaya. Son
+        // brouillon existe, il ne sert à rien.
+        //
+        // On garde tout de même l'empreinte du numéro visé : c'est elle que la
+        // cérémonie de possession viendra confirmer plus tard. Une empreinte
+        // n'est pas une preuve — c'est la CIBLE d'une preuve à venir.
+        ...(empreinte ? { phone_hmac: empreinte.hmac, hmac_version: empreinte.version } : {}),
+        lien_etat: 'UNBOUND',
+        claim_method: target_canal === 'whatsapp' ? 'numero_entrant' : 'jeton_app',
       })
       .select('token, short_code')
       .single()
@@ -153,9 +205,16 @@ export async function POST(req: NextRequest) {
     const code = (data as { short_code?: string }).short_code || ''
     const sujet = (resolvedState.question_chauffeur as string | undefined) || ''
 
+    // ⛔ PLUS AUCUNE RÉFÉRENCE TECHNIQUE. Le code court de ce matin était un
+    // progrès de lisibilité, pas de sécurité : un texte que le chauffeur peut
+    // modifier ne peut porter aucune autorité, quelle que soit sa forme.
+    // Le message ne sert plus qu'à une chose : être une phrase que le chauffeur
+    // accepte d'envoyer. S'il la réécrit entièrement, rien n'est perdu — la
+    // liaison, elle, vit côté serveur.
+    void code
     const texteWhatsApp = sujet
-      ? `Salut Ajnaya, on parlait de : « ${sujet.slice(0, 120)} ». Je continue ici.${code ? ` (réf. ${code})` : ''}`
-      : `Salut Ajnaya, je continue ici la conversation commencée sur foreas.xyz.${code ? ` (réf. ${code})` : ''}`
+      ? `Salut Ajnaya, on parlait de : « ${sujet.slice(0, 120)} ». Je continue ici.`
+      : `Salut Ajnaya, je continue ici la conversation commencée sur foreas.xyz.`
 
     // Build deeplink per target canal
     const deeplink =
@@ -177,6 +236,15 @@ export async function POST(req: NextRequest) {
       })
     } catch { /* silent — analytics never blocks handoff */ }
 
+    // ── CE QUI SORT D'ICI PART DANS UN NAVIGATEUR ────────────────────────────
+    // Pour l'App, le jeton reste nécessaire : `HandoffService` le réclame avec
+    // une session authentifiée, c'est son contrat et il est vivant.
+    // Pour WhatsApp, plus personne n'en a besoin — la réclamation se fait par le
+    // numéro entrant, côté serveur. Le rendre ici ne ferait que le remettre dans
+    // un texte, c'est-à-dire recréer exactement la faille qu'on ferme.
+    if (target_canal === 'whatsapp') {
+      return NextResponse.json({ ok: true, deeplink })
+    }
     return NextResponse.json({ ok: true, token, deeplink, webFallback })
   } catch (err) {
     console.error('[issue-handoff]', (err as Error).message)

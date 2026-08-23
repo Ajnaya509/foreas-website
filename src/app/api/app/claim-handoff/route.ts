@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { createHash } from 'crypto'
+import { createHash, createHmac } from 'crypto'
 
 export const runtime = 'nodejs'
 
@@ -25,6 +25,83 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     // `let` et non `const` : un code court est résolu en jeton juste en dessous.
     let { token } = body
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 23/08 v2 — RÉCLAMATION PAR NUMÉRO : LE TEXTE N'EST PLUS UNE AUTORITÉ
+    // ═══════════════════════════════════════════════════════════════════════
+    // Un message `wa.me` est un texte du chauffeur : modifiable, effaçable.
+    // Aucun code placé dedans ne peut faire autorité — ni un UUID, ni un code
+    // court. La continuité passe donc par le NUMÉRO ENTRANT, relu côté serveur.
+    //
+    // Mais un numéro SAISI sur le site ne prouve rien : n'importe qui peut
+    // taper celui d'un autre. D'où la règle unique et sans exception :
+    //
+    //        SEUL UN PASSAGE `BOUND` REND UN CONTEXTE.
+    //
+    // Un passage `UNBOUND` — c'est-à-dire tout passage né d'une simple saisie —
+    // ne rend RIEN. L'attaquant qui inscrit le numéro d'une victime fabrique un
+    // brouillon inerte : quand la victime écrit, elle ouvre une conversation
+    // neuve, sans un mot de ce que l'attaquant avait tapé.
+    //
+    // Cette porte est réservée au serveur : elle exige la clé Pieuvre. Un
+    // appelant public ne peut pas choisir un numéro et voir ce qui l'attend.
+    const parNumero = body?.by_phone === true
+    if (parNumero) {
+      const cle = process.env.PIEUVRE_API_KEY || process.env.PIEUVRE_OBSERVE_KEY || ''
+      const fournie = (req.headers.get('x-pieuvre-key') || '')
+      if (!cle || fournie !== cle) {
+        return NextResponse.json({ error: 'non_autorise' }, { status: 401 })
+      }
+
+      const brut = typeof body?.phone_e164 === 'string' ? body.phone_e164.trim() : ''
+      if (!/^\+\d{8,15}$/.test(brut)) {
+        return NextResponse.json({ error: 'numero_invalide' }, { status: 400 })
+      }
+
+      const secret = process.env.PASSAGE_HMAC_SECRET || process.env.OBSERVE_HMAC_SALT || ''
+      if (!secret) {
+        // Pas de secret = pas d'empreinte. On ne retombe JAMAIS sur un hachage
+        // nu : 15 chiffres se parcourent en entier. Sans secret, on refuse.
+        return NextResponse.json({ error: 'empreinte_indisponible' }, { status: 503 })
+      }
+      const hmac = createHmac('sha256', secret).update(brut).digest('hex')
+
+      const clientNum = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      )
+
+      // Consommation ATOMIQUE : le filtre `lien_etat='BOUND'` est DANS l'update.
+      // Vérifier puis agir de part et d'autre d'une attente n'est pas atomique —
+      // deux messages simultanés passeraient tous les deux.
+      const { data: pris } = await clientNum
+        .from('handoff_tokens')
+        .update({ used_at: new Date().toISOString(), claim_method: 'numero_entrant' })
+        .eq('phone_hmac', hmac)
+        .eq('lien_etat', 'BOUND')
+        .eq('target_canal', 'whatsapp')
+        .is('used_at', null)
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .select('identity_id, source_canal, target_canal, state')
+        .maybeSingle()
+
+      if (!pris) {
+        // Aucun passage PROUVÉ pour ce numéro. Réponse identique dans tous les
+        // cas — passage absent, seulement déclaré, expiré ou déjà pris : on
+        // n'apprend à personne si un numéro « existe » chez FOREAS.
+        return NextResponse.json({ ok: false, reason: 'aucun_passage_lie' }, { status: 200 })
+      }
+
+      return NextResponse.json({
+        ok: true,
+        identity_id: pris.identity_id,
+        source_canal: pris.source_canal,
+        target_canal: pris.target_canal,
+        state: pris.state,
+        claim_method: 'numero_entrant',
+      })
+    }
 
     /**
      * ⚠️ 23/08/2026 — LE CANAL DEMANDÉ, ET POURQUOI IL EST OPTIONNEL.
@@ -83,28 +160,15 @@ export async function POST(req: NextRequest) {
     )
 
     if (!UUID_RE.test(token)) {
-      if (!CODE_COURT_RE.test(token)) {
-        return NextResponse.json({ error: 'invalid_token_format' }, { status: 400 })
-      }
-      // Un code court ne désigne un billet que tant que ce billet est VIVANT.
-      // C'est ce qui rend 6 caractères acceptables : la cible disparaît dès
-      // qu'elle est consommée, révoquée ou expirée — et l'index unique interdit
-      // que deux billets vivants partagent un code.
-      const { data: parCode } = await clientResolution
-        .from('handoff_tokens')
-        .select('token')
-        .ilike('short_code', token)
-        .is('used_at', null)
-        .is('revoked_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle()
-
-      if (!parCode?.token) {
-        // Même réponse que pour un jeton inconnu : ne pas apprendre à un
-        // appelant qui tâtonne si un code existe mais est déjà consommé.
-        return NextResponse.json({ error: 'token_not_found' }, { status: 404 })
-      }
-      token = parCode.token as string
+      // 23/08 v2 — LE CODE COURT EST RETIRÉ, PAS ADAPTÉ.
+      // Il avait été ajouté ce matin pour rendre le message lisible. C'était un
+      // progrès d'apparence : un texte que le chauffeur peut réécrire ne porte
+      // aucune autorité, qu'il contienne un UUID ou six lettres. La continuité
+      // WhatsApp passe désormais par le numéro entrant (porte `by_phone`
+      // ci-dessus), et l'App garde son jeton — qu'elle réclame avec sa session.
+      // Supprimer le symbole plutôt que l'adapter : ce qui n'existe plus ne
+      // peut pas être rappelé par erreur dans six mois.
+      return NextResponse.json({ error: 'invalid_token_format' }, { status: 400 })
     }
 
     const supabase = createClient(
