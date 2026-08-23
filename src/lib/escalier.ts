@@ -82,21 +82,39 @@ export async function monterUneMarche(
 export async function identiteDepuisCookie(cookieHeader: string | null): Promise<string | null> {
   if (!cookieHeader) return null
   const vid = cookieHeader.match(/(?:^|;\s*)foreas_vid=([^;]+)/)?.[1]
-  if (!vid) return null
+  if (!vid) {
+    // Pas de badge : ce n'est pas une panne, c'est un visiteur sans cookie.
+    return null
+  }
   try {
     const supa = clientService()
-    if (!supa) return null
+    if (!supa) {
+      // ⚠️ 23/08 — CE CAS ÉTAIT MUET. Trois contradicteurs ont dû faire
+      // quinze appels et éliminer trois hypothèses pour découvrir que
+      // l'escalier n'écrivait rien. Un `catch {}` qui avale la raison
+      // transforme une panne en absence, et une absence ne se diagnostique pas.
+      console.warn('[escalier] identité non résolue : configuration Supabase absente')
+      return null
+    }
     const { data, error } = await supa.rpc('resolve_identity', {
       p_visitor_id: decodeURIComponent(vid),
       p_canal: 'site',
     })
-    if (error || !data) return null
+    if (error) {
+      console.warn('[escalier] resolve_identity a refusé :', error.message)
+      return null
+    }
+    if (!data) {
+      console.warn('[escalier] resolve_identity n\'a rien rendu')
+      return null
+    }
     const d = data as { identity_id?: string | null; conflict?: boolean }
     // ⚠️ `conflict` veut dire « la base ne sait pas de QUI il s'agit ».
     // Continuer, ce serait attacher un paiement au dossier d'un autre.
     if (d.conflict === true) return null
     return d.identity_id ?? null
-  } catch {
+  } catch (err) {
+    console.warn('[escalier] identité non résolue :', (err as Error).message)
     return null
   }
 }

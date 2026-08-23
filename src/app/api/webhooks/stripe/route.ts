@@ -728,15 +728,33 @@ export async function POST(request: Request) {
     if (event.type === 'invoice.paid' || event.type === 'invoice.payment_succeeded') {
       const facture = event.data.object as Stripe.Invoice
       const paye = (facture.amount_paid ?? 0) > 0
-      if (paye && facture.subscription) {
+      // ⚠️ 23/08 — J'AI ÉCRIT `facture.subscription` SANS LIRE VINGT LIGNES
+      // PLUS BAS. Le bloc `payment_failed` du 21/08 lit DÉJÀ les deux formes,
+      // et son commentaire explique pourquoi : `apiVersion` n'estampille que
+      // les requêtes SORTANTES ; la charge d'un événement ENTRANT est
+      // versionnée par la destination configurée chez Stripe, que ce code ne
+      // contrôle pas. Sur les versions récentes, `invoice.subscription`
+      // disparaît au profit d'un chemin imbriqué.
+      // Le piège était documenté à portée de regard. Je ne l'ai pas lu.
+      const idAbonnement =
+        (facture as unknown as { parent?: { subscription_details?: { subscription?: string } } })
+          .parent?.subscription_details?.subscription ?? facture.subscription
+      if (paye && idAbonnement) {
         try {
-          const abo = await stripe.subscriptions.retrieve(facture.subscription as string)
+          const abo = await stripe.subscriptions.retrieve(idAbonnement as string)
           const ident =
             (abo.metadata as Record<string, string> | null)?.foreas_identity_id || null
+          if (!ident) {
+            // Un paiement réel qu'on ne sait pas rattacher doit se VOIR.
+            // Silencieux, il ressemblerait à « personne n'a payé ».
+            console.warn('[escalier] facture payée sans identité rattachable')
+          }
           void monterUneMarche(ident, 'paiement_confirme', facture.id, 'stripe')
-        } catch {
-          // Une panne de lecture Stripe ne casse pas le webhook.
+        } catch (err) {
+          console.warn('[escalier] lecture Stripe impossible :', (err as Error).message)
         }
+      } else if (paye) {
+        console.warn('[escalier] facture payée mais aucun abonnement trouvé')
       }
     }
 
