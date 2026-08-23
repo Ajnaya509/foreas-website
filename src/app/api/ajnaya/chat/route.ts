@@ -172,13 +172,36 @@ function detectSentiment(text: string): 'positive' | 'negative' | 'neutral' {
 
 // ─── Objection detection ─────────────────────────────────────────────────────
 function detectObjection(text: string): string | null {
+  // ⚠️ 24/08/2026 — CES MOTIFS ÉTAIENT DES MORCEAUX DE MOTS, ET ILS MENTAIENT.
+  //
+  // Aucun n'avait de frontière de mot. Mesuré en rejouant le moteur réel :
+  //
+  //   « je cherche une zone qui paye le matin » → objection PRIX   ← « cher » dans « chercher »
+  //   « je veux annuler ma course »             → EXPERIENCE_NEG   ← « nul » dans « annuler »
+  //
+  // Ce n'est pas une étiquette pour rien : elle est AJOUTÉE au tableau
+  // `prospects.objections`, jamais retirée, puis réinjectée dans tous les
+  // prompts suivants sous « Objections passées : … ». Un chauffeur qui cherche
+  // une zone devenait, pour toujours, quelqu'un qui trouve ça trop cher.
+  //
+  // Deux fois rien nous a sauvés : 42 prospects, 0 objection écrite à ce jour.
+  // Le défaut était réel dans le code, pas encore dans les données.
+  //
+  // ⚠️ ET `\b` NE SUFFIT PAS EN FRANÇAIS : il ignore les accents, donc
+  // « hésite » ou « déjà » en début de phrase lui échappent. On borne à la main.
+  //
+  // ⚠️ CE FICHIER A UN JUMEAU. La même fonction vit dans
+  // `src/app/api/ajnaya/chat/route.ts` et dans `src/lib/ajnayaChatCore.ts`.
+  // Corriger l'un sans l'autre est le piège déjà payé deux fois le 14/08.
+  const D = '(?<![\\p{L}\\p{N}])', F = '(?![\\p{L}\\p{N}])'
+  const m = (corps: string) => new RegExp(D + '(?:' + corps + ')' + F, 'iu')
   const objections: Array<{ pattern: RegExp; label: string }> = [
-    { pattern: /trop cher|pas les moyens|cher|co[uû]t/i, label: 'prix' },
-    { pattern: /marche vraiment|crois pas|sceptique|doute/i, label: 'scepticisme' },
-    { pattern: /confiance|arnaque|escroquerie|faux/i, label: 'confiance' },
-    { pattern: /réfléchir|plus tard|pas maintenant|hésit/i, label: 'temporisation' },
-    { pattern: /pote dit|déjà essayé|nul|marche pas/i, label: 'experience_negative' },
-    { pattern: /utilise déjà|concurrent|autre app/i, label: 'concurrent' },
+    { pattern: m('trop\\s+cher\\w*|pas\\s+les\\s+moyens|c[\'’]?est\\s+cher|co[uû]te\\s+cher|hors\\s+de\\s+prix'), label: 'prix' },
+    { pattern: m('marche\\s+vraiment|crois\\s+pas|sceptique|j[\'’]?ai\\s+des\\s+doutes'), label: 'scepticisme' },
+    { pattern: m('arnaque|escroquerie|c[\'’]?est\\s+faux|pas\\s+confiance'), label: 'confiance' },
+    { pattern: m('r[ée]fl[ée]chir|plus\\s+tard|pas\\s+maintenant|j[\'’]?h[ée]site'), label: 'temporisation' },
+    { pattern: m('d[ée]j[àa]\\s+essay[ée]|c[\'’]?est\\s+nul|[çc]a\\s+marche\\s+pas|mon\\s+pote\\s+dit'), label: 'experience_negative' },
+    { pattern: m('utilise\\s+d[ée]j[àa]|concurrent|une\\s+autre\\s+appli?'), label: 'concurrent' },
   ]
   for (const o of objections) {
     if (o.pattern.test(text)) return o.label

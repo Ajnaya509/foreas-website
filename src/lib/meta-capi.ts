@@ -128,6 +128,13 @@ function buildUserData(user: CAPIUserData): Record<string, string | string[]> {
 
 // ─── Main sender ──────────────────────────────────────────────────────────────
 export interface SendCAPIOptions {
+  /**
+   * Envoyer CET événement dans le flux de test de Meta plutôt que dans le vrai.
+   * Sans effet si `META_TEST_EVENT_CODE` n'est pas configuré. À ne jamais poser
+   * en dur : c'est ce qui viderait les vraies conversions sans le dire.
+   */
+  test?: boolean
+
   /** Preuve d'accord publicitaire. Absent = refus. Voir `consentementPublicitaire`. */
   consentement?: boolean
   eventName: CAPIEventName
@@ -148,7 +155,32 @@ export async function sendCAPIEvent(opts: SendCAPIOptions): Promise<{ ok: boolea
 
   const pixelId = process.env.META_PIXEL_ID
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN
-  const testEventCode = process.env.META_TEST_EVENT_CODE
+
+  /**
+   * ── 24/08/2026 — LE MODE TEST ÉTAIT UN PIÈGE SILENCIEUX ───────────────────
+   *
+   * `META_TEST_EVENT_CODE` était lu ici et ajouté à TOUS les envois, sans
+   * qu'aucun appel puisse s'en exclure. Conséquence : le jour où on le pose en
+   * production pour vérifier un branchement, **toutes les vraies conversions
+   * partent aussi dans le flux de test** — donc ne comptent plus. Et rien ne
+   * le dit : les envois réussissent, Meta répond 200, le tableau de bord réel
+   * se vide sans un mot.
+   *
+   * Un interrupteur dont on ne peut pas savoir s'il est enfoncé n'est pas un
+   * mode test, c'est une trappe. Il faut désormais le DEMANDER — par appel
+   * (`opts.test`) ou par un second interrupteur explicite (`META_TEST_MODE`).
+   * Et dans les deux cas on l'écrit dans le journal : personne ne doit
+   * découvrir après coup que ses chiffres partaient ailleurs.
+   */
+  const codeTest = process.env.META_TEST_EVENT_CODE
+  const modeTestGlobal = process.env.META_TEST_MODE === '1'
+  const enTest = Boolean(codeTest) && (opts.test === true || modeTestGlobal)
+  if (codeTest && !enTest) {
+    console.warn(
+      `[meta-capi] un code de test est configuré mais « ${opts.eventName} » part dans le flux RÉEL. ` +
+        'Pose META_TEST_MODE=1 pour tout router en test.',
+    )
+  }
 
   if (!pixelId || !accessToken) {
     // Silencieux — permet de dev sans CAPI configuré
@@ -180,7 +212,10 @@ export async function sendCAPIEvent(opts: SendCAPIOptions): Promise<{ ok: boolea
     data: [eventPayload],
     access_token: accessToken,
   }
-  if (testEventCode) body.test_event_code = testEventCode
+  if (enTest && codeTest) {
+    body.test_event_code = codeTest
+    console.warn(`[meta-capi] « ${opts.eventName} » envoyé en TEST (code ${codeTest.slice(0, 4)}…) — non compté dans les vraies conversions.`)
+  }
 
   try {
     const res = await fetch(

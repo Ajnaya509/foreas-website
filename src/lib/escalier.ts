@@ -72,6 +72,86 @@ export async function monterUneMarche(
 }
 
 /**
+ * ── 24/08 — RÉSERVER LA PAROLE : UN SEUL CANAL PARLE À LA FOIS ──────────────
+ *
+ * `parcours_reserver` existait depuis le 23/08 et n'avait AUCUN appelant — ni
+ * dans les trois dépôts, ni en base. Une porte sans personne derrière.
+ *
+ * Elle sert ici, au seul endroit qui le mérite : le passage vers WhatsApp. Quand
+ * quelqu'un quitte le site pour aller parler à un humain, WhatsApp devient
+ * propriétaire du prochain geste — et le site, l'app ou une relance ne doivent
+ * pas lui écrire par-dessus pendant ce temps.
+ *
+ * ⚠️ Elle refuse d'elle-même sous opposition ou pendant un report, en disant
+ * laquelle des trois raisons. On ne se contente donc pas de « ça n'a pas
+ * marché » : on sait si quelqu'un parle déjà, ou si la personne a dit stop.
+ *
+ * Ne jette jamais : réserver est un confort d'orchestration, pas une condition
+ * pour qu'un chauffeur arrive sur WhatsApp.
+ */
+export async function reserverLaParole(
+  identityId: string | null | undefined,
+  canal: string,
+  geste: string,
+  minutes = 60,
+): Promise<void> {
+  if (!identityId) return
+  try {
+    const supa = clientService()
+    if (!supa) {
+      console.warn('[escalier] réservation impossible : configuration Supabase absente')
+      return
+    }
+    const { data, error } = await supa.rpc('parcours_reserver', {
+      p_identity: identityId, p_canal: canal, p_geste: geste, p_minutes: minutes,
+    })
+    if (error) {
+      console.warn('[escalier] parcours_reserver a refusé :', error.message)
+      return
+    }
+    const d = data as { reserve?: boolean; raison?: string } | null
+    if (d && d.reserve === false && d.raison) {
+      // Pas une panne : une information. « opposition » veut dire que cette
+      // personne a demandé le silence, et c'est le genre de chose qu'on veut
+      // voir dans un journal plutôt que deviner.
+      console.warn(`[escalier] parole non réservée (${canal}) : ${d.raison}`)
+    }
+  } catch (err) {
+    console.warn('[escalier] réservation impossible :', (err as Error).message)
+  }
+}
+
+/**
+ * Même chose que `identiteDepuisCookie`, mais quand l'appelant a DÉJÀ lu le
+ * badge lui-même. Évite de relire (et donc de recopier) un cookie `httpOnly`
+ * là où il est déjà entre les mains du serveur.
+ */
+export async function identiteDepuisBadge(vid: string | null): Promise<string | null> {
+  if (!vid) return null
+  try {
+    const supa = clientService()
+    if (!supa) {
+      console.warn('[escalier] identité non résolue : configuration Supabase absente')
+      return null
+    }
+    const { data, error } = await supa.rpc('resolve_identity', {
+      p_visitor_id: decodeURIComponent(vid),
+      p_canal: 'site',
+    })
+    if (error) {
+      console.warn('[escalier] resolve_identity a refusé :', error.message)
+      return null
+    }
+    const d = (data ?? {}) as { identity_id?: string | null; conflict?: boolean }
+    if (d.conflict === true) return null
+    return d.identity_id ?? null
+  } catch (err) {
+    console.warn('[escalier] identité non résolue :', (err as Error).message)
+    return null
+  }
+}
+
+/**
  * Retrouve l'identité d'un visiteur à partir de son cookie de première partie,
  * CÔTÉ SERVEUR. Le navigateur ne choisit jamais son identité — il porte un
  * badge, le serveur décide de qui il s'agit.

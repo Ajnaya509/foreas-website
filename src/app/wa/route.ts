@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { buildWAMessage, type WhatsAppSection } from '@/lib/whatsappLink'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
+import { identiteDepuisBadge, reserverLaParole } from '@/lib/escalier'
 
 /**
  * FOREAS — LE PASSAGE VERS WHATSAPP.
@@ -277,6 +278,30 @@ export async function GET(request: NextRequest) {
         .then(({ error }) => {
           if (error) console.error('[wa] écriture refusée :', error.message)
         })
+      /**
+       * ── 24/08 — CE PASSAGE ÉTAIT AVEUGLE À L'ESCALIER DE VENTE ───────────
+       *
+       * C'est le chemin vers un humain le plus emprunté du site : il lisait le
+       * badge appareil pour composer le message, et ne résolvait JAMAIS
+       * l'identité — alors que le résolveur vit dans le fichier d'à côté.
+       *
+       * Résultat : `parcours_reserver` n'avait aucun appelant. Quand un
+       * chauffeur partait discuter sur WhatsApp, rien n'empêchait le site ou
+       * une relance de lui écrire en même temps, sur un autre canal.
+       *
+       * ⚠️ On ne fait PAS monter de marche ici. Un clic prouve qu'on a voulu
+       * parler, pas qu'on a parlé — et surtout pas qu'on a vu une offre. La
+       * seule chose que ce clic prouve, c'est à QUI appartient le prochain
+       * geste. C'est exactement ce qu'on écrit, et rien de plus.
+       *
+       * Non bloquant, comme tout ce qui est dans ce `try` : la redirection est
+       * déjà construite et part quoi qu'il arrive.
+       */
+      void identiteDepuisBadge(badge)
+        .then((identite) =>
+          reserverLaParole(identite, 'whatsapp', 'répondre au message entrant', 60),
+        )
+        .catch((e) => console.warn('[wa] escalier :', (e as Error)?.message))
     } else {
       console.warn('[wa] clic non compté : clé serveur absente')
     }
