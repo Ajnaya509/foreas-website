@@ -598,7 +598,12 @@ export async function POST(request: Request) {
         (subscription?.metadata as Record<string, string> | null)?.foreas_identity_id ||
         (session.metadata as Record<string, string> | null)?.foreas_identity_id ||
         null
-      const enEssai = subscription?.status === 'trialing' || Boolean(subscription?.trial_end)
+      // ⚠️ `trial_end` RESTE REMPLI APRÈS LA FIN DE L'ESSAI — c'est une date
+      // historique, pas un drapeau. Le tester par sa simple présence dirait
+      // « en essai » pour toujours. On demande donc s'il est ENCORE dans le
+      // futur, et le statut Stripe reste l'autorité principale.
+      const finEssai = subscription?.trial_end ? subscription.trial_end * 1000 : 0
+      const enEssai = subscription?.status === 'trialing' || finEssai > Date.now()
       void monterUneMarche(
         identitePaiement,
         enEssai ? 'essai_actif' : 'paiement_confirme',
