@@ -72,12 +72,30 @@ export async function POST(request: NextRequest) {
     const device_cookie_id = request.cookies.get('foreas_vid')?.value ?? null
 
     // ── LA PORTE UNIQUE ────────────────────────────────────────────────────
+    // ── 23/08 v2 — UN NUMÉRO NON PROUVÉ NE SE MARIE À RIEN ───────────────────
+    // Relecture adverse, PROUVÉE en production : un POST avec le numéro d'une
+    // VICTIME et le `visitor_id` de l'ATTAQUANT collait le traceur de
+    // l'attaquant sur la fiche de la victime —
+    //   metadata->'visitor_ids' ? 'ATTAQUANT-DEVICE-XYZ'  →  true
+    //
+    // Fermer la RÉPONSE ne suffisait pas : la greffe se produit à l'écriture,
+    // pas à la lecture. Le dégât ne dépendait jamais de ce qu'on renvoyait.
+    //
+    // Un appelant public ne peut PAS prouver que ce numéro est le sien. On ne
+    // joint donc jamais une preuve forte à un signal faible dans le même geste :
+    // le numéro est résolu SEUL. Lier un numéro à un appareil est une
+    // affirmation — elle attend une preuve de possession, pas une déclaration.
+    //
+    // ⚠️ Le garde d'origine ne protège pas : `Origin` est un en-tête, il se
+    // forge. Le fichier `api-guard.ts` le dit lui-même. On ne s'y adosse pas.
     const resolution = await resolveIdentity(supabase, {
       phone_raw: phone_e164,
-      visitor_id: visitor_id ?? null,
-      device_cookie_id,
+      visitor_id: null,
+      device_cookie_id: null,
       canal,
     })
+    void visitor_id
+    void device_cookie_id
 
     // ⚠️ `conflict` = la base ne sait pas de QUI il s'agit (plusieurs personnes
     // fortes sur les mêmes clés). Continuer, c'est coller ce téléphone au dossier
