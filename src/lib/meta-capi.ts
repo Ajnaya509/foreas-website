@@ -18,6 +18,29 @@
 
 import crypto from 'crypto'
 
+/**
+ * ── 23/08 — LE SERVEUR NE LISAIT PAS LE CONSENTEMENT ─────────────────────────
+ *
+ * Le pixel du navigateur est correctement conditionné (`hasTrackingConsent`,
+ * cookie `foreas_consent`). Cette voie-ci, non : un téléphone haché, l'adresse
+ * réseau, le navigateur et un identifiant interne partaient chez Meta à CHAQUE
+ * capture, que la personne ait accepté, refusé, ou jamais répondu.
+ *
+ * Un consentement respecté d'un côté et ignoré de l'autre n'est pas un
+ * consentement : c'est une case cochée pour la forme.
+ *
+ * La règle est le REFUS PAR DÉFAUT. Sans preuve d'accord, rien ne part — et le
+ * produit continue de fonctionner exactement pareil : l'attribution publicitaire
+ * n'a jamais été nécessaire pour aider un chauffeur.
+ */
+export function consentementPublicitaire(cookieHeader: string | null | undefined): boolean {
+  if (!cookieHeader) return false
+  // Même valeur exacte que le client (`setTrackingConsent`) : 'accepted'.
+  // Accepter « toute valeur présente » rendrait un refus indiscernable d'un accord.
+  return /(?:^|;\s*)foreas_consent=accepted(?:;|$)/.test(cookieHeader)
+}
+
+
 const META_GRAPH_VERSION = 'v21.0'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -105,6 +128,8 @@ function buildUserData(user: CAPIUserData): Record<string, string | string[]> {
 
 // ─── Main sender ──────────────────────────────────────────────────────────────
 export interface SendCAPIOptions {
+  /** Preuve d'accord publicitaire. Absent = refus. Voir `consentementPublicitaire`. */
+  consentement?: boolean
   eventName: CAPIEventName
   userData: CAPIUserData
   customData?: CAPICustomData
@@ -113,7 +138,14 @@ export interface SendCAPIOptions {
   actionSource?: CAPIEventPayload['action_source']
 }
 
-export async function sendCAPIEvent(opts: SendCAPIOptions): Promise<{ ok: boolean; error?: string }> {
+export async function sendCAPIEvent(opts: SendCAPIOptions): Promise<{ ok: boolean; error?: string; skipped?: string }> {
+  // ⛔ REFUS PAR DÉFAUT. L'appelant doit PROUVER l'accord ; l'oublier ne
+  // vaut pas l'avoir. Un paramètre facultatif qui autorise quand il manque
+  // n'est pas une garde, c'est une décoration.
+  if (opts.consentement !== true) {
+    return { ok: false, skipped: 'consentement_absent' }
+  }
+
   const pixelId = process.env.META_PIXEL_ID
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN
   const testEventCode = process.env.META_TEST_EVENT_CODE

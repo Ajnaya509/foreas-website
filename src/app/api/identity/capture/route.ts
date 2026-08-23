@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
 import { createClient } from '@supabase/supabase-js'
-import { sendCAPIEvent } from '@/lib/meta-capi'
+import { sendCAPIEvent, consentementPublicitaire } from '@/lib/meta-capi'
 import { resolveIdentity, normalizePhoneE164, type IdentityCanal } from '@/lib/identityGate'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 // 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
@@ -207,7 +207,11 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for') || ''
     const clientIp = forwardedFor.split(',')[0]?.trim() || request.headers.get('x-real-ip') || undefined
     const clientUa = request.headers.get('user-agent') || undefined
+    // 23/08 — le consentement est LU CÔTÉ SERVEUR, sur le même cookie que le
+    // pixel du navigateur. Il était respecté d'un côté et ignoré de l'autre.
+    const accordPub = consentementPublicitaire(request.headers.get('cookie'))
     sendCAPIEvent({
+      consentement: accordPub,
       eventName: 'Lead',
       eventSourceUrl: page_source ? `${URL_SITE}${page_source}` : URL_SITE,
       userData: {

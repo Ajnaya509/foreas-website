@@ -614,9 +614,22 @@ export async function POST(request: Request) {
         phone: capiUserData.phone,
         externalId: capiUserData.externalId,
       }
+      // ── 23/08 — UN WEBHOOK N'A PAS DE COOKIE ────────────────────────────
+      // L'accord publicitaire se donne dans le NAVIGATEUR, au moment du
+      // paiement. Ici, on est côté Stripe : il faut donc que l'accord ait été
+      // ENREGISTRÉ à ce moment-là, dans les métadonnées de la session.
+      //
+      // Tant qu'il n'y est pas, rien ne part : refus par défaut. Conséquence
+      // assumée et NOMMÉE — l'attribution d'un vrai achat est perdue jusqu'à ce
+      // que `/api/checkout` inscrive le consentement dans la session.
+      // Mieux vaut une attribution manquante qu'un envoi non consenti.
+      const accordPub =
+        (session.metadata as Record<string, string> | null)?.foreas_consent === 'accepted'
+
       after(async () => {
         await Promise.allSettled([
           sendCAPIEvent({
+            consentement: accordPub,
             eventName: 'StartTrial',
             eventId: `${event.id}-starttrial`,
             userData: capiUserData,

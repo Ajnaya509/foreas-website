@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
-import { sendCAPIEvent, type CAPIEventName, type CAPIUserData, type CAPICustomData } from '@/lib/meta-capi'
+import { sendCAPIEvent, type CAPIEventName, type CAPIUserData, type CAPICustomData, consentementPublicitaire } from '@/lib/meta-capi'
 
 export const runtime = 'nodejs'
 
@@ -93,7 +93,11 @@ export async function POST(request: NextRequest) {
       fbp: fbp || body.userData?.fbp,
     }
 
+    // 23/08 — cette route est appelée par le navigateur : elle a le cookie.
+    // Le pixel client était conditionné au consentement, ce relais ne l'était
+    // pas — le refus se contournait en passant par ici.
     const result = await sendCAPIEvent({
+      consentement: consentementPublicitaire(request.headers.get('cookie')),
       eventName: body.eventName,
       eventId: body.eventId,
       eventSourceUrl: body.eventSourceUrl,
