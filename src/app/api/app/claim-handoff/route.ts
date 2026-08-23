@@ -23,7 +23,8 @@ export const runtime = 'nodejs'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { token } = body
+    // `let` et non `const` : un code court est résolu en jeton juste en dessous.
+    let { token } = body
 
     /**
      * ⚠️ 23/08/2026 — LE CANAL DEMANDÉ, ET POURQUOI IL EST OPTIONNEL.
@@ -71,8 +72,39 @@ export async function POST(req: NextRequest) {
 
     // Validate UUID format — prevents injection / unexpected queries
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    // 23/08 — le message prérempli ne porte plus l'UUID brut mais un code court
+    // (6 caractères, alphabet sans 0/O ni 1/I/L). Même alphabet ici, en dur :
+    // accepter « n'importe quoi de 6 caractères » ouvrirait une porte au hasard.
+    const CODE_COURT_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/i
+
+    const clientResolution = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    )
+
     if (!UUID_RE.test(token)) {
-      return NextResponse.json({ error: 'invalid_token_format' }, { status: 400 })
+      if (!CODE_COURT_RE.test(token)) {
+        return NextResponse.json({ error: 'invalid_token_format' }, { status: 400 })
+      }
+      // Un code court ne désigne un billet que tant que ce billet est VIVANT.
+      // C'est ce qui rend 6 caractères acceptables : la cible disparaît dès
+      // qu'elle est consommée, révoquée ou expirée — et l'index unique interdit
+      // que deux billets vivants partagent un code.
+      const { data: parCode } = await clientResolution
+        .from('handoff_tokens')
+        .select('token')
+        .ilike('short_code', token)
+        .is('used_at', null)
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle()
+
+      if (!parCode?.token) {
+        // Même réponse que pour un jeton inconnu : ne pas apprendre à un
+        // appelant qui tâtonne si un code existe mais est déjà consommé.
+        return NextResponse.json({ error: 'token_not_found' }, { status: 404 })
+      }
+      token = parCode.token as string
     }
 
     const supabase = createClient(

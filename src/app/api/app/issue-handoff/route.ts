@@ -59,13 +59,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'invalid_identity_id_format' }, { status: 400 })
     }
 
-    // Ensure prompt_for_next_canal is present (CONTRACTS.md §4 — obligatoire)
     const resolvedState = state || {}
-    if (!resolvedState.prompt_for_next_canal) {
+
+    // ── 23/08 — LE SUJET, C'EST LA PHRASE DU CHAUFFEUR ─────────────────────────
+    // Mesuré sur un vrai téléphone : les deux appelants (LivePhone, AjnayaWidget)
+    // composaient le contexte à partir de la DERNIÈRE PHRASE D'AJNAYA. Ce jour-là
+    // Ajnaya avait planté, sa dernière phrase était son propre message d'erreur,
+    // et le billet est parti en annonçant :
+    //   On parlait de : "Petit souci de connexion — écris-moi sur WhatsApp"
+    // La question réellement posée — « la zone Roissy à 6 h » — n'y était pas.
+    //
+    // Une conversation a un sujet parce que QUELQU'UN A DEMANDÉ QUELQUE CHOSE.
+    // La réponse de l'assistant n'est jamais le sujet, et son échec encore moins.
+    //
+    // On corrige ICI, au point unique où le billet naît, plutôt que dans chaque
+    // composant appelant : un correctif posé à deux endroits sur trois n'en est
+    // pas un.
+    const derniers = Array.isArray(resolvedState.last_messages) ? resolvedState.last_messages : []
+
+    // Ce qui n'est PAS un sujet : nos propres pannes et nos formules d'attente.
+    const RIEN_A_DIRE = /souci de connexion|réessaie|réessayer|indisponible|erreur|une seconde|je réfléchis/i
+
+    const questionChauffeur: string =
+      [...derniers]
+        .reverse()
+        .map((m: { role?: string; text?: string } | null) =>
+          m && m.role === 'user' && typeof m.text === 'string' ? m.text.trim() : '')
+        .find((t: string) => t.length >= 3 && !RIEN_A_DIRE.test(t)) || ''
+
+    if (questionChauffeur) {
+      // On ÉCRASE délibérément ce que l'appelant a composé : le serveur voit les
+      // messages, il sait donc mieux que le composant ce qui a été demandé.
+      //
+      // ⚠️ `prompt_for_next_canal` est ENVOYÉ TEL QUEL au chauffeur par la
+      // Pieuvre (nœud « Send Handoff Welcome WA »). Ce n'est donc PAS une
+      // consigne adressée à un modèle : c'est une phrase adressée à un humain.
+      // Écrire ici « Réponds à cette question » ferait lire au chauffeur l'ordre
+      // qu'on donnait à la machine.
+      resolvedState.question_chauffeur = questionChauffeur
       resolvedState.prompt_for_next_canal =
         target_canal === 'whatsapp'
-          ? "Salut ! Tu discutais avec Ajnaya sur le site FOREAS — je reprends là où on en était. Une question ?"
-          : "Bienvenue dans l'app FOREAS ! On reprend notre conversation."
+          ? `Tu me demandais : « ${questionChauffeur.slice(0, 160)} ». Je te réponds ici.`
+          : `Tu me demandais : « ${questionChauffeur.slice(0, 160)} ». On reprend.`
+    } else if (!resolvedState.prompt_for_next_canal) {
+      // Aucune question exploitable : on ne fabrique AUCUN souvenir.
+      // « Rien à résumer » n'autorise pas à inventer un passé commun — et surtout
+      // pas un « ravie de te retrouver » adressé à quelqu'un dont on ne sait rien.
+      resolvedState.prompt_for_next_canal =
+        target_canal === 'whatsapp'
+          ? "Dis-moi ce que tu cherches, je te réponds ici."
+          : "Dis-moi ce que tu cherches, on reprend ici."
     }
 
     const supabase = createClient(
@@ -81,7 +124,7 @@ export async function POST(req: NextRequest) {
         target_canal,
         state: resolvedState,
       })
-      .select('token')
+      .select('token, short_code')
       .single()
 
     if (error || !data) {
@@ -91,10 +134,33 @@ export async function POST(req: NextRequest) {
 
     const token = data.token as string
 
+    // ── 23/08 — UN MESSAGE QUE PERSONNE N'ENVERRA TEL QUEL N'EST PAS UN PONT ──
+    // Le texte prérempli était l'identifiant BRUT du billet :
+    //     16ef60af-384b-434d-bac3-5228fd0ced71
+    // Il est parti tel quel une seule fois : parce que Chandler testait. Un
+    // chauffeur l'efface — ça ne ressemble à rien et on n'envoie pas ça à
+    // quelqu'un. Et c'était aussi le billet EN CLAIR dans la conversation.
+    //
+    // Le message porte maintenant DEUX choses, dans cet ordre d'importance :
+    //   1. LA PHRASE DU CHAUFFEUR — même retapée de mémoire ou raccourcie, le
+    //      sujet survit. C'est elle qui fait le travail.
+    //   2. un code COURT (6 caractères, ni 0/O ni 1/I/L) qui relie le numéro au
+    //      visiteur du site. Il ne sert QU'AU PREMIER message : ensuite le
+    //      numéro est connu et tout se résout par lui.
+    //
+    // Si le chauffeur efface le code, on perd le lien — pas le sujet. Et on ne
+    // fera semblant de reconnaître personne.
+    const code = (data as { short_code?: string }).short_code || ''
+    const sujet = (resolvedState.question_chauffeur as string | undefined) || ''
+
+    const texteWhatsApp = sujet
+      ? `Salut Ajnaya, on parlait de : « ${sujet.slice(0, 120)} ». Je continue ici.${code ? ` (réf. ${code})` : ''}`
+      : `Salut Ajnaya, je continue ici la conversation commencée sur foreas.xyz.${code ? ` (réf. ${code})` : ''}`
+
     // Build deeplink per target canal
     const deeplink =
       target_canal === 'whatsapp'
-        ? `https://wa.me/33780732216?text=${encodeURIComponent(token)}`
+        ? `https://wa.me/33780732216?text=${encodeURIComponent(texteWhatsApp)}`
         : `foreas://handoff?token=${token}`
 
     const webFallback = `${URL_SITE}/go?deeplink=${token}`

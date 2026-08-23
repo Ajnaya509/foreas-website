@@ -63,10 +63,37 @@ export async function POST(request: NextRequest) {
 
     if (identifiers.length === 0) return NextResponse.json({ ok: false, reason: 'no_identifiers' }, { status: 200 })
 
+    // ── 23/08 — CETTE PORTE EST PUBLIQUE, ET ELLE NE LE SAVAIT PAS ────────────
+    // Relecture adverse, PROUVÉE en direct : un POST sans aucune authentification
+    // sur cette route renvoyait `{ok:true, identity_id:…, is_known:…}`.
+    // Elle relaie avec la clé Pieuvre — donc côté backend `cleValide` est vrai,
+    // et le filtre de session posé ce matin NE S'APPLIQUE PAS ICI.
+    //
+    // Deux dégâts distincts, tous deux réels :
+    //
+    //  1. UN ORACLE. « Ce téléphone / cet e-mail est-il connu de FOREAS ? » se
+    //     répondait à n'importe qui, sur simple requête. On ne renvoie donc plus
+    //     l'identité ni le fait de connaître la personne. Vérifié : le seul
+    //     appelant réel (`lib/observe.ts`) ne lit ni l'un ni l'autre.
+    //
+    //  2. UNE GREFFE. `{email: <victime>, visitor_id: <le mien>}` en un seul
+    //     appel faisait coller le traceur de l'attaquant sur la fiche de la
+    //     victime — la boucle d'attache de `resolve_identity_v2` rattache TOUT
+    //     ce qu'elle observe ensemble, sans condition d'appartenance.
+    //
+    //     Un appelant public ne peut PAS prouver que cet e-mail est le sien. On
+    //     n'envoie donc jamais une preuve forte DANS LE MÊME PAQUET qu'un signal
+    //     faible : la preuve forte part seule. Lier un e-mail à un appareil est
+    //     une affirmation — elle attend une vérification (lien cliqué, code,
+    //     paiement), pas une simple déclaration.
+    const FORTS = new Set(['email_hash', 'phone_hash'])
+    const aUnFort = identifiers.some((i) => FORTS.has(i.id_type))
+    const faisceau = aUnFort ? identifiers.filter((i) => FORTS.has(i.id_type)) : identifiers
+
     const res = await fetch(OBSERVE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-pieuvre-key': key },
-      body: JSON.stringify({ identifiers, context: { canal } }),
+      body: JSON.stringify({ identifiers: faisceau, context: { canal } }),
       cache: 'no-store',
     })
     if (!res.ok) return NextResponse.json({ ok: false, reason: `upstream_${res.status}` }, { status: 200 })
@@ -88,7 +115,10 @@ export async function POST(request: NextRequest) {
       } catch { /* l'observation ne casse jamais la visite */ }
     }
 
-    return NextResponse.json({ ok: true, identity_id: identityId, is_known: data?.is_known ?? null })
+    // On confirme l'observation, on ne RÉVÈLE rien. `identity_id` et `is_known`
+    // ne sortent plus d'ici : c'était l'oracle. Le seul appelant réel
+    // (`lib/observe.ts`) ne les lisait pas — vérifié avant de les retirer.
+    return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false, reason: 'error' }, { status: 200 }) // jamais casser le client
   }
