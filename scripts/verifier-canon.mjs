@@ -1471,7 +1471,17 @@ for (const chemin of fichiers(RACINE)) {
     }
 
     // Le badge ne redescend plus en propriété vers un composant navigateur.
-    if (/foreas_vid/.test(code) && !chemin.endsWith('middleware.ts') && !chemin.endsWith('identityGate.ts')) {
+    //
+    // ⚠️ 23/08/2026 — TROISIÈME FICHIER AUTORISÉ, MÊME PREUVE QUE `identityGate.ts`.
+    // `escalier.ts` lit `foreas_vid` pour résoudre une identité côté Stripe
+    // (paiement_commence / essai_actif / paiement_confirme), jamais côté navigateur :
+    // ses deux seuls appelants sont `api/checkout/route.ts` et
+    // `api/webhooks/stripe/route.ts` (routes serveur), il ne rend rien à un composant,
+    // et il ne renvoie jamais la valeur du cookie — seulement un `identity_id` obtenu
+    // par `resolve_identity`, ou `null`. Vérifié le 23/08 : aucun `.tsx`/`.jsx` ne
+    // l'importe. Si un jour un composant l'importe, la preuve change et cette entrée
+    // doit être retirée — pas avant.
+    if (/foreas_vid/.test(code) && !chemin.endsWith('middleware.ts') && !chemin.endsWith('identityGate.ts') && !chemin.endsWith('escalier.ts')) {
       infractions.push({
         fichier: chemin,
         quoi: 'le badge appareil est manipulé hors du serveur',
