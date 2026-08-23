@@ -498,7 +498,7 @@ export default function AjnayaWidget() {
       setPhoneCaptureDone(true)
       setPhonePromptPending(false)
       const replyTs = new Date().toISOString()
-      const phoneReply = { role: 'ajnaya' as const, text: "Parfait ! Clique sur le bouton ci-dessous pour continuer sur WhatsApp — je t'y retrouve avec tout le contexte. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)", timestamp: replyTs }
+      const phoneReply = { role: 'ajnaya' as const, text: "Parfait ! Clique sur le bouton ci-dessous, on continue sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)", timestamp: replyTs }
       setMessages(prev => [...prev, phoneReply])
       analyticsMessages.current.push({ role: 'ajnaya', text: phoneReply.text, timestamp: replyTs })
 
