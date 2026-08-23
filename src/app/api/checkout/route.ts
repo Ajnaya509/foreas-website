@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { identiteDepuisCookie, monterUneMarche } from '@/lib/escalier'
 import { consentementPublicitaire } from '@/lib/meta-capi'
 import Stripe from 'stripe'
@@ -292,7 +292,26 @@ export async function POST(request: NextRequest) {
     // La preuve est l'identifiant de session Stripe : stable, unique,
     // vérifiable. Un rejeu de cette route ne fera pas monter deux fois.
     // Non bloquant : si l'escalier tombe, le paiement continue.
-    void monterUneMarche(identiteVisiteur, 'paiement_commence', session.id, 'site')
+      /**
+    * ⚠️ 24/08/2026 — `void` NE SUFFIT PAS SUR CET HÉBERGEUR, ET C'EST MESURÉ.
+    *
+    * La fonction est GELÉE dès que la réponse part : un travail lancé sans
+    * rien pour le retenir peut ne jamais s'exécuter. Le commentaire du
+    * webhook Stripe l'explique depuis le 21/08 — et les émetteurs de
+    * l'escalier écrits le 23/08 sont tombés dans le même piège, vingt lignes
+    * plus bas. Deuxième fois que la réponse était déjà écrite à côté.
+    *
+    * PREUVE, pas déduction : un vrai GET sur /wa (cache MISS, 307 correct)
+    * n'a produit AUCUNE ligne dans `events` — alors que 244 PageView y sont
+    * arrivés le même jour. Le dernier WhatsAppClick datait du 22/08.
+    *
+    * `after()` exécute APRÈS la réponse sans la retarder, et l'hébergeur
+    * garde la fonction en vie. Ce n'est pas `await` qu'il faut : attendre
+    * ferait dépendre le chemin principal de la latence de la base.
+    */
+    after(async () => {
+      await monterUneMarche(identiteVisiteur, 'paiement_commence', session.id, 'site')
+    })
     if (isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {

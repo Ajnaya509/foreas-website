@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, after, type NextRequest } from 'next/server'
 import { buildWAMessage, type WhatsAppSection } from '@/lib/whatsappLink'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { identiteDepuisBadge, reserverLaParole } from '@/lib/escalier'
@@ -209,7 +209,25 @@ export async function GET(request: NextRequest) {
     request.headers.get('x-moz') === 'prefetch'
   if (prefetch) return reponse
 
-  try {
+      /**
+       * ⚠️ 24/08/2026 — `void` NE SUFFIT PAS SUR CET HÉBERGEUR, ET C'EST MESURÉ.
+       *
+       * La fonction est GELÉE dès que la réponse part : un travail lancé sans
+       * rien pour le retenir peut ne jamais s'exécuter. Le commentaire du
+       * webhook Stripe l'explique depuis le 21/08 — et les émetteurs de
+       * l'escalier écrits le 23/08 sont tombés dans le même piège, vingt lignes
+       * plus bas. Deuxième fois que la réponse était déjà écrite à côté.
+       *
+       * PREUVE, pas déduction : un vrai GET sur /wa (cache MISS, 307 correct)
+       * n'a produit AUCUNE ligne dans `events` — alors que 244 PageView y sont
+       * arrivés le même jour. Le dernier WhatsAppClick datait du 22/08.
+       *
+       * `after()` exécute APRÈS la réponse sans la retarder, et l'hébergeur
+       * garde la fonction en vie. Ce n'est pas `await` qu'il faut : attendre
+       * ferait dépendre le chemin principal de la latence de la base.
+       */
+  after(async () => {
+   try {
     const sb = clientServeurOuNull()
     if (sb) {
       /**
@@ -264,9 +282,13 @@ export async function GET(request: NextRequest) {
         event_id: null,
       }
 
-      // Pas d'attente bloquante : on n'ajoute pas la latence de la base au chemin
-      // principal. L'échec est journalisé, jamais avalé en silence.
-      void sb
+      // ⚠️ 24/08 — `await` ICI N'EST PLUS BLOQUANT, ET C'EST TOUT L'INTÉRÊT.
+      // Le commentaire d'origine disait vrai avant `after()` : attendre aurait
+      // ajouté la latence de la base au chemin principal. Maintenant tout ce
+      // bloc s'exécute APRÈS que la réponse soit partie — le chauffeur est déjà
+      // sur WhatsApp. Sans ce `await`, la fenêtre se refermerait avant
+      // l'écriture, ce qui est exactement la panne mesurée aujourd'hui.
+      const { error: errEvt } = await sb
         .from('events')
         .insert({
           event_name: 'WhatsAppClick',
@@ -275,9 +297,8 @@ export async function GET(request: NextRequest) {
           source: origine.utm_source ?? 'direct',
           session_id: badge ? badge.slice(0, 80) : null,
         })
-        .then(({ error }) => {
-          if (error) console.error('[wa] écriture refusée :', error.message)
-        })
+      if (errEvt) console.error('[wa] écriture refusée :', errEvt.message)
+
       /**
        * ── 24/08 — CE PASSAGE ÉTAIT AVEUGLE À L'ESCALIER DE VENTE ───────────
        *
@@ -297,17 +318,22 @@ export async function GET(request: NextRequest) {
        * Non bloquant, comme tout ce qui est dans ce `try` : la redirection est
        * déjà construite et part quoi qu'il arrive.
        */
-      void identiteDepuisBadge(badge)
-        .then((identite) =>
-          reserverLaParole(identite, 'whatsapp', 'répondre au message entrant', 60),
-        )
-        .catch((e) => console.warn('[wa] escalier :', (e as Error)?.message))
+      // Attendu DANS `after()` — sans le `await`, la fenêtre que `after` garde
+      // ouverte se refermerait avant que la réservation soit écrite : on aurait
+      // remplacé un piège par le même piège, à un niveau d'imbrication près.
+      try {
+        const identite = await identiteDepuisBadge(badge)
+        await reserverLaParole(identite, 'whatsapp', 'répondre au message entrant', 60)
+      } catch (e) {
+        console.warn('[wa] escalier :', (e as Error)?.message)
+      }
     } else {
       console.warn('[wa] clic non compté : clé serveur absente')
     }
-  } catch (e) {
+   } catch (e) {
     console.warn('[wa] mesure impossible :', (e as Error)?.message)
-  }
+   }
+  })
 
   return reponse
 }

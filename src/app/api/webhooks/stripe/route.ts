@@ -604,12 +604,20 @@ export async function POST(request: Request) {
       // futur, et le statut Stripe reste l'autorité principale.
       const finEssai = subscription?.trial_end ? subscription.trial_end * 1000 : 0
       const enEssai = subscription?.status === 'trialing' || finEssai > Date.now()
-      void monterUneMarche(
-        identitePaiement,
-        enEssai ? 'essai_actif' : 'paiement_confirme',
-        session.id,
-        'stripe',
-      )
+      // ⚠️ 24/08 — MÊME PIÈGE QUE LES ENVOIS PUBLICITAIRES VINGT LIGNES PLUS BAS.
+      // Cette fonction est gelée dès que la réponse part : un appel lancé sans
+      // rien pour le retenir peut ne jamais s'exécuter. Le commentaire qui
+      // l'explique est déjà dans ce fichier depuis le 21/08, et l'émetteur
+      // écrit le 23/08 est tombé dedans quand même. Mesuré en production le
+      // 24/08 sur /wa : un vrai clic, aucune ligne écrite.
+      after(async () => {
+        await monterUneMarche(
+          identitePaiement,
+          enEssai ? 'essai_actif' : 'paiement_confirme',
+          session.id,
+          'stripe',
+        )
+      })
 
       const capiUserData = {
         email: session.customer_details?.email || undefined,
@@ -749,7 +757,9 @@ export async function POST(request: Request) {
             // Silencieux, il ressemblerait à « personne n'a payé ».
             console.warn('[escalier] facture payée sans identité rattachable')
           }
-          void monterUneMarche(ident, 'paiement_confirme', facture.id, 'stripe')
+          after(async () => {
+            await monterUneMarche(ident, 'paiement_confirme', facture.id, 'stripe')
+          })
         } catch (err) {
           console.warn('[escalier] lecture Stripe impossible :', (err as Error).message)
         }
