@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { identiteDepuisCookie, monterUneMarche } from '@/lib/escalier'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, resoudreFormule } from '@/lib/offre'
@@ -67,6 +68,18 @@ export async function POST(request: NextRequest) {
     const cookieHeader = request.headers.get('cookie') || ''
     const cookieRefMatch = cookieHeader.match(/foreas_partner_ref=([^;]+)/)
     const effectiveReferralCode = (referral_code || cookieRefMatch?.[1] || '').trim().toUpperCase() || null
+
+    // ── 23/08 — QUI COMMENCE À PAYER ? ────────────────────────────────────────
+    // Cette route ne connaissait AUCUNE identité. Le paiement partait donc chez
+    // Stripe sans qu'on sache à qui l'attacher, et l'escalier ne pouvait pas
+    // monter : `paiement_commence`, `essai_actif` et `paiement_confirme`
+    // n'avaient aucun émetteur.
+    //
+    // On résout CÔTÉ SERVEUR depuis le cookie de première partie. Le navigateur
+    // porte un badge, il ne choisit pas son identité. Sans certitude, on rend
+    // `null` — et la marche ne monte pas plutôt que de monter chez quelqu'un
+    // d'autre.
+    const identiteVisiteur = await identiteDepuisCookie(cookieHeader)
 
     // Parrainage V3 — remise dynamique (fonction SQL, GRANT anon).
     // get_referral_discount_for_code gère DÉJÀ les codes CHAUFFEUR (palier 10/15/18 %)
@@ -169,6 +182,9 @@ export async function POST(request: NextRequest) {
         // Sinon : essai glissant de 3 jours, identique pour tous (voir getTrialEnd).
         ...(immediate ? {} : { trial_end: trialEnd }),
         metadata: {
+          // L'identité voyage jusqu'au webhook : lui n'a ni cookie ni session.
+          // Sans elle, un paiement confirmé ne saurait pas quel escalier monter.
+          ...(identiteVisiteur ? { foreas_identity_id: identiteVisiteur } : {}),
           // ⚠️ 21/08/2026 — ON ÉCRIVAIT L'ALIAS BRUT DU NAVIGATEUR.
           //
           // `resoudreFormule()` est appelée cinquante lignes plus haut, et son
@@ -243,6 +259,12 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams)
+
+    // ⛔ CECI PROUVE QU'ON A COMMENCÉ À PAYER, PAS QU'ON A PAYÉ.
+    // La preuve est l'identifiant de session Stripe : stable, unique,
+    // vérifiable. Un rejeu de cette route ne fera pas monter deux fois.
+    // Non bloquant : si l'escalier tombe, le paiement continue.
+    void monterUneMarche(identiteVisiteur, 'paiement_commence', session.id, 'site')
     if (isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {

@@ -1,4 +1,5 @@
 import { NextResponse, after } from 'next/server'
+import { monterUneMarche } from '@/lib/escalier'
 import Stripe from 'stripe'
 import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
@@ -580,6 +581,31 @@ export async function POST(request: Request) {
       const purchaseValue = 0
       const currency = subscription?.items.data[0]?.price?.currency?.toUpperCase() || 'EUR'
       const nameParts = (session.customer_details?.name || '').split(' ')
+      // ── 23/08 — L'ESCALIER MONTE ICI, ET SEULEMENT SUR CE QUE STRIPE DIT ──
+      // L'identité voyage dans les métadonnées : ce webhook n'a ni cookie ni
+      // session, il ne peut pas la deviner. Sans elle, on ne monte rien —
+      // un paiement attaché au mauvais dossier est pire qu'un dossier vide.
+      //
+      // ⛔ ET ON DISTINGUE L'ESSAI DE L'ARGENT. `checkout.session.completed`
+      // signifie « le formulaire est allé au bout », pas « il a payé ». Sur un
+      // essai à 0 €, personne n'a rien payé — c'est exactement l'erreur qui
+      // ferait compter un essai gratuit comme une vente.
+      // ⚠️ L'identité est posée dans `subscription_data.metadata`, donc elle
+      // arrive sur l'ABONNEMENT — pas sur la session. Stripe ne recopie pas
+      // l'un dans l'autre. Lire la session seule ne trouvait rien, en silence.
+      // On lit les deux, l'abonnement d'abord.
+      const identitePaiement =
+        (subscription?.metadata as Record<string, string> | null)?.foreas_identity_id ||
+        (session.metadata as Record<string, string> | null)?.foreas_identity_id ||
+        null
+      const enEssai = subscription?.status === 'trialing' || Boolean(subscription?.trial_end)
+      void monterUneMarche(
+        identitePaiement,
+        enEssai ? 'essai_actif' : 'paiement_confirme',
+        session.id,
+        'stripe',
+      )
+
       const capiUserData = {
         email: session.customer_details?.email || undefined,
         phone: phone || undefined,
@@ -684,6 +710,31 @@ export async function POST(request: Request) {
     }
 
     // ─── invoice.payment_failed ────────────────────────────────────
+    // ── 23/08 — LE VRAI PAIEMENT N'ÉTAIT TRAITÉ NULLE PART ────────────────
+    // Le webhook connaissait `payment_failed` mais pas `paid` : un chauffeur
+    // qui finissait son essai et payait réellement restait invisible. La
+    // marche `PAYE` n'avait donc aucun émetteur, et « première valeur » ne
+    // pouvait pas se mesurer.
+    //
+    // La preuve est l'identifiant de facture Stripe — stable et unique, donc
+    // un rejeu du webhook ne fait pas monter deux fois.
+    // ⛔ Un montant nul n'est pas un paiement : la première facture d'un essai
+    // vaut 0 €, et la compter serait fabriquer une vente.
+    if (event.type === 'invoice.paid' || event.type === 'invoice.payment_succeeded') {
+      const facture = event.data.object as Stripe.Invoice
+      const paye = (facture.amount_paid ?? 0) > 0
+      if (paye && facture.subscription) {
+        try {
+          const abo = await stripe.subscriptions.retrieve(facture.subscription as string)
+          const ident =
+            (abo.metadata as Record<string, string> | null)?.foreas_identity_id || null
+          void monterUneMarche(ident, 'paiement_confirme', facture.id, 'stripe')
+        } catch {
+          // Une panne de lecture Stripe ne casse pas le webhook.
+        }
+      }
+    }
+
     if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object as Stripe.Invoice
       // ⚠️ 21/08/2026 — CETTE LECTURE DÉPEND DE LA VERSION D'API DE STRIPE, ET
