@@ -76,6 +76,26 @@ import s from './tarifs3.module.css'
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
 /**
+ * ⚠️ SI STRIPE NE SE CHARGE PAS, LA PAGE RESTAIT GRISE POUR TOUJOURS.
+ *
+ * `CheckoutElementsProvider` attend la promesse de Stripe avec un `.then` SANS
+ * `.catch` — vérifié dans le paquet livré, pas seulement dans la bibliothèque.
+ * Un rejet le laisse donc en « chargement » indéfiniment, et le formulaire
+ * affiche ses trois barres grises qui pulsent sans fin. Aucun message, aucun
+ * bouton, aucun moyen de payer : le chauffeur croit que ça charge et il part.
+ *
+ * Ça arrive pour de vrai : un bloqueur de publicité, un portail wifi d'hôtel,
+ * un réseau mobile qui tombe en pleine course — et aussi si la clé publique
+ * manque au déploiement, auquel cas le site part « vert » et n'encaisse rien.
+ *
+ * On attrape donc le rejet nous-mêmes, et on le DIT.
+ */
+const stripePret: Promise<boolean> = stripePromise.then(
+  (s) => s !== null,
+  () => false
+)
+
+/**
  * ⚠️ LA SORTIE DE SECOURS, ET POURQUOI ELLE EXISTE À CETTE DATE PRÉCISE.
  *
  * `false` → le formulaire FOREAS (nos champs, notre bouton, Stripe invisible).
@@ -325,6 +345,17 @@ export default function Tarifs3Client() {
    * ce n'est plus le même montant.
    */
   const [promesseSecret, setPromesseSecret] = useState<Promise<string> | null>(null)
+  const [stripeKO, setStripeKO] = useState(false)
+  useEffect(() => {
+    let vif = true
+    stripePret.then((ok) => {
+      if (vif && !ok) setStripeKO(true)
+    })
+    return () => {
+      vif = false
+    }
+  }, [])
+
   useEffect(() => {
     if (REPLI_PANNEAU_STRIPE) return
     setPromesseSecret(recupererClientSecret())
@@ -651,6 +682,14 @@ export default function Tarifs3Client() {
                   <EmbeddedCheckout />
                 </EmbeddedCheckoutProvider>
               </div>
+            ) : stripeKO ? (
+              /* Le seul cas où l'on parle d'un problème technique au chauffeur :
+                 quand il ne peut RIEN faire d'autre. On lui donne les deux
+                 gestes qui marchent, pas une explication. */
+              <p className={s.erreurPaiement} role="alert">
+                Le paiement n’a pas pu se charger. Recharger la page, ou désactiver
+                un bloqueur de publicité s’il y en a un.
+              </p>
             ) : promesseSecret ? (
               <CheckoutElementsProvider
                 key={formule}
