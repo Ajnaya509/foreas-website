@@ -1,166 +1,269 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
 
 /**
- * Écran de marque au chargement.
+ * LE RIDEAU FOREAS — écran de chargement du site.
+ *
+ * Brief du fil app, 27/08/2026 :
+ * FOREAS-SHARED/BRIEF_SITE_RIDEAU_CHARGEMENT_2026-08-27.md
+ *
+ * Le signe F/ s'affiche en gris, sa barre s'allonge jusqu'aux bords et s'allume
+ * en dégradé, puis se dédouble en deux arêtes qui s'écartent. La page est
+ * derrière — elle n'a jamais été retardée.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * CE QUI N'ALLAIT PAS (mesuré en production le 14/08/2026)
+ * CE QUI EST REPRIS DE L'ANCIEN VOILE, ET QU'ON NE CASSE PAS
  *
- * Ce composant est rendu CÔTÉ SERVEUR avec `isLoading` déjà à `true`. Résultat :
- * dans le HTML servi de la page d'accueil (99 Ko), le voile apparaissait au
- * caractère 702 du `<body>` — soit **avant 99 % du contenu de la page**. Un
- * `fixed inset-0 z-[100]` opaque, posé devant tout, avant même que le moindre
- * JavaScript ne s'exécute.
- *
- * Et il restait **2 200 ms + 600 ms de fondu = 2,8 secondes**, sur un minuteur
- * fixe qui n'attend rien de réel : ni les images, ni les polices, ni les données.
- * C'était du décor, pas un chargement.
- *
- * Deux conséquences, toutes deux payées cash :
- *  1. Le visiteur — 80 % en mobile, souvent en 4G — regarde un écran noir 2,8 s
- *     avant de voir la première ligne du site. À chaque chargement de page.
- *  2. Google mesure la vitesse d'affichage du contenu principal. Le contenu
- *     qu'il trouvait en premier était ce voile : le site était noté sur son
- *     écran de chargement, pas sur sa page.
+ * Ce composant existait déjà et avait été durci deux fois. Tout est conservé :
+ *  · une seule fois par session (`sessionStorage`), sinon chaque navigation
+ *    interne rejouait l'écran de marque — le piège n°3 du brief ;
+ *  · rien du tout si les animations sont refusées ;
+ *  · `pointer-events-none` et `aria-hidden` : le voile n'a jamais bloqué ni la
+ *    souris ni les lecteurs d'écran, seulement les yeux ;
+ *  · la règle `noscript` du gabarit, qui le retire quand le script est mort ;
+ *  · l'état initial est le MÊME au serveur et au navigateur — `sessionStorage`
+ *    n'est jamais lu pendant le rendu, sinon l'hydratation casse.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * CE QUI CHANGE
+ * CE QUI CHANGE, ET POURQUOI
  *
- *  · **Une seule fois par session.** Le voile garde son rôle — poser la marque à
- *    l'arrivée — mais ne le rejoue plus à chaque page. Aux chargements suivants
- *    il disparaît au premier battement du navigateur, imperceptible.
- *  · **900 ms au lieu de 2 200.** Assez pour lire « FOREAS/ », pas assez pour
- *    faire attendre. Le fondu passe de 600 à 400 ms.
- *  · **Rien pour qui a désactivé les animations** : le voile est retiré tout de
- *    suite, comme le veut le réglage système.
+ * 1. LE DESSIN. Le texte « FOREAS/ » + signature + barre dégradée devient le
+ *    rideau du fil app, à la géométrie exacte (voir globals.css).
  *
- * ⚠️ `sessionStorage` ne peut PAS être lu pendant le rendu : le serveur n'y a pas
- * accès, et un état initial différent entre serveur et navigateur casse
- * l'hydratation. On rend donc toujours le voile, puis on le retire au premier
- * effet — c'est ce qui évite à la fois le clignotement et l'incohérence.
+ * 2. LE MINUTEUR FIXE DISPARAÎT. L'ancien voile partait sur un `setTimeout` de
+ *    900 ms qui n'attendait rien de réel. Il part maintenant sur un VRAI signal,
+ *    `animationend` — l'avertissement n°6 du brief, payé côté app : « le fichier
+ *    Rive ne déclarait aucun événement de fin, seule une minuterie levait le
+ *    rideau, en silence ».
+ *
+ * 3. LES PAGES QUI ENCAISSENT SONT EXCLUES. `/tarifs2` reçoit le trafic
+ *    publicitaire et `/tarifs3` est la page de lancement : une seconde de
+ *    rideau devant un formulaire de paiement se paie en euros.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ CE QUE JE N'AI PAS PU FAIRE COMME LE BRIEF LE DEMANDE, ET JE LE DIS
+ *
+ * Le brief exige : « si la page est prête en 200 ms, le rideau s'ouvre en
+ * 200 ms ». Mais ses propres quatre temps coûtent 1040 ms AVANT que
+ * l'écartement puisse commencer — la pose, l'allongement, le dédoublement.
+ * Couper au milieu ne donne pas un rideau rapide, ça donne un clignotement.
+ *
+ * Alors le raccourci se prend AVANT que quoi que ce soit ait bougé, pas
+ * pendant : si la page est déjà complète à l'hydratation, le rideau part
+ * d'emblée sur une version courte (900 ms au lieu de 1740). Et si elle devient
+ * prête plus tard mais avant l'écartement, on supprime le reste de l'attente.
+ * Aucune animation n'est jamais touchée EN COURS : c'est ce qui provoquerait
+ * un saut.
  */
 
+/** Les pages où le rideau ne se joue jamais. Chacune pour une raison écrite. */
+const PAGES_SANS_RIDEAU = [
+  '/dashboard', // espace connecté : ce n'est plus une arrivée sur la marque
+  '/tarifs2', // reçoit le trafic publicitaire — une seconde de plus coûte de l'argent
+  '/tarifs3', // page de paiement du lancement : aucun décor devant un formulaire
+]
+
 const CLE_SESSION = 'foreas_preloader_vu'
-const DUREE_MS = 900
+
+/** Les deux cadences. Sommes en millisecondes, identiques aux noms du CSS. */
+const CADENCE_PLEINE = { pose: 440, trait: 460, battement: 140, ecart: 700 }
+const CADENCE_COURTE = { pose: 160, trait: 200, battement: 80, ecart: 460 }
+
+const total = (c: typeof CADENCE_PLEINE) => c.pose + c.trait + c.battement + c.ecart
 
 export default function Preloader() {
   const pathname = usePathname()
-  const isDashboard = pathname.startsWith('/dashboard')
-  const [isLoading, setIsLoading] = useState(!isDashboard)
+  const exclu = PAGES_SANS_RIDEAU.some((p) => pathname.startsWith(p))
+  const [isLoading, setIsLoading] = useState(!exclu)
+  const voile = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (isDashboard) return
+    if (exclu) return
 
-    // Déjà vu dans cette session, ou animations refusées → on retire immédiatement.
     let dejaVu = false
     try {
       dejaVu = sessionStorage.getItem(CLE_SESSION) === '1'
     } catch {
-      // Navigation privée ou stockage bloqué : on retombe sur le comportement
-      // normal (une fois par chargement). Jamais d'erreur visible pour ça.
+      // Navigation privée ou stockage bloqué : on retombe sur « une fois par
+      // chargement ». Jamais d'erreur visible pour ça.
     }
-    const animationsRefusees =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const animationsRefusees = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-    if (dejaVu || animationsRefusees) {
+    /* ⚠️ 27/08 — ONGLET EN ARRIÈRE-PLAN : LE PIÈGE QUI M'A COÛTÉ UNE HEURE.
+       Un navigateur GÈLE les animations CSS d'un onglet qu'on ne regarde pas.
+       L'horloge de l'animation reste à zéro, `animationend` n'arrive jamais…
+       mais `setTimeout` continue de tourner. Résultat mesuré : le filet levait
+       le rideau à chaque fois, et criait à chaque fois.
+
+       C'était un FAUX ROUGE : le code allait bien, c'est mon onglet de mesure
+       qui était caché. Mais le cas est réel en production — un lien ouvert dans
+       un nouvel onglet, un clic-milieu — et un rideau gelé n'a aucun intérêt :
+       personne ne le regarde. On ne le joue donc pas du tout. Le visiteur qui
+       revient trouve la page, pas un décor en retard d'une seconde. */
+    const ongletCache = document.hidden
+
+    if (dejaVu || animationsRefusees || ongletCache) {
       setIsLoading(false)
       return
     }
 
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-      try {
-        sessionStorage.setItem(CLE_SESSION, '1')
-      } catch {
-        /* stockage indisponible : le voile se rejouera, sans casser quoi que ce soit */
-      }
-    }, DUREE_MS)
+    const noeud = voile.current
+    if (!noeud) return
 
-    return () => clearTimeout(timer)
-  }, [isDashboard])
+    try {
+      sessionStorage.setItem(CLE_SESSION, '1')
+    } catch {
+      /* stockage indisponible : le rideau se rejouera, sans rien casser */
+    }
+
+    // ── La cadence se choisit MAINTENANT, avant le premier mouvement ────────
+    const dejaPrete = document.readyState === 'complete'
+    const cadence = dejaPrete ? CADENCE_COURTE : CADENCE_PLEINE
+    noeud.style.setProperty('--rideau-pose', `${cadence.pose}ms`)
+    noeud.style.setProperty('--rideau-trait', `${cadence.trait}ms`)
+    noeud.style.setProperty('--rideau-ecart', `${cadence.ecart}ms`)
+    const debutEcart = cadence.pose + cadence.trait + cadence.battement
+    const volets = Array.from(noeud.querySelectorAll<HTMLElement>('.rideau-volet'))
+    volets.forEach((v) => {
+      v.style.animationDelay = `${debutEcart}ms`
+    })
+
+    const depart = performance.now()
+    let fini = false
+
+    /* Si la page passe en arrière-plan APRÈS le départ, l'animation gèle en
+       route. Le filet devra agir — et ce n'est pas une panne. Un filet qui crie
+       pour un cas normal apprend à ne plus le lire ; c'est comme ça qu'une
+       vraie panne finit par passer inaperçue. */
+    let aEteCachee = false
+    const surVisibilite = () => {
+      if (document.hidden) aEteCachee = true
+    }
+    document.addEventListener('visibilitychange', surVisibilite)
+
+    /**
+     * ⚠️ TROIS CAS, PAS DEUX — l'avertissement du brief, trouvé côté app par le
+     * compilateur et pas par un humain : l'animation TERMINÉE, l'animation
+     * INTERROMPUE, et le rappel appelé SANS ARGUMENT. Le troisième est celui
+     * qu'on oublie, et c'est lui qui laisse le rideau collé à l'écran.
+     */
+    const lever = (cause: string) => {
+      if (fini) return
+      fini = true
+      setIsLoading(false)
+      if (cause !== 'animationend') {
+        // ⚠️ UN FILET SILENCIEUX TRANSFORME UNE PANNE EN LENTEUR, et personne ne
+        // la voit jamais. Celui-ci parle à chaque fois qu'il agit — mais il ne
+        // crie que quand il y a vraiment quelque chose à regarder.
+        const ms = Math.round(performance.now() - depart)
+        if (aEteCachee) {
+          console.info(
+            `[rideau FOREAS] levé par « ${cause} » après ${ms} ms : l'onglet est ` +
+              `passé en arrière-plan, le navigateur y gèle les animations. ` +
+              `Attendu, rien à corriger.`
+          )
+        } else {
+          console.warn(
+            `[rideau FOREAS] levé par « ${cause} » et non par la fin de l'animation, ` +
+              `après ${ms} ms, onglet resté visible. ` +
+              `Le vrai signal n'est pas arrivé — c'est à regarder.`
+          )
+        }
+      }
+    }
+
+    const surFin = (e?: AnimationEvent) => {
+      // Sans argument, on ne peut pas savoir QUELLE animation a fini : on lève,
+      // mais en le disant. Avec argument, on n'accepte que l'écartement — la
+      // barre qui s'allonge finit bien avant, et lèverait le rideau trop tôt.
+      if (!e) return lever('rappel sans argument')
+      if (e.animationName.startsWith('rideau-ecarter')) lever('animationend')
+    }
+    const surCoupure = () => lever('animationcancel')
+
+    volets.forEach((v) => {
+      v.addEventListener('animationend', surFin)
+      v.addEventListener('animationcancel', surCoupure)
+    })
+
+    // ── Si la page devient prête AVANT l'écartement, on supprime le reste de
+    //    l'attente. On ne touche qu'un retard non écoulé : jamais une animation
+    //    en cours, qui sauterait.
+    const presser = () => {
+      const passe = performance.now() - depart
+      if (fini || passe >= debutEcart) return
+      volets.forEach((v) => {
+        v.style.animationDelay = `${Math.max(0, Math.round(passe))}ms`
+      })
+    }
+    if (!dejaPrete) window.addEventListener('load', presser, { once: true })
+
+    // Le filet : la durée annoncée, plus une marge. S'il agit, il crie.
+    const filet = window.setTimeout(() => lever('filet de secours'), total(cadence) + 400)
+
+    return () => {
+      window.clearTimeout(filet)
+      window.removeEventListener('load', presser)
+      document.removeEventListener('visibilitychange', surVisibilite)
+      volets.forEach((v) => {
+        v.removeEventListener('animationend', surFin)
+        v.removeEventListener('animationcancel', surCoupure)
+      })
+    }
+  }, [exclu])
+
+  if (!isLoading) return null
 
   return (
-    <AnimatePresence>
-      {isLoading && (
-        /*
-         * ⚠️ 22/08/2026 — `initial={{ opacity: 1 }}` ÉCRASAIT L'ANIMATION CSS.
-         *
-         * Framer Motion écrit `initial` en style EN LIGNE dans le HTML servi. Un
-         * `style="opacity:1"` bat toujours une règle de feuille de style : le fondu
-         * posé dans `globals.css` n'aurait jamais été visible.
-         *
-         * Framer ne pilote plus l'opacité de ce voile. Le CSS s'en charge dès la
-         * lecture de la feuille de style, sans attendre une ligne de JavaScript.
-         * Framer ne fait plus que démonter le nœud, après coup.
-         */
-        <motion.div
-          // Décor pur : rien à annoncer à un lecteur d'écran, et rien à cliquer.
-          aria-hidden="true"
-          // ⚠️ 21/08/2026 — SANS JAVASCRIPT, CE VOILE NE PARTAIT JAMAIS.
-          //
-          // Il est rendu par le serveur, il couvre tout l'écran, son fond est
-          // OPAQUE, et sa disparition dépend entièrement d'un effet React et
-          // d'une animation. Aucun repli. Un visiteur dont le JavaScript
-          // échoue — réseau coupé en cours de chargement, extension, appareil
-          // ancien — voyait un écran noir avec le logo, définitivement.
-          //
-          // La classe `voile-de-marque` est ciblée par une règle CSS placée
-          // dans un `noscript` du document : sans JavaScript, le voile est
-          // retiré du flux. Voir src/app/layout.tsx.
-          //
-          // ✔️ CE QUI ÉTAIT DÉJÀ BON, et qu'on ne casse pas : `pointer-events-none`
-          // laisse passer les clics, et `aria-hidden` le retire de l'arbre lu
-          // par les lecteurs d'écran. Le voile ne bloquait donc ni la souris ni
-          // la synthèse vocale — seulement les yeux.
-          className="voile-de-marque pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[#050508]"
-        >
-          {/* Halo ambiant discret */}
-          <div className="pointer-events-none absolute top-1/2 left-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-purple/[0.06] blur-[120px]" />
+    <div
+      ref={voile}
+      aria-hidden="true"
+      /* ⚠️ z-10000 et non z-100. Le bandeau de consentement et le grain sont à
+          z-9999 : à z-100 le rideau passait DERRIÈRE eux, et la première image
+          du site était un bandeau cookies posé sur un écran noir. Mesuré en
+          capture le 27/08.
+          Le lien « Aller au contenu » est aussi à 10000 mais vient AVANT dans le
+          document : il passe donc derrière pendant les 1,7 s du rideau. Il reste
+          atteignable au clavier, seulement invisible — et le rideau ne prend
+          aucun clic. */
+      className="voile-de-marque pointer-events-none fixed inset-0 z-[10000] overflow-hidden"
+    >
+      <div className="rideau-repere">
+        <Volet cote="gauche" />
+        <Volet cote="droit" />
+      </div>
+    </div>
+  )
+}
 
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="relative"
-          >
-            {/*
-              `<p>` et non `<h1>` : deux titres de niveau 1 sur la même page
-              brouillent la lecture du document — celui de la page doit rester
-              le seul. Le rendu visuel est identique.
-            */}
-            <p className="font-title text-5xl font-semibold tracking-wider text-white md:text-7xl">
-              FOREAS<span className="text-white">/</span>
-            </p>
-          </motion.div>
-
-          {/* Signature */}
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="tagline mt-4 text-xl text-white/60 md:text-2xl"
-          >
-            Toujours plus loin.
-          </motion.p>
-
-          {/* Barre dégradée */}
-          <motion.div
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-8 w-[340px] origin-center md:w-[500px]"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/gradient-bar.svg" alt="" className="h-[2px] w-full object-cover" />
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+/**
+ * Un volet porte TOUT : son demi-plan noir, son arête de lumière, et le signe
+ * entier — dont il ne montre que sa moitié, puisqu'il coupe à la couture.
+ * C'est exactement la construction de foreas_curtain_left/right.svg.
+ */
+function Volet({ cote }: { cote: 'gauche' | 'droit' }) {
+  return (
+    <div className={`rideau-volet rideau-volet--${cote}`}>
+      <div className="rideau-ancre">
+        {/*
+          viewBox calée sur la boîte du signe seul (69.406 100.127 → 248.358 ×
+          191.734), pas sur la toile 1080×1920 : c'est ce qui permet de donner
+          au logo une largeur en pixels et d'en déduire la couture.
+        */}
+        <svg className="rideau-signe" viewBox="69.406 100.127 248.358 191.734" focusable="false">
+          <path
+            className="rideau-lettre"
+            d="M69.406252 279.970708V147.033208c0-2.707031.101563-4.789062.3125-6.25.21875-1.457031.953125-2.601562 2.203125-3.4375s3.226562-1.25 5.9375-1.25h124.171875v13.765625H93.499377v47.84375h99.46875v13.765625h-99.46875v68.5Z"
+          />
+          <path
+            className="rideau-barre"
+            d="M225.810918 291.861333 301.185918 100.126958h16.578125L242.389043 291.861333Z"
+          />
+        </svg>
+      </div>
+      <span className="rideau-arete" />
+    </div>
   )
 }

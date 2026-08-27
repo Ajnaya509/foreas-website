@@ -201,7 +201,16 @@ export default function RootLayout({
 
             /* Sans JavaScript, tout ce qui attend une animation reste visible. */
             [style*="opacity:0"], [style*="opacity: 0"] { opacity: 1 !important; }
-            [aria-hidden="true"].fixed.inset-0.z-\\[100\\] { display: none !important; }
+            /* ⚠️ 27/08 — CETTE RÈGLE VISAIT z-[100], ET LE RIDEAU EST PASSÉ À
+               z-[10000] (il devait couvrir le bandeau de consentement, lui-même
+               à 9999). Elle ne correspondait donc plus à rien : une ceinture qui
+               ne tenait plus la ceinture, mais qui en avait toujours l'air.
+               C'est « .voile-de-marque » juste au-dessus qui fait le vrai travail ;
+               ⚠️ Et pas d'accent grave dans ce commentaire : il est DANS un
+               gabarit JavaScript, où l'accent grave ferme la chaîne. Le premier
+               jet en contenait deux et le site ne compilait plus.
+               celle-ci reste la seconde chance, et il faut qu'elle vise juste. */
+            [aria-hidden="true"].fixed.inset-0.z-\\[10000\\] { display: none !important; }
           `}</style>
         </noscript>
         <Preloader />
