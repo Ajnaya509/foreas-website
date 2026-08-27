@@ -869,12 +869,22 @@ h1, h2, h3, h4, h5, h6 {
      trait, du haut de l'écran jusqu'au milieu, et en violet — parce que c'est
      la couleur de cette moitié-là du dégradé. Le trait doit épouser son volet,
      pas flotter à côté. */
-  top: 0;
+  /* ⚠️ SECONDE PASSE — `height: 100%` REPRODUISAIT LE BUG DES 155vmax.
+     100 % du volet vaut calc(200vw + 200vh), soit 6000 px sur un écran de
+     bureau. Or il n'y a que ~1700 px de trait réellement visibles. Le trait
+     atteignait donc toute sa longueur visible à scaleY ≈ 0,19 — et avec une
+     courbe aussi chargée à l'avant, ça tombe à 16 ms sur les 460 ms prévues.
+     Il ne s'allongeait pas : il claquait. Et son dégradé, étalé sur 6000 px,
+     ne montrait à l'écran qu'une seule teinte.
+     Le trait a maintenant sa propre hauteur, calée sur l'ÉCRAN et non sur le
+     volet : l'allongement se voit sur toute sa durée, et le cyan du haut
+     rejoint vraiment le violet du bas. */
+  top: 50%;
   width: 2.5px;
-  height: 100%;
+  height: calc(100vh + 50vw);
   background: linear-gradient(180deg, #4fd8f0 0%, #7c6cf5 50%, #a855f7 100%);
   box-shadow: 0 0 16px rgba(124, 108, 245, 0.7), 0 0 42px rgba(79, 216, 240, 0.35);
-  transform: scaleY(0);
+  transform: translateY(-50%) scaleY(0);
   transform-origin: 50% 50%;
   animation: rideau-allonger var(--rideau-trait) cubic-bezier(0.22, 1, 0.36, 1)
     var(--rideau-pose) forwards;
@@ -887,11 +897,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes rideau-allonger {
+  /* Le recentrage doit être RÉPÉTÉ dans les deux images : une animation de
+     `transform` remplace la propriété entière, elle ne s'ajoute pas à celle
+     déclarée sur la règle. Sans lui, le trait sauterait d'une demi-hauteur au
+     premier battement. */
   from {
-    transform: scaleY(0);
+    transform: translateY(-50%) scaleY(0);
   }
   to {
-    transform: scaleY(1);
+    transform: translateY(-50%) scaleY(1);
   }
 }
 

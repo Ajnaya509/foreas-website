@@ -193,7 +193,15 @@ export default function Preloader() {
     //    en cours, qui sauterait.
     const presser = () => {
       const passe = performance.now() - depart
-      if (fini || passe >= debutEcart) return
+      /* ⚠️ LE RACCOURCI DÉCHIRAIT LE RIDEAU AVEC LE LOGO ENCORE DESSUS.
+         Il ne touche QUE le retard des volets. Le F, le slash et le trait de
+         lumière gardent leur calendrier. Scénario mesuré : sur un poste de
+         bureau avec le cache chaud, l'événement de fin de chargement tombe à
+         700 ms — les volets partaient aussitôt, alors que le F n'était effacé
+         qu'aux deux tiers et le trait à mi-course. Le visiteur voyait le rideau
+         se déchirer, chaque moitié emportant son bout de logo gris.
+         On ne mange donc que le battement : le prélude doit être fini. */
+      if (fini || passe < cadence.pose + cadence.trait || passe >= debutEcart) return
       volets.forEach((v) => {
         v.style.animationDelay = `${Math.max(0, Math.round(passe))}ms`
       })
@@ -224,10 +232,16 @@ export default function Preloader() {
           z-9999 : à z-100 le rideau passait DERRIÈRE eux, et la première image
           du site était un bandeau cookies posé sur un écran noir. Mesuré en
           capture le 27/08.
-          Le lien « Aller au contenu » est aussi à 10000 mais vient AVANT dans le
-          document : il passe donc derrière pendant les 1,7 s du rideau. Il reste
-          atteignable au clavier, seulement invisible — et le rideau ne prend
-          aucun clic. */
+          ⚠️ 27/08, SECONDE PASSE — J'AVAIS ÉCRIT ICI QUE C'ÉTAIT ACCEPTABLE.
+          Le lien « Aller au contenu » était aussi à 10000 et vient AVANT dans le
+          document : à z-index égal, c'est le dernier du flux qui peint. Un
+          visiteur au clavier appuyant sur Tab dans la première seconde recevait
+          bien le focus, mais son indicateur — fond cyan, anneau de 4 px — était
+          intégralement couvert par le volet noir. Il ne voyait rien pendant
+          1,7 s et ne savait pas où il était. C'est le critère WCAG 2.2 SC
+          2.4.11, niveau AA, et « il reste atteignable » ne le satisfait pas.
+          Le lien est passé à 10001 dans le gabarit : c'est le seul élément du
+          site qui doit pouvoir passer devant le rideau. */
       className="voile-de-marque pointer-events-none fixed inset-0 z-[10000] overflow-hidden"
     >
       <div className="rideau-repere">

@@ -146,7 +146,7 @@ export default function RootLayout({
             Invisible tant qu'il n'a pas le focus, parfaitement visible ensuite. */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10000] focus:rounded-xl focus:bg-[#00D4FF] focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-[#05070F] focus:outline-none focus:ring-4 focus:ring-[#00D4FF]/35"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10001] focus:rounded-xl focus:bg-[#00D4FF] focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-[#05070F] focus:outline-none focus:ring-4 focus:ring-[#00D4FF]/35"
         >
           Aller au contenu
         </a>

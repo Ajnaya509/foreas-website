@@ -190,14 +190,43 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
       */}
       <div className={s.rapides} hidden={moyensRapides === false}>
         {/*
-          Aucune option passée : le type de cet élément, dans le SDK Checkout,
-          exige TOUTES ses clés dès qu'on en fournit une seule (thème, type de
-          bouton, ordre et liste des moyens). Les valeurs par défaut de Stripe
-          conviennent, et surtout elles suivent ce que le compte propose
-          réellement — une liste écrite en dur ici deviendrait fausse le jour où
-          un moyen est activé ou retiré côté Stripe.
+          ⚠️ 27/08 — ON RETIRE STRIPE LINK, ET SEULEMENT LUI.
+          Chandler : « retire Link, quand on clique dessus ça enlève la page,
+          c'est de la friction pour rien ». Il a raison : Link prend la page
+          entière et réclame un code par SMS, sur un tunnel où le chauffeur a
+          déjà tapé sa carte.
+
+          ⚠️ LE CORRECTIF ÉVIDENT ÉTAIT FAUX, ET IL AURAIT PARU JUSTE.
+          Mettre `payment_method_types: ['card']` sur la session NE SUPPRIME PAS
+          Link. La doc Stripe dit exactement l'inverse : « To include Link in a
+          card integration, pass `card` in the payment_method_types parameter ».
+          Link revient alors déguisé — l'objet PaymentMethod porte
+          `type: 'card'` avec `card.wallet.type = 'link'`. On aurait déployé,
+          constaté « payment_method_types = card », coché la case, et Chandler
+          aurait toujours eu son code par SMS.
+          Ce champ aurait EN PLUS gelé la liste des moyens de paiement : tout
+          moyen activé plus tard dans Stripe n'apparaîtrait jamais, en silence.
+          Et la route de session est PARTAGÉE avec /tarifs2, qui reçoit le
+          trafic publicitaire. Rien ne bouge côté serveur.
+
+          ⚠️ APPLE PAY ET GOOGLE PAY NE PEUVENT PAS ÊTRE TOUCHÉS ICI, par
+          construction : ils n'existent pas dans l'énumération des moyens de
+          paiement de Stripe — ce sont des portefeuilles qui transportent une
+          carte, allumés depuis le tableau de bord. Seul `link` est une valeur
+          nommable. On ne nomme donc qu'elle.
+
+          Les six clés sont exigées par le type dès qu'on en fournit une : les
+          cinq autres restent `undefined` pour garder les défauts de Stripe.
         */}
         <ExpressCheckoutElement
+          options={{
+            buttonHeight: undefined,
+            buttonTheme: undefined,
+            buttonType: undefined,
+            layout: undefined,
+            paymentMethodOrder: undefined,
+            paymentMethods: { link: 'never' },
+          }}
           onConfirm={async (event) => {
             if (!valider()) return
             await attacherCoordonnees(session.id)
@@ -219,7 +248,14 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
 
       {moyensRapides !== false && <div className={s.separateur}>ou par carte</div>}
 
-      <PaymentElement options={{ layout: 'tabs' }} />
+      {/*
+        ⚠️ LINK APPARAÎT À DEUX ENDROITS, PAS UN. Le bouton au-dessus, et
+        l'invitation Link À L'INTÉRIEUR du champ carte — celle qui propose
+        d'enregistrer la carte puis réclame un code par SMS au moment de payer.
+        Ne corriger que le bouton laissait le second : un correctif juste, au
+        mauvais endroit, et le code par SMS revenait par la porte de derrière.
+      */}
+      <PaymentElement options={{ layout: 'tabs', wallets: { link: 'never' } }} />
 
       {/*
         ⚠️ CES DEUX CHAMPS SONT À NOUS, ET ILS NE SONT PAS DÉCORATIFS.
