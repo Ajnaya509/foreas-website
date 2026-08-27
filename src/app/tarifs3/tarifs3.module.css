@@ -943,18 +943,19 @@
 }
 
 /*
-  ⚠️ CE CONTENEUR PEUT ÊTRE VIDE, ET C'EST NORMAL.
+  ⚠️ `:empty` NE MARCHAIT PAS, ET LA MESURE L'A DIT.
   Apple Pay, Google Pay et Link ne s'affichent que si l'appareil, le navigateur
-  ET le compte Stripe les proposent vraiment. Sur un Android sans portefeuille,
-  Stripe ne rend rien. D'où `:empty` : sans lui, un bloc vide laisserait un trou
-  au-dessus du séparateur, et « ou par carte » annoncerait une alternative à
-  rien du tout.
+  ET le compte Stripe les proposent vraiment. J'avais donc écrit `.rapides:empty
+  + .separateur { display: none }`.
+  Mesuré en production : Stripe pose TOUJOURS un conteneur, haut de 8 px, même
+  sans rien à afficher. Le sélecteur ne s'est jamais déclenché et « ou par carte »
+  annonçait une alternative à rien.
+  La décision se prend maintenant en JavaScript, sur la liste réelle que
+  `onReady` renvoie — voir `FormulairePaiement.tsx`. Ce qui reste ici n'est que
+  la marge.
 */
-.rapides:not(:empty) {
+.rapides:not([hidden]) {
   margin-bottom: 2px;
-}
-.rapides:empty + .separateur {
-  display: none;
 }
 
 .separateur {

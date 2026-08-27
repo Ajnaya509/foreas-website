@@ -68,6 +68,21 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
   const [erreurChamp, setErreurChamp] = useState<{ tel?: string; ville?: string }>({})
 
   /**
+   * ⚠️ « Y A-T-IL UN MOYEN RAPIDE ? » NE SE DEVINE PAS EN CSS.
+   *
+   * Première version : une règle `:empty` pour masquer le séparateur « ou par
+   * carte » quand aucun portefeuille n'est disponible. Mesuré en production :
+   * Stripe pose TOUJOURS un conteneur, haut de 8 px, même quand il n'a rien à
+   * afficher. La règle ne s'est donc jamais déclenchée, et le séparateur
+   * annonçait une alternative à rien.
+   *
+   * `onReady` donne la vraie réponse : la liste des moyens réellement offerts
+   * par cet appareil, ce navigateur et ce compte Stripe. `undefined` ou vide
+   * signifie qu'il n'y en a aucun — on retire alors le bloc ET son séparateur.
+   */
+  const [moyensRapides, setMoyensRapides] = useState<boolean | null>(null)
+
+  /**
    * ⚠️ VERROU SYNCHRONE, PAS UN ÉTAT REACT.
    * Un `useState` se met à jour au rendu suivant : entre deux appuis rapides sur
    * le bouton, il vaut encore `false`. Deux confirmations partiraient. Une `ref`
@@ -173,7 +188,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         Stripe proposent réellement. S'il n'y a rien, il ne rend rien — et le
         séparateur « ou par carte » disparaît avec lui.
       */}
-      <div className={s.rapides}>
+      <div className={s.rapides} hidden={moyensRapides === false}>
         {/*
           Aucune option passée : le type de cet élément, dans le SDK Checkout,
           exige TOUTES ses clés dès qu'on en fournit une seule (thème, type de
@@ -189,14 +204,20 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
             const r = await session.confirm({ expressCheckoutConfirmEvent: event })
             if (r.type === 'error') setErreur(r.error.message || ECHEC_GENERIQUE)
           }}
+          onReady={(evenement) => {
+            const dispos = evenement.availablePaymentMethods
+            setMoyensRapides(!!dispos && Object.values(dispos).some(Boolean))
+          }}
           onLoadError={() => {
             /* Un moyen rapide indisponible n'est pas une panne : le paiement par
-               carte reste entier juste en dessous. On ne dit rien. */
+               carte reste entier juste en dessous. On ne dit rien à l'écran, on
+               retire simplement le bloc. */
+            setMoyensRapides(false)
           }}
         />
       </div>
 
-      <div className={s.separateur}>ou par carte</div>
+      {moyensRapides !== false && <div className={s.separateur}>ou par carte</div>}
 
       <PaymentElement options={{ layout: 'tabs' }} />
 
@@ -253,7 +274,18 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         type="button"
         className={s.cta}
         onClick={confirmer}
-        disabled={enCours || !session.canConfirm}
+        /*
+          ⚠️ ON NE GRISE PAS SUR `canConfirm`.
+          Mesuré en production : `canConfirm` vaut `false` tant que la carte
+          n'est pas saisie — donc le bouton naissait gris, avant même que
+          quiconque ait tapé quoi que ce soit. Un bouton d'action grisé à
+          l'ouverture ne se lit pas « il manque quelque chose », il se lit
+          « c'est cassé ».
+          Il reste donc actif : au clic, notre validation signale nos champs, et
+          Stripe signale les siens, chacun à côté du champ concerné. C'est ce que
+          le brief demande — « les erreurs sont proches du bon champ ».
+        */
+        disabled={enCours}
         aria-describedby={erreur ? idErreur : undefined}
       >
         <span className={s.libelle} data-texte={enCours ? 'Paiement en cours…' : libelleBouton}>
