@@ -1199,6 +1199,51 @@ for (const chemin of fichiers(RACINE)) {
     }
   }
 
+  /**
+   * ⚠️ 27/08 — LA FAUTE MIROIR : AFFIRMER QUE LA REMISE N'EXISTE PAS.
+   *
+   * Elle a failli coûter un vrai avantage DEUX FOIS, des deux côtés :
+   *
+   *   · côté app, `PartnerMarketingScreen.tsx` portait depuis le 21/08
+   *     « LA REMISE FILLEUL N'EXISTE PAS … barème inventé », et un fil
+   *     précédent avait déjà retiré le chiffre de ses messages sur cette base ;
+   *   · côté site, j'ai écrit la même phrase dans `verite-commerciale.ts` — le
+   *     fichier qui EST la source de vérité — et je l'y ai LAISSÉE après avoir
+   *     découvert qu'elle était fausse.
+   *
+   * **Un commentaire faux dans un fichier de vérité est plus dangereux qu'un
+   * code faux : le code, on le teste ; le commentaire, on le croit.**
+   *
+   * La remise est réelle : `get_referral_discount_for_code` rend
+   * `COALESCE(v_pct, 10)`, jamais 0, et le paiement pose un coupon Stripe
+   * `duration: 'forever'` sur le mensuel. Trois preuves, mesurées le 27/08.
+   *
+   * Cette règle laisse passer la phrase quand elle est explicitement CORRIGÉE
+   * sur place — sinon on ne pourrait plus raconter l'erreur pour l'éviter.
+   */
+  for (const chemin of fichiersSrc) {
+    const brut = readFileSync(chemin, 'utf8')
+    const lignes = brut.split('\n')
+    for (let i = 0; i < lignes.length; i++) {
+      if (!/remise[^.\n]{0,40}(filleul|parrain)[^.\n]{0,40}n.existe pas|remise filleul n.existe pas/i.test(lignes[i])) continue
+      // La phrase est permise si elle est démentie dans les 6 lignes qui suivent.
+      const suite = lignes.slice(i, i + 7).join(' ')
+      if (/c.est faux|était fausse|corrig|erreur|dément|au contraire|elle est vivante|elle est réelle/i.test(suite)) continue
+      infractions.push({
+        fichier: chemin,
+        quoi: 'affirmation que la remise au filleul n’existe pas',
+        extrait: lignes[i].trim().slice(0, 90),
+        pourquoi:
+          'elle EXISTE : get_referral_discount_for_code rend COALESCE(v_pct, 10) — ' +
+          'jamais 0 — et le paiement pose un coupon Stripe `duration: forever` sur ' +
+          'le mensuel. Cette phrase a déjà failli faire supprimer un avantage réel ' +
+          'deux fois. Si tu la cites pour raconter l’erreur, dis dans les lignes ' +
+          'qui suivent qu’elle est fausse.',
+      })
+      break
+    }
+  }
+
   // Les deux constantes doivent rester distinctes, et dire la vérité.
   if (existsSync(VERITE)) {
     const v = sansCommentaires(readFileSync(VERITE, 'utf8'))

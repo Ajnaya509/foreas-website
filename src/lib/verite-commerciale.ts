@@ -175,15 +175,30 @@ export const PARRAINAGE = {
    * facture. Le fichier nomme lui-même l'ancien code comme périmé :
    * « mlmMonthlyPayoutCron.ts | 25 / 35 / 50 € par paliers, sur 3 niveaux ».
    *
-   * ⚠️ DEUX ÉCARTS, ET LE SECOND EST LE PIRE.
+   * ⚠️ UN SEUL ÉCART, ET PAS DEUX.
    *
-   *  1. La commission promise valait CINQ FOIS la vraie : « tu touches 25 € PAR
-   *     MOIS sur lui » contre 5 € par facture mensuelle payée.
+   * La commission promise valait CINQ FOIS la vraie : « tu touches 25 € PAR MOIS
+   * sur lui » contre 5 € par facture mensuelle payée.
    *
-   *  2. **La remise au filleul n'existe pas du tout.** « −10 % à vie, jusqu'à
-   *     −18 % » était une promesse de PRIX faite à quelqu'un qui n'y a aucun
-   *     droit. Le parrain se trompe sur son gain ; le filleul, lui, se voit
-   *     promettre une réduction sur ce qu'il paie.
+   * ⚠️⚠️ CE PARAGRAPHE EN ANNONÇAIT UN SECOND, ET IL ÉTAIT FAUX.
+   *
+   * J'avais écrit ici, le 27/08 au matin : « **La remise au filleul n'existe pas
+   * du tout.** » Je reprenais un brief sans l'avoir mesuré. C'est faux : la
+   * remise est vivante de bout en bout — voir `REMISE_FILLEUL` juste en dessous,
+   * avec ses trois preuves.
+   *
+   * ⚠️ ET LE PIRE : J'AI LAISSÉ CETTE PHRASE ICI APRÈS AVOIR DÉCOUVERT LA VÉRITÉ.
+   * Dans le fichier qui EST la source de vérité du site. Le prochain lecteur
+   * pressé y aurait lu « la remise n'existe pas » et l'aurait supprimée — la
+   * faute exacte que ce même fichier venait d'éviter, réinstallée par son propre
+   * commentaire.
+   *
+   * Signalé par le fil APP, qui portait la faute miroir de son côté :
+   * `PartnerMarketingScreen.tsx` affirmait la même chose depuis le 21/08, et un
+   * fil précédent avait déjà retiré le chiffre de ses messages sur cette base.
+   *
+   * → **Un commentaire faux dans un fichier de vérité est plus dangereux qu'un
+   * code faux : le code, on le teste ; le commentaire, on le croit.**
    *
    * ⚠️ POURQUOI `remisePct` EST SUPPRIMÉ ET NON MIS À ZÉRO.
    * Un champ à `0` reste un champ : il se réaffiche « −0 % » le jour où
