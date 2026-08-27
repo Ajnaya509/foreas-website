@@ -1,0 +1,1093 @@
+/*
+  FOREAS — PAGE DE PAIEMENT /tarifs3.
+
+  ⚠️ POURQUOI UN MODULE ET PAS `globals.css`.
+  `globals.css` est chargé par TOUTES les pages du site. Y verser cent cinquante
+  lignes qui ne servent qu'ici ferait payer ce poids à l'accueil, aux pages de
+  zone et à tout le reste — pour rien. Un module n'est téléchargé qu'avec la
+  page qui l'importe. C'est la même règle que celle appliquée au widget Ajnaya
+  et à la mesure produit : ce qui ne sert qu'à un endroit ne voyage pas.
+*/
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh; /* la barre d'adresse mobile mange les 100vh */
+  overflow-x: hidden;
+  background: #000;
+  color: #f8fafc;
+  font-optical-sizing: auto;
+}
+
+.halo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 18% 68%, rgba(0, 212, 255, 0.1), transparent 70%),
+    radial-gradient(55% 38% at 84% 62%, rgba(140, 82, 255, 0.15), transparent 72%),
+    radial-gradient(90% 50% at 50% 108%, rgba(140, 82, 255, 0.11), transparent 70%);
+}
+
+.dedans {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 18px 20px 52px;
+}
+
+/* ── En-tête ─────────────────────────────────────────────────────────────── */
+.entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.marque {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+.stripeHaut {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 12.5px;
+  letter-spacing: -0.005em;
+  color: rgba(248, 250, 252, 0.68);
+  white-space: nowrap;
+}
+
+/* ── Titre ───────────────────────────────────────────────────────────────── */
+.titre {
+  /*
+    ⚠️ LE TITRE FORCE INTER, IL N'HÉRITE PAS DE GENOS — ET CE N'EST PAS POUR LA
+    RAISON QUE J'AVAIS ÉCRITE ICI D'ABORD.
+
+    J'avais justifié ce choix par la place gagnée. C'est FAUX, et la mesure le
+    dit : à 390 px, le même titre tient sur DEUX lignes en Genos et sur TROIS en
+    Inter. Genos est plus étroite, donc plus compacte. Mon commentaire affirmait
+    l'inverse de ce que la page fait — et un commentaire faux est plus dangereux
+    qu'un code faux : le code, on le teste ; le commentaire, on le croit.
+
+    LA VRAIE RAISON EST UN ARBITRAGE, PAS UN GAIN :
+     · Genos est la police de marque. Elle est anguleuse, large, faite pour
+       l'affichage. Elle appartient à FOREAS.
+     · Inter est neutre. Elle disparaît derrière ce qu'elle dit.
+    Sur une page où quelqu'un sort sa carte bancaire, une police qui disparaît
+    est défendable — c'est le montant qu'on doit regarder, pas le titre. Mais ça
+    coûte une ligne et un peu d'identité, et c'est Chandler qui tranche.
+
+    Inter est déjà chargée par le site (`--font-inter`, layout.tsx) : ce choix
+    n'ajoute aucun téléchargement. Repasser à Genos = supprimer la ligne
+    `font-family` ci-dessous, rien d'autre.
+  */
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+  margin: 26px 0 0;
+  /*
+    ⚠️ 7,6vw N'EST PAS UN CHIFFRE CHOISI À L'ŒIL. Il vient d'un balayage mesuré
+    dans le navigateur, à 390 px de large (342 px utiles) :
+      32 px → « La rentabilité / commence / avant la course. »   3 lignes, « commence » orphelin
+      31 px → idem
+      30 px → « La rentabilité commence / avant la course. »     2 lignes, coupure au bon endroit
+
+    ⚠️ ET LE 390 N'EST PAS LA CONTRAINTE LA PLUS DURE. J'ai d'abord posé 7,6vw
+    pour coller au seuil de 390, et la page est repassée à trois lignes à 320.
+    Une pente linéaire unique doit satisfaire la largeur la PLUS SERRÉE, pas la
+    plus courante — sinon on répare un écran en cassant l'autre.
+
+    Seuils mesurés, largeur utile réelle :
+      320 px (272 utiles) → bascule à 23 px    → exige 7,19vw au maximum
+      390 px (342 utiles) → bascule à 30 px    → exige 7,69vw au maximum
+      768 px (520 utiles) → tient jusqu'à 42,4 px (le plafond)
+    La plus contraignante est celle de 320. D'où 7,15vw, qui donne 22,9 px à
+    320, 27,9 px à 390 et le plafond au-delà. Deux lignes aux trois largeurs.
+  */
+  /* ⚠️ 6,6vw au lieu de 7,15 — demande de Chandler du 27/08 : le bouton
+     d'action doit être visible sans faire défiler. Le nouveau titre est plus
+     court (« Gagner mieux, plus simplement. »), donc il tient sur deux lignes
+     malgré la réduction. Vérifié après coup aux trois largeurs. */
+  /*
+    ⚠️ LE TITRE TIENT SUR UNE SEULE LIGNE — demande de Chandler, 27/08.
+    Et comme pour la version à deux lignes, la pente est mesurée, pas choisie :
+
+      320 px (272 utiles) → une ligne dès 18 px  → exige 5,63vw au maximum
+      390 px (350 utiles) → une ligne dès 23 px  → exige 5,90vw au maximum
+      768 px (520 utiles) → une ligne jusqu'à 34 px
+
+    La plus dure est celle de 320. On prend 5,55vw, avec la marge qu'il faut
+    pour une police qui rend un peu plus large sur un autre appareil.
+
+    ⚠️ CE QUE ÇA COÛTE, ET IL FAUT LE SAVOIR : à 320 px le titre tombe à 17,8 px,
+    soit à peine plus que le texte courant de la carte (16,5 px). Sur un très
+    petit téléphone, le titre cesse d'être un titre. À 390 il fait 21,6 px, ce
+    qui tient encore debout. Le plafond descend aussi — 2,05rem au lieu de 2,4 —
+    sans quoi il repasserait à deux lignes sur tablette.
+  */
+  font-size: clamp(1.05rem, 5.55vw, 2.05rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  color: #f8fafc;
+  text-wrap: balance;
+}
+
+/* ── La ligne qui parle ──────────────────────────────────────────────────── */
+.dire {
+  margin: 14px 0 0;
+  display: inline-flex;
+  max-width: 100%;
+  padding: 1px;
+  border-radius: 999px;
+  background: linear-gradient(95deg, #22d3ee 0%, #8b5cf6 55%, #e879f9 100%);
+}
+.direTexte {
+  /*
+    ⚠️ `balance` N'EST PAS UN EMBELLISSEMENT, C'EST LA CORRECTION D'UN DÉFAUT MESURÉ.
+    Sans lui, trois phrases sur treize finissaient par un mot seul sur sa ligne :
+    « rentable. », « acceptée. », « réflexe. » — une ligne veuve, exactement ce
+    qu'aucun typographe ne laisse passer.
+    Mesuré sur les treize phrases, dans la vraie structure (mots en boîtes) :
+      sans rien      → 3 orphelines
+      `pretty`       → 0 orpheline, mais coupe au milieu des phrases
+      `balance`      → 0 orpheline, et les lignes s'équilibrent
+    C'est `balance` qui gagne, et il est gratuit.
+  */
+  text-wrap: balance;
+  display: block;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: #000;
+  font-size: 15px;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: rgba(248, 250, 252, 0.96);
+  font-weight: 450;
+  min-height: 22px;
+}
+/*
+  ⚠️ CHAQUE MOT EST UNE BOÎTE INSÉCABLE.
+  Découper le texte lettre par lettre donne au navigateur le droit de couper la
+  ligne ENTRE CHAQUE LETTRE. Mesuré à l'écran le 27/08 : « une journée RENT /
+  ABLE ». Aucune règle typographique française n'autorise ça.
+*/
+.mot {
+  display: inline-block;
+  white-space: nowrap;
+}
+/*
+  ⚠️ UNE PHRASE NE SE COUPE PAS AU MILIEU D'UNE PHRASE.
+  Six des treize textes contiennent DEUX phrases. Laissé au navigateur, le
+  retour tombait n'importe où — mesuré : « Une plateforme cherche du volume. Un /
+  chauffeur cherche de la marge. » Le point se retrouvait en plein milieu d'une
+  ligne, et la coupure au milieu de la seconde phrase.
+
+  Chaque phrase devient donc une boîte. Le navigateur casse d'abord ENTRE les
+  boîtes — c'est-à-dire au point — et ne coupe à l'intérieur que s'il n'a pas le
+  choix. `balance` s'applique à l'intérieur de chaque boîte pour équilibrer ce
+  qui reste.
+
+  Mesuré après : zéro orpheline, et les six coupent toutes au point.
+*/
+.segment {
+  display: inline-block;
+  text-wrap: balance;
+}
+.car {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  filter: blur(7px);
+  transform: translateY(6px);
+  transition:
+    opacity 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.carVisible {
+  opacity: 1;
+  filter: blur(0);
+  transform: none;
+}
+.carSortie {
+  opacity: 0;
+  filter: blur(7px);
+  transform: translateY(-6px);
+  transition-duration: 0.3s;
+}
+
+/* ── La carte claire, et la marque qui la borde ──────────────────────────── */
+.cadreCarte {
+  position: relative;
+  margin-top: 20px;
+  isolation: isolate;
+  padding: 1.5px;
+  border-radius: 29.5px;
+  background: linear-gradient(
+    158deg,
+    rgba(0, 212, 255, 0.62) 0%,
+    rgba(140, 82, 255, 0.85) 52%,
+    rgba(232, 121, 249, 0.55) 100%
+  );
+  box-shadow:
+    0 0 34px -6px rgba(140, 82, 255, 0.45),
+    0 0 52px -10px rgba(0, 212, 255, 0.28);
+}
+/*
+  ⚠️ LA LUEUR NE DÉBORDE QUE VERS LE HAUT ET LE BAS, ET C'EST GÉOMÉTRIQUE.
+  À 390 px, la carte occupe 350 px : il ne reste que 20 px de chaque côté, et la
+  page coupe ce qui dépasse. Une lueur poussée à 58 px sur les flancs était donc
+  invisible — dessinée, calculée, et jamais vue.
+*/
+.lueur {
+  position: absolute;
+  inset: -52px -15px -58px;
+  border-radius: 80px;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(52% 26% at 22% 2%, rgba(0, 212, 255, 0.62), transparent 70%),
+    radial-gradient(56% 28% at 80% 3%, rgba(140, 82, 255, 0.78), transparent 70%),
+    radial-gradient(70% 26% at 50% 99%, rgba(140, 82, 255, 0.7), transparent 70%),
+    radial-gradient(40% 22% at 14% 98%, rgba(0, 212, 255, 0.48), transparent 72%);
+  filter: blur(34px);
+}
+.carte {
+  position: relative;
+  z-index: 1;
+  padding: 16px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #fbfbfd 0%, #f1f2f5 100%);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.85);
+}
+
+/* ═══ LE BUREAU : DEUX COLONNES ═══════════════════════════════════════════
+   ⚠️ LE TÉLÉPHONE NE CHANGE PAS D'UN PIXEL, ET C'EST UNE CONSIGNE.
+   Chandler, 27/08 : « pour la partie mobile on fige, tout est good. »
+   Toute cette section vit donc DANS une requête de largeur : en dessous de
+   1024 px, `.colonnes` est un simple bloc et `.vitrine` n'existe pas.
+
+   ⚠️ ET « n'existe pas » EST À PRENDRE AU PIED DE LA LETTRE.
+   `display:none` sur une image de `next/image` empêche le navigateur de la
+   demander : le téléphone ne télécharge donc pas les 95 Ko de captures. Le
+   masquer en `opacity:0` ou `visibility:hidden` les aurait fait charger quand
+   même — c'est le genre de détail qui alourdit une page sans que rien ne se
+   voie à l'écran.
+*/
+.vitrine {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .dedans {
+    max-width: 1120px;
+    padding-top: 30px;
+  }
+  .colonnes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+  }
+  /* La carte perd sa marge haute : c'est la grille qui aligne les deux colonnes. */
+  .cadreCarte {
+    margin-top: 26px;
+  }
+  .vitrine {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 26px;
+  }
+
+  /*
+    ⚠️ LE HALO EST DERRIÈRE LE TÉLÉPHONE, PAS AUTOUR DE LA COLONNE.
+    Posé sur la colonne entière, il éclairait aussi la légende et les pastilles —
+    du texte gris sur une brume violette, illisible. Ici il est centré sur
+    l'image et s'arrête avant le texte.
+  */
+  /*
+    ⚠️ PREMIER ESSAI : 460 × 460 posé en haut. Le halo était mangé.
+    Deux causes, mesurées à l'écran : il ne couvrait que le tiers supérieur d'un
+    téléphone haut de 580 px, et l'ombre portée de l'image (60 px de flou noir)
+    l'absorbait sur tout le pourtour.
+    Il déborde donc maintenant LARGEMENT du téléphone — 620 px de côté pour une
+    image de 268 — et il monte en intensité. Un halo qui ne dépasse pas n'est pas
+    un halo : c'est un fond.
+  */
+  .vitrineHalo {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 540px;
+    height: 540px;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 38% at 24% 26%, rgba(0, 212, 255, 0.72), transparent 68%),
+      radial-gradient(42% 42% at 78% 30%, rgba(140, 82, 255, 0.85), transparent 70%),
+      radial-gradient(44% 36% at 22% 74%, rgba(140, 82, 255, 0.55), transparent 72%),
+      radial-gradient(46% 38% at 80% 78%, rgba(232, 121, 249, 0.52), transparent 72%);
+    filter: blur(64px);
+  }
+
+  /*
+    Le cadre garde la place du visuel le plus haut : sans hauteur fixe, la
+    colonne sautait à chaque changement d'image, puisque les captures n'ont pas
+    toutes le même rapport.
+  */
+  /*
+    ⚠️ 216 px N'EST PAS UN CHOIX ESTHÉTIQUE, C'EST LA LIMITE DES SOURCES.
+    Les captures actuelles font 420 px de large. Sur un écran à forte densité
+    (le cas de tous les Mac et iPhone récents), un affichage de L pixels CSS
+    réclame 2 × L pixels réels. À 268 px il en fallait 536 : l'image était
+    agrandie de 28 % et rendait mou sur la page où l'on prend une carte bancaire.
+    216 × 2 = 432, soit 97 % des 420 disponibles — la netteté est là.
+
+    ⚠️ POUR AFFICHER PLUS GRAND, IL FAUT DES SOURCES PLUS GRANDES, pas un
+    réglage : 268 px d'affichage exigent une source de 536 px de large,
+    320 px en exigent 640. C'est exactement ce qu'un export Rotato peut fournir.
+  */
+  /*
+    ⚠️ LE PANNEAU CLAIR N'EST PAS UN CHOIX DE STYLE, C'EST CE QUE LA MATIÈRE PERMET.
+    Les exports Rotato de Chandler ont un fond BLANC — mesuré : les quatre coins
+    sont à #FFFFFF exactement. Le détourage a été tenté et rejeté : `colorkey`
+    sur le blanc pur laisse l'ombre portée, qui est un dégradé de gris ; et tout
+    seuil assez large pour l'effacer mange aussi le cadre argenté du téléphone.
+    Poser ces vidéos telles quelles sur le noir aurait donné un rectangle blanc.
+
+    Le panneau assume donc ce blanc et en fait une surface : un plan clair qui
+    flotte sur le noir, en écho à la carte de paiement de gauche. Le halo passe
+    DERRIÈRE lui et déborde tout autour.
+
+    ⚠️ 240 px de large : les vidéos font 540 px, il en faut 480 pour un écran à
+    forte densité. Les deux captures plus anciennes n'ont que 420 px, soit 88 %
+    du besoin — presque net. Un export Rotato en fond transparent supprimerait le
+    panneau ET permettrait d'aller plus grand.
+  */
+  .vitrineCadre {
+    position: relative;
+    z-index: 1;
+    width: 240px;
+    height: 354px;
+    border-radius: 22px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #fdfdfe 0%, #f2f3f6 100%);
+    box-shadow:
+      0 24px 52px -22px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+  .vitrineImage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* `cover` et non `contain` : le panneau a une forme fixe, les sources non.
+       Le téléphone est centré dans chaque source, donc le rognage ne coupe que
+       du fond. */
+    object-fit: cover;
+    object-position: center top;
+    opacity: 0;
+    transform: scale(0.985);
+    transition:
+      opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+      transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+    /* Ombre allégée : à 0,85 d'opacité elle absorbait le halo au lieu de poser
+       le téléphone dessus. Le liseré clair suffit à le détacher du fond. */
+  }
+  .vitrineVisible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .vitrineTexte {
+    position: relative;
+    z-index: 1;
+    margin-top: 26px;
+    max-width: 380px;
+    text-align: center;
+    min-height: 84px;
+  }
+  .vitrineTitre {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    color: #f8fafc;
+  }
+  .vitrineDesc {
+    margin: 8px 0 0;
+    font-size: 14.5px;
+    line-height: 1.5;
+    letter-spacing: -0.008em;
+    color: rgba(248, 250, 252, 0.62);
+    text-wrap: balance;
+  }
+
+  .vitrinePastilles {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  /* 44 px de zone tactile autour d'un point de 7 px : la cible est grande,
+     le point reste discret. */
+  .pastille {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+  }
+  .pastille::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(248, 250, 252, 0.28);
+    transition: background 0.2s ease, width 0.2s ease;
+  }
+  .pastilleActive::before {
+    width: 22px;
+    background: rgba(248, 250, 252, 0.85);
+  }
+  .pastille:focus-visible {
+    outline: 2px solid #8b5cf6;
+    outline-offset: -8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vitrineImage {
+    transition: opacity 0.2s linear;
+    transform: none;
+  }
+}
+
+/* ── Le choix de la formule ──────────────────────────────────────────────── */
+.champ {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.offres {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.offre {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+.offre input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.boite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 122px;
+  padding: 16px 8px;
+  border-radius: 18px;
+  border: 2px solid transparent;
+  background: #edeef1;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.offre input:checked + .boite {
+  background: #f6f8ff;
+  border-color: #2563eb;
+}
+.offre input:focus-visible + .boite {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+.nom {
+  font-size: 16.5px;
+  color: #1d1d1f;
+  font-weight: 500;
+  letter-spacing: -0.011em;
+}
+.prix {
+  margin-top: 5px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #0b0b0f;
+  font-variant-numeric: tabular-nums;
+}
+.periode {
+  margin-top: 3px;
+  font-size: 14.5px;
+  color: #4b4b55;
+  letter-spacing: -0.006em;
+}
+.fois {
+  font-size: 0.82em;
+  color: #8a8a94;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.remise {
+  margin-top: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  color: #15803d;
+  background: #e8f6ee;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+.encoche {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: -0.004em;
+  color: #6b6b75;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.encocheActive {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+.coche {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 23px;
+  height: 23px;
+  border-radius: 999px;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filet {
+  margin: 12px 0;
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* ── Le récapitulatif ────────────────────────────────────────────────────── */
+/*
+  ⚠️ CETTE HAUTEUR RÉSERVÉE EMPÊCHE LE BOUTON DE SAUTER, ET LE CHIFFRE EST MESURÉ.
+
+  Le récapitulatif attend la réponse du serveur avant d'écrire un montant.
+  Mesuré : pendant l'attente il faisait 88 px, une fois rempli 179 px. Le bouton
+  d'action descendait donc de 91 px À L'INSTANT où le tarif arrivait — c'est-à-dire
+  souvent pile au moment où le doigt part. Quelqu'un qui appuie « démarrer » touche
+  alors le vide, ou pire, autre chose.
+
+  On réserve donc d'emblée la hauteur de l'état par défaut (essai + annuel), qui est
+  le seul état que le chargement précède jamais.
+
+  ⚠️ SI LE TEXTE DU RÉCAPITULATIF CHANGE, CE NOMBRE DOIT ÊTRE REMESURÉ.
+  Une ligne ajoutée ou retirée le rend faux, et le saut revient sans prévenir.
+  La mesure se fait dans le navigateur : hauteur de `.recap` une fois le tarif
+  affiché, à 390 px de large.
+*/
+.recap {
+  padding: 0 4px;
+  min-height: 180px;
+}
+.chapeau {
+  margin: 0 0 6px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #15803d;
+  background: #e8f6ee;
+  padding: 5px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.haut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+.hero {
+  margin: 0;
+  font-size: clamp(1.58rem, 8.1vw, 2.05rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: #0b0b0f;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+/*
+  ⚠️ LA GRATUITÉ A SA PROPRE TAILLE, ET CE N'EST PAS UN CAPRICE.
+  « 249,99 € aujourd'hui » est trois fois plus long que « 0 € ». Une seule taille
+  ne peut pas servir les deux sans casser une ligne — et le montant du jour est
+  UNE unité de sens, il ne se coupe pas en deux.
+*/
+.heroGratuit {
+  font-size: clamp(2.1rem, 11.4vw, 3.05rem);
+  letter-spacing: -0.045em;
+}
+.hero small {
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #55555f;
+}
+.heroGratuit small {
+  font-size: 0.42em;
+}
+.duree {
+  margin: 0;
+  flex: none;
+  font-size: 16px;
+  color: #55555f;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.franc {
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #1d1d1f;
+  font-weight: 500;
+  letter-spacing: -0.011em;
+}
+.micro {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: #9a9aa4;
+  letter-spacing: -0.004em;
+  font-variant-numeric: tabular-nums;
+}
+.apres {
+  margin: 9px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4b4b55;
+  letter-spacing: -0.008em;
+}
+.eco {
+  margin: 5px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 14px;
+}
+.barre {
+  color: #9a9aa4;
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+.vert {
+  color: #15803d;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.008em;
+}
+.erreur {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #b42318;
+}
+.lien {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* ── L'ATTENTE ───────────────────────────────────────────────────────────
+   ⚠️ RÉSERVER LA PLACE NE SUFFISAIT PAS : ÇA LAISSAIT UN TROU.
+
+   La hauteur réservée empêche bien le bouton de sauter. Mais pendant la seconde
+   d'attente, elle laissait 180 px de blanc avec « Chargement du tarif… » perdu
+   en haut. Vu à l'écran : la carte a l'air cassée, pas en train de charger.
+
+   Ces formes reprennent la silhouette exacte de ce qui va arriver — la pastille
+   verte, le gros montant, les deux lignes de texte, la ligne grise. L'œil
+   comprend la structure avant de lire le contenu, et rien ne bouge quand le vrai
+   texte remplace les formes.
+
+   `aria-hidden` : un lecteur d'écran n'a rien à faire de rectangles. Il reçoit
+   « Chargement du tarif… », qui est la seule information utile ici.
+*/
+.squelette {
+  display: block;
+}
+.sq {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e9eaee 25%, #f3f4f7 37%, #e9eaee 63%);
+  background-size: 400% 100%;
+  animation: sqOnde 1.4s ease-in-out infinite;
+}
+@keyframes sqOnde {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+.sqChapeau {
+  width: 118px;
+  height: 26px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.sqHero {
+  width: 64%;
+  height: 48px;
+  margin-bottom: 12px;
+}
+.sqLigne {
+  width: 100%;
+  height: 17px;
+  margin-bottom: 8px;
+}
+.sqLigne2 {
+  width: 78%;
+  height: 17px;
+  margin-bottom: 14px;
+}
+.sqMicro {
+  width: 92%;
+  height: 14px;
+}
+
+/* ── Le bouton ───────────────────────────────────────────────────────────── */
+/*
+  ⚠️ UN APLAT DE COULEUR PARAÎT TOUJOURS TERNE, QUELLE QUE SOIT LA COULEUR.
+  Ce qui donne l'impression qu'un bouton est ALLUMÉ, ce n'est pas sa teinte :
+  c'est qu'il reçoit de la lumière du haut et qu'il en renvoie autour de lui.
+  Trois couches, et aucune n'est décorative :
+   · un dégradé vertical très court — la face du bouton n'est plus plane ;
+   · un liseré clair sur l'arête haute — c'est là que la lumière frappe ;
+   · une lueur bleue portée en dessous — le bouton flotte au lieu d'être collé.
+*/
+.cta {
+  margin-top: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 60px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 16px;
+  color: #fff;
+  font-size: 18.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-family: inherit;
+  cursor: pointer;
+  isolation: isolate;
+  background: linear-gradient(180deg, #2e63ea 0%, #1d4ed8 55%, #1740b8 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 10px 26px -8px rgba(29, 78, 216, 0.72),
+    0 2px 6px -2px rgba(0, 0, 0, 0.32);
+  transition: background 0.15s ease;
+}
+.cta:hover {
+  background: linear-gradient(180deg, #3a6df0 0%, #2457de 55%, #1b48c6 100%);
+}
+.cta:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+.cta:disabled {
+  cursor: not-allowed;
+  background: linear-gradient(180deg, #9fb3e8 0%, #8ea6e2 100%);
+  box-shadow: none;
+}
+
+/*
+  ⚠️ ON N'ÉTEINT JAMAIS POUR ÉCLAIRER.
+  Première version, refusée par Chandler : « l'écriture s'efface et la police a
+  l'air terne. » Elle l'était. Pour faire passer une lumière dans du texte blanc,
+  j'avais baissé le blanc à 78 % — donc j'éteignais le libellé six secondes sur
+  sept pour qu'il paraisse plus clair une seconde.
+
+  LA VRAIE SOLUTION : puisqu'on ne peut pas rendre du blanc plus blanc, on le
+  fait DÉBORDER. Une seconde copie du libellé, posée exactement par-dessus, ne
+  porte qu'une bande claire étroite, floutée vers l'extérieur. Le résultat n'est
+  pas une lettre plus claire — c'est une lettre qui RAYONNE.
+
+  · `plus-lighter` ADDITIONNE la lumière. Sans lui, la copie repeindrait du blanc
+    sur du blanc et rien ne se verrait.
+  · `isolation:isolate` sur le bouton enferme ce mélange : sinon le reflet irait
+    éclaircir la carte blanche derrière.
+  · Le libellé de dessous reste à #FFF du début à la fin. Si le navigateur ignore
+    le découpage ou le mélange, il reste du blanc plein : on perd le reflet,
+    jamais la lisibilité.
+*/
+.libelle {
+  position: relative;
+  display: inline-block;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(10, 20, 60, 0.28);
+}
+.libelle::after {
+  content: attr(data-texte);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  pointer-events: none;
+  text-shadow: none;
+  background-image: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0.55) 47%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.55) 53%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  background-size: 210% 100%;
+  background-repeat: no-repeat;
+  background-position: 170% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 12px rgba(200, 225, 255, 0.85))
+    drop-shadow(0 0 24px rgba(140, 190, 255, 0.55));
+  mix-blend-mode: plus-lighter;
+  animation: refletCTA 6.5s cubic-bezier(0.4, 0, 0.25, 1) infinite;
+}
+@keyframes refletCTA {
+  0%,
+  63% {
+    background-position: 170% 0;
+  }
+  100% {
+    background-position: -70% 0;
+  }
+}
+
+.rassure {
+  margin: 11px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  font-size: 12.5px;
+  color: #4b4b55;
+  letter-spacing: -0.005em;
+  text-align: center;
+}
+.rassure span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.point {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #15803d;
+  flex: none;
+}
+
+/* ── La zone bancaire ────────────────────────────────────────────────────── */
+.zoneStripe {
+  margin-top: 13px;
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+}
+.retour {
+  margin: 13px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding-right: 12px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 15px;
+  color: #4b4b55;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.retour:hover {
+  color: #0b0b0f;
+}
+.retour:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.pied {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+.piedA {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 14px;
+  color: #33333b;
+  letter-spacing: -0.008em;
+}
+.piedB {
+  margin: 0;
+  font-size: 13px;
+  color: #8a8a94;
+  letter-spacing: -0.004em;
+}
+
+/* ── ÉCRANS COURTS ───────────────────────────────────────────────────────
+   ⚠️ ON RÈGLE SUR LA HAUTEUR, PAS SUR LA LARGEUR.
+
+   Le brief fait tester 320, 390, 768 et 1440 — ce sont des LARGEURS. Or le
+   bouton d'action tombe sous la ligne de flottaison à cause de la HAUTEUR, et
+   les deux ne varient pas ensemble : un iPhone SE fait 375 de large (donc rien
+   d'alarmant côté largeur) mais seulement 553 de haut une fois les barres de
+   Safari déduites. Mesuré sans cette règle : il manquait 87 px.
+
+   Ce qui rétrécit ici est choisi dans cet ordre — d'abord le décor, ensuite le
+   confort, jamais l'information. Aucun texte n'est retiré, aucun chiffre n'est
+   caché : seuls les blancs et les corps de police diminuent.
+*/
+@media (max-height: 660px) {
+  .dedans {
+    padding-top: 12px;
+  }
+  .titre {
+    margin-top: 14px;
+    /* même pente que ci-dessus : sur écran court aussi, une seule ligne */
+    font-size: clamp(1.05rem, 5.55vw, 2rem);
+  }
+  .dire {
+    margin-top: 10px;
+  }
+  .direTexte {
+    padding: 8px 14px;
+    font-size: 13.5px;
+  }
+  .cadreCarte {
+    margin-top: 13px;
+  }
+  .carte {
+    padding: 13px;
+  }
+  .boite {
+    min-height: 100px;
+    padding: 12px 6px;
+  }
+  .prix {
+    font-size: 22px;
+  }
+  .periode {
+    font-size: 13px;
+  }
+  .filet {
+    margin: 9px 0;
+  }
+  .chapeau {
+    margin-bottom: 4px;
+    padding: 4px 9px;
+  }
+  .heroGratuit {
+    font-size: clamp(1.7rem, 9vw, 2.4rem);
+  }
+  .franc {
+    margin-top: 7px;
+    font-size: 14px;
+  }
+  .micro {
+    margin-top: 5px;
+  }
+  /* même raison, hauteur mesurée sur écran court : 156 px une fois rempli */
+  .recap {
+    min-height: 158px;
+  }
+  .sqChapeau {
+    height: 22px;
+    margin-bottom: 6px;
+  }
+  .sqHero {
+    height: 40px;
+    margin-bottom: 10px;
+  }
+  .sqLigne,
+  .sqLigne2 {
+    height: 15px;
+    margin-bottom: 7px;
+  }
+  .cta {
+    margin-top: 10px;
+    min-height: 54px;
+    font-size: 17px;
+  }
+}
+
+/* ── Mouvement réduit ────────────────────────────────────────────────────── */
+/*
+  Quelqu'un qui a désactivé les animations de son téléphone l'a fait pour une
+  raison. On les SUPPRIME, on ne les ralentit pas.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .libelle::after {
+    display: none;
+  }
+  .sq {
+    animation: none;
+  }
+  .car {
+    filter: none !important;
+    transform: none !important;
+    transition: opacity 0.2s linear !important;
+  }
+  .carSortie {
+    filter: none !important;
+    transform: none !important;
+  }
+}

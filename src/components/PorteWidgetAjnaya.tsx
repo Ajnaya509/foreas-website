@@ -56,8 +56,25 @@ const AjnayaWidget = dynamic(() => import('@/components/AjnayaWidget'))
  */
 const PAGES_AVEC_LEUR_PROPRE_PORTE = new Set(['/'])
 
+/**
+ * Les pages où le widget ne doit s'ouvrir SOUS AUCUNE FORME — pas parce qu'une
+ * autre porte existe, mais parce qu'aucune ne doit exister ici.
+ *
+ * ⚠️ CE N'EST PAS LA MÊME RAISON QUE LE JEU AU-DESSUS, D'OÙ LE SECOND JEU.
+ * Ranger `/tarifs3` dans « pages avec leur propre porte » aurait écrit un
+ * mensonge dans le code : cette page n'en a pas. Le jour où quelqu'un relira
+ * cette liste pour savoir où Ajnaya est joignable, la réponse doit être juste.
+ *
+ * Le brief de la page de paiement : « Ne pas envoyer vers Ajnaya ou WhatsApp au
+ * milieu du paiement. » Une bulle flottante posée par-dessus une saisie de carte
+ * bancaire est exactement cette sortie-là — et sur téléphone, elle recouvre en
+ * plus la zone où Stripe pose ses champs.
+ */
+const PAGES_SANS_AUCUNE_PORTE = new Set(['/tarifs3'])
+
 export default function PorteWidgetAjnaya() {
   const pathname = usePathname()
   if (pathname && PAGES_AVEC_LEUR_PROPRE_PORTE.has(pathname)) return null
+  if (pathname && PAGES_SANS_AUCUNE_PORTE.has(pathname)) return null
   return <AjnayaWidget />
 }
