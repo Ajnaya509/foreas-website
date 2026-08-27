@@ -154,22 +154,124 @@ export const PLATEFORMES_PHRASES = {
  * jamais été versée à qui que ce soit.
  */
 export const PARRAINAGE = {
-  paliers: [
-    { palier: 1, commissionEur: 25, remisePct: 10 },
-    { palier: 2, commissionEur: 35, remisePct: 15 },
-    { palier: 3, commissionEur: 50, remisePct: 18 },
-  ],
-  commissionsDejaVersees: 0,
-  /** Aucun niveau 2 ni 3 au sens « filleul de filleul ». */
+  /**
+   * ⚠️ 27/08/2026 — CE BLOC PORTAIT UN BARÈME PÉRIMÉ, ET IL ÉTAIT SERVI.
+   *
+   * Il déclarait trois paliers de volume — 25 / 35 / 50 € — assortis d'une
+   * remise au filleul de 10 / 15 / 18 %. Rendu tel quel dans la FAQ de
+   * `/tarifs2`, sur `/cap` et dans `ZoneCapPartnerCTA`.
+   *
+   * La source technique dit autre chose. `gelParrainage.ts` du backend :
+   *
+   *   MONTANT_ANNUEL_CENTIMES  = 5000   → 50 € UNE SEULE FOIS, au premier
+   *                                        paiement annuel, jamais au renouvellement
+   *   MONTANT_MENSUEL_CENTIMES = 500    → 5 € par mois RÉELLEMENT PAYÉ,
+   *                                        versés le mois suivant
+   *   mono-niveau strict : seul le parrain DIRECT, aucune cascade
+   *
+   * Et ce n'est pas un `if` que quelqu'un pourrait contourner : la BASE le tient.
+   * Une contrainte refuse tout montant autre que 5000 ou 500 centimes, un index
+   * unique rend le second annuel impossible, un autre interdit le rejeu d'une
+   * facture. Le fichier nomme lui-même l'ancien code comme périmé :
+   * « mlmMonthlyPayoutCron.ts | 25 / 35 / 50 € par paliers, sur 3 niveaux ».
+   *
+   * ⚠️ DEUX ÉCARTS, ET LE SECOND EST LE PIRE.
+   *
+   *  1. La commission promise valait CINQ FOIS la vraie : « tu touches 25 € PAR
+   *     MOIS sur lui » contre 5 € par facture mensuelle payée.
+   *
+   *  2. **La remise au filleul n'existe pas du tout.** « −10 % à vie, jusqu'à
+   *     −18 % » était une promesse de PRIX faite à quelqu'un qui n'y a aucun
+   *     droit. Le parrain se trompe sur son gain ; le filleul, lui, se voit
+   *     promettre une réduction sur ce qu'il paie.
+   *
+   * ⚠️ POURQUOI `remisePct` EST SUPPRIMÉ ET NON MIS À ZÉRO.
+   * Un champ à `0` reste un champ : il se réaffiche « −0 % » le jour où
+   * quelqu'un le lit sans réfléchir. Effacer le symbole force le COMPILATEUR à
+   * nommer tous les appelants — là où un `grep` en rate toujours un.
+   */
+  politique: 'FOREAS_REFERRAL_POLICY_V2026_08_21',
+
+  /** 50 € au parrain, UNE SEULE FOIS, au premier paiement annuel du filleul. */
+  annuelUneFoisEur: 50,
+
+  /** 5 € au parrain par mois d'abonnement mensuel RÉELLEMENT PAYÉ. */
+  mensuelParMoisPayeEur: 5,
+
+  /** Aucun droit sur le filleul d'un filleul. La base l'interdit. */
   cascadeMultiNiveaux: false,
+
+  /**
+   * Rien n'est dû sur un essai, un mois à 0 €, un paiement échoué, un
+   * remboursement, un litige, ni sur un auto-parrainage.
+   */
+  droitSurEssaiOuImpaye: false,
+
+  /**
+   * Mesuré : `referral_commissions` = 0 ligne, `referral_tree` = 0,
+   * `referrals` = 0, chauffeurs avec compte Stripe = 0.
+   * Aucun versement n'a jamais eu lieu. On le dit, on ne le cache pas.
+   */
+  commissionsDejaVersees: 0,
 } as const
 
 /**
- * ❌ INTERDIT : « cascade 10 € / 4 € / 2 € à vie sur 3 niveaux »,
- *    « 25 €/mois sur lui (N1), 8 € (N2), 2 € (N3) », « parrainage 10 €/filleul »,
- *    « −20 % à vie » (aucun palier à 20 % n'existe), « virement automatique »
- *    (aucun virement n'a jamais eu lieu).
+ * LA REMISE AU FILLEUL — ELLE, ELLE EXISTE VRAIMENT.
+ *
+ * ⚠️ 27/08/2026 — J'AI FAILLI LA SUPPRIMER PAR ERREUR.
+ *
+ * Un brief venu du fil APP annonçait « AUCUNE remise promise au filleul ».
+ * C'est faux pour l'implémentation actuelle, et j'ai vérifié avant d'effacer —
+ * de justesse. Ce qui est gelé, c'est la COMMISSION AU PARRAIN ; la remise au
+ * filleul, elle, est branchée de bout en bout.
+ *
+ * Mesuré en base le 27/08 :
+ *
+ *   get_referral_discount_for_code(code)  → COALESCE(v_pct, 10)  — jamais 0
+ *   referral_program_tiers :
+ *      0–14 filleuls  → 10 %
+ *     15–49 filleuls  → 15 %
+ *     50 et plus      → 18 %
+ *
+ * Et dans `src/app/api/checkout/route.ts` :
+ *
+ *   stripe.coupons.create({ percent_off: pct, duration: 'forever' })
+ *   if (referralCouponId && !isAnnual) sessionParams.discounts = [...]
+ *
+ * Donc, mot par mot : « −10 % » est le plancher réel · « à vie » est exact
+ * (`duration: 'forever'`) · « jusqu'à −18 % » est atteignable (palier 50+) ·
+ * « l'annuel est au tarif fixe » est exact (`!isAnnual`).
+ *
+ * ⚠️ CE QUI RESTE À NE PAS CONFONDRE : ce sont des paliers de VOLUME du parrain,
+ * pas des niveaux de pyramide. Le filleul d'un filleul ne donne aucun droit.
+ *
+ * ⚠️ ET LA LEÇON : un brief, même précis et bien intentionné, ne remplace pas
+ * une mesure. Supprimer un avantage réel parce qu'un document dit qu'il
+ * n'existe pas, c'est mentir dans l'autre sens.
  */
+export const REMISE_FILLEUL = {
+  reelle: true,
+  mesureeLe: '2026-08-27',
+  planchePct: 10,
+  plafondPct: 18,
+  aVie: true,
+  surAnnuel: false,
+} as const
+
+/**
+ * ❌ INTERDIT — chaque entrée a été SERVIE au moins une fois :
+ *    « 25 € par mois sur lui », « paliers 25 / 35 / 50 € », « à partir de 15
+ *    filleuls », « −10 % à vie », « jusqu'à −18 % selon ton palier »,
+ *    « cascade 10 € / 4 € / 2 € à vie sur 3 niveaux », « 8 € (N2), 2 € (N3) »,
+ *    « −20 % à vie », « virement automatique » (aucun virement n'a eu lieu).
+ *
+ * ✅ CE QU'ON PEUT DIRE, ET RIEN D'AUTRE :
+ *    « 5 € par mois tant que ton filleul paie son abonnement mensuel »
+ *    « 50 € d'un coup s'il prend l'année »
+ *    « seulement ton filleul direct — rien sur les filleuls de tes filleuls »
+ *    « le programme vient d'ouvrir : aucune commission n'a encore été versée »
+ */
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. L'ESSAI ET LE PAIEMENT — ce que le chauffeur vit vraiment

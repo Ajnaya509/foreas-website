@@ -97,7 +97,7 @@ const ANNUEL_PAR_MOIS_CENTIMES = Math.round(PRIX_ANNUEL_CENTIMES / 12)
 // D'où une liste d'inclus unique — il n'y a rien à débloquer plus tard.
 // « Zones chaudes IA », « Ajnaya IA illimitée » : le mot IA est banni du site, Ajnaya a un nom.
 // « Parrainage 10€/filleul » : aucun montant à 10 € n'existe — `referral_program_tiers`
-// (14/08/2026) → 25 € / 35 € / 50 €.
+// (27/08/2026) → commission gelée : 5 €/mois payé, ou 50 € une fois à l'annuel.
 // URSSAF : formulation imposée par le garde-fou légal (ordonnance du 19 sept. 1945, art. 20) —
 // FOREAS calcule ce qui sera dû, FOREAS ne met rien de côté et n'est pas expert-comptable.
 const INCLUS = [
@@ -109,7 +109,7 @@ const INCLUS = [
   // rien de côté (aucun compte de cantonnement n'existe) et n'est pas expert-comptable.
   `${COMPTA_PHRASES.titre} : ce qui sera dû, calculé au fil des courses`,
   'Tes clients directs, sans commission — ton site à ton nom',
-  `Parrainage : ${PARRAINAGE.paliers[0].commissionEur} € par chauffeur que tu amènes`,
+  `Parrainage : ${PARRAINAGE.mensuelParMoisPayeEur} € par mois tant que ton filleul paie`,
 ]
 
 const PLANS = [
@@ -163,7 +163,7 @@ const BENEFITS = [
   {
     icon: Users,
     label: 'Tu parraines, tu touches',
-    sub: `${PARRAINAGE.paliers[0].commissionEur} € par chauffeur que tu amènes, jusqu’à ${PARRAINAGE.paliers[2].commissionEur} € selon ton volume`,
+    sub: `${PARRAINAGE.mensuelParMoisPayeEur} € par mois tant qu’il paie son mensuel, ou ${PARRAINAGE.annuelUneFoisEur} € d’un coup s’il prend l’année`,
   },
   {
     icon: Star,

@@ -306,7 +306,14 @@ const REGLES = [
     motif: /cascade\s+10\s*€?\s*\/\s*4\s*€?\s*\/\s*2\s*€?|25\s*€.{0,20}\(N1\)|8\s*€.{0,20}\(N2\)/i,
     quoi: 'une cascade de parrainage multi-niveaux',
     pourquoi:
-      'referral_program_tiers → 25/35/50 € : ce sont des paliers de VOLUME, pas des niveaux de pyramide. referral_commissions → 0 ligne, jamais rien versé.',
+      // ⚠️ 27/08/2026 — CE MESSAGE CERTIFIAIT L'ERREUR QU'IL DEVAIT ATTRAPER.
+      // Il annonçait « referral_program_tiers → 25/35/50 € » comme la vérité du
+      // barème. Ces trois nombres SONT dans `referral_program_tiers`, mais ce sont
+      // les paliers de REMISE AU FILLEUL (10/15/18 %), pas la commission du parrain.
+      // La commission est gelée par le backend à 5 €/mois payé et 50 € une fois à
+      // l'annuel, avec une contrainte de base qui refuse tout autre montant.
+      // Un garde qui décrit faux enseigne faux à celui qui le lit en panique.
+      'La commission du parrain vaut 5 € par mois réellement payé, ou 50 € une seule fois au premier paiement annuel — mono-niveau, seul le parrain direct (gelParrainage.ts, contrainte de base sur 5000/500 centimes). Les paliers 10/15/18 % de referral_program_tiers sont la REMISE AU FILLEUL, pas la commission. parrainage_droits → 0 ligne, referral_commissions → 0 ligne : rien n’a jamais été versé.',
   },
 ]
 
@@ -928,7 +935,11 @@ const CALCULS = [
  *   un chiffre que FOREAS **fixe** est légitime ;
  *   un chiffre que FOREAS **devine** sur l'argent du chauffeur ne l'est pas.
  *
- * « Tu touches 25 € par filleul » est un barème contractuel : FOREAS décide ce
+   * ⚠️ 27/08/2026 — cet exemple citait « 25 € », le montant PÉRIMÉ. Un
+   * commentaire d'exception qui cite un chiffre faux le réinstalle dans la
+   * tête du prochain lecteur.
+   *
+ * « Tu touches 5 € par filleul chaque mois » est un barème contractuel : FOREAS décide ce
  * montant et s'y engage. « Il te reste 18,75 € » est une déduction faite à la
  * place de quelqu'un dont on ne connaît ni la commission ni les charges.
  *
@@ -1083,6 +1094,135 @@ for (const chemin of fichiers(RACINE)) {
       pourquoi:
         "Le droit existe au contrat (/cgu) mais son mécanisme n'est pas prouvé : aucun délai, aucun responsable, aucun remboursement jamais traité. Une promesse qu'on ne peut pas prouver honorer engage plus qu'elle ne rassure. Passe par garantieAffichable() depuis src/lib/verite-commerciale.ts — le jour où les trois manques sont comblés, un seul drapeau la rallume partout.",
     })
+  }
+}
+
+// ─── LE BARÈME DE PARRAINAGE — CINQ FOIS TROP, PENDANT DES MOIS ─────────────
+//
+// ⚠️ 27/08/2026 — LE SITE PROMETTAIT UNE COMMISSION QUI N'EXISTE PLUS.
+//
+// La FAQ de /tarifs2 disait, servie au chauffeur : « tu touches 25 € PAR MOIS
+// sur lui. À partir de 15 filleuls, c'est 35 €. À partir de 50, c'est 50 €. »
+// /cap et le bandeau partenaire reprenaient les mêmes nombres.
+//
+// La source technique dit autre chose, et c'est la BASE qui la tient
+// (`FOREAS-Clean/backend/src/lib/gelParrainage.ts`) :
+//
+//   MONTANT_ANNUEL_CENTIMES  = 5000  → 50 € UNE SEULE FOIS, premier paiement
+//                                      annuel, jamais au renouvellement
+//   MONTANT_MENSUEL_CENTIMES =  500  → 5 € par mois RÉELLEMENT PAYÉ
+//   mono-niveau strict : seul le parrain DIRECT
+//
+// Une contrainte refuse tout montant autre que 5000 ou 500 centimes ; un index
+// unique rend le second annuel impossible. Le fichier nomme lui-même l'ancien
+// code comme périmé. La commission promise valait donc CINQ FOIS la vraie.
+//
+// ⚠️ CE QU'IL NE FAUT PAS SUPPRIMER EN CORRIGEANT — ET J'AI FAILLI LE FAIRE.
+//
+// Un brief annonçait « aucune remise au filleul ». C'est FAUX pour
+// l'implémentation actuelle. Mesuré le 27/08 :
+//
+//   get_referral_discount_for_code(code) → COALESCE(v_pct, 10), jamais 0
+//   referral_program_tiers : 0-14 → 10 % · 15-49 → 15 % · 50+ → 18 %
+//   checkout : stripe.coupons.create({ percent_off, duration: 'forever' })
+//              appliqué si `!isAnnual`
+//
+// Donc « −10 % à vie, jusqu'à −18 %, l'annuel au tarif fixe » est EXACT.
+// Supprimer un avantage réel parce qu'un document dit qu'il n'existe pas,
+// c'est mentir dans l'autre sens.
+{
+  const VERITE = 'src/lib/verite-commerciale.ts'
+
+  // Ce que plus personne n'a le droit d'écrire dans un texte servi.
+  const INTERDITS = [
+    [/25\s*€\s*(par|\/)\s*(mois|filleul)/i, '« 25 € par mois / par filleul »'],
+    [/à partir de\s*15\s*filleuls?/i, '« à partir de 15 filleuls »'],
+    [/paliers?\s*(de\s*volume\s*)?:?\s*25\s*\/\s*35\s*\/\s*50/i, '« paliers 25 / 35 / 50 »'],
+    [/25\s*€\s*\/\s*35\s*€\s*\/\s*50\s*€/i, '« 25 € / 35 € / 50 € »'],
+    [/\b(8|4|2)\s*€\s*\(?N[23]\)?/i, 'une cascade multi-niveaux'],
+  ]
+
+  const fichiersSrc = []
+  const marcher = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const c = join(d, e.name)
+      if (e.isDirectory()) { if (e.name !== 'node_modules') marcher(c); continue }
+      if (['.ts', '.tsx'].includes(extname(e.name))) fichiersSrc.push(c)
+    }
+  }
+  if (existsSync('src')) marcher('src')
+
+  for (const chemin of fichiersSrc) {
+    if (chemin === VERITE) continue           // il DÉFINIT les interdits
+    const code = sansCommentaires(readFileSync(chemin, 'utf8'))
+    const lignes = code.split('\n')
+
+    /**
+     * ⚠️ 27/08 — DEUX DÉFAUTS DANS MA PROPRE RÈGLE, TROUVÉS EN LA METTANT AU ROUGE.
+     *
+     * DÉFAUT A — `\b` DEVANT UN CARACTÈRE ACCENTUÉ NE MATCHE JAMAIS.
+     * `/\bà partir de/i` : en JavaScript, `\b` est ASCII. Entre une espace et un
+     * « à », les deux sont « non-mot » : il n'y a pas de frontière, donc pas de
+     * correspondance. La règle était morte, et verte.
+     *
+     * DÉFAUT B — JE M'ARRÊTAIS À LA PREMIÈRE LIGNE TROUVÉE.
+     * Je cherchais UNE ligne portant le motif, puis j'exigeais le contexte
+     * « filleul » dessus. La première ligne trouvée était
+     * `tarifs2:311  worth: '25 €/mois'` — la valeur du site perso, sans contexte.
+     * Le `continue` sautait alors TOUT le fichier, y compris la vraie faute
+     * quelques lignes plus bas.
+     *
+     * → On parcourt maintenant CHAQUE ligne. Le contexte se juge ligne par ligne,
+     * jamais fichier par fichier.
+     */
+    let signale = false
+    for (let i = 0; i < lignes.length && !signale; i++) {
+      const ligne = lignes[i]
+      // Le contexte se juge sur LA ligne fautive, pas ailleurs dans le fichier.
+      if (!/filleul|parrain|referral/i.test(ligne)) continue
+      for (const [motif, quoi] of INTERDITS) {
+        const m = ligne.match(motif)
+        if (!m) continue
+        infractions.push({
+          fichier: chemin,
+          quoi: `barème de parrainage périmé : ${quoi}`,
+          extrait: m[0],
+          pourquoi:
+            'la commission vaut 5 € par mois réellement payé, ou 50 € UNE SEULE FOIS ' +
+            'au premier paiement annuel — mono-niveau. Gelé par le backend, tenu par ' +
+            'une contrainte de base sur 5000/500 centimes. Le barème 25/35/50 était ' +
+            'CINQ FOIS la vraie commission, et il était servi.',
+        })
+        signale = true
+        break
+      }
+    }
+  }
+
+  // Les deux constantes doivent rester distinctes, et dire la vérité.
+  if (existsSync(VERITE)) {
+    const v = sansCommentaires(readFileSync(VERITE, 'utf8'))
+    const attendus = [
+      [/mensuelParMoisPayeEur:\s*5\b/, 'la commission mensuelle n’est plus 5 €'],
+      [/annuelUneFoisEur:\s*50\b/, 'la commission annuelle n’est plus 50 € une seule fois'],
+      [/cascadeMultiNiveaux:\s*false/, 'le mono-niveau n’est plus déclaré'],
+      [/REMISE_FILLEUL/, 'la remise au filleul a disparu — elle est RÉELLE, ne la supprime pas'],
+      [/planchePct:\s*10\b/, 'le plancher de remise n’est plus 10 %'],
+    ]
+    for (const [motif, quoi] of attendus) {
+      if (!motif.test(v)) {
+        infractions.push({
+          fichier: VERITE,
+          quoi,
+          extrait: String(motif),
+          pourquoi:
+            'commission au parrain et remise au filleul sont DEUX choses : la ' +
+            'première est gelée, la seconde est vivante (coupon Stripe ' +
+            '`duration: forever`, mensuel seulement). Les confondre, c’est ' +
+            'corriger l’une en cassant l’autre.',
+        })
+      }
+    }
   }
 }
 

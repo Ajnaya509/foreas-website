@@ -17,7 +17,7 @@ import { authUrls } from '@/lib/auth-urls'
 // C'est exactement le mécanisme qui produisait les faux : un chiffre plausible recopié
 // dans un .tsx, plus relié à rien, qui dérive dès que la vraie valeur bouge.
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
-import { PARRAINAGE, PLATEFORMES, COMMUNAUTE, garantieAffichable } from '@/lib/verite-commerciale'
+import { PARRAINAGE, REMISE_FILLEUL, PLATEFORMES, COMMUNAUTE, garantieAffichable } from '@/lib/verite-commerciale'
 // ── 20/08/2026 — LES CITATIONS VIENNENT DU REGISTRE, PLUS DU FICHIER ────────
 // Mesuré : la parole de la même personne existait en quatre versions dans trois
 // fichiers. Chacune était un raccourci « pour que ça tienne » — et chacune faisait
@@ -351,11 +351,20 @@ const PLAN: Plan = {
 const REMISE_ANNUELLE_PCT = Math.floor((1 - PRIX_ANNUEL_CENTIMES / (PRIX_MENSUEL_CENTIMES * 12)) * 100)
 
 // 14/08/2026 — le site annonçait « −20 % à vie » au filleul. Aucun palier à 20 % n'existe :
-// `select tier, commission_eur, discount_pct from referral_program_tiers` → 25 €/−10 %,
-// 35 €/−15 %, 50 €/−18 %, et `get_referral_discount_for_code` renvoie COALESCE(v_pct, 10).
+// ⚠️ 27/08 — `referral_program_tiers` porte DEUX colonnes, et on les confondait :
+// `discount_pct` (10/15/18 %) est la remise au filleul — VIVANTE, coupon Stripe.
+// `commission_eur` (25/35/50 €) est l'ancienne commission — GELÉE par le backend,
+// remplacée par 5 €/mois payé et 50 € une fois à l'annuel. Ne plus la lire.
+// paliers de REMISE 10/15/18 %, et `get_referral_discount_for_code` renvoie COALESCE(v_pct, 10).
 // Un code chauffeur donne donc 10 %, 18 % au mieux — jamais 20 %.
-const REMISE_PARRAIN_MIN_PCT = PARRAINAGE.paliers[0].remisePct
-const REMISE_PARRAIN_MAX_PCT = PARRAINAGE.paliers[PARRAINAGE.paliers.length - 1].remisePct
+// ⚠️ 27/08/2026 — LA REMISE VIENT MAINTENANT DE SA PROPRE SOURCE.
+// Elle sortait de `PARRAINAGE.paliers[].remisePct`, mêlée à la commission du
+// parrain. Or les deux n'ont RIEN à voir : la commission est gelée à 5 €/50 €
+// par le backend, la remise au filleul est bien vivante (coupon Stripe
+// `duration: 'forever'`, mensuel seulement). Les confondre, c'est corriger
+// l'une en cassant l'autre.
+const REMISE_PARRAIN_MIN_PCT = REMISE_FILLEUL.planchePct
+const REMISE_PARRAIN_MAX_PCT = REMISE_FILLEUL.plafondPct
 const PRIX_AVEC_PARRAIN = formaterEuros(Math.round(PRIX_MENSUEL_CENTIMES * (1 - REMISE_PARRAIN_MIN_PCT / 100)))
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -437,11 +446,23 @@ function TarifsContent() {
     { id: 'faq-mensuel', q: "Pourquoi mensuel et pas hebdomadaire ?", a: `Parce que ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois, c'est 1 € par jour — une bouteille d'eau. Tu n'as aucun calcul à faire, tu sais exactement ce que tu paies. En annuel, ${formaterEuros(PRIX_ANNUEL_CENTIMES)} : c'est l'ordre de grandeur d'une journée de chiffre d'affaires, posée une fois, pour 365 jours de décisions.` },
     // 14/08/2026 — la cascade N1 25 € / N2 8 € / N3 2 € n'existe nulle part.
     // `select * from referral_program_tiers` → 3 lignes, et ce sont des PALIERS DE VOLUME
-    // (0-14 filleuls : 25 € · 15-49 : 35 € · 50+ : 50 €), pas des niveaux de pyramide :
+    // (0-14 : −10 % · 15-49 : −15 % · 50+ : −18 %), pas des niveaux de pyramide :
     // aucun reversement sur le filleul de ton filleul. « Virement automatique » non plus :
     // `select count(*) from referral_commissions` → 0, aucune commission n'a jamais été
     // versée. Le dire franchement vaut mieux que de le faire découvrir au premier filleul.
-    { id: 'faq-parrainage', q: `${PARRAINAGE.paliers[0].commissionEur}€/filleul à vie, est-ce un piège ?`, a: `Non, et voilà exactement comment ça marche. Tant que ton filleul reste abonné ET que toi aussi, tu touches ${PARRAINAGE.paliers[0].commissionEur} € par mois sur lui. À partir de 15 filleuls, c'est ${PARRAINAGE.paliers[1].commissionEur} €. À partir de 50, c'est ${PARRAINAGE.paliers[2].commissionEur} €. Ce sont des paliers de volume, pas une pyramide : on ne te promet rien sur les filleuls de tes filleuls. Ton filleul, lui, a −${REMISE_PARRAIN_MIN_PCT} % à vie sur le mensuel, jusqu'à −${REMISE_PARRAIN_MAX_PCT} % selon ton palier. Et on est cash : le programme vient d'ouvrir, aucune commission n'a encore été versée. Tu serais dans les premiers.` },
+        // ⚠️ 27/08/2026 — CETTE RÉPONSE PROMETTAIT CINQ FOIS LA VRAIE COMMISSION.
+    //
+    // Elle disait « tu touches 25 € PAR MOIS sur lui », puis 35 € à 15 filleuls
+    // et 50 € à 50. La source technique dit autre chose, et c'est la BASE qui la
+    // tient : `gelParrainage.ts` fixe 5 € par mois réellement payé et 50 € une
+    // seule fois au premier paiement annuel, avec une contrainte qui refuse tout
+    // autre montant. Le fichier nomme lui-même l'ancien barème comme périmé.
+    //
+    // ⚠️ EN REVANCHE LA REMISE AU FILLEUL EST VRAIE, et elle reste écrite ici.
+    // Vérifié le 27/08 : plancher 10 %, plafond 18 %, coupon Stripe
+    // `duration: 'forever'`, appliqué au mensuel seulement. La supprimer aurait
+    // été mentir dans l'autre sens.
+    { id: 'faq-parrainage', q: `${PARRAINAGE.mensuelParMoisPayeEur} € par filleul chaque mois, est-ce un piège ?`, a: `Non, et voilà exactement comment ça marche. Tant que ton filleul paie son abonnement mensuel, tu touches ${PARRAINAGE.mensuelParMoisPayeEur} € par mois — versés le mois suivant. S'il prend l'année d'un coup, c'est ${PARRAINAGE.annuelUneFoisEur} € une seule fois, au premier paiement, pas à chaque renouvellement. Rien n'est dû sur un essai, un mois offert, un paiement échoué ou un remboursement. Et ce n'est pas une pyramide : on ne te promet rien sur les filleuls de tes filleuls, seulement sur le tien. Ton filleul, lui, a −${REMISE_PARRAIN_MIN_PCT} % à vie sur le mensuel, jusqu'à −${REMISE_PARRAIN_MAX_PCT} % selon ton volume de filleuls ; l'annuel reste au tarif fixe. Et on est cash : le programme vient d'ouvrir, aucune commission n'a encore été versée. Tu serais dans les premiers.` },
     { id: 'faq-directs', q: "« Clients directs », ça veut dire quoi concrètement ?", a: "Un sticker avec ton QR code dans la voiture, et un mini-site à ton nom. Le client scanne, il réserve avec toi, il te paie. Aucune plateforme au milieu, donc aucune commission prélevée : une course à 25€, c'est 25€ pour toi. Ça ne remplace pas Uber du jour au lendemain — ça se construit course après course, avec les clients qui reviennent." },
     { id: 'faq-autres-outils', q: "J'ai déjà essayé d'autres outils. Pourquoi celui-ci ?", a: "Parce que les autres te donnent des données — et c'est toi qui fais le tri, le soir, fatigué. Ajnaya te dit où aller MAINTENANT, à la prochaine course. Ce n'est pas un tableau de bord de plus. " + (IMMEDIATE_PAYMENT ? (garantieAffichable() ? "Et tu es couvert : garantie 30 jours satisfait-remboursé pour te faire ta propre idée, sans risque." : "Et tu résilies quand tu veux, depuis ton espace, sans avoir à te justifier.") : `Et tu as ${TRIAL_DAYS} jours pour te faire ta propre idée sur tes vraies courses, sans rien payer.`) },
     { id: 'faq-desactivation', q: "Et si Uber me désactive du jour au lendemain ?", a: "Justement. C'est le scénario pour lequel FOREAS existe. Ajnaya gère Uber + Bolt + Heetch en parallèle. Si une plateforme te coupe, tu redistribues ton temps sur les autres en 1 minute. La communauté FOREAS te briefe sur les bons réflexes pour récupérer ton compte." },

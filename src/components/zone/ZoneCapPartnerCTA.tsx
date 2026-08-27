@@ -49,7 +49,7 @@ export default function ZoneCapPartnerCTA() {
               </p>
               {/* CE QUI ÉTAIT FAUX — mesuré le 14/08/2026 :
                   · « Cascade 10 € / 4 € / 2 € à vie sur 3 niveaux » ne correspond à AUCUNE
-                    source. `referral_program_tiers` → 25 € / 35 € / 50 €, et ce sont des
+                    source. ⚠️ 27/08 : `referral_program_tiers` porte les paliers de REMISE au filleul
                     PALIERS DE VOLUME, pas des niveaux de pyramide : présenter la table comme
                     « vous en haut, vos recrues en dessous » en inverse la lecture.
                   · `referral_tree` → 0 ligne et `referral_commissions` → 0 ligne : il n'existe
@@ -72,7 +72,7 @@ export default function ZoneCapPartnerCTA() {
               <p className="text-white/70 t-body leading-relaxed mb-5">
                 Chaque chauffeur que vous amenez vous rapporte{' '}
                 <span className="font-semibold tabular-nums text-[#F8FAFC]">
-                  {PARRAINAGE.paliers.map((p) => `${p.commissionEur} €`).join(' / ')}
+                  {`${PARRAINAGE.mensuelParMoisPayeEur} €/mois ou ${PARRAINAGE.annuelUneFoisEur} € à l’année`}
                 </span>{' '}
                 selon votre palier de volume.
               </p>
