@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
+    const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' as Stripe.StripeConfig['apiVersion'] /* Acacia volontaire : Basil déplace current_period_end */ })
 
     // Si STRIPE_PORTAL_RETURN_URL pas configurée, retombe sur l'origin courant
     const origin =

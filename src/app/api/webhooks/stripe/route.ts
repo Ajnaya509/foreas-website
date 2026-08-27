@@ -43,8 +43,32 @@ export const runtime = 'nodejs'
 
 function getStripeClient() {
   const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
-  return new Stripe(key, { apiVersion: '2025-02-24.acacia' })
+  return new Stripe(key, { apiVersion: '2025-02-24.acacia' as Stripe.StripeConfig['apiVersion'] /* Acacia volontaire : Basil déplace current_period_end */ })
 }
+
+/**
+ * La fin de la période courante — cherchée AUX DEUX ENDROITS OÙ STRIPE LA MET.
+ *
+ * ⚠️ POURQUOI CETTE FONCTION EXISTE.
+ * Jusqu'à la version d'API `2025-02-24.acacia`, `current_period_end` vit sur
+ * l'ABONNEMENT. À partir de `2025-03-31.basil`, Stripe l'a déplacée sur les
+ * LIGNES de l'abonnement (`items.data[].current_period_end`).
+ *
+ * Ce fichier lit la forme Acacia et son client y est épinglé, donc rien ne casse
+ * aujourd'hui. Mais le jour où quelqu'un montera cette version — et ce jour
+ * viendra — la propriété deviendrait `undefined` et la ligne d'abonné partirait
+ * SANS DATE, sans la moindre erreur. Une panne muette sur le chemin qui encaisse.
+ *
+ * Lire les deux emplacements coûte trois lignes et supprime ce piège pour de bon.
+ */
+function finDePeriode(abo: Stripe.Subscription | null | undefined): string | null {
+  if (!abo) return null
+  const surLAbonnement = (abo as unknown as { current_period_end?: number }).current_period_end
+  const surLaPremiereLigne = abo.items?.data?.[0]?.current_period_end
+  const secondes = surLAbonnement ?? surLaPremiereLigne
+  return secondes ? new Date(secondes * 1000).toISOString() : null
+}
+
 
 function getWebhookSecret() {
   return (process.env.STRIPE_WEBHOOK_SECRET || '').replace(/\s/g, '')
@@ -408,10 +432,31 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session
 
       // Extraire les custom fields
+      /**
+       * ⚠️ DEUX SOURCES, ET AUCUNE N'EST FACULTATIVE.
+       *
+       * `custom_fields` est rempli par L'INTERFACE DE STRIPE — donc uniquement
+       * quand la session est en `ui_mode: 'embedded'` ou `'hosted'`. C'est le cas
+       * de /tarifs2, de /reactivation et des liens WhatsApp.
+       *
+       * `/tarifs3` crée des sessions en `ui_mode: 'custom'` : Stripe n'affiche
+       * plus aucun champ, donc `custom_fields` reste VIDE POUR TOUJOURS. C'est
+       * notre propre formulaire qui collecte le numéro et la ville, et
+       * `POST /api/checkout/coordonnees` les écrit dans les métadonnées avant la
+       * confirmation.
+       *
+       * Ne lire qu'une des deux sources reviendrait à créer des comptes sans
+       * numéro ni ville — sans erreur, sans alerte, et sans que personne ne s'en
+       * aperçoive avant de vouloir appeler quelqu'un.
+       *
+       * Ordre : les métadonnées d'abord. Elles ne sont écrites que par notre
+       * formulaire, donc leur présence prouve qu'on est sur le nouveau chemin.
+       */
+      const meta = (session.metadata as Record<string, string> | null) || {}
       const phoneField = session.custom_fields?.find(f => f.key === 'phone')
       const cityField = session.custom_fields?.find(f => f.key === 'city')
-      const phone = phoneField?.numeric?.value || null
-      const city = cityField?.text?.value || null
+      const phone = meta.foreas_phone || phoneField?.numeric?.value || null
+      const city = meta.foreas_city || cityField?.text?.value || null
 
       // Récupérer la subscription pour les détails
       let subscription: Stripe.Subscription | null = null
@@ -499,9 +544,7 @@ export async function POST(request: Request) {
         trial_end: trialEnd,
         amount_eur: amountEur,
         discount_eur: discountEur,
-        current_period_end: subscription?.current_period_end
-          ? new Date(subscription.current_period_end * 1000).toISOString()
-          : null,
+        current_period_end: finDePeriode(subscription),
       })
 
       // 2. Créer le compte Supabase Auth + envoyer le mail de bienvenue AVEC les identifiants.
@@ -746,7 +789,8 @@ export async function POST(request: Request) {
       // Le piège était documenté à portée de regard. Je ne l'ai pas lu.
       const idAbonnement =
         (facture as unknown as { parent?: { subscription_details?: { subscription?: string } } })
-          .parent?.subscription_details?.subscription ?? facture.subscription
+          .parent?.subscription_details?.subscription ??
+        (facture as unknown as { subscription?: string }).subscription
       if (paye && idAbonnement) {
         try {
           const abo = await stripe.subscriptions.retrieve(idAbonnement as string)
@@ -781,7 +825,7 @@ export async function POST(request: Request) {
       // Le jour où quelqu'un met à jour la destination dans le tableau de bord
       // Stripe, ce bloc cesse de trouver l'abonnement : un impayé ne serait plus
       // enregistré, sans erreur, sans alerte. On lit les deux formes.
-      const idAbonnement = ((invoice as unknown as { parent?: { subscription_details?: { subscription?: string } } }).parent?.subscription_details?.subscription) ?? invoice.subscription
+      const idAbonnement = ((invoice as unknown as { parent?: { subscription_details?: { subscription?: string } } }).parent?.subscription_details?.subscription) ?? (invoice as unknown as { subscription?: string }).subscription
       if (idAbonnement) {
         await updateSubscriberStatus(idAbonnement as string, 'past_due')
         console.log('[webhook] Payment failed pour subscription:', idAbonnement)

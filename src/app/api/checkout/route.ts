@@ -19,7 +19,59 @@ import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, resoudreFormu
 function getStripe() {
   const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
   return new Stripe(key, {
-    apiVersion: '2025-02-24.acacia',
+    /*
+       ⚠️ CONVERSION VOLONTAIRE, ET ELLE PROTÈGE PLUS QU'ELLE NE CONTOURNE.
+       Depuis la montée de `stripe` en 18.5, le type de `apiVersion` ne décrit
+       plus que la dernière version (`2025-08-27.basil`). Or ce client DOIT
+       rester sur Acacia : Basil déplace `current_period_end` hors de
+       l'abonnement, et tout ce fichier lit la forme Acacia.
+       À l'exécution, la version d'API n'est qu'un en-tête HTTP — Stripe accepte
+       toutes celles qu'il connaît. Retirer cette conversion en changeant la
+       valeur casserait la lecture des abonnements, en silence.
+    */
+      apiVersion: '2025-02-24.acacia' as Stripe.StripeConfig['apiVersion'],
+    timeout: 8000,
+    maxNetworkRetries: 1,
+  })
+}
+
+/**
+ * ═════════════════════════════════════════════════════════════════════════════
+ * LE SECOND CLIENT, ET POURQUOI IL Y EN A DEUX
+ * ═════════════════════════════════════════════════════════════════════════════
+ *
+ * `ui_mode: 'custom'` — celui qui permet de dessiner NOS champs au lieu du
+ * gabarit Stripe — n'existe qu'à partir de la version d'API `2025-08-27.basil`.
+ * La tentation était de monter tout le site dessus. Je l'ai mesuré avant :
+ *
+ * ⚠️ BASIL DÉPLACE `current_period_end` DE L'ABONNEMENT VERS SES LIGNES.
+ *
+ * Et `src/app/api/webhooks/stripe/route.ts` fait, ligne 445 :
+ *     subscription = await stripe.subscriptions.retrieve(...)
+ * puis lit `subscription.current_period_end` ligne 502. Avec Basil, ce champ
+ * n'est plus là : la valeur devient `undefined`, la ligne d'abonné part sans
+ * date de fin de période, et RIEN NE LÈVE D'ERREUR. Une panne muette sur le
+ * chemin qui encaisse, à quarante-huit heures d'un lancement.
+ *
+ * D'où deux clients, et une règle simple :
+ *
+ *   getStripe()          → 2025-02-24.acacia — TOUT ce qui existait déjà.
+ *                          Aucun appel du site ne change de comportement.
+ *   getStripeElements()  → 2025-08-27.basil  — UNIQUEMENT la création d'une
+ *                          session `ui_mode: 'custom'`.
+ *
+ * Les deux sont indépendants : une session créée en Basil produit le même
+ * événement `checkout.session.completed`, et le webhook la relit avec le client
+ * Acacia, donc dans la forme qu'il connaît.
+ *
+ * ⚠️ LE JOUR OÙ QUELQU'UN VOUDRA UNIFIER LES DEUX, il devra d'abord réparer la
+ * lecture de `current_period_end` (voir la parade déjà posée dans le webhook),
+ * et refaire cette mesure. Ce n'est pas un chantier de cosmétique.
+ */
+function getStripeElements() {
+  const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
+  return new Stripe(key, {
+    apiVersion: '2025-08-27.basil',
     timeout: 8000,
     maxNetworkRetries: 1,
   })
@@ -170,6 +222,17 @@ export async function POST(request: NextRequest) {
     const origin = request.nextUrl.origin
     const trialEnd = getTrialEnd()
     const isEmbedded = mode === 'embedded'
+    /**
+     * `mode: 'elements'` — le mode où NOUS dessinons les champs.
+     *
+     * ⚠️ CE N'EST PAS UN TROISIÈME TUNNEL, C'EST LE MÊME.
+     * Il crée une SESSION CHECKOUT, exactement comme les deux autres. Donc
+     * l'événement `checkout.session.completed` part, donc le webhook crée le
+     * compte et envoie le mail. C'est toute la différence avec la pile fermée le
+     * 21/08 (`stripe.subscriptions.create`), qui débitait sans provisionner.
+     * Seule l'INTERFACE change : Stripe n'affiche plus rien, il encaisse.
+     */
+    const isElements = mode === 'elements'
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       line_items: [lineItem],
@@ -237,7 +300,16 @@ export async function POST(request: NextRequest) {
         },
       },
       payment_method_collection: 'always',
-      custom_fields: [
+      /**
+       * ⚠️ CES DEUX CHAMPS N'EXISTENT QU'EN MODE EMBARQUÉ OU HÉBERGÉ.
+       * C'est Stripe qui les dessine et les remplit ; en `ui_mode: 'custom'` il
+       * ne dessine plus rien, donc ils resteraient vides pour toujours — et le
+       * webhook, qui les lit ligne 411 pour créer le compte, recevrait `null`.
+       * En mode `elements`, c'est NOTRE formulaire qui les collecte et
+       * `POST /api/checkout/coordonnees` les attache aux métadonnées de la
+       * session avant la confirmation. Le webhook lit les deux endroits.
+       */
+      ...(isElements ? {} : { custom_fields: [
         {
           key: 'phone',
           label: { type: 'custom', custom: 'Numéro de téléphone' },
@@ -250,10 +322,12 @@ export async function POST(request: NextRequest) {
           type: 'text',
           optional: false,
         },
-      ],
-      ...(isEmbedded
-        ? { ui_mode: 'embedded', return_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` }
-        : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs2?canceled=true` }),
+      ] }),
+      ...(isElements
+        ? { ui_mode: 'custom' as const, return_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` }
+        : isEmbedded
+          ? { ui_mode: 'embedded' as const, return_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` }
+          : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs2?canceled=true` }),
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -286,7 +360,17 @@ export async function POST(request: NextRequest) {
       sessionParams.allow_promotion_codes = true
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams)
+    /**
+     * ⚠️ SEULE LA CRÉATION D'UNE SESSION `custom` PASSE PAR BASIL.
+     * Tout le reste de cette route — coupons, remise parrain, résolution
+     * d'identité — continue d'utiliser le client Acacia obtenu ligne 116.
+     * Ce n'est pas de la prudence excessive : `ui_mode: 'custom'` n'existe qu'à
+     * partir de Basil, et Basil déplace des champs que le webhook lit encore.
+     * On prend donc la version neuve pour la seule chose qui l'exige.
+     */
+    const session = await (isElements ? getStripeElements() : stripe).checkout.sessions.create(
+      sessionParams,
+    )
 
     // ⛔ CECI PROUVE QU'ON A COMMENCÉ À PAYER, PAS QU'ON A PAYÉ.
     // La preuve est l'identifiant de session Stripe : stable, unique,
@@ -312,7 +396,7 @@ export async function POST(request: NextRequest) {
     after(async () => {
       await monterUneMarche(identiteVisiteur, 'paiement_commence', session.id, 'site')
     })
-    if (isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })
+    if (isElements || isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
     const err = error as { message?: string; type?: string; code?: string; statusCode?: number }

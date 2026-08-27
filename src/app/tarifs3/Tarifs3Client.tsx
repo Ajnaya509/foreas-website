@@ -2,9 +2,11 @@
 
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Check, ChevronLeft, Lock } from 'lucide-react'
+import { Check, Lock } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
+import { CheckoutElementsProvider } from '@stripe/react-stripe-js/checkout'
+import FormulairePaiement from './FormulairePaiement'
 import { formaterEuros } from '@/lib/offre'
 import {
   TUNNEL_SITE_IMMEDIAT,
@@ -73,6 +75,27 @@ import s from './tarifs3.module.css'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
+/**
+ * ⚠️ LA SORTIE DE SECOURS, ET POURQUOI ELLE EXISTE À CETTE DATE PRÉCISE.
+ *
+ * `false` → le formulaire FOREAS (nos champs, notre bouton, Stripe invisible).
+ * `true`  → l'ancien panneau embarqué de Stripe, derrière un bouton.
+ *
+ * Le lancement est dans quarante-huit heures et ceci est le chemin qui encaisse.
+ * Le mode `custom` a été vérifié — session Checkout réelle, donc événement de
+ * webhook préservé, donc compte créé — mais il n'a pas encore connu un vrai
+ * paiement d'un vrai chauffeur sur un vrai téléphone.
+ *
+ * Tant que cette preuve n'existe pas, ce booléen doit rester à portée de main :
+ * un mot, un déploiement, et le chemin d'avant reprend intégralement. Sans lui,
+ * un défaut découvert à la première vraie carte se réparerait en écrivant du
+ * code sous pression, ce qui est la pire façon de toucher à un paiement.
+ *
+ * ⚠️ À RETIRER LE JOUR OÙ UN PAIEMENT RÉEL EST PASSÉ ET QUE LA LIGNE D'ABONNÉ A
+ * ÉTÉ LUE EN BASE. Pas avant, et surtout pas parce que « ça a l'air de marcher ».
+ */
+const REPLI_PANNEAU_STRIPE = false
+
 const FORMULES: readonly Formule[] = ['mensuel', 'annuel']
 /** L'annuel est retenu par défaut — exigence explicite du brief. */
 const FORMULE_PAR_DEFAUT: Formule = 'annuel'
@@ -108,14 +131,19 @@ export default function Tarifs3Client() {
   const [formule, setFormule] = useState<Formule>(FORMULE_PAR_DEFAUT)
   const [etat, setEtat] = useState<EtatTarif>({ phase: 'chargement' })
   const [tentative, setTentative] = useState(0)
-  const [paiementOuvert, setPaiementOuvert] = useState(false)
-  const [ouvertureEnCours, setOuvertureEnCours] = useState(false)
-  const [erreur, setErreur] = useState<string | null>(null)
+  /*
+    ⚠️ `paiementOuvert`, `ouvertureEnCours` et `erreur` ont été SUPPRIMÉS le
+    27/08, pas mis de côté. Ils servaient au bouton qui ouvrait le panneau
+    Stripe — un bouton qui n'existe plus, puisque le formulaire est là dès le
+    chargement. Les garder « au cas où » aurait laissé, sur le chemin qui
+    encaisse, trois états que plus rien ne met à jour : le prochain lecteur
+    aurait cru à une machinerie vivante. L'erreur de paiement est désormais
+    portée par `FormulairePaiement`, au plus près du bouton qui la produit.
+  */
 
 
   const idLegende = useId()
   const idRecap = useId()
-  const idErreur = useId()
 
 
 
@@ -128,8 +156,7 @@ export default function Tarifs3Client() {
    * tentative fantôme dans le tableau de bord Stripe à chaque hésitation.
    */
   const sessions = useRef<Map<Formule, string>>(new Map())
-  /** Verrou synchrone : un `useState` se met à jour trop tard pour un double clic. */
-  const verrou = useRef(false)
+
 
   // ── Le tarif, confirmé par le serveur ──────────────────────────────────────
   useEffect(() => {
@@ -252,8 +279,6 @@ export default function Tarifs3Client() {
      * l'ancien prix pendant que le récapitulatif affiche le nouveau : deux
      * montants à l'écran au même instant, c'est le début d'un litige.
      */
-    setPaiementOuvert(false)
-    setErreur(null)
   }, [])
 
   const recupererClientSecret = useCallback(async (): Promise<string> => {
@@ -265,7 +290,7 @@ export default function Tarifs3Client() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         plan: planPourCheckout(formule),
-        mode: 'embedded',
+        mode: REPLI_PANNEAU_STRIPE ? 'embedded' : 'elements',
         /**
          * ⚠️ CECI EST LA DEMANDE, PAS L'AFFICHAGE. Ce booléen dit au serveur quel
          * tunnel emprunter. Ce que la page MONTRE vient de la réponse de
@@ -283,20 +308,26 @@ export default function Tarifs3Client() {
     return data.clientSecret as string
   }, [formule])
 
-  const ouvrirLePaiement = useCallback(async () => {
-    if (verrou.current) return
-    verrou.current = true
-    setOuvertureEnCours(true)
-    setErreur(null)
-    try {
-      await recupererClientSecret()
-      setPaiementOuvert(true)
-    } catch {
-      setErreur('La connexion au paiement n’a pas abouti. Vérifier le réseau, puis réessayer.')
-    } finally {
-      verrou.current = false
-      setOuvertureEnCours(false)
-    }
+  /**
+   * ⚠️ ELLE NAÎT DANS UN EFFET, DONC JAMAIS SUR LE SERVEUR.
+   * Premier essai : un `useMemo`. La fabrication a échoué au pré-rendu avec
+   * « Failed to parse URL from /api/checkout » — un `fetch` vers une adresse
+   * relative n'a pas de sens côté serveur, où il n'existe pas d'origine. Un
+   * effet ne s'exécute que dans le navigateur : le problème disparaît, et la
+   * page se pré-rend sans réclamer de session à Stripe.
+   *
+   * ⚠️ ET UNE SEULE PROMESSE PAR FORMULE, PAS UNE PAR RENDU.
+   * `CheckoutElementsProvider` accepte une promesse de secret. Mais une promesse
+   * recréée à chaque rendu ferait remonter le fournisseur, donc redemander une
+   * session à Stripe, donc laisser derrière chaque frappe au clavier une
+   * tentative morte dans le tableau de bord. La promesse est donc mémorisée —
+   * et changer de formule en crée une nouvelle, ce qui est exactement voulu :
+   * ce n'est plus le même montant.
+   */
+  const [promesseSecret, setPromesseSecret] = useState<Promise<string> | null>(null)
+  useEffect(() => {
+    if (REPLI_PANNEAU_STRIPE) return
+    setPromesseSecret(recupererClientSecret())
   }, [recupererClientSecret])
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
@@ -576,67 +607,77 @@ export default function Tarifs3Client() {
               )}
             </div>
 
-            {/* ── Le bouton, ou le vrai Stripe ────────────────────────── */}
-            {!paiementOuvert ? (
-              <>
-                <button
-                  type="button"
-                  className={s.cta}
-                  onClick={ouvrirLePaiement}
-                  disabled={!debit || ouvertureEnCours}
-                  aria-describedby={erreur ? idErreur : idRecap}
+            {/* ══ LA ZONE DE PAIEMENT ══════════════════════════════════════
+                ⚠️ ELLE EST LÀ DÈS LE CHARGEMENT. IL N'Y A PLUS DE BOUTON POUR
+                L'OUVRIR — et c'est le premier des deux reproches de Chandler :
+                « c'est de la friction en plus ». Un clic entre quelqu'un de
+                décidé et son moyen de paiement, c'est un clic où l'on peut
+                changer d'avis.
+
+                ⚠️ ET ELLE N'EST PLUS UN GABARIT STRIPE. C'était le second
+                reproche. Nos champs, notre ordre, notre bouton. Stripe ne
+                dessine que l'intérieur du champ de carte — ce qu'il ne peut pas
+                déléguer, et c'est justement ce qui fait que le numéro ne passe
+                jamais par nos serveurs. */}
+            {REPLI_PANNEAU_STRIPE ? (
+              <div className={s.zoneStripe}>
+                <EmbeddedCheckoutProvider
+                  key={formule}
+                  stripe={stripePromise}
+                  options={{ fetchClientSecret: recupererClientSecret }}
                 >
-                  <span className={s.libelle} data-texte={ouvertureEnCours ? 'Ouverture du paiement…' : libelleCTA}>
-                    {ouvertureEnCours ? 'Ouverture du paiement…' : libelleCTA}
-                  </span>
-                </button>
-
-                {erreur && (
-                  // L'erreur est collée au bouton qui l'a produite — le brief :
-                  // « erreurs proches de l'action concernée ».
-                  <p id={idErreur} role="alert" className={s.erreur}>
-                    {erreur}
-                  </p>
-                )}
-
-                {debit && (
-                  <p className={s.rassure}>
-                    {(debit.essai
+                  <EmbeddedCheckout />
+                </EmbeddedCheckoutProvider>
+              </div>
+            ) : promesseSecret ? (
+              <CheckoutElementsProvider
+                key={formule}
+                stripe={stripePromise}
+                options={{
+                  clientSecret: promesseSecret,
+                  /*
+                    ⚠️ L'APPARENCE EST LE SEUL ENDROIT OÙ ON PARLE À STRIPE DU
+                    STYLE, ET ELLE NE CONCERNE QUE LE CHAMP DE CARTE.
+                    Tout le reste de cette page est à nous. Ces valeurs sont
+                    reprises de la feuille de style du module : si l'une d'elles
+                    change là-bas sans changer ici, le champ de carte se met à
+                    jurer avec ce qui l'entoure — et personne ne verra pourquoi.
+                  */
+                  elementsOptions: {
+                    appearance: {
+                      variables: {
+                        colorPrimary: '#1D4ED8',
+                        colorBackground: '#FFFFFF',
+                        colorText: '#0B0B0F',
+                        colorDanger: '#B42318',
+                        borderRadius: '12px',
+                        spacingUnit: '4px',
+                        fontFamily:
+                          '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif',
+                        fontSizeBase: '15px',
+                      },
+                    },
+                  },
+                }}
+              >
+                <FormulairePaiement
+                  libelleBouton={libelleCTA}
+                  garanties={
+                    debit?.essai
                       ? [
                           '0 € prélevé aujourd’hui',
                           'Annulable en un clic',
                           `Carte demandée, jamais débitée avant le ${dateFrancaise(debit.premierDebitISO ?? '')}`,
                         ]
-                      : ['Paiement unique aujourd’hui', 'Annulable depuis l’espace client', 'Traité par Stripe']
-                    ).map((g) => (
-                      <span key={g}>
-                        <i className={s.point} aria-hidden />
-                        {g}
-                      </span>
-                    ))}
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                <button type="button" className={s.retour} onClick={() => setPaiementOuvert(false)}>
-                  <ChevronLeft className="h-4 w-4" aria-hidden />
-                  Changer de formule
-                </button>
-                {/* La zone bancaire, entièrement blanche, rendue par Stripe.
-                    `key` sur la formule : changer d'offre remonte le composant,
-                    donc redemande la session correspondante. */}
-                <div className={s.zoneStripe}>
-                  <EmbeddedCheckoutProvider
-                    key={formule}
-                    stripe={stripePromise}
-                    options={{ fetchClientSecret: recupererClientSecret }}
-                  >
-                    <EmbeddedCheckout />
-                  </EmbeddedCheckoutProvider>
-                </div>
-              </>
-            )}
+                      : [
+                          'Paiement unique aujourd’hui',
+                          'Annulable depuis l’espace client',
+                          'Traité par Stripe',
+                        ]
+                  }
+                />
+              </CheckoutElementsProvider>
+            ) : null}
 
             <div className={s.pied}>
               <p className={s.piedA}>

@@ -98,7 +98,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
   // Retrieve la session Stripe côté serveur
   let session: Stripe.Checkout.Session
   try {
-    const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
+    const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' as Stripe.StripeConfig['apiVersion'] /* Acacia volontaire : Basil déplace current_period_end */ })
     session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['subscription', 'customer', 'total_details.breakdown.discounts'],
     })

@@ -60,7 +60,7 @@ async function supaFetch(path: string, key: string, url: string) {
 
 function getStripe() {
   const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
-  return new Stripe(key, { apiVersion: '2025-02-24.acacia', timeout: 8000, maxNetworkRetries: 1 })
+  return new Stripe(key, { apiVersion: '2025-02-24.acacia' as Stripe.StripeConfig['apiVersion'] /* Acacia volontaire : Basil déplace current_period_end */, timeout: 8000, maxNetworkRetries: 1 })
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
