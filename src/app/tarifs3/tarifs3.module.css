@@ -13,7 +13,23 @@
   position: relative;
   min-height: 100vh;
   min-height: 100dvh; /* la barre d'adresse mobile mange les 100vh */
-  overflow-x: hidden;
+  /*
+    ⚠️ `clip` ET NON `hidden` — LA « BORDURE BIZARRE » DE CHANDLER VENAIT DE LÀ.
+
+    Mesuré sur la production, à 390 px : la carte avait 20 px de marge à gauche
+    et 28 px à droite. Huit pixels d'écart, invisibles à l'œil mais suffisants
+    pour que le liseré dégradé paraisse de travers.
+
+    La cause : `overflow-x: hidden` transforme l'élément en CONTENEUR DE
+    DÉFILEMENT. Il hérite alors d'un `overflow-y: auto` implicite, se dote de sa
+    PROPRE barre de défilement — 8 px mesurés — et pousse tout son contenu vers
+    la gauche. La page défilait donc deux fois : une fois dans la fenêtre, une
+    fois dans elle-même.
+
+    `clip` coupe ce qui dépasse SANS créer de conteneur de défilement. Le
+    contenu retrouve ses 20 px des deux côtés.
+  */
+  overflow-x: clip;
   background: #000;
   color: #f8fafc;
   font-optical-sizing: auto;
@@ -136,13 +152,26 @@
 /* ── La ligne qui parle ──────────────────────────────────────────────────── */
 .dire {
   margin: 14px 0 0;
-  display: inline-flex;
-  max-width: 100%;
+  /*
+    ⚠️ `flex` ET NON `inline-flex` — demande de Chandler du 27/08 : « je
+    préférerais qu'elle remplisse la ligne et aille aussi à la ligne. »
+    En `inline-flex`, la pastille épousait la longueur de chaque phrase : elle
+    changeait de largeur à chaque rotation, et la page semblait respirer de
+    travers. Elle occupe désormais toute la largeur, et le texte passe à la
+    ligne à l'intérieur — la boîte ne bouge plus, seul le texte change.
+  */
+  display: flex;
+  width: 100%;
   padding: 1px;
   border-radius: 999px;
   background: linear-gradient(95deg, #22d3ee 0%, #8b5cf6 55%, #e879f9 100%);
 }
 .direTexte {
+  /* Le texte occupe la largeur du contenant et se centre, au lieu de s'y coller
+     à gauche : sur une ligne courte, un texte collé au bord gauche d'une boîte
+     large se lit comme un défaut de calage. */
+  width: 100%;
+  text-align: center;
   /*
     ⚠️ `balance` N'EST PAS UN EMBELLISSEMENT, C'EST LA CORRECTION D'UN DÉFAUT MESURÉ.
     Sans lui, trois phrases sur treize finissaient par un mot seul sur sa ligne :

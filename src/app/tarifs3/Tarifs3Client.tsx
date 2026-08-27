@@ -552,7 +552,7 @@ export default function Tarifs3Client() {
                           ligne de flottaison. Le sens est intact : rien n'est pris
                           avant la date, et partir avant ne coûte rien.
                         */}
-                        Rien n’est prélevé avant le {dateFrancaise(debit.premierDebitISO)}.
+                        Aucun paiement avant le {dateFrancaise(debit.premierDebitISO)}.
                         <br />
                         Annulable en un clic, sans rien payer.
                       </p>
