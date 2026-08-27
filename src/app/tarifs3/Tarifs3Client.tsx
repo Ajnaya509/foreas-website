@@ -362,8 +362,30 @@ export default function Tarifs3Client() {
     const texte = phrases[iPhrase]?.texte ?? ''
     const total = Array.from(texte).length
     const pas = Math.min(16, 620 / Math.max(total, 1))
-    /** Découpe aux fins de phrase : un point suivi d'une espace. */
-    const segments = texte.split(/(?<=\.)\s+/).filter(Boolean)
+    /* Découpe aux fins de phrase : un point suivi d'une espace.
+     *
+     * ⚠️ 27/08 — CETTE LIGNE A CASSÉ LA PAGE DE PAIEMENT SUR IPHONE.
+     * Elle s'écrivait avec un REGARD ARRIÈRE — la construction qui dit
+     * « coupe après un point ». Safari ne la connaît qu'à partir d'iOS 16.4.
+     * Sur un iPhone plus ancien, le motif lève une erreur, React l'attrape, et
+     * le chauffeur voit « Application error: a client-side exception has
+     * occurred » à la place du formulaire. Écran noir, zéro paiement possible.
+     *
+     * ⚠️ ET ÇA NE SE VOYAIT NULLE PART AILLEURS. Le site se construit sans un
+     * mot, le contrôle de type passe, Chrome et le navigateur d'aperçu
+     * l'exécutent parfaitement. Seul un vrai iPhone le montre. C'est Chandler
+     * qui l'a trouvé — et deux fois : la première, j'avais mis son « ça ne
+     * marche pas sur l'iPhone de ma femme » sur le compte d'une adresse locale.
+     *
+     * Le remplacement n'a pas de regard arrière. On coupe sur « point + espaces »,
+     * ce qui mange le point, puis on le recolle à tous les morceaux sauf le
+     * dernier — lui garde déjà le sien. Le recollage se fait AVANT le filtrage :
+     * sinon un texte finissant par « . » perdrait son point au passage.
+     */
+    const bruts = texte.split(/\.\s+/)
+    const segments = bruts
+      .map((seg, i) => (i < bruts.length - 1 ? seg + '.' : seg))
+      .filter(Boolean)
     let n = 0
 
     const lettre = (c: string, cle: string) => {
