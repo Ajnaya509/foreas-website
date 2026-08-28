@@ -116,32 +116,30 @@ function chargerPostHog(): Promise<ClientMesure | null> {
           property_denylist: ['$ip'],      // ni renvoyée dans les propriétés
 
           /**
-           * ⚠️ 28/08/2026, 08h45 — L'ENREGISTREMENT DE SESSION EST COUPÉ,
-           * ET CE N'EST PAS UN CHOIX DE PRUDENCE : C'EST UNE MESURE.
+           * ── 28/08/2026, 09h15 — LA VIDÉO EST RALLUMÉE, SANS MASQUE.
            *
-           * Relevé dans le navigateur, sur la version servie bf3b7c7 :
+           * Décision de Chandler, après que je l'aie coupée à 08h45.
            *
-           *     session_recording : {}        ← VIDE
-           *     property_denylist : []        ← VIDE
-           *     cross_subdomain_cookie : true ← alors que j'avais écrit false
-           *     ip : false                    ← appliqué, lui
+           * POURQUOI JE L'AVAIS COUPÉE : mesuré dans le navigateur, la version
+           * servie rendait `session_recording: {}` — le masque écrit dans ce
+           * fichier n'était PAS appliqué. Je ne voulais pas filmer une carte
+           * sans savoir. Mon propre garde, lui, disait vert : il cherchait la
+           * chaîne dans le fichier, pas l'effet dans le navigateur.
            *
-           * Les valeurs SIMPLES passent, les OBJETS et TABLEAUX sont ignorés.
-           * Donc `maskAllInputs: true` — le masque qui empêche de filmer un
-           * numéro de carte pendant qu'un chauffeur le tape — N'ÉTAIT PAS
-           * APPLIQUÉ, alors que le fichier le contenait.
+           * POURQUOI LA COUPURE N'A PLUS DE RAISON D'ÊTRE : Chandler ne veut
+           * pas de masque. La précaution portait sur un masque qu'il ne
+           * demande pas.
            *
-           * ⚠️ ET MON PROPRE GARDE DE CANON A DIT VERT. Il cherche la chaîne
-           * `maskAllInputs: true` dans le fichier. Elle y était. Il vérifiait
-           * la FORME, pas l'EFFET — exactement le défaut que ce projet a déjà
-           * payé plusieurs fois.
+           * ⚠️ CE QUI RESTE VRAI, ET QUI N'EST PAS UN CHOIX : le formulaire de
+           * carte vit dans une fenêtre servie par Stripe, sur un autre domaine.
+           * Aucun enregistreur ne peut voir à l'intérieur d'une fenêtre d'un
+           * autre domaine — c'est le navigateur qui l'interdit, pas un réglage.
+           * Un numéro de carte n'est donc PAS filmable ici, masque ou pas.
            *
-           * Tant que le masque n'est pas prouvé actif DANS LE NAVIGATEUR, on
-           * ne filme pas. Le reste de la mesure (clics morts, clics rageurs,
-           * erreurs, parcours) continue et répond déjà à « pourquoi ils
-           * partent au paiement ».
+           * Ce qui EST filmé sans masque : les champs de FOREAS — téléphone,
+           * e-mail, ville. Des données que la base contient déjà.
            */
-          disable_session_recording: true,
+          disable_session_recording: false,
 
           // ── Réglages inchangés depuis `PostHogProvider` ──────────────────
           // Le consentement est déjà acquis quand on arrive ici : c'est la
@@ -153,10 +151,11 @@ function chargerPostHog(): Promise<ClientMesure | null> {
           enable_heatmaps: true,
           capture_exceptions: true,
           rageclick: true,
-          session_recording: {
-            maskAllInputs: true, // téléphone / champs = masqués
-            maskTextSelector: '[data-private]', // refus manuel par élément
-          },
+          // Pas de masque : décision de Chandler du 28/08. À noter que ce bloc
+          // était de toute façon IGNORÉ par la bibliothèque (mesuré : elle
+          // rendait `{}`), donc le retirer ne change rien au comportement réel.
+          // Les champs carte restent hors de portée : ils vivent dans une
+          // fenêtre Stripe, sur un autre domaine.
         })
       }
       ph.opt_in_capturing()

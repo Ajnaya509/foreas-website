@@ -1574,11 +1574,14 @@ for (const chemin of fichiers(RACINE)) {
       // Elle vérifiait la FORME, pas l'EFFET.
       // Tant que le masque n'est pas prouvé actif DANS LE NAVIGATEUR, la seule
       // chose qu'on puisse garantir est qu'on ne filme pas du tout.
-      [/disable_session_recording\s*:\s*true/,
-       'l’enregistrement de session a été rallumé',
-       'le masque des champs de saisie ne s’applique PAS (mesuré dans le ' +
-       'navigateur le 28/08 : session_recording rendait {}). Rallumer sans avoir ' +
-       'reprouvé le masque revient à filmer des numéros de carte.'],
+      // ⚠️ 28/08 09h15 — CETTE RÈGLE A ÉTÉ RETIRÉE, ET VOICI POURQUOI.
+      // Elle exigeait que l'enregistrement de session reste COUPÉ tant que le
+      // masque des champs n'était pas prouvé. Chandler a décidé de filmer sans
+      // masque : la règle interdisait donc une décision assumée du propriétaire.
+      // Elle ne protégeait plus rien d'autre — le formulaire de carte vit dans
+      // une fenêtre Stripe d'un autre domaine, physiquement hors de portée de
+      // tout enregistreur. Ce n'est pas un réglage, c'est le navigateur.
+      // Ce qui reste gardé ci-dessus : anonymat réseau, pas de suivi inter-domaines.
     ]) {
       if (!motif.test(m)) {
         infractions.push({ fichier: SEUL_AUTORISE, quoi, extrait: String(motif), pourquoi })
