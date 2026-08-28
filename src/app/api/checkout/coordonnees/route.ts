@@ -85,9 +85,17 @@ export async function POST(request: NextRequest) {
 
   const telephone = telephoneValide(corps?.telephone)
   const ville = villeValide(corps?.ville)
-  if (!telephone || !ville) {
+  /* ⚠️ 28/08 — LA VILLE EST DEVENUE FACULTATIVE, ET C'EST L'ORDRE DES CHOSES.
+     Le champ a été retiré du formulaire (décision de Chandler : un champ de
+     moins sur la page qui encaisse). Si cette route avait continué à l'exiger,
+     elle aurait répondu 400 — et le TÉLÉPHONE, lui aussi, ne serait jamais
+     arrivé sur la fiche. Une panne silencieuse, sur la seule donnée qui permet
+     de rattraper un chauffeur qui paie et n'ouvre jamais l'app.
+     La ville reste acceptée si elle vient d'ailleurs un jour ; elle n'est
+     simplement plus obligatoire. */
+  if (!telephone) {
     return NextResponse.json(
-      { error: 'coordonnees_invalides', telephone: !!telephone, ville: !!ville },
+      { error: 'coordonnees_invalides', telephone: false, ville: !!ville },
       { status: 400 },
     )
   }
@@ -106,7 +114,11 @@ export async function POST(request: NextRequest) {
 
   try {
     await stripe.checkout.sessions.update(idSession, {
-      metadata: { foreas_phone: telephone, foreas_city: ville },
+      /* On n'écrit `foreas_city` que si une ville existe : une clé posée à la
+         chaîne vide écraserait une valeur déjà présente sur la session. */
+      metadata: ville
+        ? { foreas_phone: telephone, foreas_city: ville }
+        : { foreas_phone: telephone },
     })
     // On ne rend rien de la session. « écrit » suffit à l'appelant.
     return NextResponse.json({ ecrit: true }, { headers: { 'Cache-Control': 'no-store' } })

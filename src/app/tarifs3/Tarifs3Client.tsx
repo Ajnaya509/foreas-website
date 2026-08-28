@@ -726,9 +726,15 @@ export default function Tarifs3Client() {
                   garanties={
                     debit?.essai
                       ? [
-                          '0 € prélevé aujourd’hui',
+                          /* ⚠️ 28/08 — LE VOCABULAIRE DU PRÉLÈVEMENT EST PARTI.
+                             Chandler : « pas de prélevé, tout le champ lexical lié à la
+                             dopamine retiré, et des phrases affirmatives ». Ces lignes
+                             disaient « prélevé » et « jamais débitée » : deux mots qui
+                             parlent de ce qu'on lui prend, sur l'écran précis où il
+                             donne sa carte. Elles disent la même chose, à l'endroit. */
+                          '0 € aujourd’hui',
                           'Annulable en un clic',
-                          `Carte demandée, jamais débitée avant le ${dateFrancaise(debit.premierDebitISO ?? '')}`,
+                          `Premier paiement le ${dateFrancaise(debit.premierDebitISO ?? '')}`,
                         ]
                       : [
                           'Paiement unique aujourd’hui',

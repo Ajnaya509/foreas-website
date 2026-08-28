@@ -55,30 +55,16 @@ interface Props {
 }
 
 /** Le message que Stripe rend n'est pas toujours présentable. On garde le nôtre. */
-/**
- * Le contrôle de la ville, protégé.
- * Si le navigateur ne connaît pas les classes Unicode, on n'échoue pas : on
- * accepte largement. Mieux vaut une ville un peu permissive qu'un bouton mort.
- */
-function villeAcceptable(v: string): boolean {
-  try {
-    return new RegExp("^[\\p{L}][\\p{L} '\u2019\\-]{1,47}$", 'u').test(v)
-  } catch {
-    return v.length >= 2 && v.length <= 48 && !/[0-9<>@]/.test(v)
-  }
-}
-
 const ECHEC_GENERIQUE =
-  'Le paiement n’a pas abouti. Aucun montant n’a été prélevé. Vérifier la carte, puis réessayer.'
+  'Le paiement n’a pas abouti. L’argent est resté sur le compte. Vérifier la carte, puis réessayer.'
 
 export default function FormulairePaiement({ libelleBouton, garanties }: Props) {
   const checkout = useCheckout()
 
   const [telephone, setTelephone] = useState('')
-  const [ville, setVille] = useState('')
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
-  const [erreurChamp, setErreurChamp] = useState<{ tel?: string; ville?: string }>({})
+  const [erreurChamp, setErreurChamp] = useState<{ tel?: string }>({})
 
   /**
    * ⚠️ « Y A-T-IL UN MOYEN RAPIDE ? » NE SE DEVINE PAS EN CSS.
@@ -104,7 +90,6 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
   const verrou = useRef(false)
 
   const idTel = useId()
-  const idVille = useId()
   const idErreur = useId()
 
   /**
@@ -116,7 +101,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
    * à côté du bon champ — pas à protéger quoi que ce soit.
    */
   const valider = useCallback(() => {
-    const fautes: { tel?: string; ville?: string } = {}
+    const fautes: { tel?: string } = {}
     const chiffres = telephone.replace(/\D/g, '')
     if (!/^\+?[0-9 .\-()]{8,24}$/.test(telephone.trim()) || chiffres.length < 8) {
       fautes.tel = 'Numéro incomplet.'
@@ -129,15 +114,12 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
        latine simple refuserait Nœux-les-Mines, Œting, Cœuvres, Łódź, Timișoara.
        On échangerait une panne théorique sur un appareil de 2017 contre un
        refus réel de communes françaises. On garde la règle, on la protège. */
-    if (!villeAcceptable(ville.trim())) {
-      fautes.ville = 'Ville manquante.'
-    }
     setErreurChamp(fautes)
     return Object.keys(fautes).length === 0
-  }, [telephone, ville])
+  }, [telephone])
 
   /**
-   * Attache le numéro et la ville à la session AVANT de confirmer.
+   * Attache le numéro à la session AVANT de confirmer.
    *
    * ⚠️ UN ÉCHEC ICI NE BLOQUE PAS LE PAIEMENT.
    * Sans ces deux informations, la fiche du chauffeur part incomplète — c'est
@@ -150,13 +132,13 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         await fetch('/api/checkout/coordonnees', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: idSession, telephone: telephone.trim(), ville: ville.trim() }),
+          body: JSON.stringify({ sessionId: idSession, telephone: telephone.trim() }),
         })
       } catch {
         console.warn('[paiement] coordonnées non attachées — le paiement continue')
       }
     },
-    [telephone, ville],
+    [telephone],
   )
 
   if (checkout.type === 'loading') {
@@ -210,7 +192,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
           dans le vide jusqu'à expiration. `valider()` échouait forcément, puisque
           nos deux champs étaient PLUS BAS et donc vides. On sortait de la
           fonction sans rendre la main à Apple, et les messages « Numéro
-          incomplet » / « Ville manquante » s'affichaient DERRIÈRE sa fenêtre :
+          incomplet » s'affichait DERRIÈRE sa fenêtre :
           invisibles. Le chemin de paiement le plus rapide échouait à 100 %.
 
           ⚠️ ET ON NE POUVAIT PAS LE RATTRAPER AU CLIC. La version « checkout »
@@ -222,9 +204,17 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         ⚠️ CES DEUX CHAMPS SONT À NOUS, ET ILS NE SONT PAS DÉCORATIFS.
         Le webhook les lit pour créer le compte du chauffeur. En mode embarqué,
         c'est Stripe qui les affichait ; ici, il ne dessine plus rien. Les
-        retirer reviendrait à créer des comptes sans numéro ni ville — sans
-        erreur, sans alerte, et sans que personne ne s'en aperçoive avant de
-        vouloir appeler quelqu'un.
+        le retirer reviendrait à créer des comptes sans numéro — sans erreur,
+        sans alerte, et sans que personne ne s'en aperçoive avant de vouloir
+        appeler quelqu'un.
+
+        ⚠️ 28/08 — LA VILLE, ELLE, A ÉTÉ RETIRÉE. Décision de Chandler. Suivie
+        jusqu'au bout dans le code avant de trancher : elle ne servait qu'à
+        suggérer un groupe de communauté sur la page de fin, et elle était
+        facultative partout en aval. Un champ de moins sur la page qui encaisse.
+        La route `/api/checkout/coordonnees` a été changée EN MÊME TEMPS : elle
+        exigeait les deux, et aurait répondu 400 — le numéro non plus ne serait
+        jamais arrivé.
       */}
       <div className={s.coordonnees}>
         <label className={s.champ} htmlFor={idTel}>
@@ -243,25 +233,6 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
           {erreurChamp.tel && (
             <span id={`${idTel}-err`} className={s.champErreur} role="alert">
               {erreurChamp.tel}
-            </span>
-          )}
-        </label>
-
-        <label className={s.champ} htmlFor={idVille}>
-          <span className={s.champLabel}>Ville principale</span>
-          <input
-            id={idVille}
-            type="text"
-            autoComplete="address-level2"
-            value={ville}
-            onChange={(e) => setVille(e.target.value)}
-            placeholder="Paris"
-            aria-invalid={!!erreurChamp.ville}
-            aria-describedby={erreurChamp.ville ? `${idVille}-err` : undefined}
-          />
-          {erreurChamp.ville && (
-            <span id={`${idVille}-err`} className={s.champErreur} role="alert">
-              {erreurChamp.ville}
             </span>
           )}
         </label>
