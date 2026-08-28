@@ -1567,10 +1567,18 @@ for (const chemin of fichiers(RACINE)) {
        'la liste des propriétés interdites a disparu',
        'c’est elle qui empêche l’adresse réseau de repartir dans les propriétés ' +
        'd’un événement, même quand `ip: false` est posé.'],
-      [/maskAllInputs\s*:\s*true/,
-       'les champs de saisie ne sont plus masqués',
-       'sans ce masque, l’enregistrement de session filme un numéro de téléphone ' +
-       'ou une carte pendant que le chauffeur les tape.'],
+      // ⚠️ 28/08 08h45 — CETTE RÈGLE A ÉTÉ PRISE EN FLAGRANT DÉLIT DE FAUX VERT.
+      // Elle exigeait `maskAllInputs: true` dans le fichier. La chaîne y était,
+      // la règle passait au vert — et le navigateur répondait
+      // `session_recording: {}`. Le masque n'était PAS appliqué.
+      // Elle vérifiait la FORME, pas l'EFFET.
+      // Tant que le masque n'est pas prouvé actif DANS LE NAVIGATEUR, la seule
+      // chose qu'on puisse garantir est qu'on ne filme pas du tout.
+      [/disable_session_recording\s*:\s*true/,
+       'l’enregistrement de session a été rallumé',
+       'le masque des champs de saisie ne s’applique PAS (mesuré dans le ' +
+       'navigateur le 28/08 : session_recording rendait {}). Rallumer sans avoir ' +
+       'reprouvé le masque revient à filmer des numéros de carte.'],
     ]) {
       if (!motif.test(m)) {
         infractions.push({ fichier: SEUL_AUTORISE, quoi, extrait: String(motif), pourquoi })

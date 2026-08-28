@@ -111,10 +111,37 @@ function chargerPostHog(): Promise<ClientMesure | null> {
           // Sans eux, « on impose la mesure » devient un suivi publicitaire
           // déguisé, et la dispense tombe. Ils ne sont pas décoratifs.
           cross_subdomain_cookie: false,   // rien ne suit d'un domaine à l'autre
-          disable_session_recording: false,
           persistence: 'localStorage+cookie',
           ip: false,                       // l'adresse réseau n'est pas conservée
           property_denylist: ['$ip'],      // ni renvoyée dans les propriétés
+
+          /**
+           * ⚠️ 28/08/2026, 08h45 — L'ENREGISTREMENT DE SESSION EST COUPÉ,
+           * ET CE N'EST PAS UN CHOIX DE PRUDENCE : C'EST UNE MESURE.
+           *
+           * Relevé dans le navigateur, sur la version servie bf3b7c7 :
+           *
+           *     session_recording : {}        ← VIDE
+           *     property_denylist : []        ← VIDE
+           *     cross_subdomain_cookie : true ← alors que j'avais écrit false
+           *     ip : false                    ← appliqué, lui
+           *
+           * Les valeurs SIMPLES passent, les OBJETS et TABLEAUX sont ignorés.
+           * Donc `maskAllInputs: true` — le masque qui empêche de filmer un
+           * numéro de carte pendant qu'un chauffeur le tape — N'ÉTAIT PAS
+           * APPLIQUÉ, alors que le fichier le contenait.
+           *
+           * ⚠️ ET MON PROPRE GARDE DE CANON A DIT VERT. Il cherche la chaîne
+           * `maskAllInputs: true` dans le fichier. Elle y était. Il vérifiait
+           * la FORME, pas l'EFFET — exactement le défaut que ce projet a déjà
+           * payé plusieurs fois.
+           *
+           * Tant que le masque n'est pas prouvé actif DANS LE NAVIGATEUR, on
+           * ne filme pas. Le reste de la mesure (clics morts, clics rageurs,
+           * erreurs, parcours) continue et répond déjà à « pourquoi ils
+           * partent au paiement ».
+           */
+          disable_session_recording: true,
 
           // ── Réglages inchangés depuis `PostHogProvider` ──────────────────
           // Le consentement est déjà acquis quand on arrive ici : c'est la
