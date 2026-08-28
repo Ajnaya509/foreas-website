@@ -118,7 +118,7 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
       </h1>
       <!-- Sous-titre en Montserrat — gris doux -->
       <p style="font-family:'Montserrat',sans-serif;font-size:14px;color:#6b6b80;text-align:center;margin:0 0 36px;line-height:1.6;">
-        Ton essai gratuit est activ&eacute;. 0&euro; d&eacute;bit&eacute; aujourd&rsquo;hui.
+        Ton abonnement est actif. <strong style="color:#F8FAFC;">0&nbsp;&euro; aujourd&rsquo;hui.</strong>
       </p>
 
       <!-- ═══ PLAN CARD — sobre, un seul accent gradient en top ═══ -->
@@ -136,8 +136,8 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
               <tr>
                 <td style="padding-top:16px;">
                   <div style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;line-height:1.8;">
-                    Essai gratuit jusqu&rsquo;au ${trialEnd}<br/>
-                    Premier pr&eacute;l&egrave;vement apr&egrave;s la p&eacute;riode d&rsquo;essai
+                    Trois jours offerts, jusqu&rsquo;au ${trialEnd}<br/>
+                    Premier paiement le ${trialEnd}
                   </div>
                 </td>
               </tr>
@@ -145,6 +145,40 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
           </div>
         </td></tr>
       </table>
+
+      <!--
+        ⚠️ 28/08 — LA GRAINE DE RÉTENTION, LA MÊME QUE SUR LE SITE.
+        Le chauffeur vient de lire « trois jours offerts » : sans ça, il comprend
+        « trois jours pour essayer », c'est-à-dire un compte à rebours avant de
+        payer. Un compte à rebours pousse à ATTENDRE. Cette phrase-là pousse à
+        ROULER, et c'est en roulant qu'Ajnaya devient utile.
+        Le « tout en » est le mot qui compte : une promesse au futur dirait « je
+        paie aujourd'hui, on me répond demain » — exactement le sentiment de
+        s'être fait avoir. « Tout en » dit que ça marche PENDANT.
+        ⚠️ Elle doit rester vraie : aucun chiffre, aucune date, aucun gain
+        annoncé. Ce qui fonctionne dès la première course ne dépend d'aucun
+        apprentissage — le calcul de ce qui reste vraiment sur une course, et
+        Ajnaya qui répond quand on lui demande.
+      -->
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;">
+        <tr><td style="padding:0 4px;">
+          <div style="font-family:'Montserrat',sans-serif;font-size:15px;line-height:1.65;color:#F8FAFC;">
+            Pendant trois jours, Ajnaya apprend comment tu travailles, tout en
+            t&rsquo;apportant du r&eacute;sultat.
+          </div>
+          <div style="font-family:'Montserrat',sans-serif;font-size:13px;line-height:1.6;color:#8888a0;margin-top:8px;">
+            Tes zones, tes heures, tes d&eacute;cisions&nbsp;: chaque course lui en dit un peu plus.
+          </div>
+        </td></tr>
+      </table>
+
+      <!-- ⚠️ 28/08 — LES IDENTIFIANTS SONT REMONTÉS AU-DESSUS DU BOUTON.
+           Ils étaient dessous. Or le bouton envoie vers /go, qui ouvre l'App
+           Store : le chauffeur QUITTE le mail. Sur iPhone il installe, puis il
+           tape « Ouvrir » — il ne revient jamais lire la suite. Son mot de passe
+           était rangé derrière une porte qu'il ne repousse pas.
+           Il le lit maintenant AVANT de partir. -->
+      ${credentials ? buildCredentialsBlock(credentials) : dejaInscrit ? buildExistingAccountBlock(dejaInscrit) : ''}
 
       <!-- ═══ CTA BUTTON — seule vraie couleur ═══ -->
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
@@ -155,27 +189,23 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
                 <a href="https://www.foreas.xyz/go" style="display:block;padding:16px 32px;color:#ffffff;font-family:'Genos',sans-serif;font-size:17px;font-weight:600;text-decoration:none;text-align:center;letter-spacing:0.5px;">
                   T&eacute;l&eacute;charger l&rsquo;app &rarr;
                 </a>
-              <!--
-                ⚠️ 21/08/2026 — LE MAIL N'ANNONÇAIT AUCUNE PORTE DE SECOURS.
-                Le mot de passe généré n'existe QUE dans ce message. S'il se
-                perd, le chauffeur payé n'a aucun recours annoncé — le filet
-                posé côté serveur alerte l'OPÉRATEUR, pas lui.
-                ⚠️ Ce lien n'est pas présenté comme éprouvé : sur toute
-                l'histoire du journal d'authentification, 22 demandes de
-                réinitialisation pour UN SEUL changement de mot de passe
-                effectif. Le bouton est cliquable ; que le chemin aboutisse
-                reste à prouver.
-              -->
-              <p style="margin:18px 0 0;font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:rgba(248,250,252,0.45);text-align:center;">
-                Mot de passe perdu&nbsp;? <a href="https://partners.foreas.xyz/auth/reset" style="color:rgba(248,250,252,0.7);">Reçois-en un nouveau</a>. Une question&nbsp;? Réponds simplement à ce message.
-              </p>
               </td>
             </tr>
           </table>
         </td></tr>
       </table>
 
-      ${credentials ? buildCredentialsBlock(credentials) : dejaInscrit ? buildExistingAccountBlock(dejaInscrit) : ''}
+      <!-- ⚠️ 28/08 — CE PARAGRAPHE ÉTAIT IMPRIMÉ DANS LE BOUTON.
+           Il vivait dans la cellule qui porte le fond violet : du gris à 45 %
+           d'opacité sur du #8C52FF, illisible, et collé sous « Télécharger
+           l'app » comme s'il en faisait partie. Vu seulement en rendant le mail
+           pour de vrai — le code, lui, était valide.
+           ⚠️ Le lien de récupération n'est pas présenté comme éprouvé : sur tout
+           l'historique, 22 demandes de réinitialisation pour UN SEUL changement
+           effectif. Il est cliquable ; qu'il aboutisse reste à prouver. -->
+      <p style="margin:0 0 32px;font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:rgba(248,250,252,0.45);text-align:center;">
+        Mot de passe perdu&nbsp;? <a href="https://partners.foreas.xyz/auth/reset" style="color:rgba(248,250,252,0.7);">Re&ccedil;ois-en un nouveau</a>. Une question&nbsp;? R&eacute;ponds &agrave; ce mail, on lit tout.
+      </p>
 
       <!-- Store links — gris discret -->
       <p style="text-align:center;font-family:'Montserrat',sans-serif;font-size:11px;color:#3a3a4a;margin:0 0 40px;">
@@ -199,13 +229,13 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
               <td style="width:24px;vertical-align:top;padding-right:14px;padding-bottom:16px;">
                 <div style="width:24px;height:24px;border-radius:50%;background-color:#0e0e16;border:1px solid #2a2a3a;color:#6b6b80;font-family:'Genos',sans-serif;font-size:12px;font-weight:600;text-align:center;line-height:24px;">2</div>
               </td>
-              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;padding-bottom:16px;line-height:1.5;">Active les notifications Ajnaya</td>
+              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;padding-bottom:16px;line-height:1.5;">Ajnaya fait le tour de l&rsquo;app avec toi &mdash; trois minutes, pas plus</td>
             </tr>
             <tr>
               <td style="width:24px;vertical-align:top;padding-right:14px;">
                 <div style="width:24px;height:24px;border-radius:50%;background-color:#0e0e16;border:1px solid #2a2a3a;color:#6b6b80;font-family:'Genos',sans-serif;font-size:12px;font-weight:600;text-align:center;line-height:24px;">3</div>
               </td>
-              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;line-height:1.5;">Commence ta premi&egrave;re journ&eacute;e avec Ajnaya</td>
+              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;line-height:1.5;">Roule comme d&rsquo;habitude. C&rsquo;est en roulant qu&rsquo;elle apprend</td>
             </tr>
           </table>
         </td></tr>
@@ -260,7 +290,21 @@ export async function sendWelcomeEmail({ email, name, plan, trialEnd, credential
       const { error } = await resend.emails.send({
       from: 'FOREAS <noreply@foreas.xyz>',
       to: email,
-      subject: `Bienvenue ${name ? name.split(' ')[0] : ''} — Ton essai FOREAS est activé`,
+      /* ⚠️ 28/08 — LE SUJET NE DÉCRIT PLUS, IL DONNE UNE RAISON D'OUVRIR.
+         « Ton essai FOREAS est activé » raconte ce qui vient de se passer : il le
+         sait, il vient de payer. Ce mail-ci porte ses IDENTIFIANTS, et c'est la
+         seule chose qu'il n'a nulle part ailleurs. Le sujet le dit.
+         ⚠️ Et il change quand le compte existait déjà : promettre des identifiants
+         dans un mail qui n'en contient aucun, c'est le meilleur moyen de lui
+         apprendre à ne plus nous croire. */
+      subject: credentials
+        ? `${name ? name.split(' ')[0] + ', t' : 'T'}es identifiants FOREAS sont dans ce mail`
+        : `${name ? name.split(' ')[0] + ', t' : 'T'}on abonnement FOREAS est actif`,
+      /* ⚠️ LE MAIL DISAIT « RÉPONDS À CE MESSAGE », ET IL PARTAIT D'UN NOREPLY.
+         La réponse tombait dans le vide, sans rebond, sans que personne ne le
+         sache. Une promesse d'assistance qui n'aboutit pas coûte plus cher que
+         pas de promesse du tout. */
+      replyTo: 'contact@foreas.xyz',
       html: buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }),
     })
       if (error) {
