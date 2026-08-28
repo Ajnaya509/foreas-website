@@ -10,7 +10,7 @@
  *  1. Query `?session_id=cs_live_...` (CHECKOUT_SESSION_ID injecté par Stripe)
  *  2. `stripe.checkout.sessions.retrieve(id, {expand: ['subscription','customer','total_details.breakdown']})`
  *  3. Détection tier réel via `price.lookup_key` (foreas_pro_*_v2 / foreas_elite_*_v2)
- *  4. Détection coupon actif (BETA60 → "Aucun débit avant [date trial_end]")
+ *  4. Détection coupon actif (BETA60 → mention du code sous la date)
  *  5. Message rétention chaleureux avec prénom + tier + date trial_end
  *  6. 3 cards prochaines étapes : Play Store / Profil chauffeur / Communauté zone
  *  7. CTA secondaire "Gérer mon abonnement" → /api/customer-portal
@@ -27,6 +27,7 @@ import Stripe from 'stripe'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SuccessChecmark from './SuccessCheckmark'
+import CorpsSucces from './CorpsSucces'
 
 export const dynamic = 'force-dynamic' // session unique → pas de cache CDN
 export const runtime = 'nodejs'
@@ -207,165 +208,17 @@ export default async function SuccessPage({ searchParams }: PageProps) {
         {/* ─── Animated check (client wrapper pour Framer Motion) ───────────── */}
         <SuccessChecmark />
 
-        {/*
-          Eyebrow — conditionné au `trial_end` RÉEL de l'abonnement Stripe.
-          Il était rendu inconditionnellement : /reactivation (immediate: true) et
-          /pay/[id] créent des sessions SANS essai qui atterrissent ici, et leur
-          chauffeur, débité à l'instant, lisait « ESSAI ACTIVÉ ». Voir la mesure
-          complète dans le commentaire de `metadata` en haut de fichier.
-        */}
-        <p
-          className="text-[10px] font-extrabold uppercase text-center mb-4 tabular-nums"
-          style={{ color: '#10B981', letterSpacing: '0.25em' }}
-        >
-          {trialEndUnix ? 'FOREAS · ESSAI ACTIVÉ' : 'FOREAS · ABONNEMENT ACTIVÉ'}
-        </p>
-
-        {/* H1 brièveté radicale (≤ 5 mots/phrase) — Genos display */}
-        <h1
-          className="text-4xl sm:text-5xl font-black text-center leading-[0.92] mb-3"
-          style={{
-            color: '#F8FAFC',
-            letterSpacing: '-0.04em',
-            fontFamily: 'var(--font-genos), system-ui, sans-serif',
-          }}
-        >
-          Bienvenue,{' '}
-          <span
-            style={{
-              backgroundImage:
-                'linear-gradient(135deg, #6C3CE0 0%, #8C52FF 50%, #00D4FF 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            {firstName}.
-          </span>
-        </h1>
-
-        <p
-          className="text-center text-base mb-8"
-          style={{ color: 'rgba(248, 250, 252, 0.78)' }}
-        >
-          Votre tier <strong style={{ color: '#F8FAFC' }}>{tierName}</strong> est actif.{' '}
-          {trialEndFormatted ? (
-            <>
-              <br className="hidden sm:block" />
-              {hasBeta60 ? (
-                <>
-                  Aucun débit avant le{' '}
-                  <strong style={{ color: '#10B981' }}>{trialEndFormatted}</strong> · code{' '}
-                  <span
-                    className="font-mono font-bold tabular-nums px-1.5 py-0.5 rounded"
-                    style={{
-                      backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                      color: '#10B981',
-                    }}
-                  >
-                    BETA60
-                  </span>
-                </>
-              ) : (
-                <>
-                  Aucun débit avant{' '}
-                  <strong style={{ color: '#F8FAFC' }}>{trialEndFormatted}</strong>
-                </>
-              )}
-            </>
-          ) : (
-            <>Premier débit selon votre cycle{billingLabel ? ` ${billingLabel}` : ''}.</>
-          )}
-        </p>
-
-        {/* Trust micros (brièveté radicale) */}
-        <div
-          className="flex items-center justify-center gap-4 mb-10 text-[10px] tabular-nums"
-          style={{ color: 'rgba(248, 250, 252, 0.32)', letterSpacing: '0.04em' }}
-        >
-          <span>🔒 Stripe sécurisé</span>
-          <span>·</span>
-          <span>Annulation 1 clic</span>
-          <span>·</span>
-          <span>Sans engagement</span>
-        </div>
-
-        {/* ─── 3 cards prochaines étapes ───────────────────────────────────── */}
-        <h2
-          className="text-[10px] font-extrabold uppercase mb-5 tabular-nums"
-          style={{ color: '#00D4FF', letterSpacing: '0.25em' }}
-        >
-          Vos 3 prochaines étapes
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
-          {/*
-            ⚠️ MENSONGE CORRIGÉ LE 14/08/2026 — « iOS bientôt ».
-            Mesure : `curl -L -o /dev/null -w '%{http_code}' https://apps.apple.com/fr/app/id6782316405`
-            → HTTP 200, <title> « App FOREAS Driver - App Store ». La fiche iPhone est
-            publiée (src/lib/app-stores.ts, APP_STORE_URL vérifiée 200 le 14/08/2026),
-            au même titre que la fiche Android (com.chandler509.foreasdriver → 200 ;
-            l'ancien com.foreas.driver, lui, était un 404).
-            Le lien suit la phrase : il ne pointe plus en dur vers Google Play — un
-            iPhone y aurait atterri sur une fiche ininstallable — mais vers /go, qui
-            lit le user-agent et ouvre la bonne boutique (src/app/go/route.ts).
-          */}
-          <NextStepCard
-            number={1}
-            title="Téléchargez l'app"
-            description="Android et iPhone — les deux fiches sont en ligne."
-            ctaLabel="Installer l'app →"
-            ctaHref="/go"
-            external
-            accent="violet"
-          />
-          <NextStepCard
-            number={2}
-            title="Configurez votre profil"
-            description="Zone, véhicule, plateformes actives. 2 minutes."
-            ctaLabel="Mon profil →"
-            ctaHref="https://partners.foreas.xyz/driver"
-            external
-            accent="cyan"
-          />
-          <NextStepCard
-            number={3}
-            title="Rejoignez votre communauté"
-            description={communityGroup ? `Groupe ${communityGroup}. Chat live chauffeurs.` : 'Chat live chauffeurs par zone.'}
-            ctaLabel="Communauté →"
-            ctaHref="https://partners.foreas.xyz/driver?tab=community"
-            external
-            accent="rose"
-          />
-        </div>
-
-        {/* ─── CTA secondaire : gérer abonnement ──────────────────────────── */}
-        {customerId && (
-          <div className="text-center">
-            <a
-              href={`/api/customer-portal?customer_id=${customerId}`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-[13px] font-medium transition-all hover:bg-white/[0.06]"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.10)',
-                color: 'rgba(248, 250, 252, 0.78)',
-              }}
-            >
-              Gérer mon abonnement →
-            </a>
-          </div>
-        )}
-
-        {/* Confirmation email — micro */}
-        {customerEmail && (
-          <p
-            className="text-center mt-6 text-[11px]"
-            style={{ color: 'rgba(248, 250, 252, 0.32)' }}
-          >
-            Email de confirmation envoyé à{' '}
-            <strong style={{ color: 'rgba(248, 250, 252, 0.52)' }}>{customerEmail}</strong>
-          </p>
-        )}
+        <CorpsSucces
+          firstName={firstName}
+          customerEmail={customerEmail}
+          trialEndUnix={trialEndUnix ?? null}
+          trialEndFormatted={trialEndFormatted}
+          tierName={tierName}
+          billingLabel={billingLabel}
+          hasBeta60={hasBeta60}
+          communityGroup={communityGroup}
+          customerId={customerId}
+        />
       </section>
 
       <Footer />
@@ -374,74 +227,6 @@ export default async function SuccessPage({ searchParams }: PageProps) {
 }
 
 // ─── Card prochaine étape ─────────────────────────────────────────────────────
-function NextStepCard({
-  number,
-  title,
-  description,
-  ctaLabel,
-  ctaHref,
-  external,
-  accent,
-}: {
-  number: number
-  title: string
-  description: string
-  ctaLabel: string
-  ctaHref: string
-  external?: boolean
-  accent: 'violet' | 'cyan' | 'rose'
-}) {
-  const accentColors = {
-    violet: { ring: 'rgba(140, 82, 255, 0.28)', text: '#8C52FF' },
-    cyan: { ring: 'rgba(0, 212, 255, 0.28)', text: '#00D4FF' },
-    rose: { ring: 'rgba(255, 102, 153, 0.28)', text: '#FF6699' },
-  }
-  const accentColor = accentColors[accent]
-  return (
-    <div
-      className="relative rounded-3xl p-5 flex flex-col"
-      style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-        border: `1px solid rgba(255, 255, 255, 0.06)`,
-        boxShadow: `0 0 0 1px ${accentColor.ring}, 0 12px 32px -16px rgba(0, 0, 0, 0.40)`,
-      }}
-    >
-      <div
-        className="w-7 h-7 rounded-full flex items-center justify-center mb-3 font-extrabold text-[12px] tabular-nums"
-        style={{
-          backgroundColor: accentColor.ring,
-          color: accentColor.text,
-        }}
-      >
-        {number}
-      </div>
-      <h3
-        className="text-[15px] font-bold leading-tight mb-1"
-        style={{ color: '#F8FAFC', letterSpacing: '-0.01em' }}
-      >
-        {title}
-      </h3>
-      <p
-        className="text-[12px] mb-4 flex-1"
-        style={{ color: 'rgba(248, 250, 252, 0.52)' }}
-      >
-        {description}
-      </p>
-      <a
-        href={ctaHref}
-        {...(external
-          ? { target: '_blank', rel: 'noopener noreferrer' }
-          : {})}
-        className="text-[13px] font-bold transition-colors hover:underline"
-        style={{ color: accentColor.text }}
-      >
-        {ctaLabel}
-      </a>
-    </div>
-  )
-}
-
-// ─── Map ville → groupe communauté FOREAS (cohérent migration §8 master) ──────
 function inferCommunityGroup(city: string | null): string | null {
   if (!city) return null
   const c = city.toLowerCase().trim()
