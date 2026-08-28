@@ -129,11 +129,25 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
   const attacherCoordonnees = useCallback(
     async (idSession: string) => {
       try {
-        await fetch('/api/checkout/coordonnees', {
+        const reponse = await fetch('/api/checkout/coordonnees', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId: idSession, telephone: telephone.trim() }),
         })
+        /* ⚠️ 28/08 — ON N'OUVRAIT MÊME PAS L'ENVELOPPE.
+           `fetch` ne lève QUE sur une panne réseau. Un 400 « coordonnées
+           invalides » ou un 503 « clé absente » passaient donc pour un succès, et
+           le `catch` en dessous ne voyait jamais rien. Le numéro n'arrivait pas
+           sur la fiche, sans un mot — et ça ne se découvre que le jour où l'on
+           veut rappeler un chauffeur qui a payé et n'a jamais ouvert l'app.
+           ⚠️ ON NE BLOQUE PAS LE PAIEMENT POUR AUTANT : perdre un numéro est
+           grave, perdre l'abonnement l'est davantage. On le dit, c'est tout. */
+        if (!reponse.ok) {
+          console.warn(
+            `[paiement] numéro NON attaché à la session — réponse ${reponse.status}. ` +
+              `Le paiement continue, mais la fiche n'aura pas de téléphone.`
+          )
+        }
       } catch {
         console.warn('[paiement] coordonnées non attachées — le paiement continue')
       }

@@ -43,9 +43,45 @@ function buildCredentialsBlock({ email, password }: { email: string; password: s
 `
 }
 
-function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
+/**
+ * ⚠️ 28/08 — LE MAIL LAISSAIT UN CHAUFFEUR DEVANT UNE PORTE CLOSE.
+ *
+ * Le bloc identifiants n'est posé que si le compte VIENT d'être créé. Quand
+ * l'adresse existait déjà — l'app essayée avant de s'abonner, un test, un ancien
+ * compte gratuit — le mail partait quand même : beau, complet, et disant
+ * « Télécharge l'app et connecte-toi ». Sans dire avec quoi.
+ *
+ * Rien ne le signalait : ni erreur, ni alerte. Et la page d'après-paiement
+ * affirmait pendant ce temps que le mot de passe était dans ce mail.
+ *
+ * On ne réécrit toujours PAS son mot de passe — il s'en sert peut-être tous les
+ * jours, et le changer sous ses pieds le déconnecterait. On lui dit simplement
+ * ce qui est vrai : il a déjà un compte, il se connecte avec.
+ */
+function buildExistingAccountBlock({ email }: { email: string }): string {
+  return `
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:36px;">
+        <tr><td style="background-color:#0e0e16;border:1px solid #2a2a3a;border-radius:14px;padding:24px;">
+          <div style="font-family:'Genos',sans-serif;font-size:14px;font-weight:600;color:#00D4FF;letter-spacing:1.5px;margin-bottom:16px;">TU AS D&Eacute;J&Agrave; UN COMPTE</div>
+
+          <div style="font-family:'Montserrat',sans-serif;font-size:11px;color:#5a5a6e;letter-spacing:0.5px;margin-bottom:5px;">EMAIL</div>
+          <div style="font-family:'Montserrat',sans-serif;font-size:15px;color:#F8FAFC;font-weight:600;margin-bottom:18px;word-break:break-all;">${escapeHtml(email)}</div>
+
+          <div style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;line-height:1.6;">
+            Cette adresse a d&eacute;j&agrave; un compte FOREAS. Connecte-toi avec ton mot de passe
+            habituel &mdash; on n&rsquo;y a pas touch&eacute;. Si tu l&rsquo;as oubli&eacute;, utilise
+            &laquo;&nbsp;Mot de passe oubli&eacute;&nbsp;&raquo; sur l&rsquo;&eacute;cran de connexion de l&rsquo;app.
+          </div>
+        </td></tr>
+      </table>
+`
+}
+
+function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
   name: string; plan: string; trialEnd: string
   credentials?: { email: string; password: string } | null
+  /** Vrai quand le compte existait déjà : on explique, au lieu de se taire. */
+  dejaInscrit?: { email: string } | null
 }) {
   const firstName = name ? name.split(' ')[0] : 'Chauffeur'
   // Genos = titres (font-weight 600), Genos italic = taglines, Montserrat = body
@@ -139,7 +175,7 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
         </td></tr>
       </table>
 
-      ${credentials ? buildCredentialsBlock(credentials) : ''}
+      ${credentials ? buildCredentialsBlock(credentials) : dejaInscrit ? buildExistingAccountBlock(dejaInscrit) : ''}
 
       <!-- Store links — gris discret -->
       <p style="text-align:center;font-family:'Montserrat',sans-serif;font-size:11px;color:#3a3a4a;margin:0 0 40px;">
@@ -157,7 +193,7 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
               <td style="width:24px;vertical-align:top;padding-right:14px;padding-bottom:16px;">
                 <div style="width:24px;height:24px;border-radius:50%;background-color:#0e0e16;border:1px solid #2a2a3a;color:#6b6b80;font-family:'Genos',sans-serif;font-size:12px;font-weight:600;text-align:center;line-height:24px;">1</div>
               </td>
-              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;padding-bottom:16px;line-height:1.5;">T&eacute;l&eacute;charge l&rsquo;app et connecte-toi${credentials ? ' avec les identifiants ci-dessus' : ''}</td>
+              <td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8888a0;padding-bottom:16px;line-height:1.5;">T&eacute;l&eacute;charge l&rsquo;app et connecte-toi${credentials ? ' avec les identifiants ci-dessus' : dejaInscrit ? ' avec ton mot de passe habituel' : ''}</td>
             </tr>
             <tr>
               <td style="width:24px;vertical-align:top;padding-right:14px;padding-bottom:16px;">
@@ -195,10 +231,12 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials }: {
 </html>`
 }
 
-export async function sendWelcomeEmail({ email, name, plan, trialEnd, credentials }: {
+export async function sendWelcomeEmail({ email, name, plan, trialEnd, credentials, dejaInscrit }: {
   email: string; name: string; plan: string; trialEnd: string
   /** Renseigné uniquement quand le webhook vient de CRÉER le compte (voir provisionDriverAccount). */
   credentials?: { email: string; password: string } | null
+  /** Renseigné quand le compte existait déjà : le mail explique au lieu de se taire. */
+  dejaInscrit?: { email: string } | null
 }): Promise<boolean> {
   if (!resend) {
     console.log('[Email] Resend non configuré — email non envoyé à', repere(email))
@@ -223,7 +261,7 @@ export async function sendWelcomeEmail({ email, name, plan, trialEnd, credential
       from: 'FOREAS <noreply@foreas.xyz>',
       to: email,
       subject: `Bienvenue ${name ? name.split(' ')[0] : ''} — Ton essai FOREAS est activé`,
-      html: buildWelcomeHTML({ name, plan, trialEnd, credentials }),
+      html: buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }),
     })
       if (error) {
         // ⚠️ RISQUE RÉSIDUEL ASSUMÉ, 21/08/2026. Le message d'erreur vient du

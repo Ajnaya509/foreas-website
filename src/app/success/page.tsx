@@ -113,6 +113,18 @@ export default async function SuccessPage({ searchParams }: PageProps) {
     return <ErrorState reason="Paiement non finalisé" />
   }
 
+  /* ⚠️ 28/08 — LA PAGE PROMETTAIT SUR UNE SESSION NON FINALISÉE.
+     La garde au-dessus laisse passer `status === 'open'`, et c'est volontaire :
+     Stripe peut renvoyer le chauffeur avant d'avoir marqué la session terminée,
+     et lui montrer « paiement non finalisé » alors qu'il vient de payer serait
+     pire. Mais dans cet état, le webhook n'a PAS tourné : ni compte, ni mail.
+     La page affirmait pourtant « envoyé à ton adresse, à l'instant ».
+     On ne bloque donc pas — on cesse d'affirmer. */
+  const paiementFinalise =
+    session.status === 'complete' ||
+    session.payment_status === 'paid' ||
+    session.payment_status === 'no_payment_required'
+
   // Extraction données
   const subscription = session.subscription as Stripe.Subscription | null
   const customer = session.customer as Stripe.Customer | null
@@ -218,6 +230,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
           hasBeta60={hasBeta60}
           communityGroup={communityGroup}
           customerId={customerId}
+          paiementFinalise={paiementFinalise}
         />
       </section>
 

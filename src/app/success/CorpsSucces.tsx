@@ -20,6 +20,9 @@ type Props = {
   hasBeta60: boolean
   communityGroup: string | null
   customerId: string | null
+  /** Le webhook n'a tourné que si la session est finalisée. Sans ça, on ne peut
+   *  RIEN affirmer sur le mail : il n'est pas encore parti. */
+  paiementFinalise: boolean
 }
 
 export default function CorpsSucces({
@@ -32,6 +35,7 @@ export default function CorpsSucces({
   hasBeta60,
   communityGroup,
   customerId,
+  paiementFinalise,
 }: Props) {
   return (
     <>
@@ -175,11 +179,11 @@ export default function CorpsSucces({
     </h2>
     {customerEmail ? (
       <p className="text-[13.5px]" style={{ color: 'rgba(248, 250, 252, 0.72)' }}>
-        Envoyé à{' '}
+        {paiementFinalise ? 'Envoyé à ' : 'Il part vers '}
         <strong className="tabular-nums" style={{ color: '#F8FAFC' }}>
           {customerEmail}
         </strong>
-        , à l’instant.
+        {paiementFinalise ? ', à l’instant.' : ', dans quelques secondes.'}
       </p>
     ) : (
       /* ⚠️ Sans adresse, on ne l'invente pas. Une adresse fausse sous les
@@ -196,7 +200,15 @@ export default function CorpsSucces({
         color: '#F5C842',
       }}
     >
-      Le mot de passe n’existe que dans ce mail. Il n’est écrit nulle part ailleurs.
+      {/* ⚠️ 28/08 — CETTE PHRASE MENTAIT À UNE PARTIE DES CHAUFFEURS.
+          Elle affirmait « Le mot de passe n'existe que dans ce mail ». Or le mot
+          de passe n'y est mis QUE si le compte vient d'être créé. Un chauffeur
+          qui avait déjà un compte FOREAS — l'app essayée avant de s'abonner —
+          reçoit le même mail SANS aucun identifiant, et lisait ici qu'ils s'y
+          trouvaient. Il cherchait dans un mail vide.
+          La phrase dit la même chose, à la condition près qui la rend vraie. */}
+      Si c’est ton premier compte FOREAS, ton mot de passe est dans ce mail — et nulle
+      part ailleurs. Garde-le.
     </p>
     <p className="mt-3 text-[12.5px]" style={{ color: 'rgba(248, 250, 252, 0.42)' }}>
       Il met parfois deux à trois minutes à arriver. Pense aux indésirables.

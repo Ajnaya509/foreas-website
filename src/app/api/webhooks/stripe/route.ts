@@ -571,6 +571,14 @@ export async function POST(request: Request) {
             provision.status === 'created'
               ? { email: session.customer_details.email, password: provision.password }
               : null,
+          /* ⚠️ 28/08 — LE CAS « COMPTE DÉJÀ LÀ » NE DOIT PLUS ÊTRE UN SILENCE.
+             Sans ce drapeau, le mail partait sans un mot sur la façon de se
+             connecter, et le chauffeur cherchait un mot de passe qui n'y était
+             pas. On ne réécrit pas le sien — on lui dit qu'il en a déjà un. */
+          dejaInscrit:
+            provision.status === 'already_exists'
+              ? { email: session.customer_details.email }
+              : null,
         })
 
         // Un paiement encaissé sans compte créé ne doit JAMAIS rester silencieux.
