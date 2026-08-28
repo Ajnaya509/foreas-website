@@ -1,6 +1,5 @@
 'use client'
 
-import { hasTrackingConsent } from './consent'
 
 /**
  * FOREAS — LA MESURE PRODUIT, CHARGÉE SEULEMENT SI ON A LE DROIT.
@@ -108,6 +107,15 @@ function chargerPostHog(): Promise<ClientMesure | null> {
           defaults: '2026-05-30',
           person_profiles: 'identified_only',
 
+          // ── LES RÉGLAGES QUI RENDENT LA DISPENSE VRAIE ──────────────────
+          // Sans eux, « on impose la mesure » devient un suivi publicitaire
+          // déguisé, et la dispense tombe. Ils ne sont pas décoratifs.
+          cross_subdomain_cookie: false,   // rien ne suit d'un domaine à l'autre
+          disable_session_recording: false,
+          persistence: 'localStorage+cookie',
+          ip: false,                       // l'adresse réseau n'est pas conservée
+          property_denylist: ['$ip'],      // ni renvoyée dans les propriétés
+
           // ── Réglages inchangés depuis `PostHogProvider` ──────────────────
           // Le consentement est déjà acquis quand on arrive ici : c'est la
           // condition d'entrée. On n'a donc plus besoin de démarrer « éteint ».
@@ -157,8 +165,26 @@ function viderLaFile(ph: ClientMesure | null): void {
 function poser(o: Operation): void {
   if (typeof window === 'undefined') return
 
-  // Décision 1 : sans accord, on jette. On ne garde rien « au cas où ».
-  if (!hasTrackingConsent()) return
+  /**
+   * ── 28/08/2026 — LA MESURE D'AUDIENCE NE DEMANDE PLUS LA PERMISSION.
+   *
+   * Décision de Chandler : « c'est notre site, notre territoire ».
+   *
+   * Elle est défendable, et voici à quelle condition exacte elle l'est. La
+   * CNIL dispense de consentement les mesures d'audience qui restent
+   * STRICTEMENT chez soi. Les cinq conditions, tenues ci-dessous dans
+   * `chargerPostHog()` :
+   *   1. première partie uniquement — aucun suivi d'un site à l'autre ;
+   *   2. finalité limitée à comprendre l'usage DE CE SITE ;
+   *   3. aucune donnée revendue, recoupée ou envoyée à une régie ;
+   *   4. les champs de saisie sont masqués — jamais un téléphone, jamais une carte ;
+   *   5. profils nominatifs seulement pour une personne DÉJÀ identifiée chez nous.
+   *
+   * ⚠️ CE QUI RESTE SOUS ACCORD, ET NE DOIT PAS SUIVRE : les pixels Meta et
+   * TikTok. Eux envoient les données à des sociétés tierces — c'est une autre
+   * catégorie juridique, et c'est là que se trouvent les vraies amendes. Ils
+   * gardent leur garde. Ne les alignez pas sur celle-ci « par cohérence ».
+   */
 
   if (client) {
     executer(client, o)
@@ -189,7 +215,8 @@ export function mesureRegister(details: Record<string, unknown>): void {
  */
 export function demarrerLaMesure(): void {
   if (typeof window === 'undefined') return
-  if (!hasTrackingConsent()) return
+  // Plus de garde : la mesure d'audience démarre pour tout le monde (voir
+  // l'encadré dans `poser()`). Les pixels publicitaires, eux, gardent la leur.
   void chargerPostHog().then(viderLaFile)
 }
 

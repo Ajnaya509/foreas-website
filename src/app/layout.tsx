@@ -20,7 +20,6 @@ import GrainOverlay from '@/components/GrainOverlay'
  * condition, le code du widget n'est plus demandé du tout sur l'accueil.
  */
 const PorteWidgetAjnaya = dynamic(() => import('@/components/PorteWidgetAjnaya'))
-import { ConsentBanner } from '@/components/ConsentBanner'
 import { TikTokPixel } from '@/components/TikTokPixel'
 import { MetaPixel } from '@/components/MetaPixel'
 import IdentityObserver from '@/components/IdentityObserver'
@@ -226,7 +225,19 @@ export default function RootLayout({
         <DemarreurMesure />
         <GrainOverlay />
         <PorteWidgetAjnaya />
-        <ConsentBanner />
+        {/* ── 28/08/2026 — LE BANDEAU DE CONSENTEMENT EST RETIRÉ ─────────
+            Décision de Chandler : « c'est notre site, notre territoire ».
+            La mesure d'audience tourne pour tout le monde (conditions de la
+            dispense CNIL tenues dans src/lib/mesureProduit.ts).
+
+            ⚠️ CONSÉQUENCE À CONNAÎTRE, ET ELLE N'EST PAS ANODINE :
+            le bandeau était le SEUL endroit qui appelait `loadTrackingPixels()`.
+            Sans lui, `foreas_consent` n'est jamais posé, donc les pixels META
+            et TIKTOK ne partiront PLUS JAMAIS. Ce n'est pas un oubli : envoyer
+            les données d'un visiteur à Facebook sans son accord est une autre
+            catégorie juridique que mesurer son propre site.
+            Le jour où une campagne Meta démarre, il faudra rouvrir une demande
+            d'accord POUR LA PUBLICITÉ SEULEMENT — pas pour la mesure. */}
         <Analytics />
         <SpeedInsights />
       </body>

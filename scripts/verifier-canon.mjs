@@ -1533,22 +1533,47 @@ for (const chemin of fichiers(RACINE)) {
     }
   }
 
-  // Le module de mesure doit rester conditionné au consentement.
+  // ⚠️ 28/08/2026 — CETTE RÈGLE A CHANGÉ D'OBJET, PAS DE CAMP.
+  //
+  // Elle exigeait `hasTrackingConsent()` dans le module de mesure. Chandler a
+  // décidé le 28/08 que la mesure d'audience ne demande plus la permission :
+  // « c'est notre site, notre territoire ». La règle telle quelle interdisait
+  // donc la décision du propriétaire — un contrôle qui interdit une décision
+  // assumée finit désactivé, et emporte avec lui ce qu'il protégeait vraiment.
+  //
+  // MAIS ON NE LA SUPPRIME PAS. Ce que le consentement protégeait, ce sont
+  // CINQ CONDITIONS. Ce sont elles qui rendent la dispense CNIL vraie, et
+  // elles sont maintenant la règle. Si l'une saute, « on impose la mesure »
+  // devient un suivi publicitaire déguisé — et là, la dispense tombe.
+  //
+  // ⚠️ Les pixels Meta et TikTok ne sont PAS concernés : eux envoient les
+  // données à des sociétés tierces et gardent leur propre garde, ailleurs.
   if (existsSync(SEUL_AUTORISE)) {
     const m = sansCommentaires(readFileSync(SEUL_AUTORISE, 'utf8'))
-    for (const [motif, quoi] of [
-      [/hasTrackingConsent\s*\(\s*\)/, 'le module de mesure ne lit plus le consentement'],
-      [/import\(\s*['"]posthog-js['"]\s*\)/, 'le chargement dynamique a disparu du module de mesure'],
+    for (const [motif, quoi, pourquoi] of [
+      [/import\(\s*['"]posthog-js['"]\s*\)/,
+       'le chargement dynamique a disparu du module de mesure',
+       'un import statique part AVANT tout, sur toutes les pages, même celles ' +
+       'qui ne mesurent rien. Mesuré le 22/08 : 5 fichiers partaient chez un tiers.'],
+      [/ip\s*:\s*false/,
+       'l’adresse réseau n’est plus anonymisée',
+       'sans elle la mesure devient nominative, et la dispense de consentement ' +
+       'tombe : il faudrait alors redemander l’accord à chaque visiteur.'],
+      [/cross_subdomain_cookie\s*:\s*false/,
+       'le suivi d’un domaine à l’autre est rouvert',
+       'la dispense ne couvre QUE la mesure de son propre site. Suivre quelqu’un ' +
+       'd’un domaine à l’autre en sort immédiatement.'],
+      [/property_denylist/,
+       'la liste des propriétés interdites a disparu',
+       'c’est elle qui empêche l’adresse réseau de repartir dans les propriétés ' +
+       'd’un événement, même quand `ip: false` est posé.'],
+      [/maskAllInputs\s*:\s*true/,
+       'les champs de saisie ne sont plus masqués',
+       'sans ce masque, l’enregistrement de session filme un numéro de téléphone ' +
+       'ou une carte pendant que le chauffeur les tape.'],
     ]) {
       if (!motif.test(m)) {
-        infractions.push({
-          fichier: SEUL_AUTORISE,
-          quoi,
-          extrait: String(motif),
-          pourquoi:
-            'sans l’un des deux, la bibliothèque repart chez un tiers avant que le ' +
-            'visiteur ait répondu — exactement le défaut mesuré le 22/08.',
-        })
+        infractions.push({ fichier: SEUL_AUTORISE, quoi, extrait: String(motif), pourquoi })
       }
     }
   } else {

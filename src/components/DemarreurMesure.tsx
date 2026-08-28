@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { hasTrackingConsent } from '@/lib/consent'
-import { demarrerLaMesure, refuserLaMesure } from '@/lib/mesureProduit'
+import { demarrerLaMesure } from '@/lib/mesureProduit'
 
 /**
  * FOREAS — LE DÉMARREUR DE LA MESURE PRODUIT.
@@ -44,22 +43,18 @@ export default function DemarreurMesure() {
     if (typeof window === 'undefined') return
     let annule = false
 
-    // ── Chemin 2 : le visiteur vient d'accepter ────────────────────────────
-    const surAccord = () => {
-      if (!annule) demarrerLaMesure()
-    }
-    window.addEventListener('foreas_consent_accepted', surAccord)
-
-    // ── Chemin 3 : refus. Rien à télécharger, rien à garder. ───────────────
-    if (!hasTrackingConsent()) {
-      refuserLaMesure()
-      return () => {
-        annule = true
-        window.removeEventListener('foreas_consent_accepted', surAccord)
-      }
-    }
-
-    // ── Chemin 1 : accord déjà là, mais après le premier écran ─────────────
+    // ── 28/08/2026 — IL N'Y A PLUS QU'UN SEUL CHEMIN ───────────────────────
+    //
+    // Il y en avait trois : accord déjà là, accord qui vient d'arriver, refus.
+    // La mesure d'audience démarre maintenant pour tout le monde (décision de
+    // Chandler, conditions de la dispense tenues dans `mesureProduit.ts`).
+    //
+    // ⚠️ Les deux autres chemins ne sont pas « désactivés », ils sont
+    // SUPPRIMÉS. Un chemin mort qu'on garde « au cas où » finit par être
+    // rebranché par erreur, et personne ne se souvient pourquoi il existait.
+    //
+    // ⚠️ Ceci ne concerne QUE la mesure d'audience première partie. Les pixels
+    // Meta et TikTok gardent leur propre garde, dans leurs propres fichiers.
     const partir = () => {
       window.setTimeout(() => {
         if (!annule) demarrerLaMesure()
@@ -70,7 +65,6 @@ export default function DemarreurMesure() {
 
     return () => {
       annule = true
-      window.removeEventListener('foreas_consent_accepted', surAccord)
       window.removeEventListener('load', partir)
     }
   }, [])
