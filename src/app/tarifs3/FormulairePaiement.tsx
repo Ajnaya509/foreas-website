@@ -61,10 +61,28 @@ const ECHEC_GENERIQUE =
 export default function FormulairePaiement({ libelleBouton, garanties }: Props) {
   const checkout = useCheckout()
 
+  /* ⚠️ 28/08 — CE CHAMP MANQUAIT, ET SON ABSENCE TUAIT LE TUNNEL ENTIER.
+     Chandler, en regardant la page : « je rentre le mail où ? le paiement ne
+     mentionne pas de champ mail ».
+
+     Il avait raison, et voici ce que ça produisait. En `ui_mode: 'custom'`,
+     Stripe ne dessine AUCUN champ e-mail : c'est à nous de le collecter et de
+     le lui donner par `updateEmail`. On ne le faisait nulle part, et la session
+     ne portait pas non plus de `customer_email`. Résultat :
+     `session.customer_details.email` restait vide.
+
+     Or le webhook enferme TOUT le provisionnement dans `if (email)` : pas de
+     compte, pas de mot de passe, pas de mail de bienvenue — ET PAS D'ALERTE,
+     puisque l'alerte est dans le même bloc. La ligne d'abonné, elle, s'écrivait
+     quand même, et la carte se serait fait débiter au troisième jour.
+
+     Un chauffeur payé, sans compte, sans que personne ne le sache. Exactement
+     la panne que le commentaire du webhook dit avoir déjà été payée une fois. */
+  const [courriel, setCourriel] = useState('')
   const [telephone, setTelephone] = useState('')
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
-  const [erreurChamp, setErreurChamp] = useState<{ tel?: string }>({})
+  const [erreurChamp, setErreurChamp] = useState<{ courriel?: string; tel?: string }>({})
 
   /**
    * ⚠️ « Y A-T-IL UN MOYEN RAPIDE ? » NE SE DEVINE PAS EN CSS.
@@ -89,6 +107,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
    */
   const verrou = useRef(false)
 
+  const idCourriel = useId()
   const idTel = useId()
   const idErreur = useId()
 
@@ -101,7 +120,14 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
    * à côté du bon champ — pas à protéger quoi que ce soit.
    */
   const valider = useCallback(() => {
-    const fautes: { tel?: string } = {}
+    const fautes: { courriel?: string; tel?: string } = {}
+    /* Contrôle volontairement large : il vaut mieux laisser passer une adresse
+       douteuse que refuser une adresse valide et perdre l'abonnement. Stripe
+       refera sa propre vérification derrière, dans `updateEmail`. */
+    const mail = courriel.trim()
+    if (!mail || mail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) {
+      fautes.courriel = 'Adresse e-mail incomplète.'
+    }
     const chiffres = telephone.replace(/\D/g, '')
     if (!/^\+?[0-9 .\-()]{8,24}$/.test(telephone.trim()) || chiffres.length < 8) {
       fautes.tel = 'Numéro incomplet.'
@@ -116,7 +142,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
        refus réel de communes françaises. On garde la règle, on la protège. */
     setErreurChamp(fautes)
     return Object.keys(fautes).length === 0
-  }, [telephone])
+  }, [courriel, telephone])
 
   /**
    * Attache le numéro à la session AVANT de confirmer.
@@ -183,6 +209,20 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
     setEnCours(true)
     setErreur(null)
     try {
+      /* ⚠️ C'EST CETTE LIGNE QUI CRÉE LE COMPTE, PAS LE PAIEMENT.
+         `updateEmail` est le seul chemin par lequel l'adresse entre dans la
+         session Stripe en `ui_mode: 'custom'`. Sans elle, le webhook reçoit une
+         session sans e-mail et saute tout le provisionnement en silence.
+         ⚠️ ET ON BLOQUE SI ELLE ÉCHOUE. C'est la seule erreur du formulaire qui
+         justifie d'arrêter : encaisser sans adresse, c'est encaisser sans
+         pouvoir livrer. Mieux vaut un paiement retardé qu'un chauffeur débité
+         sans compte. */
+      const majMail = await session.updateEmail(courriel.trim())
+      if (majMail.type === 'error') {
+        setErreurChamp((e) => ({ ...e, courriel: majMail.error.message || 'Adresse e-mail refusée.' }))
+        setErreur(null)
+        return
+      }
       await attacherCoordonnees(session.id)
       const r = await session.confirm()
       if (r.type === 'error') setErreur(r.error.message || ECHEC_GENERIQUE)
@@ -231,6 +271,35 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         jamais arrivé.
       */}
       <div className={s.coordonnees}>
+        {/* ⚠️ L'E-MAIL EST LE PREMIER CHAMP, ET C'EST DÉLIBÉRÉ.
+            C'est lui qui crée le compte, porte le mot de passe et reçoit la
+            facture. Sans lui, le paiement passe et le chauffeur n'a rien. */}
+        <label className={s.champ} htmlFor={idCourriel}>
+          <span className={s.champLabel}>E-mail</span>
+          <input
+            id={idCourriel}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="off"
+            spellCheck={false}
+            value={courriel}
+            onChange={(e) => setCourriel(e.target.value)}
+            placeholder="prenom@exemple.com"
+            aria-invalid={!!erreurChamp.courriel}
+            aria-describedby={erreurChamp.courriel ? `${idCourriel}-err` : `${idCourriel}-aide`}
+          />
+          {erreurChamp.courriel ? (
+            <span id={`${idCourriel}-err`} className={s.champErreur} role="alert">
+              {erreurChamp.courriel}
+            </span>
+          ) : (
+            <span id={`${idCourriel}-aide`} className={s.champAide}>
+              Les codes de connexion arrivent à cette adresse.
+            </span>
+          )}
+        </label>
+
         <label className={s.champ} htmlFor={idTel}>
           <span className={s.champLabel}>Téléphone</span>
           <input
@@ -306,6 +375,15 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
                  message — ils s'affichent derrière elle. `paymentFailed` est le
                  seul moyen de rendre la main à Apple Pay ou Google Pay. */
               event.paymentFailed({ reason: 'invalid_payment_data' })
+              return
+            }
+            /* Le portefeuille du téléphone ne nous donne pas d'adresse : elle
+               vient de notre champ, comme sur le chemin carte. Sans elle, le
+               compte ne serait pas créé. */
+            const majMail = await session.updateEmail(courriel.trim())
+            if (majMail.type === 'error') {
+              event.paymentFailed({ reason: 'invalid_payment_data' })
+              setErreurChamp((e) => ({ ...e, courriel: majMail.error.message || 'Adresse e-mail refusée.' }))
               return
             }
             await attacherCoordonnees(session.id)

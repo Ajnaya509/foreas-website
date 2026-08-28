@@ -551,6 +551,24 @@ export async function POST(request: Request) {
       //    Ordre imposé : on provisionne D'ABORD, pour que le mail puisse porter le mot de passe.
       //    Avant ce câblage, le mail disait « connecte-toi » alors qu'aucun compte n'existait :
       //    premier mur rencontré par 100% des chauffeurs payés depuis le site.
+      /* ⚠️ 28/08 — SANS E-MAIL, TOUT CE BLOC ÉTAIT SAUTÉ EN SILENCE.
+         L'alerte vit DANS le `if` : quand l'adresse manquait, il n'y avait ni
+         compte, ni mot de passe, ni mail de bienvenue — et personne pour le
+         savoir. La ligne d'abonné, elle, s'écrivait quand même, et la carte se
+         serait fait débiter au troisième jour.
+         C'est arrivé parce que /tarifs3 ne collectait aucune adresse : en
+         `ui_mode: 'custom'`, Stripe n'en demande pas — c'est à nous de la lui
+         donner par `updateEmail`. Le champ existe désormais côté formulaire ;
+         ce garde-ci est la seconde chance, pour le jour où il repartira. */
+      if (!session.customer_details?.email) {
+        await sendProvisionFailureAlert({
+          email: 'ADRESSE ABSENTE',
+          reason:
+            `session ${session.id} terminée SANS e-mail : aucun compte, aucun mot de passe et ` +
+            `aucun mail de bienvenue n'ont été créés. Le chauffeur a payé et n'a rien. ` +
+            `À traiter à la main, en urgence.`,
+        })
+      }
       if (session.customer_details?.email) {
         const provision = await provisionDriverAccount({
           email: session.customer_details.email,

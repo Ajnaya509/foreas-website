@@ -1055,6 +1055,17 @@
 .champ input[aria-invalid='true'] {
   border-color: #b42318;
 }
+/* L'aide sous le champ e-mail : elle dit POURQUOI on le demande. Sans elle,
+   un champ e-mail sur une page de paiement ressemble à une collecte de plus. */
+.champAide {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6B6B75;
+  letter-spacing: -0.004em;
+}
+
 .champErreur {
   display: block;
   margin-top: 5px;
