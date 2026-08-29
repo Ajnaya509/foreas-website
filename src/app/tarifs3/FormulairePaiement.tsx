@@ -138,6 +138,32 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
     return Object.keys(fautes).length === 0
   }, [courriel])
 
+  /**
+   * Programme le rappel de panier abandonné.
+   *
+   * ⚠️ APPELÉE À UN INSTANT PRÉCIS : quand Stripe vient d'ACCEPTER l'adresse,
+   * et AVANT la confirmation du paiement. C'est le seul moment où l'on sait
+   * deux choses à la fois — l'adresse est bonne, l'argent n'est pas passé.
+   *
+   * ⚠️ ELLE NE BLOQUE RIEN ET NE SE FAIT PAS ATTENDRE. On ne guette même pas sa
+   * réponse : un rappel non programmé coûte un chauffeur qu'on ne relancera
+   * pas ; une seconde d'attente de plus avant le paiement coûte des abandons.
+   * Le serveur refuse tout seul les doublons.
+   */
+  const capturerPanier = useCallback(
+    (idSession: string) => {
+      void fetch('/api/panier/capturer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: idSession, email: courriel.trim() }),
+        keepalive: true,
+      }).catch(() => {
+        /* Silence volontaire : rien ici ne doit remonter jusqu'au chauffeur. */
+      })
+    },
+    [courriel],
+  )
+
   /* ⚠️ 29/08/2026 — `attacherCoordonnees` A ÉTÉ RETIRÉE AVEC SES DEUX CHAMPS.
      Le prénom et le téléphone ne sont plus demandés ici : ils passent à l'écran
      d'après le paiement (`/success` → `POST /api/profil/completer`). Cette page
@@ -190,6 +216,9 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         setErreur(null)
         return
       }
+      /* L'adresse est acceptée, le paiement n'est pas fait : c'est ici, et
+         nulle part ailleurs, que le panier existe. */
+      capturerPanier(session.id)
       const r = await session.confirm()
       if (r.type === 'error') {
         /* ⚠️ 29/08 — MON MESSAGE GÉNÉRIQUE A CACHÉ LA VRAIE PANNE.
@@ -352,6 +381,10 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
               setErreurChamp((e) => ({ ...e, courriel: majMail.error.message || 'Adresse e-mail refusée.' }))
               return
             }
+            /* Même instant que sur le chemin carte : adresse acceptée, argent pas
+               encore passé. Le serveur refusera le doublon si les deux chemins
+               ont été tentés. */
+            capturerPanier(session.id)
             const r = await session.confirm({ expressCheckoutConfirmEvent: event })
             if (r.type === 'error') setErreur(r.error.message || ECHEC_GENERIQUE)
           }}

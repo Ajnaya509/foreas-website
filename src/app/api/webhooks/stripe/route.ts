@@ -3,6 +3,7 @@ import { monterUneMarche } from '@/lib/escalier'
 import Stripe from 'stripe'
 import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { construireSignaux, verifierCumulEssai, enregistrerEssai } from '@/lib/essaisAccordes'
+import { annulerEnvoiProgramme } from '@/lib/email'
 import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
 import { sendCAPIEvent } from '@/lib/meta-capi'
 import { sendTikTokEvent } from '@/lib/tiktok-events-api'
@@ -485,6 +486,54 @@ export async function POST(request: Request) {
          Notre formulaire demande maintenant le prénom et l'écrit ici. On garde
          le nom de Stripe en second : les sessions de /tarifs2 le portent encore. */
       const prenomChauffeur = meta.foreas_prenom || session.customer_details?.name || ''
+
+      /* ═══════════════════════════════════════════════════════════════════
+         LE RAPPEL DE PANIER ABANDONNÉ N'A PLUS LIEU D'ÊTRE : IL A PAYÉ.
+
+         Un mail « tu y étais presque » qui arrive chez quelqu'un qui vient de
+         s'abonner, c'est perdre sa confiance en une phrase — et lui faire
+         douter que son paiement soit bien passé.
+
+         ⚠️ ON LE FAIT TÔT, AVANT LE PROVISIONNEMENT. Le rappel est programmé à
+         quinze minutes ; tout ce qui suit peut prendre plusieurs secondes, et
+         un webhook rejoué plus tard arriverait trop tard pour annuler.
+
+         ⚠️ ET ON N'ÉCHOUE JAMAIS LE WEBHOOK POUR ÇA. Un rappel de trop est
+         désagréable ; un webhook en erreur coûte le compte, le mot de passe et
+         le mail de bienvenue. */
+      try {
+        const sbPanier = clientServeurOuNull()
+        if (sbPanier) {
+          const { data: panier } = await sbPanier
+            .from('paniers_abandonnes')
+            .select('envoi_programme_id')
+            .eq('checkout_session_id', session.id)
+            .is('converti_le', null)
+            .maybeSingle()
+
+          if (panier?.envoi_programme_id) {
+            const annule = await annulerEnvoiProgramme(panier.envoi_programme_id)
+            await sbPanier
+              .from('paniers_abandonnes')
+              .update({
+                converti_le: new Date().toISOString(),
+                /* On ne note l'annulation que si Resend l'a acceptée. Écrire la
+                   date sans la preuve ferait croire, plus tard, qu'aucun mail
+                   n'est parti — alors qu'il est peut-être parti. */
+                ...(annule ? { annule_le: new Date().toISOString() } : {}),
+              })
+              .eq('checkout_session_id', session.id)
+            if (!annule) {
+              console.error(
+                `[webhook] ⛔ rappel de panier NON annulé pour ${session.id} — ` +
+                  'un « tu y étais presque » peut partir chez un abonné.',
+              )
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[webhook] annulation du rappel de panier impossible :', (e as Error)?.message)
+      }
 
       // Récupérer la subscription pour les détails
       let subscription: Stripe.Subscription | null = null

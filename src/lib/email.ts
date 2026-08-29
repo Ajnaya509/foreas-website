@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 import { repere } from './journal'
-import { TEXTES } from './relanceProfilTextes'
+import { TEXTES, PANIER_TEXTE } from './textesAutomatiques'
 
 /**
  * ⚠️ 21/08/2026 — DEUX REPLIS DIVERGENTS POUR LA MÊME VARIABLE.
@@ -469,7 +469,7 @@ export async function sendProfilIncompletEmail({
 
   const lien = `https://www.foreas.xyz/success?session_id=${encodeURIComponent(sessionId)}`
 
-  /* ⚠️ LE TEXTE N'EST PLUS ÉCRIT ICI. Il vit dans `relanceProfilTextes.ts`,
+  /* ⚠️ LE TEXTE N'EST PLUS ÉCRIT ICI. Il vit dans `textesAutomatiques.ts`,
      avec les délais et l'interrupteur — c'est-à-dire tout ce qui se DÉCIDE.
      Une phrase qui part au nom de FOREAS ne se choisit pas au milieu d'une
      fonction d'envoi. */
@@ -587,6 +587,88 @@ export async function sendRecapProfilsEmail({
     return true
   } catch (e) {
     console.error('[Email] Échec récap profils :', e)
+    return false
+  }
+}
+
+/**
+ * LE RAPPEL DE PANIER ABANDONNÉ — PROGRAMMÉ, PAS ENVOYÉ TOUT DE SUITE.
+ *
+ * ⚠️ IL N'A RIEN PAYÉ. Aucun compte, aucun abonnement, aucun mot de passe.
+ * Le texte ne peut donc parler que de ce qu'il était en train de faire.
+ *
+ * ⚠️ POURQUOI `scheduledAt` ET PAS UNE TÂCHE PLANIFIÉE.
+ * Le mail doit partir 15 minutes après la saisie. Le forfait Vercel ne permet
+ * qu'un passage par jour : impossible d'y arriver. Resend programme l'envoi,
+ * et `annulerEnvoiProgramme()` l'annule si le paiement arrive entre-temps.
+ * Rien à faire tourner, rien à surveiller.
+ *
+ * Rend l'identifiant de l'envoi — c'est lui, et lui seul, qui permet d'annuler.
+ */
+export async function programmerPanierAbandonne({
+  email,
+  minutes,
+}: {
+  email: string
+  minutes: number
+}): Promise<string | null> {
+  if (!resend) {
+    console.error('[Email] Resend non configuré — panier abandonné NON programmé')
+    return null
+  }
+
+  const quand = new Date(Date.now() + minutes * 60 * 1000).toISOString()
+  const lien = 'https://www.foreas.xyz/tarifs3'
+
+  const inner = `
+    <p style="font-family:'Genos',sans-serif;font-size:26px;font-weight:600;color:#ffffff;margin:0 0 16px;">${escapeHtml(PANIER_TEXTE.titre)}</p>
+    <p style="font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.7;color:#8a8a9a;margin:0 0 26px;">${escapeHtml(PANIER_TEXTE.corps.replace(/\s+/g, ' ').trim())}</p>
+    <div style="text-align:center;margin:0 0 26px;">
+      <a href="${lien}" style="display:inline-block;background-image:linear-gradient(135deg,#8C52FF 0%,#6C3CE0 100%);color:#ffffff;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 30px;border-radius:14px;">${escapeHtml(PANIER_TEXTE.bouton)}</a>
+    </div>
+    <p style="font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:#4a4a5a;margin:0;">Tu ne recevras pas d'autre message à ce sujet.</p>`
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'FOREAS <noreply@foreas.xyz>',
+      to: email,
+      replyTo: 'contact@foreas.xyz',
+      subject: PANIER_TEXTE.sujet,
+      html: foreasEmailShell(inner),
+      scheduledAt: quand,
+    })
+    if (error) {
+      console.error(`[Email] ÉCHEC programmation panier : ${error.name} — ${error.message}`)
+      return null
+    }
+    return data?.id ?? null
+  } catch (e) {
+    console.error('[Email] Échec programmation panier :', e)
+    return null
+  }
+}
+
+/**
+ * Annule un envoi programmé. Appelée quand le paiement aboutit.
+ *
+ * ⚠️ UN ÉCHEC ICI ENVOIE UN MAIL À QUELQU'UN QUI VIENT DE PAYER — « tu y étais
+ * presque » à un abonné, c'est perdre sa confiance en une phrase. On le
+ * journalise donc comme une erreur, pas comme un détail.
+ */
+export async function annulerEnvoiProgramme(id: string): Promise<boolean> {
+  if (!resend) return false
+  try {
+    const { error } = await resend.emails.cancel(id)
+    if (error) {
+      console.error(
+        `[Email] ⛔ ANNULATION REFUSÉE (${error.name} — ${error.message}) : ` +
+          'un rappel de panier risque de partir à quelqu’un qui a déjà payé.',
+      )
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error('[Email] ⛔ annulation impossible :', e)
     return false
   }
 }

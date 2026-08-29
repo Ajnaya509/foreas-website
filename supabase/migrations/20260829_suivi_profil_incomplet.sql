@@ -60,3 +60,6 @@ alter table public.subscribers
 
 comment on column public.subscribers.checkout_session_id is
   'Identifiant de la session Stripe Checkout (cs_…). Sert au lien de relance vers /success?session_id=…';
+
+-- ── Panier abandonné (même journée) ───────────────────────────────────────
+-- Voir 20260829_paniers_abandonnes.sql

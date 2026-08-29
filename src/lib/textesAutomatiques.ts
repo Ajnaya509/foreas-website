@@ -1,5 +1,17 @@
 /**
- * LE TEXTE DES RELANCES, ET LES DÉLAIS. TOUT EST ICI, RIEN AILLEURS.
+ * TOUT CE QUI SE DÉCIDE DANS LES MAILS AUTOMATIQUES : TEXTES, DÉLAIS, INTERRUPTEURS.
+ *
+ * ⚠️ DEUX MAILS, DEUX MOMENTS QU'IL NE FAUT JAMAIS CONFONDRE :
+ *
+ *   1. PANIER ABANDONNÉ — il a tapé son e-mail sur /tarifs3 et n'a PAS payé.
+ *      Aucun compte, aucun abonnement. On a une adresse, rien d'autre.
+ *      Part 15 minutes après la saisie.
+ *
+ *   2. PROFIL INCOMPLET — il a PAYÉ, son compte existe, il manque son numéro.
+ *      Part le lendemain, puis une semaine après.
+ *
+ *   Écrire « ton abonnement est actif » à quelqu'un du premier groupe serait
+ *   un mensonge, et il le saurait immédiatement.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * ⚠️ POURQUOI CE FICHIER EXISTE
@@ -81,4 +93,40 @@ export const TEXTES: Record<1 | 2, TexteRelance> = {
       'Trente secondes suffisent.',
     bouton: 'Compléter en 30 secondes',
   },
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE PANIER ABANDONNÉ
+
+   ⚠️ IL A DONNÉ SON E-MAIL, PAS SA CARTE. Rien ne lui a été facturé, aucun
+   compte n'existe. Le mail ne peut donc parler ni d'abonnement, ni de compte,
+   ni de mot de passe — seulement de la place qu'il était en train de prendre.
+
+   ⚠️ ET IL N'EN RECEVRA QU'UN. Quelqu'un qui renonce à s'abonner n'a pas donné
+   son accord pour être démarché : un rappel se défend, une séquence non.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** L'interrupteur du panier abandonné. Éteint tant que le texte n'est pas validé. */
+export function panierAbandonneActif(): boolean {
+  return (process.env.PANIER_ABANDONNE_ACTIF || '').trim().toLowerCase() === 'true'
+}
+
+/**
+ * Combien de minutes après la saisie de l'adresse.
+ * 15 = le choix de Chandler : assez court pour qu'il soit encore devant son
+ * téléphone, assez long pour ne pas doubler quelqu'un qui paie lentement.
+ */
+export const PANIER_DELAI_MINUTES = 15
+
+/** ⚠️ BROUILLON, PAS UNE DÉCISION. À relire et à changer. */
+export const PANIER_TEXTE: TexteRelance = {
+  sujet: 'Tu y étais presque',
+  titre: 'Tu y étais presque',
+  corps:
+    "Tu as commencé ton inscription à FOREAS et tu t'es arrêté avant la fin. " +
+    "Rien n'a été prélevé, et rien ne le sera : les trois premiers jours sont offerts, " +
+    "et l'annulation prend un clic. Si quelque chose a bloqué, réponds à ce message — " +
+    "on regarde.",
+  bouton: 'Reprendre où tu en étais',
 }

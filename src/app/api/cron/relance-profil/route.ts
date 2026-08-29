@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { sendProfilIncompletEmail, sendRecapProfilsEmail } from '@/lib/email'
-import { relancesActives, DELAIS_JOURS, PLAFOND_RELANCES } from '@/lib/relanceProfilTextes'
+import { relancesActives, DELAIS_JOURS, PLAFOND_RELANCES } from '@/lib/textesAutomatiques'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,7 +40,7 @@ export const dynamic = 'force-dynamic'
  * s'oublie, la seconde agace.
  */
 
-/* Le plafond, les délais et les textes vivent dans `relanceProfilTextes.ts` :
+/* Le plafond, les délais et les textes vivent dans `textesAutomatiques.ts` :
    ce sont des décisions, pas des réglages techniques. Ici on les applique. */
 /** Un lot borné : le planificateur repassera demain pour le reste. */
 const LOT_MAX = 50
