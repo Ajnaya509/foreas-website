@@ -313,7 +313,23 @@ export async function POST(request: NextRequest) {
           plan_demande: String(plan).slice(0, 40),
           flow: immediate ? 'immediate' : 'trial',
           ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
-          ...(referralDiscountPct > 0 ? { referral_discount_pct: String(referralDiscountPct) } : {}),
+          /* ⚠️ 29/08/2026 — CETTE LIGNE ANNONÇAIT UNE REMISE QUI N'EXISTAIT PAS.
+             Le 21/08, le coupon a cessé d'être appliqué à l'annuel : `/tarifs2`
+             écrit « L'annuel est au tarif fixe », et le coupon `forever` coûtait
+             45 € par abonné et par an. Correction juste — mais À MOITIÉ FAITE :
+             cette métadonnée, elle, continuait de partir sur l'annuel.
+             Le webhook la lit (`referral_discount_pct`) et en déduit
+             `discount_eur` et `amount_eur`. Résultat mesuré sur l'abonnement de
+             test du 29/08 : la base disait 224,99 € avec 25 € de remise, pendant
+             que Stripe affichait 249,99 € et « Aucun bon de réduction n'a été
+             appliqué ». Une remise fantôme, dans les chiffres de revenus et dans
+             le calcul des commissions de parrainage.
+             ⚠️ LA CONDITION DOIT ÊTRE LA MÊME QUE CELLE DU COUPON, plus bas :
+             `referralCouponId && !isAnnual`. Deux conditions différentes pour un
+             seul fait, c'est exactement comme ça que l'écart est né. */
+          ...(referralDiscountPct > 0 && referralCouponId && !isAnnual
+            ? { referral_discount_pct: String(referralDiscountPct) }
+            : {}),
         },
       },
       payment_method_collection: 'always',
