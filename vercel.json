@@ -27,8 +27,8 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/relance-profil",
-      "schedule": "0 10 * * *"
+      "path": "/api/cron/sequence-panier",
+      "schedule": "0 16 * * *"
     }
   ]
 }

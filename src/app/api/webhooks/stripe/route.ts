@@ -504,15 +504,28 @@ export async function POST(request: Request) {
       try {
         const sbPanier = clientServeurOuNull()
         if (sbPanier) {
-          const { data: panier } = await sbPanier
+          /* ⚠️ ON FERME PAR ADRESSE, PAS PAR SESSION. LE GRINCHEUX AVAIT RAISON.
+             Un chauffeur abandonne le panier A (séquence lancée), revient une
+             heure plus tard et paie sur une session B toute neuve. Chercher
+             uniquement `checkout_session_id = B` ne trouve rien : le panier A
+             reste ouvert, et il reçoit « une question t'a arrêté hier ? » puis
+             « dans un an tu seras au même endroit » — alors qu'il est abonné.
+             On ferme donc TOUS ses paniers ouverts, quelle que soit la session. */
+          const adressePayeur = session.customer_details?.email ?? null
+          const { data: paniers } = await sbPanier
             .from('paniers_abandonnes')
-            .select('envoi_programme_id')
-            .eq('checkout_session_id', session.id)
+            .select('id, envoi_programme_id')
             .is('converti_le', null)
-            .maybeSingle()
+            .or(
+              adressePayeur
+                ? `checkout_session_id.eq.${session.id},email.eq.${adressePayeur}`
+                : `checkout_session_id.eq.${session.id}`,
+            )
 
-          if (panier?.envoi_programme_id) {
-            const annule = await annulerEnvoiProgramme(panier.envoi_programme_id)
+          for (const panier of paniers ?? []) {
+            const annule = panier.envoi_programme_id
+              ? await annulerEnvoiProgramme(panier.envoi_programme_id)
+              : true
             await sbPanier
               .from('paniers_abandonnes')
               .update({
@@ -522,11 +535,11 @@ export async function POST(request: Request) {
                    n'est parti — alors qu'il est peut-être parti. */
                 ...(annule ? { annule_le: new Date().toISOString() } : {}),
               })
-              .eq('checkout_session_id', session.id)
+              .eq('id', panier.id)
             if (!annule) {
               console.error(
-                `[webhook] ⛔ rappel de panier NON annulé pour ${session.id} — ` +
-                  'un « tu y étais presque » peut partir chez un abonné.',
+                `[webhook] ⛔ mail de séquence NON annulé (panier ${panier.id}) — ` +
+                  'une relance peut partir chez quelqu’un qui vient de payer.',
               )
             }
           }

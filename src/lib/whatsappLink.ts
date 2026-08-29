@@ -20,6 +20,7 @@ export type WhatsAppSection =
   | 'cap' // Section 6 · CAP partenaires
   | 'final' // Section 7 · CTA final
   | 'experience_phone' // Page /experience · bascule depuis le téléphone vivant
+  | 'panier_abandonne' // Mail J+1 · il a saisi son e-mail sans payer
 
 export interface BuildWAOptions {
   section: WhatsAppSection
@@ -118,6 +119,16 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
 
     case 'experience_phone':
       return `Salut Ajnaya, je continue notre discussion du site — on en était où ?`
+
+    case 'panier_abandonne':
+      /* ⚠️ CE MESSAGE PART AU NOM DU CHAUFFEUR, DANS SA CONVERSATION.
+         Il doit donc dire ce que LUI veut, pas ce que nous savons de lui.
+         « J'ai commencé et je me suis arrêté » est un fait qu'il assume ;
+         « tu as abandonné ton panier » serait notre vocabulaire, pas le sien —
+         et le mettre dans sa bouche le ferait sonner faux dès le premier mot.
+         La référence « (réf …) » est ajoutée par l'appelant : c'est elle qui
+         permet à Ajnaya de savoir où il s'était arrêté. */
+      return `Salut Ajnaya. J'ai commencé sur le site et je me suis arrêté. J'ai deux questions avant de tester.`
 
     default:
       return `Salut Ajnaya.`

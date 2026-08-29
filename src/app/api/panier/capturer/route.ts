@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
-import { programmerPanierAbandonne } from '@/lib/email'
-import { panierAbandonneActif, PANIER_DELAI_MINUTES } from '@/lib/textesAutomatiques'
+import { envoyerMailPanier } from '@/lib/email'
+import { panierAbandonneActif, PANIER_DELAIS } from '@/lib/textesAutomatiques'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -63,13 +63,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ programme: false }, { status: 503 })
   }
 
+  /* ⚠️ DÉFAUT 3 RELEVÉ PAR LE GRINCHEUX : UNE SÉQUENCE PAR PERSONNE, PAS PAR
+     SESSION. La contrainte d'unicité porte sur la session ; or un chauffeur qui
+     revient trois fois dans la semaine ouvre trois sessions, donc trois
+     séquences de trois mails. Neuf messages en sept jours : il se désabonne, et
+     il a raison. On ne relance donc pas quelqu'un dont une séquence tourne
+     encore. Sept jours, c'est la durée de la séquence elle-même.
+     ⚠️ Contrôle non atomique, assumé : deux saisies à la même seconde
+     passeraient. Le webhook, lui, ferme TOUS les paniers d'une adresse au
+     paiement — c'est ce filet-là qui rattrape le cas rare. */
+  const ilYaSeptJours = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
+  const { data: dejaEnCours } = await sb
+    .from('paniers_abandonnes')
+    .select('id')
+    .eq('email', email)
+    .is('converti_le', null)
+    .gte('capture_le', ilYaSeptJours)
+    .limit(1)
+
+  if (dejaEnCours && dejaEnCours.length > 0) {
+    return NextResponse.json({ programme: false, motif: 'sequence_deja_en_cours' })
+  }
+
   /* ⚠️ ON RÉSERVE LA PLACE AVANT DE PROGRAMMER, PAS APRÈS.
      Deux appels simultanés (double clic sur « payer ») passeraient tous les
      deux la lecture, et programmeraient deux mails. L'insertion, elle, ne peut
      réussir qu'une fois : la contrainte d'unicité arbitre, pas notre code. */
-  const { error: erreurInsertion } = await sb
+  const { data: cree, error: erreurInsertion } = await sb
     .from('paniers_abandonnes')
     .insert({ checkout_session_id: idSession, email })
+    .select('id')
+    .single()
 
   if (erreurInsertion) {
     /* 23505 = doublon : ce panier a déjà son rappel. Ce n'est pas une panne,
@@ -81,7 +105,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ programme: false }, { status: 500 })
   }
 
-  const idEnvoi = await programmerPanierAbandonne({ email, minutes: PANIER_DELAI_MINUTES })
+  const { idProgramme: idEnvoi } = await envoyerMailPanier({
+    email,
+    rang: 1,
+    /* ⚠️ SIX CARACTÈRES MINIMUM, SINON ELLE DISPARAÎT SANS UN MOT.
+       `/wa` valide la référence par `/^[A-Za-z0-9_-]{6,}$/` : « pa-1 » en fait
+       quatre et serait rejeté EN SILENCE — Ajnaya recevrait le chauffeur sans
+       savoir d'où il vient, et personne ne saurait pourquoi. On complète à six
+       chiffres, ce qui tient jusqu'au millionième panier. */
+    reference: `pa-${String(cree?.id ?? 0).padStart(6, '0')}`,
+    dansMinutes: PANIER_DELAIS.premier_minutes,
+  })
 
   if (!idEnvoi) {
     /* ⚠️ LA LIGNE RESTE, ET C'EST VOULU. Elle porte la trace qu'un panier a été
@@ -94,7 +128,10 @@ export async function POST(request: NextRequest) {
 
   const { error: erreurMaj } = await sb
     .from('paniers_abandonnes')
-    .update({ envoi_programme_id: idEnvoi })
+    /* `mails_envoyes: 1` compte le rappel de +15 min. Sans lui, le passage
+       quotidien croirait qu'aucun mail n'est encore parti et enverrait le
+       deuxième dès le lendemain d'un panier qui n'a rien reçu. */
+    .update({ envoi_programme_id: idEnvoi, mails_envoyes: 1 })
     .eq('checkout_session_id', idSession)
 
   if (erreurMaj) {
@@ -109,5 +146,5 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  return NextResponse.json({ programme: true, dans: PANIER_DELAI_MINUTES })
+  return NextResponse.json({ programme: true, dans: PANIER_DELAIS.premier_minutes })
 }

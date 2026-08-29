@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 import { repere } from './journal'
-import { TEXTES, PANIER_TEXTE } from './textesAutomatiques'
+import { PANIER_TEXTES } from './textesAutomatiques'
 
 /**
  * ⚠️ 21/08/2026 — DEUX REPLIS DIVERGENTS POUR LA MÊME VARIABLE.
@@ -437,223 +437,219 @@ export async function sendPartnerInternalEmail(app: {
   } catch (e) { console.error('[Email] Échec internal:', e) }
 }
 
-/**
- * LA RELANCE « IL MANQUE TON NUMÉRO ».
- *
- * Elle part vers quelqu'un qui a DÉJÀ payé et qui a DÉJÀ ses identifiants. Ce
- * n'est ni une vente ni une réclamation : c'est un service qu'il n'a pas fini
- * de brancher. Le ton suit — on tutoie, on ne relance pas sur l'argent, et on
- * dit ce qu'il y gagne, pas ce qu'on veut obtenir.
- *
- * ⚠️ LE LIEN EST LE CŒUR DU MAIL. Sans identifiant de session, l'écran 2 ne
- * peut pas savoir quel compte modifier : on n'envoie alors RIEN plutôt qu'un
- * mail qui mène à une page qui ne sait rien faire.
- */
-export async function sendProfilIncompletEmail({
-  email,
-  sessionId,
-  rang,
-}: {
-  email: string
-  sessionId: string | null
-  rang: number
-}): Promise<boolean> {
-  if (!sessionId) {
-    console.warn(`[Email] relance profil sans identifiant de session — non envoyée pour ${repere(email)}`)
-    return false
-  }
-  if (!resend) {
-    console.error('[Email] Resend non configuré — relance profil NON envoyée')
-    return false
-  }
-
-  const lien = `https://www.foreas.xyz/success?session_id=${encodeURIComponent(sessionId)}`
-
-  /* ⚠️ LE TEXTE N'EST PLUS ÉCRIT ICI. Il vit dans `textesAutomatiques.ts`,
-     avec les délais et l'interrupteur — c'est-à-dire tout ce qui se DÉCIDE.
-     Une phrase qui part au nom de FOREAS ne se choisit pas au milieu d'une
-     fonction d'envoi. */
-  const t = TEXTES[rang === 1 ? 1 : 2]
-
-  const inner = `
-    <p style="font-family:'Genos',sans-serif;font-size:26px;font-weight:600;color:#ffffff;margin:0 0 16px;">${escapeHtml(t.titre)}</p>
-    <p style="font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.7;color:#8a8a9a;margin:0 0 26px;">${escapeHtml(t.corps.replace(/\s+/g, ' ').trim())}</p>
-    <div style="text-align:center;margin:0 0 26px;">
-      <a href="${lien}" style="display:inline-block;background-image:linear-gradient(135deg,#8C52FF 0%,#6C3CE0 100%);color:#ffffff;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 30px;border-radius:14px;">${escapeHtml(t.bouton)}</a>
-    </div>
-    <p style="font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:#4a4a5a;margin:0;">Si le bouton ne s'ouvre pas : <span style="color:#6a6a7a;">${escapeHtml(lien)}</span></p>`
-
-  try {
-    const { error } = await resend.emails.send({
-      from: 'FOREAS <noreply@foreas.xyz>',
-      to: email,
-      replyTo: 'contact@foreas.xyz',
-      subject: t.sujet,
-      html: foreasEmailShell(inner),
-    })
-    if (error) {
-      console.error(`[Email] ÉCHEC relance profil : ${error.name} — ${error.message}`)
-      return false
-    }
-    return true
-  } catch (e) {
-    console.error('[Email] Échec relance profil :', e)
-    return false
-  }
-}
+/* ⚠️ 29/08 — `sendProfilIncompletEmail` A ÉTÉ SUPPRIMÉE, PAS DÉSACTIVÉE.
+   Elle relançait des gens qui AVAIENT PAYÉ pour qu'ils finissent leur profil.
+   Chandler : « tu forces à envoyer des mails aux gens qui n'ont pas complété
+   le formulaire alors qu'ils ont payé — tu DOIS envoyer aux gens qui n'ont pas
+   payé ». Il a raison : relancer un client qui vient de donner sa carte, c'est
+   du harcèlement administratif ; relancer quelqu'un qui a renoncé, c'est de la
+   vente. Le suivi des profils incomplets reste en base et dans le compte rendu
+   du matin — c'est une mesure, plus une relance. */
 
 /**
- * LE COMPTE RENDU QUOTIDIEN DU TUNNEL — VERS L'ÉQUIPE, PAS VERS UN CHAUFFEUR.
+ * LE COMPTE RENDU DU SOIR — VERS L'ÉQUIPE, PAS VERS UN CHAUFFEUR.
  *
  * ⚠️ IL NE PART QUE S'IL A QUELQUE CHOSE À DIRE (le décideur est dans le cron).
- * Un rapport qui répète « zéro » chaque matin apprend à ne plus être ouvert, et
- * le jour où il porte un vrai chiffre, il est ignoré comme les autres.
+ * Un rapport qui répète « zéro » chaque jour apprend à ne plus être ouvert, et
+ * le jour où il porte un vrai chiffre il est ignoré comme les autres.
  *
  * ⚠️ AUCUNE ADRESSE DE CHAUFFEUR N'Y FIGURE. Des compteurs suffisent à décider
- * s'il faut agir ; la liste nominative se lit en base, avec une requête, par
- * quelqu'un qui a une raison de la lire.
+ * s'il faut agir ; la liste nominative se lit en base, par quelqu'un qui a une
+ * raison de la lire — et les paniers abandonnés sont des gens qui n'ont RIEN
+ * acheté.
  */
 export async function sendRecapProfilsEmail({
   payants,
   incomplets,
   nouveauxDuJour,
-  relancesEnvoyees,
-  relancesEnEchec,
-  relancesEteintes,
-  enAttenteDeRelance,
+  paniersOuverts,
+  paniersDuJour,
+  paniersConvertisDuJour,
+  mailsEnvoyes,
+  mailsEnEchec,
+  sequenceEteinte,
+  enAttenteDEnvoi,
 }: {
   payants: number
   incomplets: number
   nouveauxDuJour: number
-  relancesEnvoyees: number
-  relancesEnEchec: number
-  /** Vrai tant que le texte des relances n'a pas été validé. */
-  relancesEteintes: boolean
-  /** Combien de chauffeurs seraient relancés si c'était allumé. */
-  enAttenteDeRelance: number
+  paniersOuverts: number
+  paniersDuJour: number
+  paniersConvertisDuJour: number
+  mailsEnvoyes: number
+  mailsEnEchec: number
+  /** Vrai tant que la séquence n'est pas allumée dans Vercel. */
+  sequenceEteinte: boolean
+  /** Combien de mails seraient partis si elle l'était. */
+  enAttenteDEnvoi: number
 }): Promise<boolean> {
   if (!resend) {
-    console.error('[Email] Resend non configuré — récap profils NON envoyé')
+    console.error('[Email] Resend non configuré — compte rendu NON envoyé')
     return false
   }
 
+  /* ⚠️ UN TAUX SUR ZÉRO N'EST PAS « 0 % », C'EST UNE ABSENCE DE RÉPONSE.
+     Un « 0 % » au réveil fait chercher une panne qui n'existe pas. */
+  const tauxPanier =
+    paniersDuJour > 0 ? `${Math.round((paniersConvertisDuJour / paniersDuJour) * 100)} %` : '——'
   const complets = Math.max(0, payants - incomplets)
-  /* Un pourcentage sur zéro abonné n'est pas « 0 % », c'est « pas de réponse ».
-     On écrit « —— » plutôt qu'un chiffre qui se lirait comme un échec. */
-  const tauxTexte = payants > 0 ? `${Math.round((complets / payants) * 100)} %` : '——'
 
   const ligne = (libelle: string, valeur: string) =>
     `<tr><td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8a8a9a;padding:7px 0;">${escapeHtml(libelle)}</td>` +
     `<td style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;color:#ffffff;padding:7px 0;text-align:right;">${escapeHtml(valeur)}</td></tr>`
 
+  const titreSection = (t: string) =>
+    `<p style="font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#4a4a5a;margin:22px 0 4px;">${escapeHtml(t)}</p>`
+
   const inner = `
-    <p style="font-family:'Genos',sans-serif;font-size:24px;font-weight:600;color:#ffffff;margin:0 0 4px;">Le tunnel, ce matin</p>
-    <p style="font-family:'Montserrat',sans-serif;font-size:12px;color:#4a4a5a;margin:0 0 24px;">Compte rendu automatique · foreas.xyz</p>
-    <table role="presentation" width="100%" style="border-collapse:collapse;margin:0 0 22px;">
-      ${ligne('Nouveaux abonnés (24 h)', String(nouveauxDuJour))}
-      ${ligne('Abonnés actifs ou en essai', String(payants))}
-      ${ligne('Profils complets', `${complets} · ${tauxTexte}`)}
+    <p style="font-family:'Genos',sans-serif;font-size:24px;font-weight:600;color:#ffffff;margin:0 0 4px;">Le tunnel, ce soir</p>
+    <p style="font-family:'Montserrat',sans-serif;font-size:12px;color:#4a4a5a;margin:0 0 8px;">Compte rendu automatique · foreas.xyz</p>
+    ${titreSection('Paniers — ils ont saisi leur e-mail')}
+    <table role="presentation" width="100%" style="border-collapse:collapse;">
+      ${ligne('Ouverts aujourd’hui', String(paniersDuJour))}
+      ${ligne('Convertis aujourd’hui', `${paniersConvertisDuJour} · ${tauxPanier}`)}
+      ${ligne('Toujours sans paiement', String(paniersOuverts))}
+      ${ligne('Mails de séquence partis', String(mailsEnvoyes))}
+      ${mailsEnEchec > 0 ? ligne('Mails EN ÉCHEC', String(mailsEnEchec)) : ''}
+    </table>
+    ${titreSection('Abonnés — ils ont payé')}
+    <table role="presentation" width="100%" style="border-collapse:collapse;margin:0 0 20px;">
+      ${ligne('Nouveaux (24 h)', String(nouveauxDuJour))}
+      ${ligne('Actifs ou en essai', String(payants))}
+      ${ligne('Profils complets', String(complets))}
       ${ligne('Sans prénom ni numéro', String(incomplets))}
-      ${ligne('Relances parties aujourd’hui', String(relancesEnvoyees))}
-      ${relancesEnEchec > 0 ? ligne('Relances EN ÉCHEC', String(relancesEnEchec)) : ''}
     </table>
     ${
-      relancesEteintes
+      sequenceEteinte
         ? `<div style="background-color:#2a1c05;border:1px solid #6b4a0a;border-radius:12px;padding:14px 16px;margin:0 0 18px;">
-             <p style="font-family:'Montserrat',sans-serif;font-size:13px;font-weight:600;color:#F5C842;margin:0 0 6px;">Les relances sont ÉTEINTES</p>
+             <p style="font-family:'Montserrat',sans-serif;font-size:13px;font-weight:600;color:#F5C842;margin:0 0 6px;">La séquence est ÉTEINTE</p>
              <p style="font-family:'Montserrat',sans-serif;font-size:12.5px;line-height:1.6;color:#b9a06a;margin:0;">
-               ${enAttenteDeRelance} chauffeur(s) attendent. Rien ne part tant que le texte des mails n'est pas validé.
-               Pour allumer : poser <span style="color:#e6d5a8;">RELANCES_PROFIL_ACTIVES = true</span> dans Vercel.
+               ${enAttenteDEnvoi} mail(s) seraient partis aujourd'hui. Rien ne part tant que le texte n'est pas validé.
+               Pour allumer : <span style="color:#e6d5a8;">PANIER_ABANDONNE_ACTIF = true</span> dans Vercel.
              </p>
            </div>`
         : ''
     }
     <p style="font-family:'Montserrat',sans-serif;font-size:12.5px;line-height:1.6;color:#6a6a7a;margin:0;">
       « Sans prénom ni numéro » = ils ont payé mais n'ont pas rempli l'écran d'après-paiement.
-      Ajnaya ne peut pas les joindre sur WhatsApp.
+      C'est une mesure, pas une relance : on ne leur écrit plus.
     </p>`
 
   try {
     const { error } = await resend.emails.send({
       from: 'FOREAS <noreply@foreas.xyz>',
       to: 'contact@foreas.xyz',
-      subject: `FOREAS · ${nouveauxDuJour} nouveau(x) · ${incomplets} profil(s) incomplet(s)`,
+      subject: `FOREAS · ${nouveauxDuJour} abonné(s) · ${paniersOuverts} panier(s) sans paiement`,
       html: foreasEmailShell(inner),
     })
     if (error) {
-      console.error(`[Email] ÉCHEC récap profils : ${error.name} — ${error.message}`)
+      console.error(`[Email] ÉCHEC compte rendu : ${error.name} — ${error.message}`)
       return false
     }
     return true
   } catch (e) {
-    console.error('[Email] Échec récap profils :', e)
+    console.error('[Email] Échec compte rendu :', e)
     return false
   }
 }
 
 /**
- * LE RAPPEL DE PANIER ABANDONNÉ — PROGRAMMÉ, PAS ENVOYÉ TOUT DE SUITE.
+ * UN MAIL DE LA SÉQUENCE PANIER ABANDONNÉ.
  *
- * ⚠️ IL N'A RIEN PAYÉ. Aucun compte, aucun abonnement, aucun mot de passe.
- * Le texte ne peut donc parler que de ce qu'il était en train de faire.
+ * ⚠️ DEUX MODES D'ENVOI, ET C'EST VOULU.
+ * · Le mail 1 part **programmé** (`scheduledAt` à +15 min) : aucun
+ *   planificateur ne tourne aussi souvent, et le forfait Vercel n'en autorise
+ *   qu'un par jour. Resend garde le mail en attente, on l'annule si le paiement
+ *   arrive.
+ * · Les mails 2 et 3 partent **immédiatement**, appelés par le passage
+ *   quotidien de 18 h Paris. Les programmer sept jours à l'avance obligerait à
+ *   garder trois identifiants à annuler au lieu d'un.
  *
- * ⚠️ POURQUOI `scheduledAt` ET PAS UNE TÂCHE PLANIFIÉE.
- * Le mail doit partir 15 minutes après la saisie. Le forfait Vercel ne permet
- * qu'un passage par jour : impossible d'y arriver. Resend programme l'envoi,
- * et `annulerEnvoiProgramme()` l'annule si le paiement arrive entre-temps.
- * Rien à faire tourner, rien à surveiller.
- *
- * Rend l'identifiant de l'envoi — c'est lui, et lui seul, qui permet d'annuler.
+ * Rend l'identifiant d'envoi quand il est programmé (mail 1), sinon `null` —
+ * un mail déjà parti n'a rien à annuler.
  */
-export async function programmerPanierAbandonne({
+export async function envoyerMailPanier({
   email,
-  minutes,
+  rang,
+  reference,
+  dansMinutes,
 }: {
   email: string
-  minutes: number
-}): Promise<string | null> {
+  rang: 1 | 2 | 3
+  /** Référence courte du panier, portée jusqu'à WhatsApp. */
+  reference: string
+  /** Renseigné pour le mail 1 seulement : l'envoi est alors programmé. */
+  dansMinutes?: number
+}): Promise<{ envoye: boolean; idProgramme: string | null }> {
   if (!resend) {
-    console.error('[Email] Resend non configuré — panier abandonné NON programmé')
-    return null
+    console.error(`[Email] Resend non configuré — panier ${rang} NON envoyé`)
+    return { envoye: false, idProgramme: null }
   }
 
-  const quand = new Date(Date.now() + minutes * 60 * 1000).toISOString()
-  const lien = 'https://www.foreas.xyz/tarifs3'
+  const t = PANIER_TEXTES[rang]
+
+  /* ⚠️ LA DESTINATION EST DÉCLARÉE À CÔTÉ DU TEXTE, PAS ICI.
+     Le mail 2 mène à WhatsApp, les deux autres au paiement. Décider du lien
+     ailleurs qu'à côté du bouton, c'est se garantir qu'un jour l'un dira une
+     chose et l'autre une autre. */
+  const lien =
+    t.destination === 'whatsapp'
+      ? `https://www.foreas.xyz/wa?s=panier_abandonne&sid=${encodeURIComponent(reference)}`
+      : 'https://www.foreas.xyz/tarifs3'
+
+  /* Une idée par phrase, une phrase par paragraphe : c'est la règle de voix, et
+     un pavé de dix lignes sur un téléphone ne se lit pas. */
+  const phrases = t.corps
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(/(?<=\.) /)
+    .filter(Boolean)
 
   const inner = `
-    <p style="font-family:'Genos',sans-serif;font-size:26px;font-weight:600;color:#ffffff;margin:0 0 16px;">${escapeHtml(PANIER_TEXTE.titre)}</p>
-    <p style="font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.7;color:#8a8a9a;margin:0 0 26px;">${escapeHtml(PANIER_TEXTE.corps.replace(/\s+/g, ' ').trim())}</p>
-    <div style="text-align:center;margin:0 0 26px;">
-      <a href="${lien}" style="display:inline-block;background-image:linear-gradient(135deg,#8C52FF 0%,#6C3CE0 100%);color:#ffffff;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 30px;border-radius:14px;">${escapeHtml(PANIER_TEXTE.bouton)}</a>
+    <p style="font-family:'Genos',sans-serif;font-size:26px;font-weight:600;color:#ffffff;margin:0 0 18px;line-height:1.25;">${escapeHtml(t.titre)}</p>
+    ${phrases
+      .map(
+        (ph) =>
+          `<p style="font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.75;color:#8a8a9a;margin:0 0 12px;">${escapeHtml(ph)}</p>`,
+      )
+      .join('')}
+    <div style="text-align:center;margin:28px 0 22px;">
+      <a href="${lien}" style="display:inline-block;background-image:linear-gradient(135deg,#8C52FF 0%,#6C3CE0 100%);color:#ffffff;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 30px;border-radius:14px;">${escapeHtml(t.bouton)}</a>
     </div>
-    <p style="font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:#4a4a5a;margin:0;">Tu ne recevras pas d'autre message à ce sujet.</p>`
+    <p style="font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:#4a4a5a;margin:0;">${
+      rang === 3
+        ? 'Tu ne recevras plus de message de notre part à ce sujet.'
+        : 'Si tu ne veux plus de ces messages, réponds « stop » — on arrête tout de suite.'
+    }</p>`
 
   try {
     const { data, error } = await resend.emails.send({
       from: 'FOREAS <noreply@foreas.xyz>',
       to: email,
       replyTo: 'contact@foreas.xyz',
-      subject: PANIER_TEXTE.sujet,
+      subject: t.sujet,
       html: foreasEmailShell(inner),
-      scheduledAt: quand,
+      ...(dansMinutes
+        ? { scheduledAt: new Date(Date.now() + dansMinutes * 60 * 1000).toISOString() }
+        : {}),
     })
     if (error) {
-      console.error(`[Email] ÉCHEC programmation panier : ${error.name} — ${error.message}`)
-      return null
+      console.error(`[Email] ÉCHEC panier ${rang} : ${error.name} — ${error.message}`)
+      return { envoye: false, idProgramme: null }
     }
-    return data?.id ?? null
+    return { envoye: true, idProgramme: dansMinutes ? (data?.id ?? null) : null }
   } catch (e) {
-    console.error('[Email] Échec programmation panier :', e)
-    return null
+    console.error(`[Email] Échec panier ${rang} :`, e)
+    return { envoye: false, idProgramme: null }
   }
 }
 
 /**
  * Annule un envoi programmé. Appelée quand le paiement aboutit.
  *
- * ⚠️ UN ÉCHEC ICI ENVOIE UN MAIL À QUELQU'UN QUI VIENT DE PAYER — « tu y étais
- * presque » à un abonné, c'est perdre sa confiance en une phrase. On le
- * journalise donc comme une erreur, pas comme un détail.
+ * ⚠️ UN ÉCHEC ICI ENVOIE UN MAIL DE RELANCE À QUELQU'UN QUI VIENT DE PAYER.
+ * « Trois jours pour voir » chez un abonné, c'est lui faire douter que son
+ * paiement soit passé. On le journalise comme une erreur, pas comme un détail.
  */
 export async function annulerEnvoiProgramme(id: string): Promise<boolean> {
   if (!resend) return false
@@ -662,7 +658,7 @@ export async function annulerEnvoiProgramme(id: string): Promise<boolean> {
     if (error) {
       console.error(
         `[Email] ⛔ ANNULATION REFUSÉE (${error.name} — ${error.message}) : ` +
-          'un rappel de panier risque de partir à quelqu’un qui a déjà payé.',
+          'un mail de relance risque de partir à quelqu’un qui a déjà payé.',
       )
       return false
     }
