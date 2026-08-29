@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { construireSignaux, verifierCumulEssai, enregistrerEssai } from '@/lib/essaisAccordes'
 import { annulerEnvoiProgramme } from '@/lib/email'
-import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
+import { provisionDriverAccount, activerAccesChauffeur } from '@/lib/provisionDriverAccount'
 import { sendCAPIEvent } from '@/lib/meta-capi'
 import { sendTikTokEvent } from '@/lib/tiktok-events-api'
 // 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
@@ -764,6 +764,44 @@ export async function POST(request: Request) {
           phone,
           city,
         })
+
+        /* ═══════════════════════════════════════════════════════════════
+           OUVRIR L'ACCÈS DANS L'APP — SANS ÇA, IL A PAYÉ POUR RIEN.
+
+           ⚠️ CE GESTE MANQUAIT, ET C'ÉTAIT LA PREMIÈRE RAISON DE FUITE.
+           Le webhook créait le compte de connexion et s'arrêtait là.
+           `drivers.status` restait à « pending » et `subscription_active` à
+           false — les deux valeurs que l'app exige pour laisser entrer. Le
+           chauffeur qui venait de payer tombait sur l'écran « active ton
+           essai » : l'app lui redemandait de payer, en boucle, sans issue.
+           Mesuré le 29/08 : 18 lignes sur 31 dans cet état.
+
+           ⚠️ ON L'APPELLE AUSSI QUAND LE COMPTE EXISTAIT DÉJÀ. Un chauffeur qui
+           avait un compte gratuit et qui paie aujourd'hui doit être ouvert lui
+           aussi — c'est même le cas le plus fréquent après quelques mois.
+           Ne le faire que pour les comptes neufs recréerait le mur pour eux. */
+        if (provision.status === 'created' || provision.status === 'already_exists') {
+          const acces = await activerAccesChauffeur({
+            email: session.customer_details.email,
+            finEssai: trialEnd,
+          })
+          if (!acces.ouvert) {
+            /* La trace en base d'abord : elle ne dépend d'aucun service tiers.
+               Un chauffeur qui a payé et à qui l'app redemande de payer est le
+               pire état possible — il faut pouvoir le retrouver demain matin. */
+            noteIncident =
+              `ACCÈS APP NON OUVERT (${acces.detail}) pour ${session.customer_details.email} — ` +
+              `il a payé, l'app lui redemandera de payer`
+            console.error(`[webhook] ⛔ ${noteIncident}`)
+            await sendProvisionFailureAlert({
+              email: session.customer_details.email,
+              reason:
+                `paiement encaissé mais accès app NON ouvert (${acces.detail}). ` +
+                `drivers.status reste « pending » : le chauffeur est bloqué sur l'écran d'activation.`,
+              sujet: `⛔ Chauffeur payé mais bloqué dans l'app`,
+            })
+          }
+        }
 
         const mailParti = await sendWelcomeEmail({
           email: session.customer_details.email,
