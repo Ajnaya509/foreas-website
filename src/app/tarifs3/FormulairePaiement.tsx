@@ -132,7 +132,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
     /* Deux lettres suffisent. On ne juge pas un prénom : on vérifie seulement
        que quelqu'un a répondu à la question. */
     if (prenom.trim().length < 2) {
-      fautes.prenom = 'Ton prénom, en deux lettres minimum.'
+      fautes.prenom = 'Prénom trop court — deux lettres au minimum.'
     }
     /* Contrôle volontairement large : il vaut mieux laisser passer une adresse
        douteuse que refuser une adresse valide et perdre l'abonnement. Stripe
@@ -322,7 +322,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
             </span>
           ) : (
             <span id={`${idPrenom}-aide`} className={s.champAide}>
-              C&apos;est comme ça qu&apos;Ajnaya t&apos;appellera.
+              Il apparaît dans l&apos;app et dans les messages d&apos;Ajnaya.
             </span>
           )}
         </label>

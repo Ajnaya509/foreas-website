@@ -149,6 +149,19 @@ export default function Tarifs3Client() {
   const phrases = useMemo(() => phrasesAffichables(), [])
 
   const [formule, setFormule] = useState<Formule>(FORMULE_PAR_DEFAUT)
+
+  /* ── Le code parrain ──────────────────────────────────────────────────────
+     `codeSaisi` est ce qu'il tape. `codeApplique` est ce que la caisse connaît.
+     Les deux sont séparés exprès : tant qu'on n'a pas VÉRIFIÉ, taper ne doit
+     rien changer au prix affiché. Un champ qui modifie le montant à chaque
+     lettre, c'est un montant qui danse pendant qu'on saisit sa carte. */
+  const [champCodeOuvert, setChampCodeOuvert] = useState(false)
+  const [codeSaisi, setCodeSaisi] = useState('')
+  const [codeApplique, setCodeApplique] = useState('')
+  const [etatCode, setEtatCode] = useState<{
+    phase: 'repos' | 'verification' | 'accepte' | 'refuse' | 'panne'
+    remisePct?: number
+  }>({ phase: 'repos' })
   const [etat, setEtat] = useState<EtatTarif>({ phase: 'chargement' })
   const [tentative, setTentative] = useState(0)
   /*
@@ -175,7 +188,13 @@ export default function Tarifs3Client() {
    * panneau rend SA session, pas une seconde qui laisserait derrière elle une
    * tentative fantôme dans le tableau de bord Stripe à chaque hésitation.
    */
-  const sessions = useRef<Map<Formule, string>>(new Map())
+  /* ⚠️ 29/08 — LA CLÉ N'EST PLUS LA FORMULE SEULE.
+     Un code parrain change le montant de la session. Garder la formule comme
+     seule clé aurait resservi la session SANS remise à quelqu'un qui vient
+     d'entrer son code : le récapitulatif aurait annoncé une remise, et Stripe
+     aurait encaissé le prix plein. Le même écart que la remise fantôme du 29/08,
+     mais sous les yeux du chauffeur. */
+  const sessions = useRef<Map<string, string>>(new Map())
 
 
   // ── Le tarif, confirmé par le serveur ──────────────────────────────────────
@@ -291,6 +310,50 @@ export default function Tarifs3Client() {
    */
   const figerPendantLePaiement = useCallback(() => setFigee(true), [])
 
+  /**
+   * Vérifie le code AVANT de toucher au montant.
+   *
+   * ⚠️ ON STOCKE `remisePct`, JAMAIS LA REMISE APPLIQUÉE.
+   * La remise réelle dépend de la formule choisie, et la formule peut changer
+   * APRÈS la vérification. Garder en mémoire « 10 % de remise » alors que le
+   * chauffeur vient de passer à l'annuel afficherait une promesse que la caisse
+   * ne tiendra pas — exactement la remise fantôme trouvée le 29/08, mais cette
+   * fois sous ses yeux. On garde la valeur brute, on dérive à l'affichage.
+   */
+  const appliquerCode = useCallback(async () => {
+    const code = codeSaisi.trim().toUpperCase()
+    if (!code) return
+    setEtatCode({ phase: 'verification' })
+    try {
+      const res = await fetch('/api/parrainage/verifier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      if (!res.ok) {
+        /* ⚠️ UNE PANNE N'EST PAS UN CODE FAUX. Dire « code inconnu » enverrait
+           corriger une faute de frappe qui n'existe pas. */
+        setEtatCode({ phase: 'panne' })
+        return
+      }
+      const data = (await res.json()) as { valide?: boolean; remisePct?: number }
+      if (!data?.valide) {
+        setEtatCode({ phase: 'refuse' })
+        return
+      }
+      setEtatCode({ phase: 'accepte', remisePct: Number(data.remisePct) || 0 })
+      setCodeApplique(code)
+    } catch {
+      setEtatCode({ phase: 'panne' })
+    }
+  }, [codeSaisi])
+
+  const retirerCode = useCallback(() => {
+    setCodeApplique('')
+    setCodeSaisi('')
+    setEtatCode({ phase: 'repos' })
+  }, [])
+
   // ── Le paiement ────────────────────────────────────────────────────────────
   const choisirFormule = useCallback((f: Formule) => {
     setFormule(f)
@@ -302,7 +365,8 @@ export default function Tarifs3Client() {
   }, [])
 
   const recupererClientSecret = useCallback(async (): Promise<string> => {
-    const deja = sessions.current.get(formule)
+    const cleSession = `${formule}|${codeApplique}`
+    const deja = sessions.current.get(cleSession)
     if (deja) return deja
 
     const res = await fetch('/api/checkout', {
@@ -318,15 +382,18 @@ export default function Tarifs3Client() {
          * navigateur se répondre à lui-même.
          */
         immediate: TUNNEL_SITE_IMMEDIAT,
+        /* Le code n'est envoyé qu'une fois VÉRIFIÉ. Envoyer une saisie en cours
+           créerait une session par lettre tapée. */
+        ...(codeApplique ? { referral_code: codeApplique } : {}),
       }),
     })
 
     const data = await res.json().catch(() => null)
     if (!res.ok || !data?.clientSecret) throw new Error(data?.error || `checkout_${res.status}`)
 
-    sessions.current.set(formule, data.clientSecret as string)
+    sessions.current.set(cleSession, data.clientSecret as string)
     return data.clientSecret as string
-  }, [formule])
+  }, [formule, codeApplique])
 
   /**
    * ⚠️ ELLE NAÎT DANS UN EFFET, DONC JAMAIS SUR LE SERVEUR.
@@ -551,6 +618,100 @@ export default function Tarifs3Client() {
               </div>
             </fieldset>
 
+            {/* ── Le code parrain ───────────────────────────────────────────
+                ⚠️ REPLIÉ PAR DÉFAUT, ET C'EST DÉLIBÉRÉ. La grande majorité des
+                chauffeurs n'a pas de code. Un champ vide de plus sur la page qui
+                encaisse, c'est une question de plus à se poser au moment de
+                sortir sa carte. Celui qui a un code, lui, le cherche — il
+                trouvera le lien. */}
+            <div className={s.parrain}>
+              {!champCodeOuvert && !codeApplique && (
+                <button
+                  type="button"
+                  className={s.parrainLien}
+                  onClick={() => setChampCodeOuvert(true)}
+                >
+                  J&apos;ai un code parrain
+                </button>
+              )}
+
+              {(champCodeOuvert || codeApplique) && (
+                <>
+                  <div className={s.parrainLigne}>
+                    <input
+                      type="text"
+                      className={s.parrainChamp}
+                      value={codeSaisi}
+                      onChange={(e) => {
+                        setCodeSaisi(e.target.value.toUpperCase())
+                        /* Retaper efface le verdict précédent : garder « accepté »
+                           affiché pendant qu'on modifie le code serait un mensonge
+                           d'un caractère. */
+                        if (etatCode.phase !== 'repos') setEtatCode({ phase: 'repos' })
+                        if (codeApplique) setCodeApplique('')
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          void appliquerCode()
+                        }
+                      }}
+                      placeholder="Code parrain"
+                      aria-label="Code parrain"
+                      autoCapitalize="characters"
+                      autoComplete="off"
+                      spellCheck={false}
+                      maxLength={24}
+                      disabled={etatCode.phase === 'verification'}
+                    />
+                    {codeApplique ? (
+                      <button type="button" className={s.parrainBouton} onClick={retirerCode}>
+                        Retirer
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={s.parrainBouton}
+                        onClick={() => void appliquerCode()}
+                        disabled={etatCode.phase === 'verification' || codeSaisi.trim().length < 3}
+                      >
+                        {etatCode.phase === 'verification' ? 'Vérification…' : 'Appliquer'}
+                      </button>
+                    )}
+                  </div>
+
+                  <p className={s.parrainMot} role="status" aria-live="polite">
+                    {etatCode.phase === 'accepte' && formule === 'annuel' && (
+                      /* ⚠️ LA PHRASE LA PLUS IMPORTANTE DE CE BLOC.
+                         Le coupon n'est pas appliqué à l'annuel — l'annuel est à
+                         tarif fixe. Afficher une remise ici, c'est promettre un
+                         montant que Stripe ne facturera pas. Le code n'est pas
+                         perdu pour autant : il part en attribution, le parrain
+                         touche sa commission. On le dit, plutôt que de laisser
+                         croire à une remise. */
+                      <span className={s.parrainNeutre}>
+                        Code accepté. L&apos;annuel est à tarif fixe : pas de remise dessus.
+                        Le parrain est bien crédité.
+                      </span>
+                    )}
+                    {etatCode.phase === 'accepte' && formule !== 'annuel' && (
+                      <span className={s.parrainOk}>
+                        Code accepté — {etatCode.remisePct} % de remise appliquée.
+                      </span>
+                    )}
+                    {etatCode.phase === 'refuse' && (
+                      <span className={s.parrainKo}>Ce code n&apos;est pas reconnu.</span>
+                    )}
+                    {etatCode.phase === 'panne' && (
+                      <span className={s.parrainKo}>
+                        Vérification impossible pour l&apos;instant. Réessayer dans un instant.
+                      </span>
+                    )}
+                  </p>
+                </>
+              )}
+            </div>
+
             <hr className={s.filet} />
 
             {/* ── Le récapitulatif ───────────────────────────────────── */}
@@ -635,6 +796,42 @@ export default function Tarifs3Client() {
                           `, soit ${ECONOMIE_ANNUELLE_PCT.toLocaleString('fr-FR')}\u202F% de moins qu’au mois`}
                         .
                       </p>
+                      {/* ⚠️ SANS CETTE LIGNE, DEUX MONTANTS SE CONTREDISAIENT.
+                          Le bloc parrain annonçait « 10 % de remise appliquée »
+                          pendant que le récapitulatif affichait le prix plein
+                          juste en dessous. Deux nombres qui se contredisent à
+                          l'écran, c'est le début d'un litige — le commentaire de
+                          `choisirFormule` le dit déjà pour le changement de
+                          formule ; ça vaut ici aussi.
+
+                          ⚠️ LE MONTANT EST CALCULÉ, DONC IL DOIT TOMBER JUSTE AU
+                          CENTIME. Stripe applique `percent_off` sur le montant
+                          puis arrondit au centime. Vérifié pour les TROIS
+                          paliers réels sur le prix réel (29,99 € = 2999) :
+                            10 % → 2699,1 → 26,99 €
+                            15 % → 2549,15 → 25,49 €
+                            18 % → 2459,18 → 24,59 €
+                          Troncature et arrondi donnent le même centime sur les
+                          trois : aucune ambiguïté possible sur nos tarifs.
+                          Si un palier ou le prix change, REVÉRIFIER ce calcul —
+                          un centime d'écart entre l'écran et le relevé se paie
+                          en confiance, pas en euros. */}
+                      {etatCode.phase === 'accepte' &&
+                        formule !== 'annuel' &&
+                        !!etatCode.remisePct && (
+                          <p className={s.micro}>
+                            Avec le code parrain :{' '}
+                            <span className={s.vert}>
+                              {formaterEuros(
+                                Math.round(
+                                  (debit.montantEnsuiteCentimes * (100 - etatCode.remisePct)) / 100,
+                                ),
+                              )}{' '}
+                              par mois
+                            </span>
+                            .
+                          </p>
+                        )}
                     </>
                   ) : (
                     <>
@@ -675,7 +872,7 @@ export default function Tarifs3Client() {
             {REPLI_PANNEAU_STRIPE ? (
               <div className={s.zoneStripe}>
                 <EmbeddedCheckoutProvider
-                  key={formule}
+                  key={`${formule}|${codeApplique}`}
                   stripe={stripePromise}
                   options={{ fetchClientSecret: recupererClientSecret }}
                 >
@@ -692,7 +889,7 @@ export default function Tarifs3Client() {
               </p>
             ) : promesseSecret ? (
               <CheckoutElementsProvider
-                key={formule}
+                key={`${formule}|${codeApplique}`}
                 stripe={stripePromise}
                 options={{
                   clientSecret: promesseSecret,
