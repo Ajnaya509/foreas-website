@@ -1,0 +1,355 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ÉCRAN AJNAYA — PORT DU FIL PIEUVRE, VALEUR POUR VALEUR
+
+   Source : FOREAS-SHARED/DEMO_MODALE_AJNAYA/demo-modale-ajnaya.html
+   Brief  : FOREAS-SHARED/DEMO_MODALE_AJNAYA/BRIEF_FIL_SITE.md (29/08/2026)
+
+   ⚠️ CHAQUE VALEUR VIENT DU CODE DE L'APP, LUE PAR LE FIL PIEUVRE DANS
+   AjnayaScreenOptimized.tsx, AppleNoirBackground.tsx, MaterializingBlock.tsx,
+   AjnayaEyeAvatar.tsx et premium.ts. AUCUNE N'A ÉTÉ APPROXIMÉE À L'ŒIL, et
+   aucune ne doit l'être en la modifiant. Les commentaires du fil Pieuvre sont
+   conservés tels quels : ils disent POURQUOI un nombre est ce qu'il est.
+
+   ⚠️ L'ÉCRAN EST DESSINÉ À 393 px — la largeur réelle de l'app — puis réduit
+   par transform:scale(). C'est le seul moyen de garder les valeurs intactes :
+   un 19 px reste un 19 px, on ne recalcule rien, donc on ne se trompe nulle
+   part. Ne JAMAIS convertir une valeur à la main pour « l'adapter ».
+
+   ⚠️ UNE SEULE ADAPTATION AU SITE, ET ELLE EST NOMMÉE.
+   Le brief oppose « site = Montserrat » et « app = Inter ». Mesuré le 29/08 :
+   ce site est DÉJÀ passé à Inter (src/app/layout.tsx:35, poids 400→900). La
+   distinction ne tient donc plus — mais la règle de fond, elle, tient : l'écran
+   doit être en Inter. On utilise la variable du site (--font-inter), pas un nom
+   de police écrit en dur : avec next/font le nom réel est haché.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.racine {
+  --app-texte: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --data: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   L'ÉCRAN AJNAYA, REPRODUIT DEPUIS LE CODE DE L'APP
+   ═══════════════════════════════════════════════════════════════════
+   Toutes les valeurs ci-dessous sortent de la lecture du dépôt
+   FOREAS-Clean (AjnayaScreenOptimized.tsx, AppleNoirBackground.tsx,
+   MaterializingBlock.tsx, premium.ts). Aucune n'est approximée à l'œil.
+
+   ⚠️ L'ÉCRAN EST DESSINÉ À LA TAILLE RÉELLE DE L'APP — 393 px de large —
+   puis RÉDUIT par transform:scale(). C'est le seul moyen de garder les
+   valeurs du code intactes : un 19 px reste un 19 px, on ne recalcule
+   rien, donc on ne se trompe nulle part. Le facteur est mesuré en JS
+   sur la largeur réellement rendue.
+
+   Le châssis vient du rendu Rotato de Chandler : dernière image de sa
+   vidéo, écran percé dans le PNG (alpha 0, coins d'iPhone). */
+.tel{position:relative;width:100%;max-width:var(--tel-l,392px);margin:0 auto;
+  /* DEUX ombres : une noire qui pose le poids, une violette très faible qui
+     fait rebondir la lumière du site sur la tranche. C'est ce deuxième
+     éclat, presque invisible, qui donne l'impression que l'objet DÉCOLLE
+     au lieu d'être collé sur la page. */
+  filter:drop-shadow(0 46px 58px rgba(0,0,0,.85))
+         drop-shadow(0 14px 22px rgba(140,82,255,.20));
+  animation:ajFlotte 7s ease-in-out infinite;}
+@keyframes ajFlotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.tel > img{display:block;width:100%;height:auto;position:relative;z-index:2;
+  pointer-events:none;user-select:none;}
+.ecran{position:absolute;z-index:1;overflow:hidden;left:12.037%;top:6.221%;width:76.445%;height:87.439%;border-radius:14.749%/6.871%;background:#000;}
+
+/* la scène à l'échelle 1:1 de l'app, réduite d'un bloc */
+.app{position:absolute;top:0;left:0;width:393px;
+  transform-origin:top left;display:flex;flex-direction:column;
+  font-family:var(--app-texte);}
+
+/* ── LE FOND — AppleNoirBackground variant="ajnaya" ──────────────────
+   CINQ couches, pas deux. Et le halo n'est PAS un radial : c'est un
+   dégradé LINÉAIRE diagonal partant du centre, clippé dans un cercle.
+   La moitié « avant » le centre est donc de la couleur pleine. Un
+   radial symétrique éteint le halo trop tôt et aplatit le fond. */
+.aj-fond{position:absolute;inset:0;overflow:hidden;pointer-events:none;background:#000;}
+.aj-fond i{position:absolute;display:block;}
+.h-violet{width:479px;height:479px;top:-149px;left:-130px;border-radius:50%;
+  background:linear-gradient(to bottom right,
+    rgba(140,82,255,.30) 0%, rgba(140,82,255,.30) 50%, rgba(140,82,255,0) 100%);
+  animation:ajRespire 18s ease-in-out infinite;}
+@keyframes ajRespire{0%,100%{opacity:.93}50%{opacity:1}}
+.h-cyan{width:540px;height:540px;bottom:-130px;right:-149px;border-radius:50%;
+  background:linear-gradient(to top left,
+    rgba(0,212,255,.20) 0%, rgba(0,212,255,.20) 50%, rgba(0,212,255,0) 100%);}
+.h-wash{inset:0;background:linear-gradient(180deg,
+  rgba(140,82,255,.06) 0%, rgba(140,82,255,0) 30%,
+  rgba(0,212,255,0) 62%, rgba(0,212,255,.05) 100%);}
+/* 0,6 % et non 1,2 % : sur cet écran le 1,2 % remontait le noir et
+   éteignait les halos (AppleNoirBackground.tsx:342-345). */
+.h-grain{inset:0;background:rgba(255,255,255,.006);}
+
+/* ── L'EN-TÊTE — NU. Pas de plaque, pas de bordure, pas de flou. ──── */
+.aj-head{position:relative;z-index:1;display:flex;align-items:center;gap:10px;
+  padding:10px 16px;background:transparent;overflow:hidden;flex:none;}
+.aj-orbe{width:40px;height:40px;border-radius:20px;flex:none;
+  background:rgba(26,16,48,.9);border:1px solid rgba(140,82,255,.45);
+  box-shadow:0 0 9px rgba(140,82,255,.25);
+  display:flex;align-items:center;justify-content:center;position:relative;}
+/* l'anneau cyan fait 30 px, pas 40 : l'œil est en retrait de 5 px */
+.aj-orbe .anneau{position:absolute;width:30px;height:30px;border-radius:15px;
+  border:1.5px solid #6DEAFF;opacity:.4;pointer-events:none;}
+.aj-orbe svg{width:30px;height:30px;display:block;}
+.aj-id{flex:1;min-width:0;}
+/* 19 px et 800 : le style écrase TYPO.h3 (17) juste après le spread. */
+.aj-nom{font-family:var(--app-texte);font-size:19px;line-height:24px;font-weight:800;
+  letter-spacing:-.4px;color:#F8FAFC;}
+/* 12 px mais lineHeight 14 HÉRITÉ du token : il n'est pas écrasé. */
+.aj-etat{display:flex;align-items:center;gap:6px;font-size:12px;line-height:14px;
+  letter-spacing:0;color:rgba(248,250,252,.55);margin-top:1px;}
+/* 6 px de couleur pleine. Ni glow, ni ombre, ni bordure.
+   ⚠️ Le texte de l'app est « Prête, {prénom} ». Sur le SITE, le visiteur
+      n'a pas de prénom connu : afficher un prénom en dur serait un faux.
+      On garde donc l'état, sans la personne. */
+.aj-etat i{width:6px;height:6px;border-radius:3px;background:#10B981;flex:none;}
+/* pastille de verre à 10 %, le « rond violet » perçu est le GLYPHE.
+   Inline dans la rangée, jamais en absolu (bug corrigé le 05/08). */
+.aj-aide{width:32px;height:32px;border-radius:16px;flex:none;border:none;cursor:pointer;
+  background:rgba(140,82,255,.10);color:#8C52FF;
+  display:flex;align-items:center;justify-content:center;padding:0;}
+.aj-aide svg{width:18px;height:18px;}
+
+/* ── LE FIL ────────────────────────────────────────────────────────── */
+.aj-fil{position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;
+  padding:6px 12px 4px;scrollbar-width:none;}
+.aj-fil::-webkit-scrollbar{display:none;}
+.aj-ligne{display:flex;flex-direction:column;margin-bottom:12px;
+  animation:ajEntre .22s ease-out both;}
+@keyframes ajEntre{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.aj-ligne.toi{align-items:flex-end;}
+.aj-ligne .etiq{font-size:11px;line-height:14px;color:rgba(248,250,252,.38);
+  margin-bottom:4px;}
+/* retraits ASYMÉTRIQUES : 8 à gauche pour Ajnaya, 6 à droite pour Toi */
+.aj-ligne.elle .etiq{margin-left:8px;}
+.aj-ligne.toi  .etiq{margin-right:6px;}
+.aj-bulle{max-width:93%;font-size:15px;line-height:22px;letter-spacing:0;}
+
+/* Toi : coin bas-DROITE coupé, padding UNIFORME 13, AUCUNE ombre,
+   texte OPAQUE. Trois différences avec la bulle d'Ajnaya. */
+.aj-ligne.toi .aj-bulle{background:rgba(140,82,255,.16);
+  border:1px solid rgba(140,82,255,.34);
+  border-radius:20px 20px 8px 20px;padding:13px;color:#F8FAFC;}
+/* Ajnaya : coin bas-GAUCHE coupé, padding 13/15/14, ombre, et surtout
+   une bordure NON UNIFORME — le haut est à .14, les autres à .09. */
+.aj-ligne.elle .aj-bulle{background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.09);border-top-color:rgba(255,255,255,.14);
+  border-radius:20px 20px 20px 8px;padding:13px 15px 14px;
+  color:rgba(248,250,252,.92);box-shadow:0 12px 28px rgba(0,0,0,.4);}
+/* une réponse n'est pas un paragraphe : des blocs de sens, 10 px entre eux */
+.aj-bloc + .aj-bloc{margin-top:10px;}
+.aj-bloc.tag{font-family:var(--data);font-size:9.5px;font-weight:700;
+  letter-spacing:.14em;display:block;margin-bottom:4px;}
+.aj-bloc .c{color:#00D4FF;} .aj-bloc .g{color:#2ECC71;}
+.aj-bloc b{color:#F8FAFC;font-weight:700;}
+/* (retiré le 29/08 : ces deux règles visaient une classe .aj-mater que le
+   script ne posait jamais — c'est ce décalage qui rendait la poussière
+   invisible. Tout le positionnement de la toile est désormais écrit en
+   ligne, dans materialiser().) */
+
+/* ── LA CARTE D'ACTION — le contenant d'icône est un CERCLE ────────── */
+.aj-chip{font-family:var(--app-texte);display:flex;align-items:center;gap:10px;width:100%;cursor:pointer;
+  margin-top:8px;padding:11px 13px;border-radius:16px;text-align:left;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);
+  border-top-color:rgba(255,255,255,.14);color:#F8FAFC;}
+.aj-chip .ico{width:28px;height:28px;border-radius:9999px;flex:none;
+  background:rgba(0,212,255,.12);color:#00D4FF;
+  display:flex;align-items:center;justify-content:center;}
+.aj-chip .ico svg{width:15px;height:15px;}
+/* Deux portes, deux couleurs : l'essai prend l'accent produit (cyan),
+   WhatsApp garde SA couleur — un chauffeur reconnaît le vert avant de
+   lire le mot. */
+.aj-chip.essai .ico{background:rgba(0,212,255,.14);color:#00C9FF;}
+.aj-chip.wa .ico{background:rgba(37,211,102,.14);color:#25D366;}
+.aj-chip + .aj-chip{margin-top:6px;}
+.aj-chip .lib{flex:1;font-size:14px;font-weight:700;}
+.aj-chip .chev{color:rgba(248,250,252,.38);font-size:15px;}
+
+/* ── LE DOCK — transparent. Le halo cyan perçu autour du micro vient
+   du FOND, pas d'une ombre : il n'y en a aucune dans le code. ─────── */
+.aj-dock{position:relative;z-index:1;flex:none;padding-bottom:2px;background:transparent;}
+.aj-hair{display:block;height:1px;margin:0 24px 10px;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.09) 50%,rgba(255,255,255,0));}
+.aj-sugg{display:flex;align-items:center;gap:7px;padding:0 18px 9px;
+  font-size:13px;font-weight:700;color:#F8FAFC;cursor:pointer;}
+.aj-sugg svg{width:16px;height:16px;color:#8C52FF;flex:none;}
+.aj-row{display:flex;align-items:flex-end;gap:10px;padding:10px 18px;}
+.aj-mic{width:48px;height:48px;border-radius:9999px;flex:none;cursor:pointer;
+  background:rgba(0,212,255,.10);border:1px solid rgba(0,212,255,.30);
+  border-top-color:rgba(0,212,255,.42);color:#00D4FF;
+  display:flex;align-items:center;justify-content:center;}
+.aj-mic svg{width:18px;height:18px;}
+.aj-champ{flex:1;min-height:48px;width:100%;outline:none;font-family:inherit;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);
+  border-radius:24px;padding:12px 18px;font-size:14.5px;color:#F8FAFC;}
+.aj-champ::placeholder{color:rgba(248,250,252,.38);}
+.aj-champ:focus{border-color:rgba(0,212,255,.45);}
+.aj-send{width:48px;height:48px;border-radius:9999px;flex:none;border:none;cursor:pointer;
+  background:#00D4FF;color:#05070F;display:flex;align-items:center;justify-content:center;}
+.aj-send svg{width:18px;height:18px;}
+
+@media(max-width:560px){.tel{--tel-l:320px;}}
+
+/* ══ LA CARTE D'ESTIMATION (DecisionBanner) ══════════════════════════
+   Son bord haut est DOUBLE : une lumière blanche pleine largeur, PUIS
+   un filet violet→cyan en retrait de 18 px qui s'éteint aux deux bouts.
+   Les deux coexistent. Un seul des deux et la carte perd son relief. */
+.aj-banniere{position:relative;display:flex;align-items:center;gap:12px;
+  margin:2px 6px 0;padding:14px 17px;border-radius:22px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(to bottom,rgba(255,255,255,.06),rgba(255,255,255,.025));
+  box-shadow:0 14px 32px rgba(0,0,0,.45);cursor:pointer;}
+.aj-banniere .lum{position:absolute;top:0;left:0;right:0;height:1px;
+  background:rgba(255,255,255,.13);}
+.aj-banniere .filet{position:absolute;top:0;left:18px;right:18px;height:1px;
+  background:linear-gradient(90deg,rgba(140,82,255,0),rgba(140,82,255,.5),
+    rgba(0,212,255,.4),rgba(0,212,255,0));}
+.aj-banniere .gauche{flex:1;min-width:0;}
+/* alignés sur la LIGNE DE BASE, pas centrés — et trois couleurs distinctes */
+.aj-sous{display:flex;align-items:baseline;gap:5px;}
+.aj-approx{font-size:17px;font-weight:600;color:rgba(255,255,255,.45);}
+.aj-montant{font-size:31px;font-weight:800;letter-spacing:-1.4px;color:#F8FAFC;
+  font-variant-numeric:tabular-nums;}
+.aj-unite{font-size:15px;font-weight:600;color:rgba(255,255,255,.72);}
+.aj-zone{font-size:13px;color:rgba(248,250,252,.62);margin-top:2px;}
+.aj-droite{display:flex;align-items:center;gap:8px;flex:none;}
+.aj-tampon{font-size:11px;color:rgba(248,250,252,.45);}
+.aj-banniere .chev{color:rgba(248,250,252,.38);font-size:16px;}
+
+/* ══ LA FRISE DES 3 PROCHAINES HEURES ════════════════════════════════
+   Le halo vit sur la PISTE, jamais sur les points (loi R3 du système).
+   Et la piste ne finit PAS en violet : elle S'ÉTEINT en blanc à 12 %. */
+.aj-frise{margin:16px 6px 0;padding:0 8px;}
+.aj-frise .titre{font-size:10px;line-height:14px;font-weight:800;letter-spacing:2.5px;
+  text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:13px;}
+.aj-piste{position:relative;height:2.5px;border-radius:1.25px;
+  background:linear-gradient(90deg,rgba(0,212,255,.90) 0%,rgba(140,82,255,.75) 50%,
+    rgba(255,255,255,.12) 100%);
+  box-shadow:0 0 12px rgba(0,212,255,.55);}
+.aj-points{position:absolute;top:-4px;left:0;right:0;display:flex;pointer-events:none;}
+.aj-heures{display:flex;margin-top:11px;}
+.aj-tiers{width:33.333%;display:flex;flex-direction:column;}
+.aj-tiers.d{align-items:flex-start;} .aj-tiers.m{align-items:center;} .aj-tiers.f{align-items:flex-end;}
+.aj-point{width:10px;height:10px;border-radius:5px;background:#070A14;
+  border:2px solid rgba(255,255,255,.18);}
+.aj-point.on{border-color:#00D4FF;}
+.aj-heure{font-size:12px;color:rgba(248,250,252,.6);font-variant-numeric:tabular-nums;}
+.aj-vide{font-size:12px;color:rgba(248,250,252,.38);margin-top:8px;}
+
+/* ── AJOUT SITE, ABSENT DE L'APP — le verrou abonné ──────────────────
+   ⚠️ À dire franchement : ce verrou N'EXISTE PAS dans l'application.
+   Vérifié : NextHoursLine ne reçoit que {slots, onSlotPress}, aucun test
+   d'abonnement avant ni après, et useTierLimits ne gouverne que le quota
+   de messages et le micro. Dans l'app, un point éteint signifie « rien de
+   mesuré », jamais « contenu bloqué » — c'est une doctrine d'honnêteté.
+   Ce bloc est donc une ADDITION demandée pour le site, pas une
+   reproduction. Il ne doit jamais être présenté comme le comportement
+   de l'app. */
+.aj-verrou{margin-top:9px;display:flex;align-items:center;gap:7px;
+  padding:8px 10px;border-radius:12px;
+  background:rgba(140,82,255,.10);border:1px solid rgba(140,82,255,.24);}
+.aj-verrou svg{width:13px;height:13px;color:#8C52FF;flex:none;}
+.aj-verrou span{font-size:11.5px;line-height:15px;color:rgba(248,250,252,.72);}
+.aj-verrou b{color:#F8FAFC;font-weight:700;}
+
+/* ══ CE QUI LA REND VIVANTE ══════════════════════════════════════════ */
+/* la ligne de pensée : 45 % de large, aller-retour de 5 200 ms */
+.aj-pense{position:absolute;bottom:0;left:0;right:0;height:1px;overflow:hidden;z-index:3;}
+.aj-pense i{position:absolute;top:0;bottom:0;width:45%;
+  background:linear-gradient(90deg,rgba(140,82,255,0),#8C52FF 25%,#00D4FF 50%,#8C52FF 75%,rgba(140,82,255,0));
+  animation:ajPense 5200ms cubic-bezier(.45,0,.55,1) infinite alternate;}
+@keyframes ajPense{from{transform:translateX(-100%)}to{transform:translateX(222%)}}
+/* les deux traînées : jamais au-dessus de 5 % d'opacité */
+.aj-trainee{position:absolute;left:0;height:1px;width:60%;pointer-events:none;z-index:0;}
+.aj-t1{top:27.7%;background:linear-gradient(90deg,transparent,#00D4FF,transparent);
+  animation:ajT1 9000ms cubic-bezier(.45,0,.55,1) infinite;}
+.aj-t2{top:55.4%;background:linear-gradient(90deg,transparent,#8C52FF,transparent);
+  animation:ajT2 12500ms cubic-bezier(.45,0,.55,1) infinite;}
+@keyframes ajT1{0%{transform:translateX(-100%) rotate(-7deg);opacity:0}
+  20%,50%,80%{opacity:.05}100%{transform:translateX(166%) rotate(-7deg);opacity:0}}
+@keyframes ajT2{0%{transform:translateX(-100%) rotate(5deg);opacity:0}
+  20%,50%,80%{opacity:.05}100%{transform:translateX(166%) rotate(5deg);opacity:0}}
+/* le clin d'œil : 175 ms, une fois toutes les 26 secondes */
+.aj-orbe svg{animation:ajClin 26175ms infinite;transform-origin:center;}
+@keyframes ajClin{0%,99.32%{transform:scaleY(1)}99.67%{transform:scaleY(.12)}100%{transform:scaleY(1)}}
+/* le chuchotement d'attente */
+.aj-chuchote{align-self:flex-start;font-size:12px;color:rgba(248,250,252,.38);
+  margin:14px 0 0;padding-left:6px;animation:ajEntre .22s ease-out both;}
+/* le séparateur de date */
+.aj-jour{text-align:center;font-size:11px;color:rgba(248,250,252,.38);margin:10px 0 12px;}
+
+@media (prefers-reduced-motion:reduce){
+  .aj-pense i,.aj-trainee,.aj-orbe svg,.h-violet{animation:none!important;}
+}
+
+/* ══ LA SCÈNE — le téléphone arrive comme dans Rotato ═════════════════
+   Trois couches emboîtées, chacune avec SA transformation : on ne peut
+   pas empiler deux animations de transform sur un même élément.
+   .scene = la perspective · .arrivee = l'entrée · .tel = le flottement. */
+.scene{perspective:1500px;perspective-origin:50% 42%;min-height:60px;
+  display:flex;justify-content:center;}
+.arrivee{transform-style:preserve-3d;opacity:0;}
+.arrivee.on{animation:ajArrive 1150ms cubic-bezier(.16,1,.3,1) both;}
+@keyframes ajArrive{
+  0%  {opacity:0;transform:rotateY(-32deg) rotateX(10deg) scale(.78) translateY(46px);}
+  55% {opacity:1;}
+  100%{opacity:1;transform:rotateY(0) rotateX(0) scale(1) translateY(0);}
+}
+
+/* ── L'étiquette au-dessus : le point vert qui respire ─────────────── */
+.vivant{display:flex;align-items:center;justify-content:center;gap:9px;
+  margin:0 0 16px;opacity:0;}
+.vivant.on{animation:ajFondu .7s ease-out .35s both;}
+@keyframes ajFondu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.vivant .pt{width:8px;height:8px;border-radius:50%;background:#10B981;flex:none;
+  position:relative;animation:ajBat 2.6s ease-in-out infinite;}
+/* Une seule onde, très lente. Deux, et ça devient une alarme. */
+.vivant .pt::after{content:'';position:absolute;inset:-5px;border-radius:50%;
+  border:1px solid #10B981;opacity:0;animation:ajOnde 2.6s ease-out infinite;}
+@keyframes ajBat{0%,100%{opacity:1;box-shadow:0 0 9px rgba(16,185,129,.55)}
+  50%{opacity:.72;box-shadow:0 0 14px rgba(16,185,129,.85)}}
+@keyframes ajOnde{0%{opacity:.5;transform:scale(.7)}70%,100%{opacity:0;transform:scale(1.5)}}
+.vivant em{font-style:italic;font-size:14px;color:rgba(255,255,255,.62);letter-spacing:.01em;}
+
+/* ══ LA PRÉDICTION — le bloc qui doit être limpide ═══════════════════
+   L'app affiche des créneaux éteints quand rien n'est mesuré. Ici on dit
+   autre chose, et il faut l'assumer : Ajnaya SAIT prédire, et c'est ce
+   savoir-là qui se paie. Le premier créneau est donné, les deux suivants
+   sont voilés — on montre la marchandise avant de demander. */
+.aj-frise .titre{font-size:10px;line-height:14px;font-weight:800;letter-spacing:2.5px;
+  text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:5px;}
+.aj-promesse{font-size:12.5px;line-height:17px;color:rgba(248,250,252,.72);
+  margin:0 0 13px;}
+.aj-promesse b{color:#00D4FF;font-weight:700;}
+.aj-tiers .val{font-size:13.5px;font-weight:700;color:#F8FAFC;margin-top:4px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.2px;}
+.aj-tiers.floue .val, .aj-tiers.floue .aj-heure{filter:blur(4.5px);opacity:.75;
+  user-select:none;}
+.aj-point.futur{border-color:#8C52FF;}
+.aj-verrou{margin-top:11px;display:flex;align-items:center;gap:9px;cursor:pointer;
+  padding:10px 12px;border-radius:13px;
+  background:linear-gradient(96deg,rgba(140,82,255,.16),rgba(0,212,255,.10));
+  border:1px solid rgba(140,82,255,.30);}
+.aj-verrou svg{width:14px;height:14px;color:#8C52FF;flex:none;}
+.aj-verrou span{font-size:11.5px;line-height:16px;color:rgba(248,250,252,.8);
+  flex:1;text-wrap:balance;}
+.aj-verrou b{color:#F8FAFC;font-weight:700;}
+.aj-verrou .fl{color:#00D4FF;font-weight:700;font-size:14px;}
+
+/* ══ LE MICRO QUI ÉCOUTE ═════════════════════════════════════════════ */
+.aj-mic.ecoute{background:rgba(0,212,255,.22);border-color:rgba(0,212,255,.65);
+  color:#EF4444;}
+.aj-onde{display:flex;align-items:flex-end;gap:2px;height:12px;margin-left:2px;}
+.aj-onde i{width:2.5px;border-radius:1px;background:#00D4FF;height:4px;
+  animation:ajEq 800ms cubic-bezier(.45,0,.55,1) infinite;}
+.aj-onde i:nth-child(2){animation-delay:150ms}
+.aj-onde i:nth-child(3){animation-delay:300ms}
+.aj-onde i:nth-child(4){animation-delay:450ms}
+@keyframes ajEq{0%,100%{height:4px}50%{height:12px}}
+.aj-champ.dicte{color:#F8FAFC;}
+
+@media(max-width:560px){.tel{--tel-l:330px;}}
+

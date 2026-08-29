@@ -7,6 +7,7 @@ import { useTypewriter } from '@/hooks/useTypewriter'
 import { recordSearch, readVisitState, type SarcasmLevel } from '@/lib/sarcasticVisits'
 import { getVisitorId } from '@/lib/zoneFingerprint'
 import ZoneSearchResultCard from './ZoneSearchResultCard'
+import AjnayaPhoneDemo from './AjnayaPhoneDemo'
 import TestimonialVideoCard from './TestimonialVideoCard'
 import { TESTIMONIALS } from './testimonials.data'
 
@@ -47,6 +48,36 @@ export default function ZoneSearchBarHero() {
   const [loading, setLoading] = useState(false)
   const [sarcasmLevel, setSarcasmLevel] = useState<SarcasmLevel>(1)
   const [hasInteracted, setHasInteracted] = useState(false)
+
+  /* ══ LE TÉLÉPHONE OU LA CARTE ═══════════════════════════════════════════
+     Le brief du fil Pieuvre (§3, §11.7) est explicite : le téléphone REMPLACE
+     la carte quand la recherche aboutit, et la carte reste le REPLI si quoi que
+     ce soit échoue.
+
+     ⚠️ ON MESURE, ON NE SUPPOSE PAS. Deux conditions, et elles se vérifient :
+       · la toile 2D existe — sans elle, pas de poussière, et la poussière EST
+         la signature visuelle de cet écran ;
+       · les polices sont chargées — sinon la photo du bloc est prise dans une
+         police et le texte affiché dans une autre : les grains ne collent pas
+         aux lettres. Le brief le dit, la démo attend `document.fonts.ready`.
+
+     ⚠️ LE MOUVEMENT RÉDUIT N'EST PAS UN REPLI. La démo le respecte déjà : pas
+     de poussière, pas de flottement, pas de respiration. Renvoyer ces gens sur
+     la carte les priverait du produit pour une préférence d'accessibilité. */
+  const [telephonePret, setTelephonePret] = useState(false)
+  useEffect(() => {
+    let vivant = true
+    try {
+      const toile = document.createElement('canvas')
+      if (!toile.getContext('2d')) return
+    } catch {
+      return
+    }
+    const pret = () => { if (vivant) setTelephonePret(true) }
+    if (document.fonts?.ready) document.fonts.ready.then(pret).catch(() => {})
+    else pret()
+    return () => { vivant = false }
+  }, [])
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Placeholder animé (en boucle)
@@ -283,11 +314,26 @@ export default function ZoneSearchBarHero() {
         {/* Résultat search */}
         {stats && (
           <div className="mt-8 max-w-xl mx-auto text-left">
-            <ZoneSearchResultCard
-              stats={stats}
-              sarcasmLevel={sarcasmLevel}
-              onWhatsAppClick={handleWAClick}
-            />
+            {/* ⚠️ `ZoneSearchResultCard` N'EST PAS SUPPRIMÉE, ET NE DOIT PAS
+                L'ÊTRE. Elle porte les commentaires de vérité commerciale
+                accumulés depuis le 14/08 — pourquoi tel chiffre a été retiré,
+                pourquoi telle phrase est interdite. Les perdre, c'est rouvrir
+                des portes déjà fermées. Elle reste le repli. */}
+            {telephonePret ? (
+              <AjnayaPhoneDemo
+                zone={stats.zone_match || zoneInput}
+                onEssaiClick={() => {
+                  if (typeof window !== 'undefined') window.location.href = '/tarifs3'
+                }}
+                onWhatsAppClick={handleWAClick}
+              />
+            ) : (
+              <ZoneSearchResultCard
+                stats={stats}
+                sarcasmLevel={sarcasmLevel}
+                onWhatsAppClick={handleWAClick}
+              />
+            )}
 
             {/* Preuve incarnée AU MOMENT DU DOUTE (juste après le résultat) — Binaté, cas réel */}
             <div className="mt-5">
