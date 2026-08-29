@@ -70,28 +70,44 @@ export type TexteRelance = {
 }
 
 /**
- * ⚠️ CES DEUX TEXTES SONT UN BROUILLON, PAS UNE DÉCISION.
- * Ils sont écrits pour que quelque chose existe et se lise, pas pour rester.
- * Ils partent après le paiement : on tutoie (règle de Chandler). Ils ne parlent
- * pas d'argent et ne réclament rien — ils disent ce que le chauffeur y gagne.
+ * ⚠️ RÉÉCRITS LE 29/08 SOUS LA GRILLE /foreas-copy-atomic. CE QUI N'ALLAIT PAS :
+ *
+ * Mail 1 — « Il manque ton numéro » : c'était FOREAS qui réclamait son dû. La
+ * marque devenait le héros demandeur (anti-pattern Miller n°1). Un titre porte
+ * SON gain, jamais notre manque.
+ *
+ * Mail 2 — « Tu paies pour un service dont la moitié dort » : un reproche
+ * adressé à quelqu'un qui paie. §8 (émotionnel) : le shaming braque, il ne
+ * convertit pas. Et « toujours pas » enfonçait le reproche.
+ *
+ * Les deux disaient « Compléter » — un verbe de formulaire. §2 du playbook :
+ * verbe + objet, et l'objet doit être le bénéfice, pas la corvée.
+ *
+ * Le second garde son rôle de dernier message, mais il RECONNAÎT le choix au
+ * lieu de le juger. C'est la seule urgence vraie dont on dispose, et elle est
+ * tenue par le code : le plafond de deux envois la rend honnête.
  */
 export const TEXTES: Record<1 | 2, TexteRelance> = {
   1: {
-    sujet: 'Il manque ton numéro',
-    titre: 'Il manque ton numéro',
+    sujet: 'Ajnaya t’attend sur WhatsApp',
+    titre: 'Ajnaya t’attend sur WhatsApp',
     corps:
-      "Ton abonnement est actif et ton compte est prêt. Il reste une chose : ton prénom et ton numéro. " +
-      "Sans eux, Ajnaya ne peut ni t'appeler par ton nom, ni te prévenir sur WhatsApp quand la demande monte près de toi.",
-    bouton: 'Compléter en 30 secondes',
+      'Quand tu roules, tu ne regardes pas ton écran. ' +
+      "C'est pour ça qu'Ajnaya passe par WhatsApp : une zone qui chauffe, un pic à l'aéroport, " +
+      'le bon moment pour rentrer. ' +
+      'Il lui manque ton prénom et ton numéro. Trente secondes. ' +
+      "Personne ne t'appellera pour te vendre quoi que ce soit.",
+    bouton: 'Brancher WhatsApp',
   },
   2: {
-    sujet: 'Ajnaya ne peut toujours pas te prévenir',
-    titre: 'Ajnaya ne peut toujours pas te prévenir',
+    sujet: 'Dernier message à ce sujet',
+    titre: 'Dernier message à ce sujet',
     corps:
-      'Tu paies pour un service dont la moitié dort. Les alertes de zones, les pics de demande, ' +
-      "les rappels avant une course : tout ça passe par WhatsApp, et on n'a pas ton numéro. " +
-      'Trente secondes suffisent.',
-    bouton: 'Compléter en 30 secondes',
+      "Tu n'as pas donné ton numéro, et c'est ton droit. L'app marche très bien sans. " +
+      "Ce qui ne marche pas sans, c'est Ajnaya quand tu roules sans regarder ton écran : " +
+      "elle voit la zone chauffer, et elle n'a personne à prévenir. " +
+      "Trente secondes si tu changes d'avis. Sinon on n'en reparle plus.",
+    bouton: 'Brancher WhatsApp',
   },
 }
 
@@ -119,14 +135,33 @@ export function panierAbandonneActif(): boolean {
  */
 export const PANIER_DELAI_MINUTES = 15
 
-/** ⚠️ BROUILLON, PAS UNE DÉCISION. À relire et à changer. */
+/**
+ * ⚠️ RÉÉCRIT LE 29/08 SOUS LA GRILLE /foreas-copy-atomic. CE QUI N'ALLAIT PAS :
+ *
+ * · « Tu y étais presque » = de la consolation. On le félicitait d'avoir
+ *   renoncé. §8 (émotionnel) : la pitié infantilise et braque.
+ * · La première phrase parlait de NOTRE tunnel (« ton inscription à FOREAS »),
+ *   pas de SA vie. Anti-pattern Miller n°1 : il doit se reconnaître dans la
+ *   première phrase, et le héros c'est lui.
+ * · Zéro bénéfice. Le mail parlait de paiement et d'annulation — nos
+ *   conditions — jamais de ce qu'il rate. Aucun désir touché.
+ * · Le mot « prélevé » : champ lexical de la perte, banni par Chandler le
+ *   28/08. Il était encore là.
+ *
+ * ⚠️ ET AUCUN CHIFFRE DE GAIN N'A ÉTÉ AJOUTÉ, EXPRÈS. La grille réclame du
+ * concret chiffré ; le canon du dépôt interdit toute affirmation non mesurée.
+ * Entre les deux, c'est le canon qui gagne. Les seuls chiffres ici sont ceux
+ * qu'on peut prouver : trois jours, zéro euro, un clic.
+ */
 export const PANIER_TEXTE: TexteRelance = {
-  sujet: 'Tu y étais presque',
-  titre: 'Tu y étais presque',
+  sujet: 'Trois jours pour voir si ça change ta journée',
+  titre: 'Trois jours pour voir ce que ça change',
   corps:
-    "Tu as commencé ton inscription à FOREAS et tu t'es arrêté avant la fin. " +
-    "Rien n'a été prélevé, et rien ne le sera : les trois premiers jours sont offerts, " +
-    "et l'annulation prend un clic. Si quelque chose a bloqué, réponds à ce message — " +
-    "on regarde.",
-  bouton: 'Reprendre où tu en étais',
+    'Tu choisis tes zones au feeling, comme tout le monde. ' +
+    "Ajnaya, elle, regarde la demande en direct et te dit où elle monte. " +
+    "C'est tout ce qu'elle fait, et c'est déjà beaucoup. " +
+    'Trois jours offerts pour voir ce que ça donne sur tes journées à toi. ' +
+    "0 € aujourd'hui, et un clic pour arrêter quand tu veux. " +
+    "Si quelque chose a bloqué tout à l'heure, réponds à ce mail — je lis.",
+  bouton: 'Lancer mes 3 jours',
 }
