@@ -69,8 +69,20 @@ const PAGES_AVEC_LEUR_PROPRE_PORTE = new Set(['/'])
  * milieu du paiement. » Une bulle flottante posée par-dessus une saisie de carte
  * bancaire est exactement cette sortie-là — et sur téléphone, elle recouvre en
  * plus la zone où Stripe pose ses champs.
+ *
+ * 29/08/2026 — la liste ne contenait QUE `/tarifs3`. Les autres pages du même
+ * tunnel étaient découvertes : `/success` (juste après le paiement, là où la
+ * seule action doit être « télécharge l'app »), et `/pay`, `/checkout`,
+ * `/subscribe` qui mènent au même formulaire. Le raisonnement ci-dessus vaut
+ * pour toutes : le tunnel est hermétique du premier champ au dernier écran.
  */
-const PAGES_SANS_AUCUNE_PORTE = new Set(['/tarifs3'])
+const PAGES_SANS_AUCUNE_PORTE = new Set([
+  '/tarifs3',
+  '/success',
+  '/pay',
+  '/checkout',
+  '/subscribe',
+])
 
 export default function PorteWidgetAjnaya() {
   const pathname = usePathname()

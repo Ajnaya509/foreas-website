@@ -70,6 +70,31 @@ function villeValide(v: unknown): string | null {
   return t.split(/\s+/).filter(Boolean).length <= 4 ? t : null
 }
 
+/**
+ * Un prénom : lettres, espaces, apostrophes et traits d'union. Un seul mot
+ * composé au plus (« Jean-Pierre », « N'Guyen »), 32 caractères maximum.
+ *
+ * ⚠️ 29/08/2026 — POURQUOI CE CHAMP EXISTE MAINTENANT.
+ * La page de succès affichait « Bienvenue, chauffeur ». Ce n'était pas un choix :
+ * `billing_address_collection` est passé de `required` à `auto` le 28 pour
+ * débloquer les cartes refusées — et Stripe a cessé, du même coup, de collecter
+ * le NOM de facturation. `session.customer_details.name` est vide depuis.
+ *
+ * On ne le récupère donc plus de Stripe : on le demande nous-mêmes. Il sert à
+ * trois endroits d'un coup — la page de succès, le mail de bienvenue, et
+ * `auth.users.raw_user_meta_data.full_name`, que l'app lit à sa première
+ * ouverture. C'est pour ça qu'il vaut le champ supplémentaire.
+ *
+ * Même liste blanche que la ville : on décrit ce qui est autorisé, jamais ce
+ * qui est interdit.
+ */
+function prenomValide(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  const t = v.trim().slice(0, 32)
+  if (!/^[\p{L}][\p{L}'’\- ]{0,31}$/u.test(t)) return null
+  return t.split(/\s+/).filter(Boolean).length <= 3 ? t : null
+}
+
 export async function POST(request: NextRequest) {
   const cle = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
   if (!cle) {
@@ -85,6 +110,7 @@ export async function POST(request: NextRequest) {
 
   const telephone = telephoneValide(corps?.telephone)
   const ville = villeValide(corps?.ville)
+  const prenom = prenomValide(corps?.prenom)
   /* ⚠️ 28/08 — LA VILLE EST DEVENUE FACULTATIVE, ET C'EST L'ORDRE DES CHOSES.
      Le champ a été retiré du formulaire (décision de Chandler : un champ de
      moins sur la page qui encaisse). Si cette route avait continué à l'exiger,
@@ -116,9 +142,13 @@ export async function POST(request: NextRequest) {
     await stripe.checkout.sessions.update(idSession, {
       /* On n'écrit `foreas_city` que si une ville existe : une clé posée à la
          chaîne vide écraserait une valeur déjà présente sur la session. */
-      metadata: ville
-        ? { foreas_phone: telephone, foreas_city: ville }
-        : { foreas_phone: telephone },
+      /* On ne pose une clé que si sa valeur existe : une clé écrite à la chaîne
+         vide écraserait une valeur déjà présente sur la session. */
+      metadata: {
+        foreas_phone: telephone,
+        ...(ville ? { foreas_city: ville } : {}),
+        ...(prenom ? { foreas_prenom: prenom } : {}),
+      },
     })
     // On ne rend rien de la session. « écrit » suffit à l'appelant.
     return NextResponse.json({ ecrit: true }, { headers: { 'Cache-Control': 'no-store' } })

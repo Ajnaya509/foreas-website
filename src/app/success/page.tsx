@@ -130,8 +130,18 @@ export default async function SuccessPage({ searchParams }: PageProps) {
   const customer = session.customer as Stripe.Customer | null
   const customerEmail =
     session.customer_details?.email ?? customer?.email ?? ''
+  /* ⚠️ 29/08/2026 — CETTE PAGE DISAIT « Bienvenue, chauffeur ».
+     Pas un choix de copie : `customer_details.name` est vide depuis que
+     `billing_address_collection` est passé à `auto` (28/08, pour débloquer les
+     cartes refusées). Stripe ne collecte plus le nom de facturation.
+     Notre formulaire demande maintenant le prénom et l'écrit dans les
+     métadonnées de la session — c'est donc la PREMIÈRE source à lire.
+     Les deux suivantes restent pour les sessions de /tarifs2, qui portent
+     encore un nom de facturation. Et « chauffeur » reste le dernier recours :
+     mieux vaut un mot générique qu'un « Bienvenue, ». */
+  const metaSession = (session.metadata as Record<string, string> | null) || {}
   const customerName =
-    session.customer_details?.name ?? customer?.name ?? ''
+    metaSession.foreas_prenom || session.customer_details?.name || customer?.name || ''
   const firstName = customerName.split(' ')[0] || 'chauffeur'
 
   // Tier réel via price.lookup_key (préférable au metadata.plan qui peut diverger)

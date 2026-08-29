@@ -78,11 +78,18 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
 
      Un chauffeur payé, sans compte, sans que personne ne le sache. Exactement
      la panne que le commentaire du webhook dit avoir déjà été payée une fois. */
+  /* ⚠️ 29/08/2026 — LE PRÉNOM EST DEMANDÉ ICI, ET C'EST LE SEUL ENDROIT POSSIBLE.
+     La page de succès disait « Bienvenue, chauffeur ». Stripe ne collecte plus
+     le nom de facturation depuis que `billing_address_collection` est passé à
+     `auto` (28/08, pour débloquer les cartes refusées) : `customer_details.name`
+     est vide. Ce champ le remplace, et il sert TROIS fois — l'écran de succès,
+     le mail de bienvenue, et le nom que l'app affiche à sa première ouverture. */
+  const [prenom, setPrenom] = useState('')
   const [courriel, setCourriel] = useState('')
   const [telephone, setTelephone] = useState('')
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
-  const [erreurChamp, setErreurChamp] = useState<{ courriel?: string; tel?: string }>({})
+  const [erreurChamp, setErreurChamp] = useState<{ prenom?: string; courriel?: string; tel?: string }>({})
 
   /**
    * ⚠️ « Y A-T-IL UN MOYEN RAPIDE ? » NE SE DEVINE PAS EN CSS.
@@ -107,6 +114,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
    */
   const verrou = useRef(false)
 
+  const idPrenom = useId()
   const idCourriel = useId()
   const idTel = useId()
   const idErreur = useId()
@@ -120,7 +128,12 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
    * à côté du bon champ — pas à protéger quoi que ce soit.
    */
   const valider = useCallback(() => {
-    const fautes: { courriel?: string; tel?: string } = {}
+    const fautes: { prenom?: string; courriel?: string; tel?: string } = {}
+    /* Deux lettres suffisent. On ne juge pas un prénom : on vérifie seulement
+       que quelqu'un a répondu à la question. */
+    if (prenom.trim().length < 2) {
+      fautes.prenom = 'Ton prénom, en deux lettres minimum.'
+    }
     /* Contrôle volontairement large : il vaut mieux laisser passer une adresse
        douteuse que refuser une adresse valide et perdre l'abonnement. Stripe
        refera sa propre vérification derrière, dans `updateEmail`. */
@@ -142,7 +155,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
        refus réel de communes françaises. On garde la règle, on la protège. */
     setErreurChamp(fautes)
     return Object.keys(fautes).length === 0
-  }, [courriel, telephone])
+  }, [prenom, courriel, telephone])
 
   /**
    * Attache le numéro à la session AVANT de confirmer.
@@ -158,7 +171,11 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         const reponse = await fetch('/api/checkout/coordonnees', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: idSession, telephone: telephone.trim() }),
+          body: JSON.stringify({
+            sessionId: idSession,
+            telephone: telephone.trim(),
+            prenom: prenom.trim(),
+          }),
         })
         /* ⚠️ 28/08 — ON N'OUVRAIT MÊME PAS L'ENVELOPPE.
            `fetch` ne lève QUE sur une panne réseau. Un 400 « coordonnées
@@ -178,7 +195,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         console.warn('[paiement] coordonnées non attachées — le paiement continue')
       }
     },
-    [telephone],
+    [telephone, prenom],
   )
 
   if (checkout.type === 'loading') {
@@ -283,6 +300,33 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         jamais arrivé.
       */}
       <div className={s.coordonnees}>
+        {/* Le prénom vient en premier : c'est la question la plus facile de la
+            page, et la seule dont la réponse lui revient tout de suite — l'écran
+            suivant l'appelle par son prénom, et l'app aussi. */}
+        <label className={s.champ} htmlFor={idPrenom}>
+          <span className={s.champLabel}>Prénom</span>
+          <input
+            id={idPrenom}
+            type="text"
+            autoComplete="given-name"
+            autoCapitalize="words"
+            value={prenom}
+            onChange={(e) => setPrenom(e.target.value)}
+            placeholder="Karim"
+            aria-invalid={!!erreurChamp.prenom}
+            aria-describedby={erreurChamp.prenom ? `${idPrenom}-err` : `${idPrenom}-aide`}
+          />
+          {erreurChamp.prenom ? (
+            <span id={`${idPrenom}-err`} className={s.champErreur} role="alert">
+              {erreurChamp.prenom}
+            </span>
+          ) : (
+            <span id={`${idPrenom}-aide`} className={s.champAide}>
+              C&apos;est comme ça qu&apos;Ajnaya t&apos;appellera.
+            </span>
+          )}
+        </label>
+
         {/* ⚠️ L'E-MAIL EST LE PREMIER CHAMP, ET C'EST DÉLIBÉRÉ.
             C'est lui qui crée le compte, porte le mot de passe et reçoit la
             facture. Sans lui, le paiement passe et le chauffeur n'a rien. */}

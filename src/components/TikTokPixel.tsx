@@ -15,7 +15,29 @@ import { hasTrackingConsent } from '@/lib/consent'
  * (NEXT_PUBLIC_TIKTOK_PIXEL_ID) — voir .env.example. Sans cette variable, le
  * composant ne charge simplement rien (fail-open, pas d'erreur visible).
  */
-const PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID
+/**
+ * ⚠️ 28/08/2026 — L'IDENTIFIANT EXISTE ENFIN, ET C'EST POUR ÇA QU'IL EST ÉCRIT ICI.
+ *
+ * Avant ce jour, ce composant lisait `NEXT_PUBLIC_TIKTOK_PIXEL_ID` SANS valeur de
+ * repli, et la variable n'existait ni en local ni sur Vercel. Le garde `!PIXEL_ID`
+ * plus bas rendait donc `null` à chaque visite : pas d'erreur, pas de requête,
+ * RIEN. TikTok n'a jamais reçu un seul événement de ce site — et rien ne le
+ * signalait, puisque « ne rien charger » était le comportement voulu.
+ *
+ * Vérifié le 28/08 dans le Gestionnaire d'événements TikTok (compte FOREAS0728,
+ * aadvid 7532101410356248593) : la liste des sources de données était VIDE.
+ * Le pixel n'avait jamais été créé. Il l'est maintenant — « FOREAS - foreas.xyz »,
+ * mode Pixel + Events API, les 9 événements standard et tous les paramètres
+ * client (email, phone, external_id, ttclid, ip) activés.
+ *
+ * Pourquoi en dur et pas en variable d'environnement : un identifiant de pixel
+ * n'est PAS un secret. Il part en clair dans le HTML de chaque page — c'est sa
+ * fonction. Le pixel Meta juste à côté suit exactement la même règle depuis le
+ * 31/07. La variable d'environnement reste prioritaire pour les environnements
+ * de test ; le repli garantit que la production ne redevienne jamais muette
+ * parce qu'une variable a disparu d'un tableau de bord.
+ */
+const PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || 'DA8T1MBC77UES97470I0'
 
 export function TikTokPixel() {
   const [hasConsent, setHasConsent] = useState(false)

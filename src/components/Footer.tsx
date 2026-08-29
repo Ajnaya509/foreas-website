@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { authUrls } from '@/lib/auth-urls'
+import ForeasLogo from '@/components/experience/ForeasLogo'
 
 /**
  * Footer — Site2026v44 (Phase 3.4)
@@ -46,23 +47,24 @@ export default function Footer() {
                 className={`inline-block group min-h-[44px] px-sm py-xs ${focusRing}`}
                 aria-label="FOREAS — Accueil"
               >
-                <span className="font-title text-h1 font-bold tracking-wider text-text-primary">
-                  FOREAS
-                  <span className="bg-gradient-foreas-h bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-fast">
-                    /
-                  </span>
-                </span>
+                <ForeasLogo
+                  variant="full"
+                  className="h-8 w-auto text-text-primary group-hover:opacity-80 transition-opacity duration-fast"
+                />
               </Link>
               <p className="tagline text-body text-text-tertiary mt-sm">
                 Toujours plus loin.
               </p>
-              {/* Barre dégradée cyan-violet-cyan (signature) */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/assets/gradient-bar.svg"
-                alt=""
+              {/*
+                29/08/2026 — c'était `/assets/gradient-bar.svg`, le Composant
+                graphique de la charte (800 × 40) écrasé à 2 px avec
+                `object-cover` : on n'en voyait qu'une tranche arbitraire.
+                Un filet CSS rend exactement le dégradé voulu, à la bonne
+                épaisseur, sans requête réseau.
+              */}
+              <div
                 aria-hidden="true"
-                className="w-[140px] md:w-[180px] h-[2px] object-cover mt-md opacity-60"
+                className="mt-md h-px w-[140px] md:w-[180px] rounded-full bg-[linear-gradient(90deg,transparent_0%,#00D4FF_25%,#8C52FF_50%,#00D4FF_75%,transparent_100%)] opacity-70"
               />
             </div>
 
@@ -113,9 +115,21 @@ export default function Footer() {
         {/* Bottom — légal */}
         <div className="py-lg md:py-xl border-t border-glass-border">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-md">
-            <p className="text-caption text-text-muted">
-              © 2026 FOREAS Labs
-            </p>
+            {/*
+              29/08/2026 — le pied de page n'affichait qu'un « © 2026 FOREAS Labs »
+              seul. Pas de forme juridique, pas de SIRET, pas de non-affiliation,
+              alors qu'Uber, Bolt et Heetch sont cités partout sur le site.
+              Le SIRET vient de mentions-legales/page.tsx (940 879 281).
+            */}
+            <div className="text-center sm:text-left">
+              <p className="text-caption text-text-muted">
+                © 2026 FOREAS Labs · SIRET 940 879 281 · Paris, France
+              </p>
+              <p className="text-caption text-white/25 mt-xs max-w-[46ch]">
+                FOREAS est un outil indépendant. Marques citées à titre informatif :
+                FOREAS n&apos;est affilié ni à Uber, ni à Bolt, ni à Heetch.
+              </p>
+            </div>
             <div className="flex flex-wrap items-center justify-center gap-md sm:gap-lg md:gap-xxl">
               {legal.map((link) => (
                 <Link
@@ -138,9 +152,6 @@ export default function Footer() {
               >
                 <span className="underline-grow">Mot de passe oublié</span>
               </a>
-              <span className="text-caption text-text-muted">
-                Paris
-              </span>
             </div>
           </div>
         </div>

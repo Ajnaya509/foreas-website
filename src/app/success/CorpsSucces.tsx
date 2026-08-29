@@ -249,20 +249,13 @@ export default function CorpsSucces({
       cette page plus tard. Elles gardent leur place, elles perdent leur
       poids : elles ne peuvent plus concurrencer le seul geste qui compte. */}
   <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mb-6 text-[13px]">
-    <a
-      href="https://partners.foreas.xyz/driver"
-      className="underline underline-offset-4 transition-colors hover:text-white"
-      style={{ color: 'rgba(248, 250, 252, 0.52)' }}
-    >
-      Mon profil
-    </a>
-    <a
-      href="https://partners.foreas.xyz/driver?tab=community"
-      className="underline underline-offset-4 transition-colors hover:text-white"
-      style={{ color: 'rgba(248, 250, 252, 0.52)' }}
-    >
-      Ma communauté{communityGroup ? ` · ${communityGroup}` : ''}
-    </a>
+    {/* ⚠️ 29/08/2026 — « Mon profil » et « Ma communauté » ONT ÉTÉ RETIRÉS.
+        Les deux menaient à la MÊME page (`?tab=community` n'est lu nulle part),
+        qui est le tableau de bord partenaire — et
+        `foreas-partners/app/(driver)/layout.tsx:12` renvoie vers l'écran de
+        connexion quand il n'y a pas de session. Un chauffeur qui vient de payer
+        y heurtait donc un mur, trente secondes après avoir donné sa carte.
+        À rebrancher le jour où le programme partenaire accepte ces comptes. */}
     {customerId && (
       <a
         href={`/api/customer-portal?customer_id=${customerId}`}

@@ -23,6 +23,7 @@ const PorteWidgetAjnaya = dynamic(() => import('@/components/PorteWidgetAjnaya')
 import { TikTokPixel } from '@/components/TikTokPixel'
 import { MetaPixel } from '@/components/MetaPixel'
 import IdentityObserver from '@/components/IdentityObserver'
+import { ConsentBanner } from '@/components/ConsentBanner'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import DemarreurMesure from '@/components/DemarreurMesure'
@@ -225,19 +226,33 @@ export default function RootLayout({
         <DemarreurMesure />
         <GrainOverlay />
         <PorteWidgetAjnaya />
-        {/* ── 28/08/2026 — LE BANDEAU DE CONSENTEMENT EST RETIRÉ ─────────
-            Décision de Chandler : « c'est notre site, notre territoire ».
-            La mesure d'audience tourne pour tout le monde (conditions de la
-            dispense CNIL tenues dans src/lib/mesureProduit.ts).
+        {/* ── 28/08/2026 — LE BANDEAU EST REVENU, MAIS IL NE DEMANDE PLUS
+            LA MÊME CHOSE ────────────────────────────────────────────────
 
-            ⚠️ CONSÉQUENCE À CONNAÎTRE, ET ELLE N'EST PAS ANODINE :
-            le bandeau était le SEUL endroit qui appelait `loadTrackingPixels()`.
-            Sans lui, `foreas_consent` n'est jamais posé, donc les pixels META
-            et TIKTOK ne partiront PLUS JAMAIS. Ce n'est pas un oubli : envoyer
-            les données d'un visiteur à Facebook sans son accord est une autre
-            catégorie juridique que mesurer son propre site.
-            Le jour où une campagne Meta démarre, il faudra rouvrir une demande
-            d'accord POUR LA PUBLICITÉ SEULEMENT — pas pour la mesure. */}
+            Il a d'abord été RETIRÉ ce matin, sur décision de Chandler :
+            « c'est notre site, notre territoire ». La mesure d'audience tourne
+            depuis pour tout le monde, sans rien demander — c'est légal, les
+            cinq conditions de la dispense CNIL sont tenues et gardées par
+            scripts/verifier-canon.mjs (première partie, pas de suivi
+            inter-sites, IP anonymisée, aucun usage publicitaire, finalité
+            limitée). Ça, ça ne change pas et ça ne revient pas en arrière.
+
+            MAIS le bandeau était aussi le SEUL endroit du dépôt qui appelait
+            `loadTrackingPixels()`. En le retirant, on a éteint pour toujours
+            les pixels META et TIKTOK — sans le vouloir, et sans que rien ne
+            le signale. Vérifié : `grep -rn loadTrackingPixels src/` ne
+            trouvait plus qu'un appelant, ce composant, monté nulle part.
+
+            D'où ce bandeau-ci. Il ne demande PLUS l'accord pour mesurer.
+            Il ne demande QUE la publicité — la seule chose qu'il débloque
+            réellement. Ça n'est pas une nuance de rédaction : un accord
+            obtenu en parlant de « mesure » alors qu'on envoie les données à
+            Facebook est un accord nul, et c'est exactement ce qui se plaide
+            lors d'un contrôle.
+
+            Réglages de Chandler en haut de ConsentBanner.tsx : le délai
+            d'apparition (DELAI_AVANT_BANDEAU_MS) et le texte (TEXTE). */}
+        <ConsentBanner />
         <Analytics />
         <SpeedInsights />
       </body>

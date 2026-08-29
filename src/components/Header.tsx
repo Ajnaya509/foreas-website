@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, useMotionValueEvent, useScroll } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { InkGradientButton } from '@/components/ui'
 import { authUrls } from '@/lib/auth-urls'
 import { useOverlayLock } from '@/lib/overlayStore'
+import ForeasLogo from '@/components/experience/ForeasLogo'
 
 /**
  * Header — Site2026v54
@@ -30,10 +32,19 @@ const navigation = [
   { name: 'Tarifs', href: '/tarifs2' },
 ]
 
+/*
+ * 29/08/2026 — Chandler : « le bouton essai gratuit est toujours là ».
+ * Proposer un essai à quelqu'un qui vient de payer tue la crédibilité.
+ * On masque le CTA sur tout le parcours de paiement et d'après-paiement.
+ */
+const PARCOURS_PAIEMENT = ['/tarifs3', '/success', '/pay', '/checkout', '/subscribe', '/go']
+
 const focusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-obsidian rounded-md'
 
 export default function Header() {
+  const chemin = usePathname()
+  const dansLeTunnel = PARCOURS_PAIEMENT.some((r) => chemin === r || chemin?.startsWith(r + '/'))
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [hidden, setHidden] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -95,12 +106,16 @@ export default function Header() {
             className={`inline-flex min-h-[44px] items-center group ${focusRing}`}
             aria-label="FOREAS — Retour à l'accueil"
           >
-            <span className="font-title text-2xl lg:text-[28px] font-semibold tracking-wider text-text-primary">
-              FOREAS
-              <span className="bg-gradient-foreas-h bg-clip-text text-transparent group-hover:opacity-80 transition-opacity duration-fast">
-                /
-              </span>
-            </span>
+            {/*
+              29/08/2026 — le mot « FOREAS » était REDESSINÉ en Genos avec un
+              <span>/</span> en dégradé. Ce n'est pas le logo de la charte.
+              Le vrai vectoriel existe déjà : ForeasLogo (md5 conforme aux SVG
+              officiels). Monochrome, slash compris. On ne colore plus le slash.
+            */}
+            <ForeasLogo
+              variant="full"
+              className="h-6 lg:h-7 w-auto text-text-primary group-hover:opacity-80 transition-opacity duration-fast"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -136,9 +151,11 @@ export default function Header() {
               33 fichiers en dépendent, et les agrandir tous déplacerait des
               mises en page qui n'ont rien demandé.
             */}
-            <InkGradientButton as="link" href="/tarifs2" size="md">
-              Essai gratuit
-            </InkGradientButton>
+            {!dansLeTunnel && (
+              <InkGradientButton as="link" href="/tarifs2" size="md">
+                Essai gratuit
+              </InkGradientButton>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -193,22 +210,24 @@ export default function Header() {
                     Mon espace
                   </a>
                 </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25, duration: 0.22 }}
-                  className="pt-4"
-                >
-                  <InkGradientButton
-                    as="link"
-                    href="/tarifs2"
-                    size="md"
-                    fullWidth
-                    onClick={() => setMobileMenuOpen(false)}
+                {!dansLeTunnel && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25, duration: 0.22 }}
+                    className="pt-4"
                   >
-                    Essai gratuit
-                  </InkGradientButton>
-                </motion.div>
+                    <InkGradientButton
+                      as="link"
+                      href="/tarifs2"
+                      size="md"
+                      fullWidth
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Essai gratuit
+                    </InkGradientButton>
+                  </motion.div>
+                )}
               </div>
             </motion.div>
           )}

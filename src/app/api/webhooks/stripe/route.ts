@@ -362,6 +362,23 @@ export async function POST(request: Request) {
   // Le jeton de propriété de CET exemplaire. Sans lui, un exemplaire repris
   // pourrait confirmer le travail d'un autre.
   const proprietaire = crypto.randomUUID()
+
+  /*
+   * ⚠️ 29/08/2026 — POURQUOI CETTE VARIABLE EXISTE.
+   *
+   * Le 28 au soir, un chauffeur a payé, son compte a été créé, son numéro
+   * écrit — et son mail d'identifiants n'est jamais parti : la clé du service
+   * d'envoi était invalide. La trace n'existait QUE dans les journaux
+   * d'exécution, qui s'effacent. L'alerte de secours, elle, passait par le
+   * MÊME service : elle n'est jamais partie non plus.
+   *
+   * On écrit donc l'incident dans la ligne de l'événement, en base. Ça survit
+   * aux journaux, ça se retrouve avec une seule requête, et ça ne dépend
+   * d'aucun service tiers :
+   *   select event_id, note from site_evenements_stripe_traites
+   *   where note is not null order by fini_le desc;
+   */
+  let noteIncident: string | null = null
   try {
     const body = await request.text()
     const sig = request.headers.get('stripe-signature')
@@ -457,6 +474,16 @@ export async function POST(request: Request) {
       const cityField = session.custom_fields?.find(f => f.key === 'city')
       const phone = meta.foreas_phone || phoneField?.numeric?.value || null
       const city = meta.foreas_city || cityField?.text?.value || null
+
+      /* ⚠️ 29/08/2026 — LE NOM NE VIENT PLUS DE STRIPE, ET C'EST VOULU.
+         `billing_address_collection` est passé de `required` à `auto` le 28
+         pour débloquer les cartes qui étaient toutes refusées. Effet de bord
+         découvert le lendemain : Stripe a cessé du même coup de collecter le
+         NOM de facturation, donc `customer_details.name` est vide, donc la page
+         de succès affichait « Bienvenue, chauffeur ».
+         Notre formulaire demande maintenant le prénom et l'écrit ici. On garde
+         le nom de Stripe en second : les sessions de /tarifs2 le portent encore. */
+      const prenomChauffeur = meta.foreas_prenom || session.customer_details?.name || ''
 
       // Récupérer la subscription pour les détails
       let subscription: Stripe.Subscription | null = null
@@ -572,14 +599,14 @@ export async function POST(request: Request) {
       if (session.customer_details?.email) {
         const provision = await provisionDriverAccount({
           email: session.customer_details.email,
-          name: session.customer_details.name,
+          name: prenomChauffeur || session.customer_details.name,
           phone,
           city,
         })
 
         const mailParti = await sendWelcomeEmail({
           email: session.customer_details.email,
-          name: session.customer_details.name || '',
+          name: prenomChauffeur,
           plan: planInfo.name,
           trialEnd: trialEndLabel,
           // Identifiants seulement si le compte vient d'être créé. S'il existait déjà (rejeu
@@ -611,6 +638,11 @@ export async function POST(request: Request) {
         // l'expéditeur de courrier ne doit pas devenir une perte de paiement :
         // on alerte, et le paiement reste enregistré.
         if (!mailParti && provision.status === 'created') {
+          // La trace en base D'ABORD : elle ne dépend de personne.
+          noteIncident = `MAIL IDENTIFIANTS NON PARTI — compte créé pour ${session.customer_details.email}, mot de passe perdu, à régénérer à la main`
+          console.error(`[webhook] ⛔ ${noteIncident}`)
+          // L'alerte ENSUITE : elle passe par le service d'envoi, donc elle
+          // peut très bien échouer elle aussi. C'est pour ça qu'elle est seconde.
           await sendProvisionFailureAlert({
             email: session.customer_details?.email ?? 'inconnu',
             reason: `compte créé mais e-mail de bienvenue NON envoyé (abonnement ${(session.subscription as string) ?? 'inconnu'}) — le chauffeur n’a pas ses identifiants`,
@@ -859,7 +891,7 @@ export async function POST(request: Request) {
       }
     }
 
-    await confirmerEvenement(event.id, proprietaire)
+    await confirmerEvenement(event.id, proprietaire, noteIncident ?? undefined)
     return NextResponse.json({ received: true })
   } catch (error) {
     // ⚠️ 21/08/2026 — ICI, LE CODE RÉPONDAIT 200 SUR N'IMPORTE QUELLE ERREUR.
