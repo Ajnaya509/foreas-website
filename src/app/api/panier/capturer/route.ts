@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import Stripe from 'stripe'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { envoyerMailPanier } from '@/lib/email'
 import { panierAbandonneActif, PANIER_DELAIS } from '@/lib/textesAutomatiques'
@@ -33,6 +34,8 @@ export const dynamic = 'force-dynamic'
 
 const FORME_SESSION = /^cs_[A-Za-z0-9_]{10,}$/
 
+/** Vaut aussi pour une valeur venue de Stripe : `customer_details.email` peut
+ *  être `null` tant que `updateEmail` n'a pas abouti. */
 function emailPlausible(v: unknown): string | null {
   if (typeof v !== 'string') return null
   const t = v.trim().toLowerCase().slice(0, 254)
@@ -51,10 +54,64 @@ export async function POST(request: NextRequest) {
   const corps = await request.json().catch(() => null)
   const c = (corps ?? {}) as Record<string, unknown>
   const idSession = typeof c.sessionId === 'string' ? c.sessionId.trim() : ''
-  const email = emailPlausible(c.email)
 
-  if (!FORME_SESSION.test(idSession) || !email) {
+  if (!FORME_SESSION.test(idSession)) {
     return NextResponse.json({ error: 'requete_invalide' }, { status: 400 })
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     ⚠️ 29/08 — CETTE ROUTE ÉTAIT UN RELAIS OUVERT. TROUVÉ PAR L'AUDIT ADVERSE.
+
+     Première version : l'adresse venait du CORPS de la requête, et
+     l'identifiant de session n'était comparé qu'à une forme — jamais présenté à
+     Stripe. Une seule commande suffisait donc à faire partir trois courriers
+     signés `noreply@foreas.xyz` chez n'importe qui :
+
+       curl -X POST .../api/panier/capturer -d '{"sessionId":"cs_aaaaaaaaaaaa",
+                                                 "email":"victime@exemple.fr"}'
+
+     Sans limite de volume. La réputation d'envoi du domaine y passait, et avec
+     elle les mails d'identifiants des vrais chauffeurs.
+
+     ⚠️ LA ROUTE SŒUR FAISAIT DÉJÀ BIEN. `/api/profil/completer` interroge
+     Stripe avant d'écrire quoi que ce soit. L'omission ici était un oubli, pas
+     un choix — et c'est ce genre d'asymétrie entre deux routes jumelles qu'il
+     faut chercher en premier.
+
+     DÉSORMAIS : la session doit EXISTER chez Stripe, être encore OUVERTE (un
+     paiement abouti n'est pas un panier abandonné), et c'est ELLE qui donne
+     l'adresse. Ce que le navigateur envoie n'est plus jamais cru. */
+  const cleStripe = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
+  if (!cleStripe) {
+    console.warn('[panier] clé Stripe absente — capture impossible')
+    return NextResponse.json({ programme: false }, { status: 503 })
+  }
+
+  let email: string | null = null
+  try {
+    const stripe = new Stripe(cleStripe, {
+      apiVersion: '2025-08-27.basil',
+      timeout: 8000,
+      maxNetworkRetries: 1,
+    })
+    const session = await stripe.checkout.sessions.retrieve(idSession)
+    if (session.status !== 'open') {
+      /* `complete` = il a payé, il n'y a pas de panier à relancer.
+         `expired` = trop tard, la séquence n'a plus de sens. */
+      return NextResponse.json({ programme: false, motif: 'session_non_ouverte' })
+    }
+    email = emailPlausible(session.customer_details?.email)
+  } catch {
+    /* Session inconnue de Stripe : la requête est fabriquée. On ne dit pas
+       laquelle des deux raisons, pour ne pas offrir un oracle. */
+    return NextResponse.json({ error: 'session_invalide' }, { status: 404 })
+  }
+
+  if (!email) {
+    /* L'adresse n'est pas encore posée sur la session (le champ vient d'être
+       quitté mais `updateEmail` n'a pas encore répondu). Rien à faire : le
+       prochain passage la trouvera. */
+    return NextResponse.json({ programme: false, motif: 'sans_email' })
   }
 
   const sb = clientServeurOuNull()

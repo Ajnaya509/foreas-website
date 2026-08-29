@@ -10,16 +10,20 @@ import { useCallback, useId, useState } from 'react'
  *
  * Chaque question posée avant la carte se paie en abandons. Celles-ci sont
  * rattrapables : le compte existe déjà, le mot de passe est parti par mail, et
- * une relance peut aller chercher celui qui ne remplit pas. L'e-mail, lui, est
- * resté à l'écran 1 — sans lui, rien n'existe et personne n'est joignable.
+ * il reste joignable par l'adresse qu'il a déjà donnée. L'e-mail, lui, est resté
+ * à l'écran 1 — sans lui, rien n'existe et personne n'est joignable.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * ⚠️ CE BLOC NE DOIT JAMAIS EMPÊCHER D'ALLER PLUS LOIN
  *
  * Il est posé AVANT le bouton de téléchargement, parce que c'est là qu'on le
  * lit. Mais il ne bloque rien : ni bandeau modal, ni bouton grisé en dessous.
- * Un chauffeur qui veut son app tout de suite doit pouvoir l'avoir. On le
- * relancera par mail — c'est exactement pour ça que le suivi existe.
+ * Un chauffeur qui veut son app tout de suite doit pouvoir l'avoir.
+ *
+ * ⚠️ MAIS PERSONNE NE LE RELANCERA. Ce commentaire affirmait le contraire : les
+ * relances aux payants ont été supprimées le 29/08 (relancer quelqu'un qui vient
+ * de donner sa carte, c'est du harcèlement administratif). Ce qui n'est pas
+ * rempli ici est perdu — d'où l'importance de ne rien promettre à l'écran.
  *
  * ⚠️ ET IL SE TAIT UNE FOIS REMPLI. Un formulaire qui reste affiché après
  * l'envoi fait douter de l'envoi.
@@ -94,9 +98,17 @@ export default function FormulaireProfil({ sessionId }: { sessionId: string }) {
       {/* Elle dit ce que ça lui apporte, pas ce que ça nous apporte. Un
           formulaire d'après-paiement qui ne justifie rien ressemble à une
           collecte de plus. */}
+      {/* ⚠️ 29/08 — DEUX PROMESSES FAUSSES ONT ÉTÉ RETIRÉES DE CET ÉCRAN.
+          1. « ton numéro pour qu'elle te prévienne sur WhatsApp quand ça bouge » :
+             Chandler l'a démentie le jour même (« elle n'envoie pas d'alerte »).
+             La phrase avait été tuée dans les mails et laissée vivante ici — à
+             l'endroit le plus coûteux, trente secondes après la carte.
+          2. « un mail arrivera pour le refaire » : ce mail n'existe pas. La
+             relance des payants a été supprimée le même jour. Le chauffeur était
+             rassuré, arrêtait de réessayer, et personne ne le rappelait jamais. */}
       <p className="text-[13px] mb-4" style={{ color: 'rgba(248, 250, 252, 0.55)' }}>
-        Ton prénom pour qu&apos;elle t&apos;appelle par ton nom, ton numéro pour qu&apos;elle
-        te prévienne sur WhatsApp quand ça bouge près de toi.
+        Ton prénom pour qu&apos;Ajnaya t&apos;appelle par ton nom, ton numéro pour
+        qu&apos;on puisse te joindre si quelque chose bloque sur ton compte.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -179,8 +191,8 @@ export default function FormulaireProfil({ sessionId }: { sessionId: string }) {
         )}
         {etat === 'erreur' && (
           <span style={{ color: '#EF4444' }}>
-            Enregistrement impossible pour l&apos;instant. Ce n&apos;est pas grave : un mail
-            arrivera pour le refaire.
+            Enregistrement impossible pour l&apos;instant. Réessaie dans un moment, ou
+            écris à contact@foreas.xyz.
           </span>
         )}
       </p>

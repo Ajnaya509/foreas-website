@@ -429,7 +429,29 @@ export async function POST(request: NextRequest) {
     after(async () => {
       await monterUneMarche(identiteVisiteur, 'paiement_commence', session.id, 'site')
     })
-    if (isElements || isEmbedded) return NextResponse.json({ clientSecret: session.client_secret })
+    /* ⚠️ 29/08 — LA SESSION RENVOIE DÉSORMAIS LA REMISE QU'ELLE PORTE VRAIMENT.
+       Trouvé par l'audit adverse : un visiteur passé une fois par /r/<code>
+       garde un cookie `foreas_partner_ref` trente jours. Des jours plus tard il
+       paie sur /tarifs3 sans jamais ouvrir le bloc parrain — le coupon s'attache
+       côté serveur (ligne 123, repli sur le cookie), mais l'écran, lui, ne
+       connaît que `codeApplique` et affiche le prix plein.
+       Résultat : « Ensuite 29,99 € par mois » affiché, 26,99 € prélevé à chaque
+       échéance, indéfiniment. Le client paie MOINS que l'annonce — ça reste un
+       montant faux sur la page qui encaisse, et une commission de parrainage
+       déclenchée sans que rien ne l'indique.
+       ⚠️ LA VALEUR RENDUE EST CELLE DU COUPON, PAS CELLE DU CODE. Même condition
+       que l'attachement vingt lignes plus haut : zéro sur l'annuel, qui est à
+       tarif fixe. Deux conditions différentes pour un seul fait, c'est
+       exactement l'écart qu'on vient de corriger deux fois. */
+    const remiseSurLaSession = referralCouponId && !isAnnual ? referralDiscountPct : 0
+    if (isElements || isEmbedded)
+      return NextResponse.json({
+        clientSecret: session.client_secret,
+        remiseParrainPct: remiseSurLaSession,
+        /* Pour que l'écran puisse dire d'où vient la remise quand le chauffeur
+           n'a rien tapé : elle vient de son lien de parrainage. */
+        remiseHeritee: remiseSurLaSession > 0 && !referral_code,
+      })
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
     const err = error as { message?: string; type?: string; code?: string; statusCode?: number }

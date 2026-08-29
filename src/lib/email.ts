@@ -84,7 +84,15 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
   /** Vrai quand le compte existait déjà : on explique, au lieu de se taire. */
   dejaInscrit?: { email: string } | null
 }) {
-  const firstName = name ? name.split(' ')[0] : 'Chauffeur'
+  /* ⚠️ 29/08 — CE REPLI DISAIT « Bienvenue, Chauffeur. » À TOUS LES PAYANTS.
+     Le prénom a quitté la page de paiement (v187) : il n'est demandé qu'APRÈS,
+     sur /success. À l'instant où ce mail part, on ne le connaît donc pas — et
+     `name` est vide pour 100 % du tunnel principal.
+     La page de succès a été réparée le matin même ; son jumeau, ce mail, ne
+     l'avait pas été. C'est le premier objet que reçoit un client qui vient de
+     payer, et il lui disait qu'on ne sait pas qui il est.
+     Chaîne vide plutôt que faux prénom : le titre juste en dessous s'adapte. */
+  const firstName = name ? name.split(' ')[0] : ''
   // Genos = titres (font-weight 600), Genos italic = taglines, Montserrat = body
   // Fallback: sans-serif sur les clients qui ne supportent pas Google Fonts
   return `
@@ -115,7 +123,7 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
 
       <!-- Titre en Genos 600 — blanc pur -->
       <h1 style="font-family:'Genos',sans-serif;font-size:30px;font-weight:600;color:#ffffff;text-align:center;margin:0 0 6px;line-height:1.2;">
-        Bienvenue, ${firstName}.
+        ${firstName ? `Bienvenue, ${escapeHtml(firstName)}.` : 'Bienvenue chez FOREAS.'}
       </h1>
       <!-- Sous-titre en Montserrat — gris doux -->
       <p style="font-family:'Montserrat',sans-serif;font-size:14px;color:#6b6b80;text-align:center;margin:0 0 36px;line-height:1.6;">

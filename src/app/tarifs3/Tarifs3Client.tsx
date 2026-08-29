@@ -158,6 +158,15 @@ export default function Tarifs3Client() {
   const [champCodeOuvert, setChampCodeOuvert] = useState(false)
   const [codeSaisi, setCodeSaisi] = useState('')
   const [codeApplique, setCodeApplique] = useState('')
+  /* ⚠️ 29/08 — CE QUE LA SESSION APPLIQUE VRAIMENT, DIT PAR LE SERVEUR.
+     `etatCode` ne connaît que ce que le chauffeur a TAPÉ. Or un cookie posé par
+     un lien /r/<code> applique une remise sans qu'il ait rien tapé : l'écran
+     affichait alors le prix plein pendant que Stripe encaissait moins, à chaque
+     échéance. Une seule source décide désormais, et c'est la session. */
+  const [remiseSession, setRemiseSession] = useState<{ pct: number; heritee: boolean }>({
+    pct: 0,
+    heritee: false,
+  })
   const [etatCode, setEtatCode] = useState<{
     phase: 'repos' | 'verification' | 'accepte' | 'refuse' | 'panne'
     remisePct?: number
@@ -391,6 +400,10 @@ export default function Tarifs3Client() {
     const data = await res.json().catch(() => null)
     if (!res.ok || !data?.clientSecret) throw new Error(data?.error || `checkout_${res.status}`)
 
+    setRemiseSession({
+      pct: Number(data.remiseParrainPct) || 0,
+      heritee: !!data.remiseHeritee,
+    })
     sessions.current.set(cleSession, data.clientSecret as string)
     return data.clientSecret as string
   }, [formule, codeApplique])
@@ -816,15 +829,15 @@ export default function Tarifs3Client() {
                           Si un palier ou le prix change, REVÉRIFIER ce calcul —
                           un centime d'écart entre l'écran et le relevé se paie
                           en confiance, pas en euros. */}
-                      {etatCode.phase === 'accepte' &&
-                        formule !== 'annuel' &&
-                        !!etatCode.remisePct && (
+                      {remiseSession.pct > 0 && (
                           <p className={s.micro}>
-                            Avec le code parrain :{' '}
+                            {remiseSession.heritee
+                              ? 'Avec la remise de ton lien de parrainage : '
+                              : 'Avec le code parrain : '}
                             <span className={s.vert}>
                               {formaterEuros(
                                 Math.round(
-                                  (debit.montantEnsuiteCentimes * (100 - etatCode.remisePct)) / 100,
+                                  (debit.montantEnsuiteCentimes * (100 - remiseSession.pct)) / 100,
                                 ),
                               )}{' '}
                               par mois

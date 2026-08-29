@@ -74,7 +74,21 @@ import { identiteDepuisBadge, reserverLaParole } from '@/lib/escalier'
 
 const NUMERO = '33780732216' // FOREAS WABA Production — constante, jamais un paramètre.
 
-/** Liste fermée. Tout ce qui n'y est pas retombe sur `final`. */
+/**
+ * Liste fermée. Tout ce qui n'y est pas retombe sur `final`.
+ *
+ * ⚠️ 29/08 — CETTE LISTE A ÉTÉ OUBLIÉE, ET ÇA A COÛTÉ LE CONTRAIRE DU MESSAGE.
+ * `panier_abandonne` a été ajoutée au TYPE et au texte (`whatsappLink.ts`), mais
+ * pas ici. Le lien du mail 2 retombait donc sur `final`, et le chauffeur qui
+ * cliquait « Poser ma question sur WhatsApp » se retrouvait à écrire, de sa
+ * main : « Je démarre avec FOREAS. 0 €. Je teste. » — soit exactement la carte
+ * qu'on venait de lui promettre de ne pas redemander.
+ *
+ * Le compilateur n'a rien vu : le type était juste, seule la liste manquait.
+ * ⚠️ TOUTE NOUVELLE SECTION SE DÉCLARE À DEUX ENDROITS. Le repli silencieux
+ * ci-dessous est fait pour survivre à un lien mal formé venu de l'extérieur —
+ * pas pour cacher un oubli de notre côté. D'où le journal.
+ */
 const SECTIONS: readonly WhatsAppSection[] = [
   'hero_zone',
   'pain',
@@ -84,10 +98,16 @@ const SECTIONS: readonly WhatsAppSection[] = [
   'cap',
   'final',
   'experience_phone',
+  'panier_abandonne',
 ]
 
 function sectionValide(v: string | null): WhatsAppSection {
-  return (SECTIONS as readonly string[]).includes(v ?? '') ? (v as WhatsAppSection) : 'final'
+  if ((SECTIONS as readonly string[]).includes(v ?? '')) return v as WhatsAppSection
+  /* Un `s` absent est normal (lien nu). Un `s` PRÉSENT et inconnu ne l'est pas :
+     c'est soit un lien fabriqué ailleurs, soit une section oubliée dans cette
+     liste. Se taire, c'est laisser le second cas durer des semaines. */
+  if (v) console.warn(`[wa] section inconnue « ${v.slice(0, 40)} » — repli sur « final »`)
+  return 'final'
 }
 
 /**

@@ -310,7 +310,23 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
                panier), donc revenir sur le champ ne coûte rien. */
             onBlur={() => {
               const mail = courriel.trim()
-              if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) capturerPanier(session.id)
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) return
+              /* ⚠️ L'ORDRE COMPTE, ET IL A FAILLI ÊTRE FAUX.
+                 Depuis que `/api/panier/capturer` refuse de croire le navigateur
+                 et lit l'adresse SUR LA SESSION STRIPE, capturer avant de la
+                 poser ne trouverait rien : la route répondrait « sans_email » et
+                 aucun panier n'existerait jamais. On pose d'abord, on capture
+                 ensuite.
+                 ⚠️ ET ON NE DIT RIEN SI ÇA ÉCHOUE : on est sur une simple sortie
+                 de champ, pas sur un clic « payer ». Afficher une erreur rouge
+                 parce qu'il a cliqué à côté serait une punition pour rien — le
+                 vrai contrôle, bloquant, reste au moment du paiement. */
+              void session
+                .updateEmail(mail)
+                .then((r) => {
+                  if (r.type !== 'error') capturerPanier(session.id)
+                })
+                .catch(() => {})
             }}
             placeholder="prenom@exemple.com"
             aria-invalid={!!erreurChamp.courriel}
