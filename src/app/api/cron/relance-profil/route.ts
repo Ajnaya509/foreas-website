@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
-import { sendProfilIncompletEmail } from '@/lib/email'
+import { sendProfilIncompletEmail, sendRecapProfilsEmail } from '@/lib/email'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -137,8 +137,55 @@ export async function GET(request: NextRequest) {
     else echecs += 1
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     LE SUIVI, RENDU VISIBLE.
+
+     ⚠️ UN SUIVI QU'ON NE VOIT PAS N'EXISTE PAS. Les colonnes en base disent
+     tout, mais personne ne lit une base tous les matins. Le même passage
+     quotidien qui relance envoie donc le compte rendu — c'est le seul moment
+     où les chiffres sont déjà sous la main.
+
+     ⚠️ ET IL SE TAIT QUAND IL N'A RIEN À DIRE. Un rapport quotidien qui répète
+     « zéro, zéro, zéro » pendant trois semaines apprend à ne plus être ouvert —
+     et le jour où il porte un vrai chiffre, il est ignoré comme les autres.
+     On n'envoie que s'il s'est passé quelque chose. */
+  const { count: payantsTotal } = await sb
+    .from('subscribers')
+    .select('id', { count: 'exact', head: true })
+    .in('status', ['trialing', 'active'])
+
+  const { count: profilsIncomplets } = await sb
+    .from('subscribers')
+    .select('id', { count: 'exact', head: true })
+    .in('status', ['trialing', 'active'])
+    .is('profil_complete_le', null)
+
+  const { count: nouveauxDuJour } = await sb
+    .from('subscribers')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', new Date(maintenant - 24 * 3600 * 1000).toISOString())
+
+  const aQuelqueChoseADire = (nouveauxDuJour ?? 0) > 0 || (profilsIncomplets ?? 0) > 0
+  if (aQuelqueChoseADire) {
+    await sendRecapProfilsEmail({
+      payants: payantsTotal ?? 0,
+      incomplets: profilsIncomplets ?? 0,
+      nouveauxDuJour: nouveauxDuJour ?? 0,
+      relancesEnvoyees: envoyees,
+      relancesEnEchec: echecs,
+    })
+  }
+
   console.log(
-    `[relance-profil] ${aRelancer.length} à relancer · ${envoyees} parties · ${echecs} en échec`,
+    `[relance-profil] ${aRelancer.length} à relancer · ${envoyees} parties · ${echecs} en échec · ` +
+      `${payantsTotal ?? 0} payants dont ${profilsIncomplets ?? 0} sans profil`,
   )
-  return NextResponse.json({ candidats: aRelancer.length, envoyees, echecs })
+  return NextResponse.json({
+    candidats: aRelancer.length,
+    envoyees,
+    echecs,
+    payants: payantsTotal ?? 0,
+    incomplets: profilsIncomplets ?? 0,
+    nouveauxDuJour: nouveauxDuJour ?? 0,
+  })
 }

@@ -508,3 +508,75 @@ export async function sendProfilIncompletEmail({
     return false
   }
 }
+
+/**
+ * LE COMPTE RENDU QUOTIDIEN DU TUNNEL — VERS L'ÉQUIPE, PAS VERS UN CHAUFFEUR.
+ *
+ * ⚠️ IL NE PART QUE S'IL A QUELQUE CHOSE À DIRE (le décideur est dans le cron).
+ * Un rapport qui répète « zéro » chaque matin apprend à ne plus être ouvert, et
+ * le jour où il porte un vrai chiffre, il est ignoré comme les autres.
+ *
+ * ⚠️ AUCUNE ADRESSE DE CHAUFFEUR N'Y FIGURE. Des compteurs suffisent à décider
+ * s'il faut agir ; la liste nominative se lit en base, avec une requête, par
+ * quelqu'un qui a une raison de la lire.
+ */
+export async function sendRecapProfilsEmail({
+  payants,
+  incomplets,
+  nouveauxDuJour,
+  relancesEnvoyees,
+  relancesEnEchec,
+}: {
+  payants: number
+  incomplets: number
+  nouveauxDuJour: number
+  relancesEnvoyees: number
+  relancesEnEchec: number
+}): Promise<boolean> {
+  if (!resend) {
+    console.error('[Email] Resend non configuré — récap profils NON envoyé')
+    return false
+  }
+
+  const complets = Math.max(0, payants - incomplets)
+  /* Un pourcentage sur zéro abonné n'est pas « 0 % », c'est « pas de réponse ».
+     On écrit « —— » plutôt qu'un chiffre qui se lirait comme un échec. */
+  const tauxTexte = payants > 0 ? `${Math.round((complets / payants) * 100)} %` : '——'
+
+  const ligne = (libelle: string, valeur: string) =>
+    `<tr><td style="font-family:'Montserrat',sans-serif;font-size:13px;color:#8a8a9a;padding:7px 0;">${escapeHtml(libelle)}</td>` +
+    `<td style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;color:#ffffff;padding:7px 0;text-align:right;">${escapeHtml(valeur)}</td></tr>`
+
+  const inner = `
+    <p style="font-family:'Genos',sans-serif;font-size:24px;font-weight:600;color:#ffffff;margin:0 0 4px;">Le tunnel, ce matin</p>
+    <p style="font-family:'Montserrat',sans-serif;font-size:12px;color:#4a4a5a;margin:0 0 24px;">Compte rendu automatique · foreas.xyz</p>
+    <table role="presentation" width="100%" style="border-collapse:collapse;margin:0 0 22px;">
+      ${ligne('Nouveaux abonnés (24 h)', String(nouveauxDuJour))}
+      ${ligne('Abonnés actifs ou en essai', String(payants))}
+      ${ligne('Profils complets', `${complets} · ${tauxTexte}`)}
+      ${ligne('Sans prénom ni numéro', String(incomplets))}
+      ${ligne('Relances parties aujourd’hui', String(relancesEnvoyees))}
+      ${relancesEnEchec > 0 ? ligne('Relances EN ÉCHEC', String(relancesEnEchec)) : ''}
+    </table>
+    <p style="font-family:'Montserrat',sans-serif;font-size:12.5px;line-height:1.6;color:#6a6a7a;margin:0;">
+      « Sans prénom ni numéro » = ils ont payé mais n'ont pas rempli l'écran d'après-paiement.
+      Ajnaya ne peut pas les joindre sur WhatsApp. Ils reçoivent deux relances, puis on les laisse.
+    </p>`
+
+  try {
+    const { error } = await resend.emails.send({
+      from: 'FOREAS <noreply@foreas.xyz>',
+      to: 'contact@foreas.xyz',
+      subject: `FOREAS · ${nouveauxDuJour} nouveau(x) · ${incomplets} profil(s) incomplet(s)`,
+      html: foreasEmailShell(inner),
+    })
+    if (error) {
+      console.error(`[Email] ÉCHEC récap profils : ${error.name} — ${error.message}`)
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error('[Email] Échec récap profils :', e)
+    return false
+  }
+}
