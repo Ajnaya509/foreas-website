@@ -2,6 +2,7 @@ import { NextResponse, after } from 'next/server'
 import { monterUneMarche } from '@/lib/escalier'
 import Stripe from 'stripe'
 import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
+import { construireSignaux, verifierCumulEssai, enregistrerEssai } from '@/lib/essaisAccordes'
 import { provisionDriverAccount } from '@/lib/provisionDriverAccount'
 import { sendCAPIEvent } from '@/lib/meta-capi'
 import { sendTikTokEvent } from '@/lib/tiktok-events-api'
@@ -514,7 +515,12 @@ export async function POST(request: Request) {
       let planInfo: { name: string; cycle: string } = { name: 'inconnu', cycle: 'inconnu' }
 
       if (session.subscription) {
-        subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+        /* `expand` : sans lui, `default_payment_method` n'est qu'un identifiant,
+           et l'empreinte de carte — le seul signal vraiment fiable contre le
+           cumul d'essais — resterait hors de portée. */
+        subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
+          expand: ['default_payment_method'],
+        })
         const prix = subscription.items.data[0]?.price
         const planMeta = (subscription.metadata?.plan || '').trim()
         const intervalle = prix?.recurring?.interval || ''
@@ -546,6 +552,95 @@ export async function POST(request: Request) {
             weekday: 'long', day: 'numeric', month: 'long',
           })
         : 'Non défini'
+
+      /* ═══════════════════════════════════════════════════════════════════
+         UN ESSAI GRATUIT PAR PERSONNE, PAS PAR ADRESSE E-MAIL
+
+         Avant ce bloc, `/api/checkout` posait `trial_end` à CHAQUE session sans
+         jamais regarder l'historique, et aucun client Stripe n'était réutilisé :
+         n'importe qui pouvait enchaîner les essais à l'infini.
+
+         ⚠️ POURQUOI ICI ET PAS À LA CRÉATION DE SESSION. Parce qu'à ce
+         moment-là on ne sait RIEN : en `ui_mode: 'custom'` l'e-mail arrive par
+         `updateEmail()`, le téléphone par `/api/checkout/coordonnees`, et la
+         carte n'existe pas encore. Ici, les trois sont connus.
+
+         ⚠️ LA SANCTION EST LA FIN DE L'ESSAI, PAS LA FIN DE L'ABONNEMENT.
+         Refuser l'abonnement ferait d'un fraudeur un client perdu ; lui faire
+         payer tout de suite en fait un client payant.
+
+         ⚠️ ON NE TOUCHE RIEN SI L'ESSAI N'EN EST PAS UN. `/reactivation` passe
+         `immediate: true` — Stripe renvoie alors `active`, sans essai. Couper
+         un essai inexistant déclencherait une facture surprise chez quelqu'un
+         qui a déjà payé.                                                       */
+      if (subscription && subscription.status === 'trialing' && subscription.trial_end) {
+        /* L'empreinte de carte est le signal le plus fiable : elle est stable
+           pour une même carte physique, quel que soit l'e-mail utilisé. Stripe
+           la donne sur le moyen de paiement — d'où le `expand` plus haut. */
+        const moyen = subscription.default_payment_method
+        let empreinteCarte: string | null =
+          moyen && typeof moyen !== 'string' ? (moyen.card?.fingerprint ?? null) : null
+
+        /* Repli : sur un abonnement en essai, Stripe laisse parfois
+           `default_payment_method` vide — la carte est alors rattachée au
+           client. Sans ce repli, le seul signal solide disparaîtrait en
+           silence, et le garde ne tiendrait plus que sur l'e-mail. */
+        if (!empreinteCarte && session.customer) {
+          try {
+            const cartes = await stripe.paymentMethods.list({
+              customer: session.customer as string,
+              type: 'card',
+              limit: 1,
+            })
+            empreinteCarte = cartes.data[0]?.card?.fingerprint ?? null
+          } catch (e) {
+            console.warn(`[essais] carte du client illisible : ${(e as Error)?.message}`)
+          }
+        }
+        if (!empreinteCarte) {
+          console.warn(
+            '[essais] aucune empreinte de carte — le contrôle ne tient plus que sur ' +
+              "l'e-mail, le téléphone et le visiteur. Signal le plus fiable absent.",
+          )
+        }
+
+        const signaux = construireSignaux({
+          empreinteCarte,
+          email: session.customer_details?.email ?? null,
+          telephone: phone,
+          visiteur: meta.foreas_identity_id || subscription.metadata?.foreas_identity_id || null,
+        })
+
+        const idAbo = subscription.id
+        const verdict = await verifierCumulEssai(signaux, idAbo)
+
+        if (verdict.cumul) {
+          console.warn(
+            `[essais] CUMUL DÉTECTÉ sur ${idAbo} — signal « ${verdict.signal} » déjà utilisé ` +
+              `par ${verdict.abonnementPrecedent}. Fin de l'essai, encaissement immédiat.`,
+          )
+          try {
+            /* `trial_end: 'now'` met fin à l'essai et déclenche la facture tout
+               de suite. L'abonnement, lui, continue : la vente est conservée. */
+            await stripe.subscriptions.update(idAbo, { trial_end: 'now' })
+            noteIncident =
+              `essai refusé (2e essai détecté par « ${verdict.signal} », précédent ${verdict.abonnementPrecedent}) — encaissement immédiat`
+          } catch (e) {
+            /* ⚠️ ON NE FAIT PAS ÉCHOUER LE PAIEMENT POUR ÇA. Un essai de trop
+               coûte quelques euros ; un webhook en erreur coûte le compte du
+               chauffeur, son mot de passe et son mail de bienvenue. */
+            console.error(`[essais] fin d'essai impossible sur ${idAbo} : ${(e as Error)?.message}`)
+            noteIncident = `cumul détecté sur ${idAbo} mais essai NON coupé — à traiter à la main`
+          }
+        } else {
+          if (verdict.motif === 'base_injoignable') {
+            noteIncident = `contrôle du cumul NON EXÉCUTÉ pour ${idAbo} (base injoignable) — essai accordé sans vérification`
+          }
+          /* On enregistre même quand le contrôle n'a pas pu tourner : mieux vaut
+             une empreinte de plus en mémoire qu'un trou définitif. */
+          await enregistrerEssai(signaux, idAbo)
+        }
+      }
 
       // Parrainage V3 — traçabilité prix payé + remise (colonnes existantes amount_eur / discount_eur).
       const fullPriceEur = (subscription?.items.data[0]?.price?.unit_amount ?? 0) / 100
