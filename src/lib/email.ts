@@ -108,7 +108,7 @@ function buildWelcomeHTML({ name, plan, trialEnd, credentials, dejaInscrit }: {
 
     <!-- ═══ HEADER IMAGE ═══ -->
     <div style="background-color:#000000;text-align:center;">
-      <img src="https://7iphe7xxtq6glx0w.public.blob.vercel-storage.com/Capture%20d%E2%80%99e%CC%81cran%202026-03-26%20a%CC%80%2022.01.03.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+      <img src="https://www.foreas.xyz/assets/email-entete.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
     </div>
 
     <!-- ═══ MAIN CONTENT — Monochrome élégant ═══ -->
@@ -343,11 +343,30 @@ function escapeHtml(s: string): string {
 }
 
 // Coquille email sobre charte FOREAS (header image + tagline "Toujours plus loin").
+/**
+ * ⚠️ 29/08 — L'EN-TÊTE DES MAILS ÉTAIT UNE CAPTURE D'ÉCRAN.
+ *
+ * Elle vivait sur un stockage externe, sous un nom de fichier contenant des
+ * accents en forme décomposée (« Capture d'écran 2026-03-26 à 22.01.03.png »).
+ * Deux problèmes, et le second est le pire :
+ *  · ce n'était pas le logo de la charte, c'était une photo de quelque chose ;
+ *  · l'adresse portait des accents combinants. Un ré-envoi depuis un système qui
+ *    normalise autrement casse l'image SANS erreur — l'en-tête devient un carré
+ *    vide dans le mail qui porte le mot de passe, et personne n'est prévenu.
+ *
+ * Remplacée par `public/assets/email-entete.png`, fabriquée depuis
+ * `public/assets/logo-blanc.svg` (md5 identique au fichier officiel de la
+ * charte) et servie depuis foreas.xyz — un domaine qu'on contrôle, une adresse
+ * en ASCII pur.
+ *
+ * ⚠️ NE PAS UTILISER DE SVG ICI. Gmail le retire, Outlook ne le connaît pas :
+ * l'en-tête disparaîtrait chez la majorité des chauffeurs.
+ */
 function foreasEmailShell(inner: string): string {
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Genos:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet"></head>
 <body style="margin:0;padding:0;background-color:#050508;">
 <div style="max-width:600px;margin:0 auto;">
-  <div style="background-color:#000000;text-align:center;"><img src="https://7iphe7xxtq6glx0w.public.blob.vercel-storage.com/Capture%20d%E2%80%99e%CC%81cran%202026-03-26%20a%CC%80%2022.01.03.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" /></div>
+  <div style="background-color:#000000;text-align:center;"><img src="https://www.foreas.xyz/assets/email-entete.png" alt="FOREAS/ — Toujours plus loin." width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" /></div>
   <div style="background-color:#050508;padding:40px 28px;">${inner}</div>
   <div style="padding:24px 28px;text-align:center;border-top:1px solid #12121e;">
     <p style="font-family:'Genos',sans-serif;font-style:italic;font-size:12px;color:#2a2a3a;margin:0;">Toujours plus loin.</p>
