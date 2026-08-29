@@ -134,6 +134,9 @@ export async function POST(request: NextRequest) {
        pourquoi. Mieux vaut une alerte de trop qu'un abonné perdu en silence. */
     await sendProvisionFailureAlert({
       email: adresse,
+      /* Un objet qui dit ce qui s'est passé : « Compte non créé après paiement »
+         enverrait chercher au mauvais endroit pour un simple rebond. */
+      sujet: `⚠️ Mail NON REMIS (${type.replace('email.', '')}) : ${adresse}`,
       reason:
         `mail NON REMIS (${type})${sujet ? ` — « ${sujet.slice(0, 80)} »` : ''}. ` +
         `Si c'est le mail de bienvenue, le chauffeur a payé et n'a PAS ses identifiants. ` +

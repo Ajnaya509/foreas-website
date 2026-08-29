@@ -375,8 +375,16 @@ export async function sendPartnerApplicantEmail({ email, contactName, companyNam
  * retrouve devant un écran de connexion sans identifiants, exactement le mur que le
  * provisionnement était censé supprimer. Ici on veut être réveillé, pas informé.
  */
-export async function sendProvisionFailureAlert({ email, name, reason }: {
+export async function sendProvisionFailureAlert({ email, name, reason, sujet }: {
   email: string; name?: string | null; reason: string
+  /**
+   * ⚠️ 28/08 — L'OBJET ÉTAIT FIGÉ, ET C'EST DEVENU FAUX LE JOUR OÙ J'AI RÉUTILISÉ
+   * CETTE FONCTION. Elle sert maintenant aussi aux rebonds de courrier, et une
+   * alerte de rebond intitulée « Compte non créé après paiement » envoie chercher
+   * au mauvais endroit. Un objet d'alerte est lu avant le corps : s'il ment, il
+   * fait perdre les premières minutes, celles qui comptent.
+   */
+  sujet?: string
 }) {
   if (!resend) { console.log('[Email] Resend non configuré — alerte provisionnement non envoyée'); return }
   const inner = `
@@ -392,7 +400,7 @@ export async function sendProvisionFailureAlert({ email, name, reason }: {
     await resend.emails.send({
       from: 'FOREAS <noreply@foreas.xyz>',
       to: 'contact@foreas.xyz',
-      subject: `⚠️ Compte non créé après paiement : ${email}`,
+      subject: sujet ?? `⚠️ Compte non créé après paiement : ${email}`,
       html: foreasEmailShell(inner),
     })
     console.log('[Email] Alerte provisionnement envoyée pour', repere(email))
