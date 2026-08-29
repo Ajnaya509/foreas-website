@@ -110,7 +110,7 @@ export const PANIER_TEXTES: Record<1 | 2 | 3, TexteMail> = {
     sujet: "Une question t'a arrêté hier ?",
     titre: "Une question t'a arrêté hier ?",
     corps:
-      'Hier tu as commencé, et tu ne suis pas allé au bout. ' +
+      "Hier tu as commencé, et tu n'es pas allé au bout. " +
       "La plupart du temps ce n'est pas le prix — c'est une question qu'on n'a pas envie de taper dans un formulaire. " +
       'Alors pose-la à Ajnaya directement, sur WhatsApp. ' +
       "Tu écris, elle répond. Pas de rendez-vous, pas de carte à sortir. " +
