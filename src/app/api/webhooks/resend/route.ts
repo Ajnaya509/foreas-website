@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
   if (A_TRAITER.has(type) && adresse.toLowerCase() === ADRESSE_ALERTE) {
     console.error(
       `[resend] ⛔ BOUCLE ÉVITÉE — l'adresse d'alerte ${ADRESSE_ALERTE} rebondit elle-même ` +
-        `(${type}). Aucune alerte envoyée : elle rebondirait à son tour. ` +
+        `(${type}). On n'en déclenche pas une seconde : elle rebondirait aussi. ` +
         `LA BOÎTE D'ALERTE EST MORTE, plus aucune alerte n'arrive.`,
     )
     return NextResponse.json({ recu: true, boucle_evitee: true })
