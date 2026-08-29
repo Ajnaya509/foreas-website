@@ -236,7 +236,24 @@ export async function POST(request: NextRequest) {
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       line_items: [lineItem],
-      billing_address_collection: 'required',
+      /* ⚠️ 29/08 — CETTE LIGNE EMPÊCHAIT TOUT PAIEMENT SUR /tarifs3.
+         `required` oblige Stripe à obtenir une adresse de facturation complète
+         avant d'accepter la confirmation. En mode embarqué (/tarifs2) c'est
+         Stripe qui dessine ce formulaire, donc il l'obtient. En `ui_mode:
+         'custom'` (/tarifs3) c'est NOUS qui dessinons : il n'y a ni champ
+         adresse, ni `updateBillingAddress`. Stripe refusait donc la
+         confirmation — avec n'importe quelle carte.
+
+         ⚠️ ET ÇA NE LAISSAIT AUCUNE TRACE CÔTÉ SERVEUR. Le refus a lieu DANS LE
+         NAVIGATEUR, avant le moindre appel d'API : les journaux Stripe ne
+         montrent que des 200. On pouvait regarder le tableau de bord toute la
+         journée sans rien voir. C'est Chandler, carte en main, qui l'a trouvé.
+
+         `auto` laisse Stripe ne réclamer que ce dont le moyen de paiement a
+         vraiment besoin — pour une carte, le code postal, affiché dans le champ
+         de carte lui-même. /tarifs2 garde `required` : son formulaire est
+         dessiné par Stripe, il sait le remplir. */
+      billing_address_collection: isElements ? 'auto' : 'required',
       locale: 'fr',
       /**
        * ── 24/08/2026 — LE CONSENTEMENT PUBLICITAIRE VOYAGE JUSQU'AU WEBHOOK ──

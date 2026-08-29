@@ -225,7 +225,19 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
       }
       await attacherCoordonnees(session.id)
       const r = await session.confirm()
-      if (r.type === 'error') setErreur(r.error.message || ECHEC_GENERIQUE)
+      if (r.type === 'error') {
+        /* ⚠️ 29/08 — MON MESSAGE GÉNÉRIQUE A CACHÉ LA VRAIE PANNE.
+           Le refus venait d'une adresse de facturation exigée et jamais
+           collectée ; l'écran disait « Vérifier la carte, puis réessayer ». On a
+           donc cherché du côté des cartes, qui n'y étaient pour rien.
+           Quand Stripe ne donne pas de phrase, on montre au moins son code : une
+           panne nommée se corrige, une panne muette se cherche. */
+        setErreur(
+          r.error.message ||
+            (r.error.code ? `${ECHEC_GENERIQUE} (code : ${r.error.code})` : ECHEC_GENERIQUE)
+        )
+        console.warn('[paiement] confirmation refusée par Stripe —', r.error)
+      }
       // En cas de succès, Stripe redirige vers `return_url`. Rien à faire ici.
     } catch {
       setErreur(ECHEC_GENERIQUE)
