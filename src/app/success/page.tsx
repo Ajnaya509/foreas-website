@@ -142,7 +142,13 @@ export default async function SuccessPage({ searchParams }: PageProps) {
   const metaSession = (session.metadata as Record<string, string> | null) || {}
   const customerName =
     metaSession.foreas_prenom || session.customer_details?.name || customer?.name || ''
-  const firstName = customerName.split(' ')[0] || 'chauffeur'
+  /* ⚠️ 29/08 — PLUS DE REPLI SUR « chauffeur ».
+     Depuis le découpage en deux écrans, le prénom n'est demandé qu'APRÈS le
+     paiement : à cet instant on ne le connaît pas encore, et c'est normal.
+     Écrire « Bienvenue, chauffeur » à quelqu'un qui vient de payer, c'est lui
+     dire qu'on ne sait pas qui il est. On rend une chaîne vide, et le titre
+     s'adapte au lieu d'inventer un nom. */
+  const firstName = customerName.split(' ')[0] || ''
 
   // Tier réel via price.lookup_key (préférable au metadata.plan qui peut diverger)
   const firstItem = subscription?.items?.data?.[0]
@@ -231,6 +237,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
         <SuccessChecmark />
 
         <CorpsSucces
+          sessionId={sessionId}
           firstName={firstName}
           customerEmail={customerEmail}
           trialEndUnix={trialEndUnix ?? null}

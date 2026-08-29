@@ -435,3 +435,76 @@ export async function sendPartnerInternalEmail(app: {
     console.log('[Email] Partner internal envoyé')
   } catch (e) { console.error('[Email] Échec internal:', e) }
 }
+
+/**
+ * LA RELANCE « IL MANQUE TON NUMÉRO ».
+ *
+ * Elle part vers quelqu'un qui a DÉJÀ payé et qui a DÉJÀ ses identifiants. Ce
+ * n'est ni une vente ni une réclamation : c'est un service qu'il n'a pas fini
+ * de brancher. Le ton suit — on tutoie, on ne relance pas sur l'argent, et on
+ * dit ce qu'il y gagne, pas ce qu'on veut obtenir.
+ *
+ * ⚠️ LE LIEN EST LE CŒUR DU MAIL. Sans identifiant de session, l'écran 2 ne
+ * peut pas savoir quel compte modifier : on n'envoie alors RIEN plutôt qu'un
+ * mail qui mène à une page qui ne sait rien faire.
+ */
+export async function sendProfilIncompletEmail({
+  email,
+  sessionId,
+  rang,
+}: {
+  email: string
+  sessionId: string | null
+  rang: number
+}): Promise<boolean> {
+  if (!sessionId) {
+    console.warn(`[Email] relance profil sans identifiant de session — non envoyée pour ${repere(email)}`)
+    return false
+  }
+  if (!resend) {
+    console.error('[Email] Resend non configuré — relance profil NON envoyée')
+    return false
+  }
+
+  const lien = `https://www.foreas.xyz/success?session_id=${encodeURIComponent(sessionId)}`
+
+  /* Deux relances, deux angles. La première rappelle ce qui manque ; la seconde
+     dit ce qu'il rate. Répéter le même message deux fois n'apporte rien à
+     quelqu'un qui l'a déjà lu une fois sans agir. */
+  const titre =
+    rang === 1 ? 'Il manque ton numéro' : 'Ajnaya ne peut toujours pas te prévenir'
+  const corps =
+    rang === 1
+      ? `Ton abonnement est actif et ton compte est prêt. Il reste une chose :
+         ton prénom et ton numéro. Sans eux, Ajnaya ne peut ni t'appeler par ton
+         nom, ni te prévenir sur WhatsApp quand la demande monte près de toi.`
+      : `Tu paies pour un service dont la moitié dort. Les alertes de zones, les
+         pics de demande, les rappels avant une course : tout ça passe par
+         WhatsApp, et on n'a pas ton numéro. Trente secondes suffisent.`
+
+  const inner = `
+    <p style="font-family:'Genos',sans-serif;font-size:26px;font-weight:600;color:#ffffff;margin:0 0 16px;">${escapeHtml(titre)}</p>
+    <p style="font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.7;color:#8a8a9a;margin:0 0 26px;">${escapeHtml(corps.replace(/\s+/g, ' ').trim())}</p>
+    <div style="text-align:center;margin:0 0 26px;">
+      <a href="${lien}" style="display:inline-block;background-image:linear-gradient(135deg,#8C52FF 0%,#6C3CE0 100%);color:#ffffff;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 30px;border-radius:14px;">Compléter en 30 secondes</a>
+    </div>
+    <p style="font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:#4a4a5a;margin:0;">Si le bouton ne s'ouvre pas : <span style="color:#6a6a7a;">${escapeHtml(lien)}</span></p>`
+
+  try {
+    const { error } = await resend.emails.send({
+      from: 'FOREAS <noreply@foreas.xyz>',
+      to: email,
+      replyTo: 'contact@foreas.xyz',
+      subject: titre,
+      html: foreasEmailShell(inner),
+    })
+    if (error) {
+      console.error(`[Email] ÉCHEC relance profil : ${error.name} — ${error.message}`)
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error('[Email] Échec relance profil :', e)
+    return false
+  }
+}

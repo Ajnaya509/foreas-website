@@ -1114,18 +1114,15 @@
 }
 
 /* ── Nos deux champs ─────────────────────────────────────────────────────── */
+/* ⚠️ 29/08 — UNE SEULE COLONNE, PARCE QU'IL N'Y A PLUS QU'UN CHAMP.
+   C'était une grille de deux colonnes pour l'e-mail et le téléphone. Le
+   téléphone est passé à l'écran d'après le paiement ; laisser deux colonnes
+   aurait affiché l'e-mail sur une demi-largeur, avec un vide à côté. */
 .coordonnees {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
   margin-top: 12px;
-}
-@media (max-width: 380px) {
-  /* À 320 px, deux champs côte à côte laissent moins de 130 px chacun : un
-     numéro de téléphone n'y tient pas. Ils passent l'un sous l'autre. */
-  .coordonnees {
-    grid-template-columns: 1fr;
-  }
 }
 .champ {
   display: block;

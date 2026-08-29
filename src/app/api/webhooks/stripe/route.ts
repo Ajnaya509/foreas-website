@@ -652,6 +652,10 @@ export async function POST(request: Request) {
       await upsertSubscriber({
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
+        /* Le lien de relance vers l'écran 2 vit sur `/success?session_id=…` :
+           sans cet identifiant, un mail « il manque ton numéro » ne pourrait
+           proposer qu'un lien mort. */
+        checkout_session_id: session.id,
         email: session.customer_details?.email,
         name: session.customer_details?.name,
         phone,

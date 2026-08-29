@@ -10,6 +10,8 @@
  * le temps de le voir. Ce n'est pas une copie : c'est le composant que la vraie
  * page utilise. Ce qu'on regarde est donc ce qui part.
  */
+import FormulaireProfil from './FormulaireProfil'
+
 type Props = {
   firstName: string
   customerEmail: string
@@ -20,6 +22,9 @@ type Props = {
   hasBeta60: boolean
   communityGroup: string | null
   customerId: string | null
+  /** L'identifiant de la session Stripe : c'est lui, et lui seul, qui autorise
+   *  l'écran 2 à écrire le prénom et le téléphone sur le bon compte. */
+  sessionId: string
   /** Le webhook n'a tourné que si la session est finalisée. Sans ça, on ne peut
    *  RIEN affirmer sur le mail : il n'est pas encore parti. */
   paiementFinalise: boolean
@@ -35,6 +40,7 @@ export default function CorpsSucces({
   hasBeta60,
   communityGroup,
   customerId,
+  sessionId,
   paiementFinalise,
 }: Props) {
   return (
@@ -87,7 +93,12 @@ export default function CorpsSucces({
       fontFamily: 'var(--font-genos), system-ui, sans-serif',
     }}
   >
-    Bienvenue,{' '}
+    {/* ⚠️ DEUX TITRES, PARCE QU'ON NE CONNAÎT PAS TOUJOURS LE PRÉNOM ICI.
+        Il n'est demandé qu'à l'écran 2, juste en dessous. Tant qu'il manque, le
+        titre parle de la marque plutôt que d'appeler quelqu'un « chauffeur » —
+        ce qui revient à lui dire qu'on ne sait pas qui il est, trente secondes
+        après qu'il a donné sa carte. */}
+    Bienvenue{firstName ? ',' : ' chez'}{' '}
     <span
       style={{
         backgroundImage:
@@ -97,7 +108,7 @@ export default function CorpsSucces({
         WebkitTextFillColor: 'transparent',
       }}
     >
-      {firstName}.
+      {firstName || 'FOREAS'}.
     </span>
   </h1>
 
@@ -214,6 +225,14 @@ export default function CorpsSucces({
       Il met parfois deux à trois minutes à arriver. Pense aux indésirables.
     </p>
   </div>
+
+  {/* ⚠️ L'ÉCRAN 2, ET SA PLACE EST DÉLIBÉRÉE.
+      Il vient APRÈS le rappel du mot de passe (qui rassure) et AVANT le bouton
+      de téléchargement (qui fait partir). Une fois le bouton touché, l'App
+      Store recouvre l'écran et personne ne revient remplir un formulaire.
+      Mais il ne bloque rien : celui qui veut son app tout de suite l'a, et une
+      relance par mail ira le chercher. */}
+  <FormulaireProfil sessionId={sessionId} />
 
   {/* L'invitation vient juste avant le bouton : c'est elle qui donne envie
       d'appuyer. Sous le bouton, elle ne serait lue par personne. */}

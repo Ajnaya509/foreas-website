@@ -78,18 +78,10 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
 
      Un chauffeur payé, sans compte, sans que personne ne le sache. Exactement
      la panne que le commentaire du webhook dit avoir déjà été payée une fois. */
-  /* ⚠️ 29/08/2026 — LE PRÉNOM EST DEMANDÉ ICI, ET C'EST LE SEUL ENDROIT POSSIBLE.
-     La page de succès disait « Bienvenue, chauffeur ». Stripe ne collecte plus
-     le nom de facturation depuis que `billing_address_collection` est passé à
-     `auto` (28/08, pour débloquer les cartes refusées) : `customer_details.name`
-     est vide. Ce champ le remplace, et il sert TROIS fois — l'écran de succès,
-     le mail de bienvenue, et le nom que l'app affiche à sa première ouverture. */
-  const [prenom, setPrenom] = useState('')
   const [courriel, setCourriel] = useState('')
-  const [telephone, setTelephone] = useState('')
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
-  const [erreurChamp, setErreurChamp] = useState<{ prenom?: string; courriel?: string; tel?: string }>({})
+  const [erreurChamp, setErreurChamp] = useState<{ courriel?: string }>({})
 
   /**
    * ⚠️ « Y A-T-IL UN MOYEN RAPIDE ? » NE SE DEVINE PAS EN CSS.
@@ -114,9 +106,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
    */
   const verrou = useRef(false)
 
-  const idPrenom = useId()
   const idCourriel = useId()
-  const idTel = useId()
   const idErreur = useId()
 
   /**
@@ -128,22 +118,13 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
    * à côté du bon champ — pas à protéger quoi que ce soit.
    */
   const valider = useCallback(() => {
-    const fautes: { prenom?: string; courriel?: string; tel?: string } = {}
-    /* Deux lettres suffisent. On ne juge pas un prénom : on vérifie seulement
-       que quelqu'un a répondu à la question. */
-    if (prenom.trim().length < 2) {
-      fautes.prenom = 'Prénom trop court — deux lettres au minimum.'
-    }
+    const fautes: { courriel?: string } = {}
     /* Contrôle volontairement large : il vaut mieux laisser passer une adresse
        douteuse que refuser une adresse valide et perdre l'abonnement. Stripe
        refera sa propre vérification derrière, dans `updateEmail`. */
     const mail = courriel.trim()
     if (!mail || mail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) {
       fautes.courriel = 'Adresse e-mail incomplète.'
-    }
-    const chiffres = telephone.replace(/\D/g, '')
-    if (!/^\+?[0-9 .\-()]{8,24}$/.test(telephone.trim()) || chiffres.length < 8) {
-      fautes.tel = 'Numéro incomplet.'
     }
     /* ⚠️ `\p{L}` EXIGE UN NAVIGATEUR DE 2018. En dessous (WebView Android
        jamais mise à jour), la construction du motif lève une erreur — et comme
@@ -155,48 +136,17 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
        refus réel de communes françaises. On garde la règle, on la protège. */
     setErreurChamp(fautes)
     return Object.keys(fautes).length === 0
-  }, [prenom, courriel, telephone])
+  }, [courriel])
 
-  /**
-   * Attache le numéro à la session AVANT de confirmer.
-   *
-   * ⚠️ UN ÉCHEC ICI NE BLOQUE PAS LE PAIEMENT.
-   * Sans ces deux informations, la fiche du chauffeur part incomplète — c'est
-   * ennuyeux et réparable. Un paiement bloqué, non. On tente, on note, on
-   * continue.
-   */
-  const attacherCoordonnees = useCallback(
-    async (idSession: string) => {
-      try {
-        const reponse = await fetch('/api/checkout/coordonnees', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId: idSession,
-            telephone: telephone.trim(),
-            prenom: prenom.trim(),
-          }),
-        })
-        /* ⚠️ 28/08 — ON N'OUVRAIT MÊME PAS L'ENVELOPPE.
-           `fetch` ne lève QUE sur une panne réseau. Un 400 « coordonnées
-           invalides » ou un 503 « clé absente » passaient donc pour un succès, et
-           le `catch` en dessous ne voyait jamais rien. Le numéro n'arrivait pas
-           sur la fiche, sans un mot — et ça ne se découvre que le jour où l'on
-           veut rappeler un chauffeur qui a payé et n'a jamais ouvert l'app.
-           ⚠️ ON NE BLOQUE PAS LE PAIEMENT POUR AUTANT : perdre un numéro est
-           grave, perdre l'abonnement l'est davantage. On le dit, c'est tout. */
-        if (!reponse.ok) {
-          console.warn(
-            `[paiement] numéro NON attaché à la session — réponse ${reponse.status}. ` +
-              `Le paiement continue, mais la fiche n'aura pas de téléphone.`
-          )
-        }
-      } catch {
-        console.warn('[paiement] coordonnées non attachées — le paiement continue')
-      }
-    },
-    [telephone, prenom],
-  )
+  /* ⚠️ 29/08/2026 — `attacherCoordonnees` A ÉTÉ RETIRÉE AVEC SES DEUX CHAMPS.
+     Le prénom et le téléphone ne sont plus demandés ici : ils passent à l'écran
+     d'après le paiement (`/success` → `POST /api/profil/completer`). Cette page
+     ne pose plus que la question sans laquelle rien n'est rattrapable —
+     l'e-mail — et la carte.
+     La route `/api/checkout/coordonnees` reste en place : elle sert encore aux
+     sessions créées ailleurs. La supprimer casserait un chemin qu'on ne voit pas
+     d'ici. */
+
 
   if (checkout.type === 'loading') {
     return (
@@ -240,7 +190,6 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         setErreur(null)
         return
       }
-      await attacherCoordonnees(session.id)
       const r = await session.confirm()
       if (r.type === 'error') {
         /* ⚠️ 29/08 — MON MESSAGE GÉNÉRIQUE A CACHÉ LA VRAIE PANNE.
@@ -300,33 +249,13 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
         jamais arrivé.
       */}
       <div className={s.coordonnees}>
-        {/* Le prénom vient en premier : c'est la question la plus facile de la
-            page, et la seule dont la réponse lui revient tout de suite — l'écran
-            suivant l'appelle par son prénom, et l'app aussi. */}
-        <label className={s.champ} htmlFor={idPrenom}>
-          <span className={s.champLabel}>Prénom</span>
-          <input
-            id={idPrenom}
-            type="text"
-            autoComplete="given-name"
-            autoCapitalize="words"
-            value={prenom}
-            onChange={(e) => setPrenom(e.target.value)}
-            placeholder="Karim"
-            aria-invalid={!!erreurChamp.prenom}
-            aria-describedby={erreurChamp.prenom ? `${idPrenom}-err` : `${idPrenom}-aide`}
-          />
-          {erreurChamp.prenom ? (
-            <span id={`${idPrenom}-err`} className={s.champErreur} role="alert">
-              {erreurChamp.prenom}
-            </span>
-          ) : (
-            <span id={`${idPrenom}-aide`} className={s.champAide}>
-              Il apparaît dans l&apos;app et dans les messages d&apos;Ajnaya.
-            </span>
-          )}
-        </label>
-
+        {/* ⚠️ 29/08 — IL N'Y A PLUS QU'UN SEUL CHAMP ICI, ET C'EST LE POINT.
+            Le prénom et le téléphone sont passés à l'écran d'après le paiement.
+            Reste l'e-mail, parce que lui n'est PAS rattrapable : sans lui, le
+            webhook ne crée aucun compte, n'envoie aucun mot de passe, et le
+            chauffeur devient introuvable avec une carte qui sera débitée trois
+            jours plus tard. Mesuré le 28/08 — les paiements passaient très bien
+            sans e-mail, et personne ne recevait rien. */}
         {/* ⚠️ L'E-MAIL EST LE PREMIER CHAMP, ET C'EST DÉLIBÉRÉ.
             C'est lui qui crée le compte, porte le mot de passe et reçoit la
             facture. Sans lui, le paiement passe et le chauffeur n'a rien. */}
@@ -356,25 +285,6 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
           )}
         </label>
 
-        <label className={s.champ} htmlFor={idTel}>
-          <span className={s.champLabel}>Téléphone</span>
-          <input
-            id={idTel}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={telephone}
-            onChange={(e) => setTelephone(e.target.value)}
-            placeholder="06 12 34 56 78"
-            aria-invalid={!!erreurChamp.tel}
-            aria-describedby={erreurChamp.tel ? `${idTel}-err` : undefined}
-          />
-          {erreurChamp.tel && (
-            <span id={`${idTel}-err`} className={s.champErreur} role="alert">
-              {erreurChamp.tel}
-            </span>
-          )}
-        </label>
       </div>
       {/*
         ⚠️ APPLE PAY ET GOOGLE PAY NE SONT PAS DESSINÉS PAR NOUS.
@@ -442,7 +352,6 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
               setErreurChamp((e) => ({ ...e, courriel: majMail.error.message || 'Adresse e-mail refusée.' }))
               return
             }
-            await attacherCoordonnees(session.id)
             const r = await session.confirm({ expressCheckoutConfirmEvent: event })
             if (r.type === 'error') setErreur(r.error.message || ECHEC_GENERIQUE)
           }}
