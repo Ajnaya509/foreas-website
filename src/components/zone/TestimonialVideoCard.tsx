@@ -92,7 +92,7 @@ function citationAffichable(t: Testimonial): boolean {
 }
 
 interface TestimonialVideoCardProps {
-  testimonial: Testimonial
+  testimonial: Testimonial | undefined
   /** Index pour stagger animation sur mount (0, 1, 2...) */
   index?: number
   /** Affiche le quote au-dessus de la vidéo (sinon vidéo seule) */
@@ -139,6 +139,16 @@ export default function TestimonialVideoCard({
   // placé au-dessus d'un useState rend l'appel des crochets conditionnel, et
   // React lève une erreur dès qu'un rendu change de branche. C'était mon
   // premier jet ; la vérification des types l'a attrapé.
+  /* ⚠️ 29/08 — `t` PEUT ÊTRE `undefined`, ET ÇA A FAIT PLANTER UNE PAGE ENTIÈRE.
+     `TESTIMONIALS[0]` vaut `undefined` par conception tant qu'aucun accord n'est
+     signé (testimonials.data.ts:218 le dit). Lire `t.name` sur rien remontait
+     jusqu'à React, et `/ou-ca-paie` devenait « Application error » à chaque
+     recherche de zone — mesuré en production.
+
+     ⚠️ LE GARDE EST ICI, ET PAS SEULEMENT CHEZ L'APPELANT. Quatre endroits
+     appellent ce composant ; deux gardaient, deux non. Un garde qui dépend de la
+     discipline de chaque appelant n'en est pas un : c'est une chance. */
+  if (!t) return null
   if (!temoignagePubliableParNom(t.name)) return null
 
 

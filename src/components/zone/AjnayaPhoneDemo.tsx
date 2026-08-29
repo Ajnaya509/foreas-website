@@ -151,20 +151,32 @@ export default function AjnayaPhoneDemo({
      L'écran est dessiné à 393 px puis RÉDUIT. Aucune valeur du code n'est
      recalculée à la main : un 19 px reste 19 px, donc on ne se trompe nulle
      part. Le facteur se mesure sur la largeur réellement rendue. */
-  useEffect(() => {
+  const poserEchelle = useCallback(() => {
     const ecran = ecranRef.current
     const app = appRef.current
     if (!ecran || !app) return
-    const poser = () => {
-      const k = ecran.clientWidth / LARGEUR_APP
-      app.style.transform = `scale(${k})`
-      app.style.height = `${ecran.clientHeight / k}px`
-    }
-    poser()
-    const ro = new ResizeObserver(poser)
+    const l = ecran.clientWidth
+    /* ⚠️ ON N'ÉCRIT JAMAIS scale(0), ET C'EST UN BUG DÉJÀ PAYÉ.
+       `.ecran` est positionné en POURCENTAGES de `.tel`, dont la taille vient
+       de l'image du châssis. Tant qu'elle n'est pas chargée, `.tel` n'a aucune
+       hauteur, `clientWidth` vaut 0, et `scale(0)` rend l'écran invisible —
+       téléphone présent, contenu introuvable, et rien dans la console.
+       La démo d'origine n'a jamais rencontré ça : son image était en base64,
+       donc déjà là. Ici elle vient du réseau. */
+    if (l <= 0) return
+    const k = l / LARGEUR_APP
+    app.style.transform = `scale(${k})`
+    app.style.height = `${ecran.clientHeight / k}px`
+  }, [])
+
+  useEffect(() => {
+    const ecran = ecranRef.current
+    if (!ecran) return
+    poserEchelle()
+    const ro = new ResizeObserver(poserEchelle)
     ro.observe(ecran)
     return () => ro.disconnect()
-  }, [])
+  }, [poserEchelle])
 
   /* L'horloge se recalcule chaque minute : les heures sont VRAIES, même
      lorsqu'aucune donnée n'existe derrière. */
@@ -289,7 +301,14 @@ export default function AjnayaPhoneDemo({
         <div className={`${s.arrivee} ${arrive ? s.on : ''}`}>
           <div className={s.tel}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/demo/ajnaya-cadre.png" alt="" aria-hidden="true" />
+            <img
+              src="/demo/ajnaya-cadre.png"
+              alt=""
+              aria-hidden="true"
+              /* C'est elle qui donne sa taille au téléphone : dès qu'elle est
+                 là, on remesure. Ne pas s'en remettre au seul observateur. */
+              onLoad={poserEchelle}
+            />
             <div className={s.ecran} ref={ecranRef}>
               <div className={s.app} ref={appRef}>
                 {/* ── LE FOND : CINQ couches, pas deux. Et les halos ne sont

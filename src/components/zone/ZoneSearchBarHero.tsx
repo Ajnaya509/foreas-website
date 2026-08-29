@@ -335,16 +335,29 @@ export default function ZoneSearchBarHero() {
               />
             )}
 
-            {/* Preuve incarnée AU MOMENT DU DOUTE (juste après le résultat) — Binaté, cas réel */}
-            <div className="mt-5">
-              <p className="text-white/50 text-[11px] font-semibold uppercase mb-2.5" style={{ letterSpacing: '0.2em' }}>
-                Pas moi qui le dis. Lui.
-              </p>
-              <TestimonialVideoCard
-                testimonial={TESTIMONIALS[0]}
-                showQuote
-              />
-            </div>
+            {/* ⚠️ 29/08 — CE BLOC FAISAIT PLANTER LA PAGE À CHAQUE RECHERCHE.
+                `TESTIMONIALS[0]` est `undefined` PAR CONCEPTION : la liste ne
+                garde que les témoignages dont l'accord est signé, et
+                testimonials.data.ts:218 l'écrit noir sur blanc — « peut être
+                undefined : la liste est vide tant qu'aucun accord n'est signé ».
+                `TestimonialVideoCard` lit `testimonial.name` sans garde, donc
+                l'exception remontait jusqu'à React et TOUTE la page devenait
+                « Application error ». Le chauffeur tapait sa zone et perdait
+                l'écran entier — mesuré en production le 29/08.
+
+                ⚠️ CE N'EST PAS UN DÉFAUT D'AFFICHAGE, C'EST UN TYPE QUI MENT :
+                le fichier de données annonce `undefined` possible, le composant
+                exige un objet, et rien entre les deux ne l'a jamais vérifié.
+                On garde donc à l'appel — et le jour où un accord est signé, le
+                bloc réapparaît tout seul. */}
+            {TESTIMONIALS[0] && (
+              <div className="mt-5">
+                <p className="text-white/50 text-[11px] font-semibold uppercase mb-2.5" style={{ letterSpacing: '0.2em' }}>
+                  Pas moi qui le dis. Lui.
+                </p>
+                <TestimonialVideoCard testimonial={TESTIMONIALS[0]} showQuote />
+              </div>
+            )}
           </div>
         )}
       </div>
