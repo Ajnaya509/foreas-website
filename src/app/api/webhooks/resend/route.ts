@@ -128,6 +128,35 @@ export async function POST(request: NextRequest) {
 
   console.log(`[resend] ${type} → ${repere(adresse)}${sujet ? ` — « ${sujet.slice(0, 60)} »` : ''}`)
 
+  /*
+   * ⚠️ 29/08/2026 — CE GARDE ARRÊTE UNE BOUCLE QUE J'AI CRÉÉE HIER.
+   *
+   * L'alerte de rebond part vers `contact@foreas.xyz` (email.ts:402). Or cette
+   * adresse REBONDIT elle aussi — constaté à l'instant dans Resend. Donc :
+   *   un rebond → une alerte vers contact@ → qui rebondit → une alerte → …
+   * Quatre alertes étaient déjà parties en moins d'une minute, chacune
+   * engendrant la suivante. Sans fin, et en brûlant la réputation d'envoi du
+   * domaine à chaque tour.
+   *
+   * La règle : on n'alerte JAMAIS sur un rebond dont le destinataire est
+   * l'adresse d'alerte elle-même. Le journal, lui, garde la trace — c'est ce
+   * qui permet de découvrir que la boîte d'alerte est morte, sans la nourrir.
+   *
+   * ⚠️ CE N'EST PAS UN CORRECTIF COSMÉTIQUE : tant que `contact@foreas.xyz`
+   * rebondit, AUCUNE alerte n'arrive nulle part. Le canal d'alerte est mort,
+   * et ce garde ne fait que l'empêcher de s'auto-alimenter. Réparer la boîte
+   * est un travail distinct, et il reste à faire.
+   */
+  const ADRESSE_ALERTE = 'contact@foreas.xyz'
+  if (A_TRAITER.has(type) && adresse.toLowerCase() === ADRESSE_ALERTE) {
+    console.error(
+      `[resend] ⛔ BOUCLE ÉVITÉE — l'adresse d'alerte ${ADRESSE_ALERTE} rebondit elle-même ` +
+        `(${type}). Aucune alerte envoyée : elle rebondirait à son tour. ` +
+        `LA BOÎTE D'ALERTE EST MORTE, plus aucune alerte n'arrive.`,
+    )
+    return NextResponse.json({ recu: true, boucle_evitee: true })
+  }
+
   if (A_TRAITER.has(type)) {
     /* ⚠️ ON ALERTE MÊME POUR UN RETARD. Un mail « delayed » qui porte le mot de
        passe est un chauffeur qui attend devant un écran de connexion sans savoir
