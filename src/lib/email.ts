@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 import { repere } from './journal'
+import { TEXTES } from './relanceProfilTextes'
 
 /**
  * ⚠️ 21/08/2026 — DEUX REPLIS DIVERGENTS POUR LA MÊME VARIABLE.
@@ -468,25 +469,17 @@ export async function sendProfilIncompletEmail({
 
   const lien = `https://www.foreas.xyz/success?session_id=${encodeURIComponent(sessionId)}`
 
-  /* Deux relances, deux angles. La première rappelle ce qui manque ; la seconde
-     dit ce qu'il rate. Répéter le même message deux fois n'apporte rien à
-     quelqu'un qui l'a déjà lu une fois sans agir. */
-  const titre =
-    rang === 1 ? 'Il manque ton numéro' : 'Ajnaya ne peut toujours pas te prévenir'
-  const corps =
-    rang === 1
-      ? `Ton abonnement est actif et ton compte est prêt. Il reste une chose :
-         ton prénom et ton numéro. Sans eux, Ajnaya ne peut ni t'appeler par ton
-         nom, ni te prévenir sur WhatsApp quand la demande monte près de toi.`
-      : `Tu paies pour un service dont la moitié dort. Les alertes de zones, les
-         pics de demande, les rappels avant une course : tout ça passe par
-         WhatsApp, et on n'a pas ton numéro. Trente secondes suffisent.`
+  /* ⚠️ LE TEXTE N'EST PLUS ÉCRIT ICI. Il vit dans `relanceProfilTextes.ts`,
+     avec les délais et l'interrupteur — c'est-à-dire tout ce qui se DÉCIDE.
+     Une phrase qui part au nom de FOREAS ne se choisit pas au milieu d'une
+     fonction d'envoi. */
+  const t = TEXTES[rang === 1 ? 1 : 2]
 
   const inner = `
-    <p style="font-family:'Genos',sans-serif;font-size:26px;font-weight:600;color:#ffffff;margin:0 0 16px;">${escapeHtml(titre)}</p>
-    <p style="font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.7;color:#8a8a9a;margin:0 0 26px;">${escapeHtml(corps.replace(/\s+/g, ' ').trim())}</p>
+    <p style="font-family:'Genos',sans-serif;font-size:26px;font-weight:600;color:#ffffff;margin:0 0 16px;">${escapeHtml(t.titre)}</p>
+    <p style="font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.7;color:#8a8a9a;margin:0 0 26px;">${escapeHtml(t.corps.replace(/\s+/g, ' ').trim())}</p>
     <div style="text-align:center;margin:0 0 26px;">
-      <a href="${lien}" style="display:inline-block;background-image:linear-gradient(135deg,#8C52FF 0%,#6C3CE0 100%);color:#ffffff;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 30px;border-radius:14px;">Compléter en 30 secondes</a>
+      <a href="${lien}" style="display:inline-block;background-image:linear-gradient(135deg,#8C52FF 0%,#6C3CE0 100%);color:#ffffff;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 30px;border-radius:14px;">${escapeHtml(t.bouton)}</a>
     </div>
     <p style="font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:#4a4a5a;margin:0;">Si le bouton ne s'ouvre pas : <span style="color:#6a6a7a;">${escapeHtml(lien)}</span></p>`
 
@@ -495,7 +488,7 @@ export async function sendProfilIncompletEmail({
       from: 'FOREAS <noreply@foreas.xyz>',
       to: email,
       replyTo: 'contact@foreas.xyz',
-      subject: titre,
+      subject: t.sujet,
       html: foreasEmailShell(inner),
     })
     if (error) {
@@ -526,12 +519,18 @@ export async function sendRecapProfilsEmail({
   nouveauxDuJour,
   relancesEnvoyees,
   relancesEnEchec,
+  relancesEteintes,
+  enAttenteDeRelance,
 }: {
   payants: number
   incomplets: number
   nouveauxDuJour: number
   relancesEnvoyees: number
   relancesEnEchec: number
+  /** Vrai tant que le texte des relances n'a pas été validé. */
+  relancesEteintes: boolean
+  /** Combien de chauffeurs seraient relancés si c'était allumé. */
+  enAttenteDeRelance: number
 }): Promise<boolean> {
   if (!resend) {
     console.error('[Email] Resend non configuré — récap profils NON envoyé')
@@ -558,9 +557,20 @@ export async function sendRecapProfilsEmail({
       ${ligne('Relances parties aujourd’hui', String(relancesEnvoyees))}
       ${relancesEnEchec > 0 ? ligne('Relances EN ÉCHEC', String(relancesEnEchec)) : ''}
     </table>
+    ${
+      relancesEteintes
+        ? `<div style="background-color:#2a1c05;border:1px solid #6b4a0a;border-radius:12px;padding:14px 16px;margin:0 0 18px;">
+             <p style="font-family:'Montserrat',sans-serif;font-size:13px;font-weight:600;color:#F5C842;margin:0 0 6px;">Les relances sont ÉTEINTES</p>
+             <p style="font-family:'Montserrat',sans-serif;font-size:12.5px;line-height:1.6;color:#b9a06a;margin:0;">
+               ${enAttenteDeRelance} chauffeur(s) attendent. Rien ne part tant que le texte des mails n'est pas validé.
+               Pour allumer : poser <span style="color:#e6d5a8;">RELANCES_PROFIL_ACTIVES = true</span> dans Vercel.
+             </p>
+           </div>`
+        : ''
+    }
     <p style="font-family:'Montserrat',sans-serif;font-size:12.5px;line-height:1.6;color:#6a6a7a;margin:0;">
       « Sans prénom ni numéro » = ils ont payé mais n'ont pas rempli l'écran d'après-paiement.
-      Ajnaya ne peut pas les joindre sur WhatsApp. Ils reçoivent deux relances, puis on les laisse.
+      Ajnaya ne peut pas les joindre sur WhatsApp.
     </p>`
 
   try {

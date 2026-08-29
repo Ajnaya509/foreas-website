@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { sendProfilIncompletEmail, sendRecapProfilsEmail } from '@/lib/email'
+import { relancesActives, DELAIS_JOURS, PLAFOND_RELANCES } from '@/lib/relanceProfilTextes'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -39,8 +40,8 @@ export const dynamic = 'force-dynamic'
  * s'oublie, la seconde agace.
  */
 
-/** Nombre de relances au-delà duquel on laisse le chauffeur tranquille. */
-const PLAFOND_RELANCES = 2
+/* Le plafond, les délais et les textes vivent dans `relanceProfilTextes.ts` :
+   ce sont des décisions, pas des réglages techniques. Ici on les applique. */
 /** Un lot borné : le planificateur repassera demain pour le reste. */
 const LOT_MAX = 50
 
@@ -79,8 +80,13 @@ export async function GET(request: NextRequest) {
   }
 
   const maintenant = Date.now()
-  const ilYaUnJour = new Date(maintenant - 24 * 3600 * 1000).toISOString()
-  const ilYaSixJours = new Date(maintenant - 6 * 24 * 3600 * 1000).toISOString()
+  const jour = 24 * 3600 * 1000
+  const seuilPremiere = new Date(maintenant - DELAIS_JOURS.premiere * jour).toISOString()
+  /* L'écart entre les deux relances, pas la date de la seconde : on compte à
+     partir de la PREMIÈRE relance, pas du paiement. */
+  const ecartSeconde = new Date(
+    maintenant - Math.max(1, DELAIS_JOURS.seconde - DELAIS_JOURS.premiere) * jour,
+  ).toISOString()
 
   const { data: candidats, error } = await sb
     .from('subscribers')
@@ -90,7 +96,7 @@ export async function GET(request: NextRequest) {
     .in('status', ['trialing', 'active'])
     /* Pas de relance sur un paiement de moins de 24 h : il est peut-être encore
        sur la page, en train de remplir. */
-    .lt('created_at', ilYaUnJour)
+    .lt('created_at', seuilPremiere)
     .lt('relances_profil_envoyees', PLAFOND_RELANCES)
     .order('created_at', { ascending: true })
     .limit(LOT_MAX)
@@ -104,13 +110,20 @@ export async function GET(request: NextRequest) {
     /* La première relance n'attend rien de plus. La seconde attend six jours
        après la première — sinon les deux partiraient le même jour. */
     if ((c.relances_profil_envoyees ?? 0) === 0) return true
-    return !!c.relance_profil_envoyee_le && c.relance_profil_envoyee_le < ilYaSixJours
+    return !!c.relance_profil_envoyee_le && c.relance_profil_envoyee_le < ecartSeconde
   })
 
   let envoyees = 0
   let echecs = 0
 
-  for (const c of aRelancer) {
+  /* ⚠️ ÉTEINT PAR DÉFAUT. Le texte de ces mails part au nom de FOREAS : il
+     n'est pas à moi de décider qu'il est bon. Tant que Chandler n'a pas allumé
+     `RELANCES_PROFIL_ACTIVES` dans Vercel, on compte, on prévient, on n'envoie
+     rien. Le compte rendu du matin le dit — un interrupteur éteint qui se tait
+     est un oubli définitif. */
+  const envoiAutorise = relancesActives()
+
+  for (const c of envoiAutorise ? aRelancer : []) {
     /* La marque AVANT l'envoi : voir l'en-tête de ce fichier. */
     const { error: erreurMarque } = await sb
       .from('subscribers')
@@ -173,6 +186,8 @@ export async function GET(request: NextRequest) {
       nouveauxDuJour: nouveauxDuJour ?? 0,
       relancesEnvoyees: envoyees,
       relancesEnEchec: echecs,
+      relancesEteintes: !envoiAutorise,
+      enAttenteDeRelance: aRelancer.length,
     })
   }
 
@@ -181,6 +196,7 @@ export async function GET(request: NextRequest) {
       `${payantsTotal ?? 0} payants dont ${profilsIncomplets ?? 0} sans profil`,
   )
   return NextResponse.json({
+    relancesActives: envoiAutorise,
     candidats: aRelancer.length,
     envoyees,
     echecs,
