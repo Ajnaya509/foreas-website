@@ -299,6 +299,19 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
             spellCheck={false}
             value={courriel}
             onChange={(e) => setCourriel(e.target.value)}
+            /* ⚠️ 29/08 — LE PANIER SE CAPTURE ICI, PAS AU CLIC SUR « PAYER ».
+               Première version : la capture vivait dans le gestionnaire de
+               paiement, juste après `updateEmail`. Elle n'attrapait donc QUE les
+               paiements REFUSÉS — jamais celui qui tape son adresse, hésite, et
+               ferme l'onglet. C'est-à-dire la majorité des abandons, et la
+               raison d'être de toute la séquence.
+               Ici, dès que l'adresse est valide et qu'il quitte le champ, le
+               panier existe. Le serveur refuse les doublons (une session, un
+               panier), donc revenir sur le champ ne coûte rien. */
+            onBlur={() => {
+              const mail = courriel.trim()
+              if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) capturerPanier(session.id)
+            }}
             placeholder="prenom@exemple.com"
             aria-invalid={!!erreurChamp.courriel}
             aria-describedby={erreurChamp.courriel ? `${idCourriel}-err` : `${idCourriel}-aide`}
