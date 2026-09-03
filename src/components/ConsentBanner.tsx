@@ -91,7 +91,17 @@ export function ConsentBanner() {
           Ici le refus reste disponible deux fois, en clair et en discret. */}
       <div className="mx-auto flex max-w-4xl items-center gap-3">
         <p className="min-w-0 flex-1 text-[12.5px] leading-[16px] text-text-secondary">
-          Quelle pub t&apos;a amené&nbsp;? Le dire à Meta et TikTok nous évite de payer les autres.{' '}
+          {/* ⚠️ ON PART DE SON INTÉRÊT, PAS DU NÔTRE — consigne de Chandler.
+              Le mot « pub » disparaît : ce n'est pas son problème.
+              Ce qui l'est : est-ce que ça lui coûte quelque chose. Non.
+              La phrase le dit en premier, et c'est vrai. */}
+          <span className="font-semibold text-text-primary">Ça ne change rien pour toi.</span>{' '}
+          Ça change tout pour nous.{' '}
+          {/* ⚠️ « Meta et TikTok » RESTE, ET CE N'EST PAS NÉGOCIABLE.
+              Sans dire qui reçoit la donnée, ce n'est plus un consentement :
+              c'est une case qu'on fait cocher. Trois mots suffisent, et le
+              détail complet part derrière le lien. */}
+          <span className="text-text-secondary/70">Meta et TikTok ·</span>{' '}
           <Link
             href="/confidentialite"
             className="whitespace-nowrap text-accent-cyan underline underline-offset-2"
