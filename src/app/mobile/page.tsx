@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Ecran1Zone from './Ecran1Zone'
 import s from './mobile.module.css'
 
 /**
@@ -46,7 +47,14 @@ export const metadata: Metadata = {
 
 export default function AccueilMobile() {
   return (
-    <main className={s.scene}>
+    <>
+      {/* ══ ÉCRAN 1 — la question de zone, décision de Chandler du 03/09 ══
+          Elle passe devant tout : moins d'un visiteur mobile sur deux fait
+          défiler une page. Le geste demandé est un nom de lieu qu'il connaît
+          par cœur. La réponse vend, et elle ne lit aucune table. */}
+      <Ecran1Zone lienWhatsApp="/wa?s=hero_zone" />
+
+      <main className={s.scene}>
       <div className={s.halos} aria-hidden="true" />
       <div className={s.grain} aria-hidden="true" />
 
@@ -114,13 +122,14 @@ export default function AccueilMobile() {
         </p>
 
         <div className={s.suite}>
-          Ce que ça change sur une journée
+          Ce que ça change sur une journée entière
           <svg className={s.chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor"
                strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
             <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   )
 }
