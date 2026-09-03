@@ -513,7 +513,20 @@ export default function AjnayaPhoneDemo({
             )}
 
             <div className={s.ecran} ref={ecranRef}>
-              <div className={s.app} ref={appRef}>
+              <div
+                className={s.app}
+                ref={appRef}
+                /* ⚠️ RIEN N'EST TOUCHABLE DANS L'APP TANT QU'ON N'EST PAS EN PLEIN ÉCRAN.
+                   Reproduit sur iPhone 16 le 03/09 : `readOnly` NE SUFFIT PAS.
+                   Sur iOS un champ en lecture seule reste focusable et ouvre
+                   quand même le clavier. Le doigt tombait à côté de la zone
+                   d'ouverture, atterrissait sur le champ, iOS faisait défiler
+                   la page pour dégager le clavier — et le téléphone sortait de
+                   l'écran. C'était ça, le « bug dégueulasse ».
+                   Ici, la seule chose qui répond au doigt est la zone
+                   d'ouverture posée par-dessus. */
+                style={immersifPossible && !immersif ? { pointerEvents: 'none' } : undefined}
+              >
                 {/* ── LE FOND : CINQ couches, pas deux. Et les halos ne sont
                        PAS des radiaux — voir la feuille de style. ────────── */}
                 <div className={s['aj-fond']}>
