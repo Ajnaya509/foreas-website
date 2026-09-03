@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
+import { empreinteDemandeur, sousPlafondAjnayaPartage } from '@/lib/plafondAjnaya'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 // ── 20/08/2026 — LES PAROLES VIENNENT DU REGISTRE ──────────────────────────
 // Le correctif du 14/08 avait retiré le « de PAIEMENT » ajouté à Dragan, mais
@@ -38,6 +39,26 @@ import { resolveSiteIdentity } from '@/lib/identityGate'
 
 import { temoignagePubliableParNom } from '@/lib/consentements.prive'
 export const runtime = 'nodejs'
+
+/**
+ * ⚠️ COMBIEN DE TEMPS CETTE PORTE A LE DROIT DE VIVRE — 03/09/2026.
+ *
+ * Sans cette ligne, la fonction est coupee par le defaut de l'hebergeur (10 s).
+ * Or l'attente MESUREE du cerveau monte a 11 132 ms
+ * (`pieuvre_analytics_events`, event_name='ajnaya_respond',
+ * canal_source='widget_site') : la reponse existait, la base l'avait gardee, et
+ * la personne ne voyait rien. Pire, le repli n'avait meme pas le temps de
+ * repondre a sa place.
+ *
+ * 30 s laisse la place a l'attente du cerveau PUIS au repli.
+ *
+ * ⚠️ NE PAS MONTER AU-DELA DE 60 SANS VERIFIER LE FORFAIT. L'hebergeur ne
+ * rabote pas une valeur trop grande : il REFUSE le deploiement
+ * (« must have a maxDuration between 1 and 60 for plan hobby »). 30 passe sur
+ * tous les forfaits, et `api/webhooks/stripe/route.ts` tient deja 60.
+ */
+export const maxDuration = 30
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -481,6 +502,17 @@ export async function POST(request: NextRequest) {
   // vivant du site aujourd'hui, appelé uniquement par AjnayaConversationModal.
   if (!isSameOriginRequest(request)) {
     return forbiddenOrigin()
+  }
+
+  // ── PLAFOND (03/09) — meme raison que les deux autres portes d'Ajnaya ──────
+  // Le garde d'origine autorise, il ne compte pas. Chaque message se paie.
+  const verdictAjnaya = await sousPlafondAjnayaPartage(empreinteDemandeur(request, 'ajnaya'))
+  if (!verdictAjnaya.autorise) {
+    console.warn('[home-modal] plafond atteint — reponse refusee')
+    return NextResponse.json(
+      { error: 'trop_de_messages', message: 'Tu vas un peu vite pour moi. Laisse-moi souffler une minute et reecris-moi.' },
+      { status: 429, headers: { 'Retry-After': String(verdictAjnaya.attendreSecondes) } },
+    )
   }
 
   try {

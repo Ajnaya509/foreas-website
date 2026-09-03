@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
 import Anthropic from '@anthropic-ai/sdk'
 import { isSameOriginRequest, hasValidBearer, forbiddenOrigin } from '@/lib/api-guard'
+import { empreinteDemandeur, sousPlafondAjnayaPartage } from '@/lib/plafondAjnaya'
 // ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
 // Cette route retombait sur la clé publique quand la clé serveur manquait.
 // Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
@@ -14,6 +15,26 @@ import { resolveSiteIdentity } from '@/lib/identityGate'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
+
+/**
+ * ⚠️ COMBIEN DE TEMPS CETTE PORTE A LE DROIT DE VIVRE — 03/09/2026.
+ *
+ * Sans cette ligne, la fonction est coupee par le defaut de l'hebergeur (10 s).
+ * Or l'attente MESUREE du cerveau monte a 11 132 ms
+ * (`pieuvre_analytics_events`, event_name='ajnaya_respond',
+ * canal_source='widget_site') : la reponse existait, la base l'avait gardee, et
+ * la personne ne voyait rien. Pire, le repli n'avait meme pas le temps de
+ * repondre a sa place.
+ *
+ * 30 s laisse la place a l'attente du cerveau PUIS au repli.
+ *
+ * ⚠️ NE PAS MONTER AU-DELA DE 60 SANS VERIFIER LE FORFAIT. L'hebergeur ne
+ * rabote pas une valeur trop grande : il REFUSE le deploiement
+ * (« must have a maxDuration between 1 and 60 for plan hobby »). 30 passe sur
+ * tous les forfaits, et `api/webhooks/stripe/route.ts` tient deja 60.
+ */
+export const maxDuration = 30
+
 
 // ─── Supabase helper (lazy, never crashes) ───────────────────────────────────
 async function getSupabase() {
@@ -426,6 +447,24 @@ export async function POST(request: NextRequest) {
     //   · un appel serveur-à-serveur porteur de `AJNAYA_LLM_TOKEN` (pont ElevenLabs).
     if (!isSameOriginRequest(request) && !hasValidBearer(request, 'AJNAYA_LLM_TOKEN')) {
       return forbiddenOrigin()
+    }
+
+    // ── PLAFOND (03/09) — le garde d'origine ne COMPTE rien ──────────────────
+    // Chaque message part vers un grand modele et se paie : 0,0064 a 0,0616 USD
+    // la reponse, mesure dans `pieuvre_analytics_events`. Avant les publicites,
+    // une boucle ici n'avait aucun plafond en face d'elle.
+    // ⚠️ Le pont serveur-a-serveur (ElevenLabs, porteur du jeton) N'EST PAS
+    // plafonne : tous ses appels partagent une seule empreinte, et un plafond
+    // commun le couperait entierement des le premier emballement.
+    if (isSameOriginRequest(request)) {
+      const verdictAjnaya = await sousPlafondAjnayaPartage(empreinteDemandeur(request, 'ajnaya'))
+      if (!verdictAjnaya.autorise) {
+        console.warn('[ajnaya/chat] plafond atteint — reponse refusee')
+        return NextResponse.json(
+          { error: 'trop_de_messages', message: 'Tu vas un peu vite pour moi. Laisse-moi souffler une minute et reecris-moi.' },
+          { status: 429, headers: { 'Retry-After': String(verdictAjnaya.attendreSecondes) } },
+        )
+      }
     }
 
     const body = await request.json()
