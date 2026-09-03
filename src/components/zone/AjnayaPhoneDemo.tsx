@@ -62,6 +62,9 @@ type Bloc = { html: string; tag?: { texte: string; couleur: 'c' | 'g' } }
 type Ligne = { id: string; qui: 'toi' | 'elle'; etiq: string; blocs: Bloc[]; sorties?: boolean }
 
 const LARGEUR_APP = 393 // la largeur réelle de l'app — voir le brief §4
+/* Plancher de sécurité : en dessous, l'écran n'affiche plus rien d'utile et
+   mieux vaut un téléphone qui dépasse qu'un téléphone vide. */
+const HAUTEUR_ECRAN_MIN = 200
 
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
 const MOIS = [
@@ -142,18 +145,27 @@ export default function AjnayaPhoneDemo({
    */
   immersifPossible?: boolean
   /**
-   * ⚠️ LE TÉLÉPHONE SE DIMENSIONNE PAR LA HAUTEUR, PAS PAR LA LARGEUR.
-   * Sur un iPhone en Safari, la barre du navigateur prend ~150 points et le
-   * bandeau de consentement ~155 de plus. Un téléphone calé sur la largeur
-   * (320 px → 633 de haut) ne rentre pas dans les ~270 qui restent : il est
-   * coupé en deux et son champ de saisie finit sous le bandeau.
-   * Mesuré sur iPhone 16 le 03/09 — c'est le bug que Chandler a vu.
-   * Ici, il prend la hauteur disponible et sa largeur en découle.
+   * ⚠️ LE TÉLÉPHONE PREND TOUTE LA LARGEUR, ET C'EST SON ÉCRAN QU'ON RACCOURCIT.
+   *
+   * Le châssis fait 820 × 1528 : à 413 points de large il mesure 770 de haut,
+   * alors que Safari n'en montre que ~647 au total. Un téléphone ENTIER à
+   * l'échelle lisible ne rentre donc dans aucun iPhone — c'est de la géométrie,
+   * pas un réglage. Les deux issues fausses, toutes deux essayées :
+   *   — le caler sur la hauteur : il tombe à 184 points de large, le texte de
+   *     l'app à 7 px, illisible (Chandler, 03/09) ;
+   *   — le laisser dépasser : il devient « loooong de fou » et il faut faire
+   *     défiler la page pour voir le bas (Chandler, 03/09 au soir).
+   *
+   * La sortie : le téléphone garde sa VRAIE largeur, il est COUPÉ net en bas
+   * par son bloc, et l'écran est raccourci EXACTEMENT à la partie visible.
+   * Conséquence décisive : le fil de conversation défile À L'INTÉRIEUR, et la
+   * dernière chose qu'on voit en bas est le champ « écris ici pour répondre ».
    */
   ajusteHauteur?: boolean
 }) {
   const ecranRef = useRef<HTMLDivElement | null>(null)
   const appRef = useRef<HTMLDivElement | null>(null)
+  const racineRef = useRef<HTMLDivElement | null>(null)
   const filRef = useRef<HTMLDivElement | null>(null)
   const minuteurs = useRef<ReturnType<typeof setTimeout>[]>([])
 
@@ -189,10 +201,55 @@ export default function AjnayaPhoneDemo({
        La démo d'origine n'a jamais rencontré ça : son image était en base64,
        donc déjà là. Ici elle vient du réseau. */
     if (l <= 0) return
+
+    /* ══ ON RACCOURCIT L'ÉCRAN À CE QUI EST RÉELLEMENT VISIBLE ══════════════
+       Le châssis dépasse volontairement du bloc, qui le coupe. Si on laissait
+       l'écran à ses 87,439 % naturels, sa moitié basse tomberait DERRIÈRE la
+       coupe : le fil de conversation défile jusqu'au dernier message, et ce
+       dernier message se retrouverait dans la partie cachée. On verrait une
+       conversation qui se termine dans le vide.
+       On mesure donc la fenêtre — le parent de la racine — et on donne à
+       l'écran exactement la hauteur qui reste sous son bord haut.
+       Aucune boucle possible : `.ecran` est en position absolue, sa hauteur
+       n'influence la position de rien. */
+    if (ajusteHauteur && !immersif) {
+      const fenetre = racineRef.current?.parentElement
+      const tel = ecran.parentElement
+      if (fenetre && tel) {
+        /* ⚠️ `offsetTop`, JAMAIS `getBoundingClientRect`. C'EST MESURÉ.
+           Le téléphone arrive en tournant (`ajArrive`, 1150 ms). Pendant ce
+           temps, le rectangle DESSINÉ est réduit et déplacé — j'ai relevé
+           299 px de large pour un élément qui en fait 375, et une hauteur
+           d'écran calculée à 385 au lieu de 488. Le téléphone restait
+           rabougri, avec 104 px de vide sous lui, pour toujours.
+           `offsetTop` vient de la mise en page, pas de la peinture : aucune
+           transformation d'un parent ne le touche. */
+        let hautEcran = 0
+        for (let n: HTMLElement | null = ecran; n && n !== fenetre; n = n.offsetParent as HTMLElement | null) {
+          hautEcran += n.offsetTop
+        }
+        const restant = fenetre.clientHeight - hautEcran
+        /* La hauteur naturelle reste le plafond : sur un grand écran, le
+           téléphone tient en entier et on ne l'étire surtout pas. */
+        const naturelle = tel.offsetHeight * 0.87439
+        const voulue = Math.max(HAUTEUR_ECRAN_MIN, Math.min(restant, naturelle))
+        /* `floor` et non `round` : la hauteur du châssis est fractionnaire
+           (698,77 px), donc le 6,221 % du bord haut l'est aussi. Arrondi au
+           supérieur, l'écran dépassait de 4 px sous la coupe et le bas de la
+           barre de saisie était rogné. Vers le bas, on ne perd rien de visible. */
+        const arrondie = `${Math.floor(voulue)}px`
+        if (ecran.style.height !== arrondie) ecran.style.height = arrondie
+        /* La cible d'ouverture épouse l'écran : elle est posée en pourcentage
+           du châssis, donc elle dépasserait de la coupe si on l'oubliait —
+           un doigt posé sous le téléphone ouvrirait le plein écran. */
+        if (declencheur.current) declencheur.current.style.height = arrondie
+      }
+    }
+
     const k = l / LARGEUR_APP
     app.style.transform = `scale(${k})`
     app.style.height = `${ecran.clientHeight / k}px`
-  }, [])
+  }, [ajusteHauteur, immersif])
 
   useEffect(() => {
     const ecran = ecranRef.current
@@ -200,6 +257,13 @@ export default function AjnayaPhoneDemo({
     poserEchelle()
     const ro = new ResizeObserver(poserEchelle)
     ro.observe(ecran)
+    /* ⚠️ OBSERVER L'ÉCRAN NE SUFFIT PAS QUAND C'EST NOUS QUI LE DIMENSIONNONS.
+       Quand le bandeau de consentement part, c'est la FENÊTRE qui grandit ;
+       l'écran, lui, garde la hauteur qu'on lui a écrite et ne bouge pas — donc
+       l'observateur ne se déclenche jamais et le téléphone reste rabougri.
+       On surveille les deux. */
+    const fenetre = racineRef.current?.parentElement
+    if (fenetre) ro.observe(fenetre)
     return () => ro.disconnect()
   }, [poserEchelle])
 
@@ -474,7 +538,9 @@ export default function AjnayaPhoneDemo({
             background: '#000',
           }
         : ajusteHauteur
-          ? { height: '100%', minHeight: 0, alignItems: 'flex-start' }
+          /* Aligné en HAUT, jamais centré : c'est le bas du téléphone qui est
+             coupé, donc le haut doit être posé au bord du bloc. */
+          ? { minHeight: 0, alignItems: 'flex-start', width: '100%' }
           : undefined
     }
   >
@@ -493,7 +559,7 @@ export default function AjnayaPhoneDemo({
               animation: 'none',
               position: 'absolute', inset: 0, opacity: 1, transform: 'none',
             }
-          : ajusteHauteur ? { height: '100%' } : undefined
+          : ajusteHauteur ? { width: '100%' } : undefined
       }
     >
       {/* ⚠️ LE VOILE EST SUPPRIMÉ, ET C'ÉTAIT LUI, L'ÉCRAN SOMBRE.
@@ -537,7 +603,12 @@ export default function AjnayaPhoneDemo({
                 filter: 'none', animation: 'none', transform: 'none',
               }
             : ajusteHauteur
-              ? { width: 'auto', height: '100%', maxWidth: '100%', animation: 'none' }
+              /* ⚠️ LA LARGEUR COMMANDE. `height: 100%` calait le téléphone sur
+                 la place restante et le rendait illisible (184 points de large,
+                 texte à 7 px). Ici il prend toute la largeur, et c'est le bloc
+                 parent qui le coupe en bas. `animation: none` retire le
+                 flottement : un objet coupé net qui flotte tremble sur sa coupe. */
+              ? { width: '100%', maxWidth: 'none', animation: 'none' }
               : undefined
         }
       >
@@ -549,7 +620,7 @@ export default function AjnayaPhoneDemo({
           /* C'est elle qui donne sa taille au téléphone : dès qu'elle est
              là, on remesure. Ne pas s'en remettre au seul observateur. */
           onLoad={poserEchelle}
-          style={ajusteHauteur ? { height: '100%', width: 'auto', display: 'block' } : undefined}
+          style={ajusteHauteur ? { width: '100%', height: 'auto', display: 'block' } : undefined}
         />}
         {/* ⚠️ AU REPOS, TOUT L'ÉCRAN EST LA COMMANDE.
             Le téléphone est réduit d'un facteur ~0,62 : le champ ne mesure
@@ -808,8 +879,11 @@ export default function AjnayaPhoneDemo({
 
   return (
     <div
+      ref={racineRef}
       className={s.racine}
-      style={undefined}
+      /* En mode ajusté, c'est le PARENT de cette racine qui fait la fenêtre :
+         il a une hauteur ferme et `overflow: hidden`. On mesure sur lui. */
+      style={ajusteHauteur ? { width: '100%' } : undefined}
     >
       {/* ⚠️ EN MODE AJUSTÉ, CETTE LIGNE DISPARAÎT ENTIÈREMENT.
           Mesuré : elle mangeait 105 px de haut pour une pastille verte et un

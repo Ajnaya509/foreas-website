@@ -75,11 +75,16 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
       <div className={s.halos} aria-hidden="true" />
       <div className={s.grain} aria-hidden="true" />
 
-      <div className={s.surtitre}>FOREAS DRIVER · POUR CHAUFFEURS VTC</div>
-
-      <h1 id="titre-zone" className={`${s.titreZone} ${validee ? s.titreZonePetit : ''}`}>
-        {validee ? <>Tu roules à<br />{validee}&nbsp;?</> : <>Tu roules où<br />ce soir&nbsp;?</>}
-      </h1>
+      {/* Le surtitre et la grande question ne servent QUE tant qu'on n'a pas
+          la zone. Une fois qu'elle est donnée, chaque ligne qu'ils gardent est
+          une ligne que le téléphone perd — et le téléphone est le seul
+          argument de cet écran. */}
+      {!validee && (
+        <>
+          <div className={s.surtitre}>FOREAS DRIVER · POUR CHAUFFEURS VTC</div>
+          <h1 id="titre-zone" className={s.titreZone}>Tu roules où<br />ce soir&nbsp;?</h1>
+        </>
+      )}
 
       {!validee && (
         <form className={s.champBloc} onSubmit={(e) => { e.preventDefault(); valider(zone) }}>
@@ -110,6 +115,33 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
 
       {validee && (
         <>
+          {/* ══ LA CONSIGNE ═══════════════════════════════════════════════════
+              Deux lignes, et elles disent exactement ce qu'il doit faire et où
+              il se trouve. Ce qui était là avant — « Tu roules à Roissy CDG ? »
+              en gros, puis « Elle répond tout de suite. Tu écris, c'est tout. »
+              en bas — coûtait 145 points de haut pour ne rien demander.
+              La zone n'a pas besoin d'être répétée : elle est écrite DANS le
+              téléphone, deux centimètres plus bas (« Autour de Roissy CDG »). */}
+          <div className={s.consigne}>
+            <div className={s.consigneTexte}>
+              <h1 id="titre-zone" className={s.consigneTitre}>Touche l&apos;écran.</h1>
+              <p className={s.consigneSous}>
+                Tu parles à Ajnaya <b>dans l&apos;app que tu auras</b>.
+              </p>
+            </div>
+            {/* Écrit court pour que « Touche l'écran. » tienne sur UNE ligne :
+                sur deux, le titre volait 32 points au téléphone. Le nom complet
+                reste dans l'étiquette lue par les lecteurs d'écran. */}
+            <button
+              type="button"
+              className={s.changer}
+              aria-label="Changer de zone"
+              onClick={() => setValidee(null)}
+            >
+              Changer
+            </button>
+          </div>
+
           <div className={s.telBloc}>
             {/* ⚠️ C'EST LE MÊME TÉLÉPHONE QUE `/ou-ca-paie`, PAS UNE COPIE.
                 J'en avais fabriqué un deuxième, plus pauvre : orbe perdue,
@@ -122,12 +154,6 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
           </div>
 
           <a className={s.actionWa} href={lienWhatsApp}>Continuer sur WhatsApp</a>
-          <p className={s.souslAction}>
-            Elle répond tout de suite. Tu écris, c&apos;est tout.{' '}
-            <button type="button" className={s.lienNu} onClick={() => setValidee(null)}>
-              Changer de zone
-            </button>
-          </p>
         </>
       )}
     </section>

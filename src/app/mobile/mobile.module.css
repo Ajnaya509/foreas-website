@@ -253,16 +253,18 @@
 
 .ecran1 {
   position: relative;
-  /* ⚠️ REVENU À `min-height`, ET C'EST UN ARBITRAGE, PAS UN RETOUR EN ARRIÈRE.
-     Avec une hauteur ferme, le téléphone tenait dans l'écran — mais il ne
-     faisait plus que 184 points de large : le texte de l'app tombait à 7 px,
-     illisible avant qu'on clique dessus. Chandler l'a vu tout de suite.
-     Choix assumé : le téléphone reprend sa vraie largeur et redevient LISIBLE,
-     et la page défile normalement pour aller chercher ce qui suit.
-     Ce qui reste interdit, c'est le RECOUVREMENT : le téléphone ne doit
-     jamais mordre sur le bouton d'en dessous. C'est le flux qui l'en empêche
-     maintenant, pas une hauteur imposée. */
-  min-height: 100svh;
+  /* ⚠️ HAUTEUR FERME, ET CETTE FOIS SANS RÉTRÉCIR LE TÉLÉPHONE.
+     Les deux tentatives précédentes se sont annulées :
+       — hauteur ferme + téléphone calé sur la hauteur → 184 points de large,
+         texte de l'app à 7 px, illisible ;
+       — hauteur libre + téléphone en pleine largeur → 770 points de haut dans
+         un écran qui en montre 647, « loooong de fou », il faut faire défiler.
+     Ce qui les départage : le téléphone garde sa pleine largeur ET il est
+     COUPÉ par son bloc, dont l'écran est raccourci d'autant. Rien ne dépasse,
+     rien ne rétrécit, et le fil défile à l'intérieur du téléphone.
+     `100svh` et jamais `100vh` : sur Safari mobile, `100vh` compte les barres
+     qui disparaissent et la page saute au premier défilement. */
+  height: 100svh;
   display: flex; flex-direction: column;
   background: #060610;
   overflow: hidden;
@@ -354,8 +356,12 @@
 .reponseTexte b { color: #F8FAFC; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .actionWa {
+  /* `flex: none` : la fenêtre du téléphone prend tout le reste, le bouton, lui,
+     garde ses 54 points quoi qu'il arrive. C'est le défaut du 21/08 —
+     un bouton principal inatteignable pour tous les nouveaux visiteurs. */
+  flex: none;
   display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 54px; margin-top: 4px; border-radius: 15px;
+  width: 100%; height: 54px; margin-top: 12px; border-radius: 15px;
   background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 52%, #B494FF 100%);
   box-shadow: 0 0 24px rgba(140,82,255,.32);
   font-family: var(--font-genos), system-ui, sans-serif;
@@ -379,34 +385,66 @@
    en plein écran lisible — on comprend qu'on VIENT d'entrer quelque part. */
 .telBloc {
   position: relative; z-index: 3;
-  /* ⚠️ LA LARGEUR COMMANDE, PAS LA HAUTEUR.
-     À 184 points de large, l'app à l'intérieur était réduite d'un facteur 0,47 :
-     un texte de 15 px tombait à 7 px. On ne lit pas 7 px sur un téléphone.
-     À 350, le facteur passe à 0,68 et le texte à 10 px : on lit.
-     Le téléphone est le héros de cet écran ; c'est à lui qu'on donne la place. */
-  flex: none;
-  /* ⚠️ PLEINE LARGEUR, MOINS RIEN. C'est le but : on doit voir un TÉLÉPHONE
-     dans le téléphone, pas une vignette. À 373 points, l'app à l'intérieur
-     tourne à 0,73 — un texte de 15 px se lit à 11 px, comme dans la vraie app.
-     Le bloc sort des marges de la page volontairement : le téléphone est le
-     héros de cet écran, pas un élément de plus dans une colonne. */
+  /* ══ LA FENÊTRE QUI COUPE LE TÉLÉPHONE ═════════════════════════════════
+     Elle prend TOUT l'espace qui reste entre la consigne et le bouton, et
+     elle coupe net ce qui dépasse. Le téléphone, lui, est dessiné à sa vraie
+     largeur — 413 points, l'app à l'intérieur tourne à 0,80, un texte de 15 px
+     se lit à 12. C'est le seul réglage où il est à la fois ENTIER en largeur
+     et CONTENU en hauteur.
+     `min-height: 0` est obligatoire : sans lui, un enfant de flex refuse de
+     descendre sous sa taille naturelle et la coupe n'a jamais lieu. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  /* Il sort des marges de la page volontairement : le téléphone est le héros
+     de cet écran, pas un élément de plus dans une colonne. */
   width: calc(100% + 40px); max-width: none;
-  margin: 8px -20px 0;
-  display: flex; justify-content: center;
+  margin: 10px -20px 0;
+  display: block;
 }
 
-/* Le titre rétrécit une fois la zone choisie : il a fait son travail, et
-   chaque ligne qu'il garde est une ligne que le téléphone perd. */
-/* Une fois la zone choisie, le titre a fait son travail. Chaque ligne qu'il
-   garde est une ligne que le téléphone perd. */
-.titreZonePetit { font-size: 22px; letter-spacing: -.8px; line-height: 1.06; }
 
-/* Un lien écrit comme du texte, mais qui reste une vraie commande :
-   48 px de haut réels, focus visible. On ne rabote jamais une cible. */
-.lienNu {
-  display: inline-flex; align-items: center; min-height: 48px;
-  background: none; border: 0; padding: 0;
-  color: rgba(248,250,252,.72); font: inherit; cursor: pointer;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA CONSIGNE — une fois la zone donnée, il n'y a plus qu'une chose à dire.
+   Chandler, 03/09 : « efface les phrases, mets quelque chose de concis et
+   abyssalement limpide en lui disant de parler directement dans l'app ».
+   Deux lignes, sept mots pour la première. Rien d'autre ne survit ici :
+   chaque ligne gardée est une ligne que le téléphone perd, et le téléphone
+   est le seul argument de cet écran.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.consigne {
+  position: relative; z-index: 3; flex: none;
+  display: flex; align-items: flex-start; gap: 12px;
+  margin: 2px 0 0;
+}
+.consigneTexte { flex: 1; min-width: 0; }
+.consigneTitre {
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-size: 32px; font-weight: 900; letter-spacing: -1.4px; line-height: 1;
+  color: #F8FAFC; margin: 0; white-space: nowrap;
+}
+.consigneSous {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 14.5px; line-height: 19px; color: rgba(248,250,252,.62);
+  margin: 7px 0 0;
+}
+.consigneSous b { color: #F8FAFC; font-weight: 700; }
+
+/* « Changer de zone » : discret, mais c'est une vraie commande — 44 points de
+   haut réels et un anneau de focus. On ne rabote jamais une cible. */
+.changer {
+  flex: none; display: inline-flex; align-items: center; min-height: 44px;
+  background: none; border: 0; padding: 0 2px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 12.5px; color: rgba(248,250,252,.42); cursor: pointer;
   text-decoration: underline; text-underline-offset: 3px;
 }
-.lienNu:focus-visible { outline: 2px solid #00D4FF; outline-offset: 2px; }
+.changer:focus-visible { outline: 2px solid #00D4FF; outline-offset: 2px; }
+
+@media (max-width: 360px) {
+  .consigneTitre { font-size: 28px; }
+  .consigneSous { font-size: 13.5px; }
+}
