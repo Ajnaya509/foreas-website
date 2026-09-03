@@ -276,6 +276,42 @@ export default function AjnayaPhoneDemo({
     setImmersif(true)
   }, [immersifPossible])
 
+  /* ══ DEUX GESTES SUR UN SEUL OBJET ════════════════════════════════════════
+     ⚠️ CE QUI EXISTAIT AVANT NE MARCHAIT PAS, ET CHANDLER L'A DIT TROIS FOIS :
+     « le mockup ne scroll pas, il est fixe sur la page ».
+     La cause : un calque invisible (`.ouvrir`) couvrait 76 % × 87 % de l'écran
+     et attrapait TOUT — y compris un glissement. Et par-dessus, l'application
+     entière portait `pointer-events: none`. Le téléphone était donc une photo :
+     le seul geste possible était l'appui, et il ouvrait le plein écran.
+
+     Maintenant, un seul objet répond à deux gestes, comme un vrai téléphone :
+       · GLISSER  → la conversation défile à l'intérieur (défilement natif,
+                    on n'appelle jamais preventDefault) ;
+       · APPUYER  → le plein écran s'ouvre.
+     On distingue les deux à la levée du doigt : moins de 10 px parcourus et
+     moins de 600 ms écoulées, c'est un appui ; au-delà, c'est un glissement et
+     on ne fait rien.
+
+     `PointerEvent` et non `TouchEvent` : il couvre le doigt ET la souris avec
+     le même code, et il n'y a donc pas de double déclenchement (un `click`
+     après un `touchend` aurait ouvert le plein écran deux fois). */
+  const appui = useRef({ x: 0, y: 0, t: 0 })
+  const doigtPose = useCallback((e: React.PointerEvent) => {
+    appui.current = { x: e.clientX, y: e.clientY, t: e.timeStamp }
+  }, [])
+  const doigtLeve = useCallback(
+    (e: React.PointerEvent) => {
+      if (!immersifPossible || immersif) return
+      const d = appui.current
+      const distance = Math.hypot(e.clientX - d.x, e.clientY - d.y)
+      const duree = e.timeStamp - d.t
+      /* 10 px : en dessous, aucun pouce humain ne « glisse » volontairement.
+         600 ms : au-delà, c'est un appui long, pas une ouverture. */
+      if (distance < 10 && duree < 600) entrer()
+    },
+    [immersifPossible, immersif, entrer],
+  )
+
   const sortir = useCallback(() => {
     setImmersif(false)
     /* Le focus revient d'où il venait. Sans ça, un lecteur d'écran repart du
@@ -630,6 +666,13 @@ export default function AjnayaPhoneDemo({
             n'est pas une cible, c'est un piège à pouce.
             On ne grossit pas le champ, ça casserait l'échelle de l'app :
             c'est l'écran entier qui devient touchable. */}
+        {/* ⚠️ CE BOUTON NE PREND PLUS LE DOIGT — IL NE SERT PLUS QU'AU CLAVIER.
+            Il porte `pointer-events: none` (feuille de style) : il devient
+            invisible au toucher et à la souris, qui passent au travers jusqu'à
+            l'écran et à ses deux gestes. Mais il reste dans le document, donc
+            il garde son nom pour les lecteurs d'écran et il s'atteint à la
+            tabulation avec un anneau de focus. Le supprimer aurait retiré la
+            seule commande d'ouverture accessible au clavier. */}
         {immersifPossible && !immersif && (
           <button
             ref={declencheur}
@@ -643,21 +686,27 @@ export default function AjnayaPhoneDemo({
         <div
           className={s.ecran}
           ref={ecranRef}
+          onPointerDown={immersifPossible && !immersif ? doigtPose : undefined}
+          onPointerUp={immersifPossible && !immersif ? doigtLeve : undefined}
           style={immersif ? { position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: 0 } : undefined}
         >
           <div
             className={s.app}
             ref={appRef}
-            /* ⚠️ RIEN N'EST TOUCHABLE DANS L'APP TANT QU'ON N'EST PAS EN PLEIN ÉCRAN.
-               Reproduit sur iPhone 16 le 03/09 : `readOnly` NE SUFFIT PAS.
-               Sur iOS un champ en lecture seule reste focusable et ouvre
-               quand même le clavier. Le doigt tombait à côté de la zone
-               d'ouverture, atterrissait sur le champ, iOS faisait défiler
-               la page pour dégager le clavier — et le téléphone sortait de
-               l'écran. C'était ça, le « bug dégueulasse ».
-               Ici, la seule chose qui répond au doigt est la zone
-               d'ouverture posée par-dessus. */
-            style={immersifPossible && !immersif ? { pointerEvents: 'none' } : undefined}
+            /* ⚠️ L'APP EST TOUCHABLE À NOUVEAU — SAUF DEUX ENDROITS.
+               Elle portait `pointer-events: none` en entier, et c'est ce qui la
+               rendait morte : on ne pouvait rien y faire défiler.
+               Mais on ne peut pas non plus tout rendre touchable. Mesuré sur
+               iPhone 16 le 03/09 : `readOnly` NE SUFFIT PAS — sur iOS un champ
+               en lecture seule reste focusable et ouvre quand même le clavier ;
+               iOS fait alors défiler la page pour le dégager, et le téléphone
+               sort de l'écran. C'était le « bug dégueulasse ».
+               La règle est donc : le FIL est touchable (c'est lui qui défile),
+               l'en-tête et la barre du bas ne le sont pas (voir la feuille de
+               style, `.aj-head` et `.aj-dock` en mode posé). Bonus : un doigt
+               posé sur l'en-tête ou sur la barre traverse et fait défiler la
+               PAGE — le visiteur n'est jamais prisonnier du téléphone. */
+            data-pose={immersifPossible && !immersif ? 'oui' : undefined}
           >
             {/* ── LE FOND : CINQ couches, pas deux. Et les halos ne sont
                    PAS des radiaux — voir la feuille de style. ────────── */}
@@ -715,28 +764,38 @@ export default function AjnayaPhoneDemo({
               <div className={s['aj-pense']}><i /></div>
             </header>
 
-            <div className={s['aj-fil']} ref={filRef} aria-live="polite">
-              {/* ── LA CARTE D'ESTIMATION — bord haut DOUBLE : une lumière
-                     pleine largeur, PUIS un filet en retrait de 18 px. ── */}
-              <div className={s['aj-banniere']}>
-                <span className={s.lum} />
-                <span className={s.filet} />
-                <div className={s.gauche}>
-                  <div className={s['aj-sous']}>
-                    <span className={s['aj-approx']}>≈</span>
-                    <span className={s['aj-montant']}>32</span>
-                    <span className={s['aj-unite']}>€/h</span>
-                  </div>
-                  <div className={s['aj-zone']}>
-                    Autour de {nomLieu} · {savoir.etat}
-                  </div>
+            {/* ══ LA RÉPONSE, ÉPINGLÉE HORS DU FIL ═══════════════════════════
+                ⚠️ ELLE ÉTAIT DANS LE FIL, ET C'ÉTAIT LE DÉFAUT.
+                Le fil se recolle en bas à chaque message (voir plus haut, sans
+                condition). La carte, premier enfant du fil, remontait donc avec
+                lui : mesuré à 2,5 s, elle était 536 px AU-DESSUS du bord haut de
+                l'écran, et le nom de la zone demandée n'était plus écrit nulle
+                part. Ce n'était pas un défaut de hiérarchie — c'était de la
+                géométrie : la réponse à sa question sortait physiquement du cadre.
+                Sortie du fil, avec `flex: none` et un fond OPAQUE, elle ne peut
+                plus bouger. C'est ça, « mettre en exergue ce qu'on lui a demandé ».
+                Le fond doit être opaque : translucide, le texte qui défile
+                dessous se lirait au travers. */}
+            <div className={`${s['aj-banniere']} ${s.epinglee}`}>
+              <span className={s.lum} />
+              <span className={s.filet} />
+              <div className={s.gauche}>
+                <div className={s['aj-sous']}>
+                  <span className={s['aj-approx']}>≈</span>
+                  <span className={s['aj-montant']}>32</span>
+                  <span className={s['aj-unite']}>€/h</span>
                 </div>
-                <div className={s['aj-droite']}>
-                  <span className={s['aj-tampon']}>estimation · {heures.hh}</span>
-                  <span className={s.chev}>›</span>
+                <div className={s['aj-zone']}>
+                  Autour de {nomLieu} · {savoir.etat}
                 </div>
               </div>
+              <div className={s['aj-droite']}>
+                <span className={s['aj-tampon']}>estimation · {heures.hh}</span>
+                <span className={s.chev}>›</span>
+              </div>
+            </div>
 
+            <div className={s['aj-fil']} ref={filRef} aria-live="polite">
               <div className={s['aj-frise']}>
                 <div className={s.titre}>
                   Les zones rentables, heure par heure

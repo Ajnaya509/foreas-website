@@ -114,8 +114,19 @@
 .aj-aide svg{width:18px;height:18px;}
 
 /* ── LE FIL ────────────────────────────────────────────────────────── */
+/* ⚠️ TROIS PROPRIÉTÉS, ET CHACUNE RÉPARE UNE CHOSE PRÉCISE.
+   `touch-action: pan-y pinch-zoom` — autorise le glissement vertical du doigt.
+     JAMAIS `pan-y` tout seul : ça interdirait d'agrandir le texte au pincement,
+     et la charte l'exige jusqu'à 200 %. JAMAIS `none` : ça retuerait tout.
+   `overscroll-behavior-y: contain` — quand le fil arrive au bout, la page ne
+     part pas d'un coup. Le visiteur n'est pas prisonnier pour autant : l'en-tête
+     et la barre du bas laissent passer le doigt jusqu'à la page.
+   `-webkit-overflow-scrolling: touch` — l'élan naturel d'iOS. Sans lui, le
+     défilement s'arrête net au lever du doigt : ça ne ressemble pas à une app. */
 .aj-fil{position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;
-  padding:6px 12px 4px;scrollbar-width:none;}
+  padding:6px 12px 4px;scrollbar-width:none;
+  touch-action:pan-y pinch-zoom;overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;}
 .aj-fil::-webkit-scrollbar{display:none;}
 .aj-ligne{display:flex;flex-direction:column;margin-bottom:12px;
   animation:ajEntre .22s ease-out both;}
@@ -396,10 +407,20 @@
 /* La cible d'ouverture, état posé. Invisible, mais c'est une vraie commande :
    elle a un nom pour les lecteurs d'écran et un anneau de focus au clavier.
    Elle épouse exactement la découpe de l'écran dans le châssis. */
+/* ⚠️ `pointer-events: none` EST LA CORRECTION, PAS UN DÉTAIL.
+   Ce calque couvrait 76 % × 87 % de l'écran et attrapait TOUT geste, glissement
+   compris. C'est lui qui rendait la maquette inerte : « le mockup ne scroll pas,
+   il est fixe sur la page ». Il ne prend plus rien au doigt ni à la souris — ils
+   traversent jusqu'à l'écran, qui distingue lui-même l'appui du glissement.
+   On le GARDE quand même, et pour une seule raison : c'est la seule commande
+   d'ouverture atteignable au clavier et nommée pour les lecteurs d'écran.
+   Un focus au clavier le rend visible ; un doigt ne le rencontre jamais. */
 .ouvrir{position:absolute;z-index:4;
   left:12.037%;top:6.221%;width:76.445%;height:87.439%;
   border:0;background:transparent;cursor:pointer;
+  pointer-events:none;
   border-radius:14.749%/6.871%;}
+.ouvrir:focus-visible{pointer-events:auto;}
 .ouvrir:focus-visible{outline:2px solid #00D4FF;outline-offset:3px;}
 
 /* La sortie. 48 px comme tout le reste — on ne rabote jamais une cible. */
@@ -418,3 +439,32 @@
 @media (prefers-reduced-motion: reduce){
   .voile{animation:none;opacity:1;}
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE MODE POSÉ — quels endroits du téléphone répondent au doigt
+   ═══════════════════════════════════════════════════════════════════════════
+   Le FIL répond : c'est lui qu'on fait défiler.
+   L'EN-TÊTE et la BARRE DU BAS ne répondent pas, et c'est double gain :
+     · le faux champ de saisie ne peut plus prendre le focus — sur iOS un champ
+       en lecture seule ouvre quand même le clavier, iOS fait alors défiler la
+       page pour le dégager, et le téléphone sort de l'écran (bug du 03/09) ;
+     · un doigt posé là traverse jusqu'à la page, donc on peut toujours faire
+       défiler la page malgré `overscroll-behavior: contain` sur le fil.
+   Le téléphone touche les deux bords de l'écran : sans cette échappée, le
+   visiteur se croirait coincé dedans. */
+[data-pose='oui'] .aj-head,
+[data-pose='oui'] .aj-dock { pointer-events: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA RÉPONSE ÉPINGLÉE — elle est sortie du fil, elle ne peut plus s'en aller
+   ═══════════════════════════════════════════════════════════════════════════
+   `flex: none` : elle ne se laisse pas comprimer par le fil qui grandit.
+   Fond OPAQUE : le fond d'origine est translucide ; posée au-dessus d'un fil
+   qui défile, elle laisserait lire le texte au travers.
+   Plus d'ombre portée : elle baverait sur la première bulle du fil. À la place,
+   un filet net d'un pixel qui marque la séparation sans salir. */
+.epinglee{flex:none;z-index:2;margin:2px 6px 6px;
+  background:#0D1122;
+  box-shadow:none;
+  border-color:rgba(255,255,255,.10);}
