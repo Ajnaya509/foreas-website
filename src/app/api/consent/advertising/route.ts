@@ -12,6 +12,7 @@ import {
   readCurrentAdvertisingConsent,
   recordAdvertisingConsent,
 } from '@/lib/advertisingConsentServer'
+import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -91,6 +92,39 @@ export async function POST(request: NextRequest) {
       },
       { status: conflict ? 409 : 503, headers: noStore },
     )
+  }
+
+  // ── 03/09 — L'ORIGINE S'ÉCRIT ICI, SUR LA FICHE QUI PORTE L'ACCORD ────────
+  //
+  // ⚠️ LE DÉFAUT QU'ON FERME, MESURÉ SUR UNE VISITE RÉELLE.
+  // Le Site fabriquait DEUX fiches pour une seule visite :
+  //   20:29:35  fiche A, badge httpOnly `foreas_vid` (UUID)  -> reçoit l'ACCORD (ici)
+  //   20:29:51  fiche B, empreinte JavaScript de la page     -> recevait l'ORIGINE
+  // Comptes du 03/09 : 3 identités portent un accord, 324 portent une origine,
+  // ZÉRO ne porte les deux. Conséquence : la route qui parle à Meta demande
+  // « cette personne a-t-elle accepté ? » à la fiche B, qui n'a jamais d'accord.
+  // Rien ne pouvait donc jamais partir, même après un vrai « oui ».
+  //
+  // ⚠️ POURQUOI PAS DE L'AUTRE CÔTÉ. Le correctif évident — ajouter le badge
+  // serveur aux identifiants de /api/observe — a été mesuré et REFUSÉ :
+  // `resolve_identity_v2` ne retient que le PREMIER `visitor_id` du tableau
+  // (`LIMIT 1`, sans tri). Le badge serait arrivé en second, donc jamais lu, et
+  // aurait laissé une trace « rattaché » trompeuse dans identity_identifiers.
+  //
+  // Ici, `identityId` EST déjà la fiche qui porte l'accord. L'origine y atterrit
+  // par construction, sans dépendre d'un ordre ni du relais Railway. C'est le
+  // motif déjà éprouvé dans `api/ajnaya/home-modal/route.ts` (l. 506-525).
+  //
+  // ⚠️ SEULEMENT SUR UN OUI. Écrire l'origine de quelqu'un qui vient de REFUSER
+  // serait exactement ce que son refus interdit.
+  if (result.granted === true) {
+    try {
+      await persistAcquisition(sb, identityId, 'consent', readAcquisitionFromRequest(request))
+    } catch (error) {
+      // Une origine non écrite ne doit JAMAIS faire échouer un consentement :
+      // le geste de la personne prime sur notre mesure.
+      console.warn('[consent] origine non rattachée :', (error as Error).message)
+    }
   }
 
   // Ne jamais renvoyer l'identité, le badge, ni une donnée personnelle.
