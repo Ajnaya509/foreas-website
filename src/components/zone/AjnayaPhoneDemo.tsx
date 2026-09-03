@@ -434,21 +434,55 @@ export default function AjnayaPhoneDemo({
     mot()
   }
 
+  /* ⚠️ LA RACINE AUSSI. C'est l'étage que j'avais oublié, et il suffisait à tout
+     casser : mesuré, elle faisait 681 px dans une boîte de 431.
+     `height: 100%` remonte la chaîne des parents et s'arrête au PREMIER qui n'a
+     pas de hauteur ferme. En oublier un seul, c'est comme n'en avoir posé aucun —
+     la mesure était rigoureusement identique avant et après ma correction. */
   return (
-    <div className={s.racine}>
-      <p className={`${s.vivant} ${arrive ? s.on : ''}`}>
-        <span className={s.pt} />
-        {!ajusteHauteur && <em>Reproduction réelle de FOREAS Driver</em>}
-      </p>
+    <div
+      className={s.racine}
+      style={ajusteHauteur && !immersif ? { height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' } : undefined}
+    >
+      {/* ⚠️ EN MODE AJUSTÉ, CETTE LIGNE DISPARAÎT ENTIÈREMENT.
+          Mesuré : elle mangeait 105 px de haut pour une pastille verte et un
+          commentaire sur nous-mêmes — et ces 105 px, c'est le téléphone qui
+          les perdait. Il passait de 230 à 175 points de large.
+          Cacher le texte sans retirer le bloc ne sert à rien : c'est la
+          HAUTEUR qui coûte, pas le texte. */}
+      {!ajusteHauteur && (
+        <p className={`${s.vivant} ${arrive ? s.on : ''}`}>
+          <span className={s.pt} />
+          <em>Reproduction réelle de FOREAS Driver</em>
+        </p>
+      )}
 
-      <div className={`${s.scene} ${immersif ? s.immersif : ''}`}>
-        <div className={`${s.arrivee} ${arrive ? s.on : ''}`}>
+      {/* ⚠️ CHAQUE NIVEAU DOIT AVOIR UNE HAUTEUR, SINON `height: 100%` NE VAUT RIEN.
+          Mesuré le 03/09 : le téléphone faisait 538 px dans une boîte de 432 et
+          recouvrait le bouton WhatsApp. Cause — `.scene` porte `min-height: 60px`
+          et `.arrivee` aucune hauteur. Un `height: 100%` posé sur l'enfant remonte
+          la chaîne, ne trouve aucune hauteur ferme, et retombe sur la taille
+          naturelle de l'image. Il faut la poser à TOUS les étages. */}
+      <div
+        className={`${s.scene} ${immersif ? s.immersif : ''}`}
+        style={ajusteHauteur && !immersif ? { height: '100%', minHeight: 0, alignItems: 'flex-start' } : undefined}
+      >
+        <div
+          className={`${s.arrivee} ${arrive ? s.on : ''}`}
+          style={ajusteHauteur && !immersif ? { height: '100%' } : undefined}
+        >
           {/* Le voile qui coupe le site quand on entre dans l'application. */}
           {immersif && <div className={s.voile} onClick={sortir} aria-hidden="true" />}
 
           <div
             className={s.tel}
-            style={ajusteHauteur ? { width: 'auto', height: '100%', maxWidth: '100%' } : undefined}
+            style={ajusteHauteur && !immersif ? {
+              width: 'auto', height: '100%', maxWidth: '100%',
+              /* Le flottement est coupé ici : il translate le téléphone de
+                 quelques pixels et le fait mordre sur ce qui suit quand la
+                 place est comptée au pixel près. */
+              animation: 'none',
+            } : undefined}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {!immersif && <img
