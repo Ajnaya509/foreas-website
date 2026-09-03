@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import TelephoneAjnaya, { type Bulle } from './TelephoneAjnaya'
+import { useState } from 'react'
+import AjnayaPhoneDemo from '@/components/zone/AjnayaPhoneDemo'
 import s from './mobile.module.css'
 
 /**
@@ -35,66 +35,17 @@ import s from './mobile.module.css'
 
 const ZONES_SUGGEREES = ['Roissy CDG', 'Orly', 'La Défense', 'Bastille', 'Gare de Lyon']
 
-/** La réponse d'accueil. Zéro chiffre de zone — voir l'en-tête. */
-function accueil(zone: string): Bulle[] {
-  return [
-    { de: 'elle', texte: `${zone}. Le piège là-bas, ce n'est pas de trouver une course. C'est de prendre la mauvaise.` },
-    { de: 'elle', texte: `Une course à 34 € peut te payer moins qu'une course à 12 €. Tout dépend du temps qu'elle te prend.` },
-    { de: 'elle', texte: `Envoie-moi une course : le prix, les kilomètres, les minutes. Je te dis ce qu'elle t'a vraiment payé.` },
-  ]
-}
-
 export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
   const [zone, setZone] = useState('')
   const [validee, setValidee] = useState<string | null>(null)
-  const [messages, setMessages] = useState<Bulle[]>([])
-  const [enAttente, setEnAttente] = useState(false)
-  const historique = useRef<Array<{ role: string; content: string }>>([])
 
   const valider = (valeur: string) => {
     const propre = valeur.trim()
     if (!propre) return
     setZone(propre)
     setValidee(propre)
-    setMessages(accueil(propre))
   }
 
-  /** La question part au cerveau. On n'écrit jamais la réponse à sa place. */
-  const envoyer = async (texte: string) => {
-    setMessages((m) => [...m, { de: 'lui', texte }])
-    setEnAttente(true)
-    try {
-      const r = await fetch('/api/ajnaya/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: texte,
-          pageSource: '/mobile',
-          scrollSection: 'hero_zone',
-          conversationHistory: historique.current,
-        }),
-      })
-      const d = await r.json().catch(() => null)
-      const reponse = d?.reply
-      if (!r.ok || typeof reponse !== 'string' || !reponse.trim()) throw new Error('pas de réponse')
-
-      historique.current = [
-        ...historique.current,
-        { role: 'user', content: texte },
-        { role: 'assistant', content: reponse },
-      ].slice(-10)
-      setMessages((m) => [...m, { de: 'elle', texte: reponse }])
-    } catch {
-      /* ⚠️ ON NE FABRIQUE PAS UNE RÉPONSE POUR BOUCHER LE TROU.
-         On dit ce qui se passe, et on ouvre la porte qui, elle, fonctionne. */
-      setMessages((m) => [...m, {
-        de: 'elle',
-        texte: "Je n'arrive pas à répondre ici tout de suite. Écris-moi sur WhatsApp, je te réponds directement.",
-      }])
-    } finally {
-      setEnAttente(false)
-    }
-  }
 
   return (
     <section className={s.ecran1} aria-labelledby="titre-zone">
@@ -137,13 +88,20 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
       {validee && (
         <>
           <div className={s.telBloc}>
-            <TelephoneAjnaya messages={messages} enAttente={enAttente} onEnvoyer={envoyer} />
+            {/* ⚠️ C'EST LE MÊME TÉLÉPHONE QUE `/ou-ca-paie`, PAS UNE COPIE.
+                J'en avais fabriqué un deuxième, plus pauvre : orbe perdue,
+                traînées perdues, onde vocale perdue, cinq couches de fond
+                réduites à une. Deux téléphones, c'est deux vérités qui
+                divergent au premier changement. Il n'y en a qu'un.
+                `immersifPossible` est la seule différence : ici on écrit
+                dedans, sur `/ou-ca-paie` on le regarde jouer. */}
+            <AjnayaPhoneDemo zone={validee} immersifPossible />
           </div>
 
           <a className={s.actionWa} href={lienWhatsApp}>Continuer sur WhatsApp</a>
           <p className={s.souslAction}>
             Elle répond tout de suite. Tu écris, c&apos;est tout.{' '}
-            <button type="button" className={s.lienNu} onClick={() => { setValidee(null); setMessages([]) }}>
+            <button type="button" className={s.lienNu} onClick={() => setValidee(null)}>
               Changer de zone
             </button>
           </p>

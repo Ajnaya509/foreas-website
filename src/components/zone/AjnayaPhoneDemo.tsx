@@ -125,11 +125,20 @@ export default function AjnayaPhoneDemo({
   zone,
   onEssaiClick,
   onWhatsAppClick,
+  immersifPossible = false,
 }: {
   /** La zone tapée par le chauffeur. Un changement relance la conversation. */
   zone: string
   onEssaiClick?: () => void
   onWhatsAppClick?: () => void
+  /**
+   * ⚠️ OPT-IN, ET C'EST VOLONTAIRE.
+   * Sur `/ou-ca-paie` le téléphone est une DÉMONSTRATION qui se joue toute
+   * seule : on la regarde, on n'écrit pas dedans. Y ouvrir le plein écran
+   * changerait le sens de la scène sans que personne l'ait demandé.
+   * Seul `/mobile` l'active, où l'écriture est le but.
+   */
+  immersifPossible?: boolean
 }) {
   const ecranRef = useRef<HTMLDivElement | null>(null)
   const appRef = useRef<HTMLDivElement | null>(null)
@@ -143,6 +152,10 @@ export default function AjnayaPhoneDemo({
   const [saisie, setSaisie] = useState('')
   const [zoneCourante, setZoneCourante] = useState(zone)
   const [ecoute, setEcoute] = useState(false)
+  const [immersif, setImmersif] = useState(false)
+  const [invite, setInvite] = useState('Parle ou tape…')
+  const declencheur = useRef<HTMLButtonElement | null>(null)
+  const champRef = useRef<HTMLInputElement | null>(null)
 
   const nomLieu = (zoneCourante || '').trim() || 'ta zone'
   const savoir = typePourZone(zoneCourante || '')
@@ -177,6 +190,126 @@ export default function AjnayaPhoneDemo({
     ro.observe(ecran)
     return () => ro.disconnect()
   }, [poserEchelle])
+
+  /* ══ LE PLEIN ÉCRAN ═══════════════════════════════════════════════════════
+     Le téléphone quitte son châssis et prend tout l'écran. Le clavier monte,
+     le champ vient se poser dessus. À partir de là, on est DANS l'application. */
+
+  const entrer = useCallback(() => {
+    if (!immersifPossible) return
+    setImmersif(true)
+  }, [immersifPossible])
+
+  const sortir = useCallback(() => {
+    setImmersif(false)
+    /* Le focus revient d'où il venait. Sans ça, un lecteur d'écran repart du
+       haut de la page et la personne perd sa place. */
+    setTimeout(() => declencheur.current?.focus(), 40)
+  }, [])
+
+  useEffect(() => {
+    if (!immersif) return
+    const app = appRef.current
+    if (!app) return
+
+    /* ══ LE CLAVIER ═════════════════════════════════════════════════════════
+       La charte range « le sursaut au moment où l'on tape » dans les défauts.
+       C'est exactement ce qui arrive si on ne fait rien : sur iPhone,
+       l'ouverture du clavier ne redimensionne PAS la page — elle la fait
+       glisser dessous. Le champ part hors de vue.
+       La seule mesure fiable est `visualViewport` : `height` donne ce qui reste
+       visible clavier déduit, `offsetTop` de combien la page a glissé.
+       Repli sans lui : `innerHeight`. Moins juste, mais ça ne bloque personne. */
+    const vv = window.visualViewport
+    const coller = () => {
+      const h = vv ? vv.height : window.innerHeight
+      const y = vv ? vv.offsetTop : 0
+      app.style.transform = `translateY(${y}px)`
+      app.style.height = `${h}px`
+      app.style.width = '100%'
+    }
+    coller()
+    vv?.addEventListener('resize', coller)
+    vv?.addEventListener('scroll', coller)
+    window.addEventListener('resize', coller)
+
+    /* ══ LE VERROU DE DÉFILEMENT ════════════════════════════════════════════
+       ⚠️ `body { overflow: hidden }` NE SUFFIT PAS SUR IPHONE. Safari continue
+       de faire glisser la page sous le doigt — c'est le « défilement bizarre »
+       constaté. La seule méthode qui tient est de FIGER le corps de la page à
+       sa position, puis de la lui rendre exactement en sortant. */
+    const yPage = window.scrollY
+    const b = document.body
+    const avant = { position: b.style.position, top: b.style.top, width: b.style.width, overflow: b.style.overflow }
+    b.style.position = 'fixed'
+    b.style.top = `-${yPage}px`
+    b.style.width = '100%'
+    b.style.overflow = 'hidden'
+
+    const surEchap = (e: KeyboardEvent) => { if (e.key === 'Escape') sortir() }
+    window.addEventListener('keydown', surEchap)
+
+    /* Le focus vient APRÈS le passage en plein écran. Dans l'autre ordre, le
+       clavier monte pendant que la mise en page bouge encore : c'est le saut. */
+    const t = window.setTimeout(() => champRef.current?.focus(), 70)
+
+    return () => {
+      vv?.removeEventListener('resize', coller)
+      vv?.removeEventListener('scroll', coller)
+      window.removeEventListener('resize', coller)
+      window.removeEventListener('keydown', surEchap)
+      window.clearTimeout(t)
+      b.style.position = avant.position
+      b.style.top = avant.top
+      b.style.width = avant.width
+      b.style.overflow = avant.overflow
+      window.scrollTo(0, yPage)   // on lui rend sa place, à la ligne près
+      app.style.transform = ''
+      app.style.height = ''
+      app.style.width = ''
+      poserEchelle()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [immersif, sortir])
+
+  /* ══ L'INVITE QUI S'ÉCRIT TOUTE SEULE ═════════════════════════════════════
+     « écris ici pour répondre... » en gris presque effacé, lettre par lettre.
+
+     ⚠️ UN COMPTEUR QUI SURVIT AUX REDESSINS, PAS UNE CHAÎNE DE MINUTEURS.
+     Première version : une chaîne de `setTimeout` relancée par un effet.
+     Mesuré : UNE lettre par 800 ms au lieu d'une toutes les 55 ms.
+     Cause — la démo redessine beaucoup (conversation jouée, horloge, poussière),
+     et chaque redessin qui touchait une dépendance repartait de zéro.
+     Ici l'indice vit dans une référence : il traverse les redessins. Un seul
+     battement, posé une fois. Rien ne peut le remettre à zéro par accident. */
+  const indiceInvite = useRef(0)
+  const sensInvite = useRef<1 | -1>(1)
+
+  useEffect(() => {
+    if (!immersif) { setInvite('Parle ou tape…'); return }
+    const CIBLE = 'écris ici pour répondre...'
+    if (mouvementReduit()) { setInvite(CIBLE); return }
+
+    indiceInvite.current = 0
+    sensInvite.current = 1
+    let attente = 0
+
+    const battement = window.setInterval(() => {
+      /* Champ non vide : l'invite se tait. Une invite qui continue de bouger
+         sous un texte déjà tapé est un scintillement, pas une aide. */
+      if (champRef.current && champRef.current.value.trim()) return
+      if (attente > 0) { attente -= 1; return }
+
+      indiceInvite.current += sensInvite.current
+      const i = indiceInvite.current
+      setInvite(CIBLE.slice(0, i))
+
+      if (i >= CIBLE.length) { sensInvite.current = -1; attente = 42 }   // ~2,3 s
+      else if (i <= 0) { sensInvite.current = 1; attente = 13 }          // ~0,7 s
+    }, 55)
+
+    return () => window.clearInterval(battement)
+  }, [immersif])
 
   /* L'horloge se recalcule chaque minute : les heures sont VRAIES, même
      lorsqu'aucune donnée n'existe derrière. */
@@ -297,18 +430,39 @@ export default function AjnayaPhoneDemo({
         <em>Reproduction réelle de FOREAS Driver</em>
       </p>
 
-      <div className={s.scene}>
+      <div className={`${s.scene} ${immersif ? s.immersif : ''}`}>
         <div className={`${s.arrivee} ${arrive ? s.on : ''}`}>
+          {/* Le voile qui coupe le site quand on entre dans l'application. */}
+          {immersif && <div className={s.voile} onClick={sortir} aria-hidden="true" />}
+
           <div className={s.tel}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            {!immersif && <img
               src="/demo/ajnaya-cadre.png"
               alt=""
               aria-hidden="true"
               /* C'est elle qui donne sa taille au téléphone : dès qu'elle est
                  là, on remesure. Ne pas s'en remettre au seul observateur. */
               onLoad={poserEchelle}
-            />
+            />}
+            {/* ⚠️ AU REPOS, TOUT L'ÉCRAN EST LA COMMANDE.
+                Le téléphone est réduit d'un facteur ~0,62 : le champ ne mesure
+                plus que 30 px de haut à l'écran réel, contre 48 exigés — la
+                charte prend le plus exigeant des deux minimums parce que le
+                téléphone de référence est un Galaxy A05. Une cible de 30 px
+                n'est pas une cible, c'est un piège à pouce.
+                On ne grossit pas le champ, ça casserait l'échelle de l'app :
+                c'est l'écran entier qui devient touchable. */}
+            {immersifPossible && !immersif && (
+              <button
+                ref={declencheur}
+                type="button"
+                className={s.ouvrir}
+                onClick={entrer}
+                aria-label="Écrire à Ajnaya"
+              />
+            )}
+
             <div className={s.ecran} ref={ecranRef}>
               <div className={s.app} ref={appRef}>
                 {/* ── LE FOND : CINQ couches, pas deux. Et les halos ne sont
@@ -323,6 +477,13 @@ export default function AjnayaPhoneDemo({
                 </div>
 
                 <header className={s['aj-head']}>
+                  {immersif && (
+                    <button type="button" className={s.fermer} onClick={sortir} aria-label="Revenir au site">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" />
+                      </svg>
+                    </button>
+                  )}
                   <div className={s['aj-orbe']}>
                     <span className={s.anneau} />
                     {/* L'œil d'Ajnaya — SVG repris trait pour trait d'AjnayaEyeAvatar. */}
@@ -496,11 +657,17 @@ export default function AjnayaPhoneDemo({
                       )}
                     </button>
                     <input
+                      ref={champRef}
                       className={s['aj-champ']}
                       type="text"
-                      placeholder="Parle ou tape…"
+                      /* L'invite s'écrit toute seule en plein écran. On anime
+                         l'attribut lui-même : un calque posé par-dessus se
+                         décale dès que la police ou l'échelle bougent. */
+                      placeholder={invite}
                       autoComplete="off"
                       value={saisie}
+                      readOnly={immersifPossible && !immersif}
+                      tabIndex={immersifPossible && !immersif ? -1 : 0}
                       onChange={(e) => setSaisie(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && envoyer()}
                     />
