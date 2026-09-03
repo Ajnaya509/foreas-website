@@ -386,7 +386,12 @@
 
 .immersif .app{position:fixed;left:0;top:0;width:100%;
   transform:none;              /* plus de réduction : l'app est à sa vraie taille */
-  will-change:transform,height;}
+  /* ⚠️ PAS DE `will-change` ICI. Sur iOS, il promeut la couche et Safari la
+     compose alors à part — l'écran entier ressortait ASSOMBRI, alors que dans
+     le DOM toutes les opacités valaient 1 et tous les textes étaient blancs.
+     Mesuré, puis vérifié : c'est bien la composition, pas le style.
+     `will-change` s'annonce comme une optimisation ; sur une couche fixe
+     plein écran, il coûte l'image. */}
 
 /* La cible d'ouverture, état posé. Invisible, mais c'est une vraie commande :
    elle a un nom pour les lecteurs d'écran et un anneau de focus au clavier.
