@@ -361,3 +361,24 @@
 @media (prefers-reduced-motion: reduce) {
   .reponse { animation: none !important; opacity: 1 !important; transform: none !important; }
 }
+
+
+/* ══ LE TÉLÉPHONE DANS L'ÉCRAN DE ZONE ════════════════════════════════════
+   Il occupe la place, mais on voit qu'il appartient au site : il garde son
+   châssis, son ombre et son léger flottement. C'est ce qui rend le passage
+   en plein écran lisible — on comprend qu'on VIENT d'entrer quelque part. */
+.telBloc {
+  position: relative; z-index: 3;
+  margin: 20px auto 0;
+  width: 100%; max-width: 320px;
+}
+
+/* Un lien écrit comme du texte, mais qui reste une vraie commande :
+   48 px de haut réels, focus visible. On ne rabote jamais une cible. */
+.lienNu {
+  display: inline-flex; align-items: center; min-height: 48px;
+  background: none; border: 0; padding: 0;
+  color: rgba(248,250,252,.72); font: inherit; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.lienNu:focus-visible { outline: 2px solid #00D4FF; outline-offset: 2px; }

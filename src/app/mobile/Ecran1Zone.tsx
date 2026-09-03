@@ -1,53 +1,99 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import TelephoneAjnaya, { type Bulle } from './TelephoneAjnaya'
 import s from './mobile.module.css'
 
 /**
- * ÉCRAN 1 — LA QUESTION DE ZONE.
+ * ÉCRAN 1 — LA QUESTION DE ZONE, PUIS LE TÉLÉPHONE.
  *
- * Décision de Chandler, 03/09 : la zone passe en PREMIER, avant tout le reste.
+ * Décision de Chandler, 03/09 : la zone passe en PREMIER, et la réponse
+ * apparaît DANS le téléphone, pas dans un bloc de texte du site.
+ *
  * Raison mesurée : moins d'un visiteur mobile sur deux fait défiler une page
  * (45,2 %, Contentsquare, 99 milliards de sessions). Ce qui compte doit être
- * au premier écran, et taper un nom de lieu est le geste le plus facile qui soit —
- * un chauffeur connaît sa zone par cœur, il n'a rien à chercher.
+ * au premier écran, et taper un nom de lieu est le geste le plus facile qui
+ * soit — un chauffeur connaît sa zone par cœur, il n'a rien à chercher.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * ⚠️ LA RÉPONSE EST UNE RÉPONSE DE VENTE. C'EST VOULU, ET C'EST ASSUMÉ.
+ * ⚠️ LA PREMIÈRE RÉPONSE EST UNE RÉPONSE DE VENTE. C'EST VOULU ET ASSUMÉ.
  *
- * Consigne directe de Chandler : « pas réponse honnête, réponse marketing
- * (crédible) — on vend, nous, à ce moment, il faut le savoir ».
- *
- * Il a raison sur le fond : l'ancienne version disait « on n'a pas assez de
- * données ici ». C'est un message perdant, et rien ne l'imposait.
+ * Consigne de Chandler : « pas réponse honnête, réponse marketing (crédible) —
+ * on vend, nous, à ce moment, il faut le savoir ».
  *
  * ⚠️ MAIS ELLE NE CONTIENT AUCUN CHIFFRE DE ZONE, ET C'EST LA CLÉ.
- * Le mot que Chandler emploie est « crédible ». Un chauffeur qui roule à Roissy
- * et qui lit un euro-par-heure inventé le vérifie en une nuit — et il ne revient
- * pas. La vente vient donc du PROBLÈME, qui est vrai partout et pour tout le
- * monde, jamais d'une mesure qu'on n'a pas.
+ * Le mot employé est « crédible ». Un chauffeur qui roule à Roissy et qui lit
+ * un euro-par-heure inventé le vérifie en une nuit — et il ne revient pas.
+ * La vente vient donc du PROBLÈME, vrai partout, jamais d'une mesure absente.
+ * Conséquence : cette réponse ne peut pas casser. Elle ne lit aucune table.
  *
- * Conséquence heureuse : cette réponse ne peut pas casser. Elle ne lit aucune
- * table, elle ne dépend d'aucune source, elle marche pour les 52 zones couvertes
- * comme pour une ville que personne n'a jamais saisie.
- *
- * ⚠️ NIVEAU DE LECTURE. Phrases de moins de dix mots. Mots d'une ou deux
- * syllabes. Aucun terme de métier au-delà de « course », « zone » et « euro ».
- * Mesuré : 11,1 % de conversion au niveau CM2 contre 5,3 % au niveau
- * professionnel, sur 41 000 pages (Unbounce).
+ * ⚠️ LA SUITE VIENT DE LA PIEUVRE, PAS D'ICI.
+ * Dès qu'il écrit, la question part à `/api/ajnaya/chat`, qui passe par le
+ * cerveau. Ce fichier n'écrit aucune réponse à sa place. Si le cerveau ne
+ * répond pas, l'état est honnête et la porte WhatsApp reste ouverte.
  */
 
 const ZONES_SUGGEREES = ['Roissy CDG', 'Orly', 'La Défense', 'Bastille', 'Gare de Lyon']
 
+/** La réponse d'accueil. Zéro chiffre de zone — voir l'en-tête. */
+function accueil(zone: string): Bulle[] {
+  return [
+    { de: 'elle', texte: `${zone}. Le piège là-bas, ce n'est pas de trouver une course. C'est de prendre la mauvaise.` },
+    { de: 'elle', texte: `Une course à 34 € peut te payer moins qu'une course à 12 €. Tout dépend du temps qu'elle te prend.` },
+    { de: 'elle', texte: `Envoie-moi une course : le prix, les kilomètres, les minutes. Je te dis ce qu'elle t'a vraiment payé.` },
+  ]
+}
+
 export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
   const [zone, setZone] = useState('')
   const [validee, setValidee] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Bulle[]>([])
+  const [enAttente, setEnAttente] = useState(false)
+  const historique = useRef<Array<{ role: string; content: string }>>([])
 
   const valider = (valeur: string) => {
     const propre = valeur.trim()
     if (!propre) return
     setZone(propre)
     setValidee(propre)
+    setMessages(accueil(propre))
+  }
+
+  /** La question part au cerveau. On n'écrit jamais la réponse à sa place. */
+  const envoyer = async (texte: string) => {
+    setMessages((m) => [...m, { de: 'lui', texte }])
+    setEnAttente(true)
+    try {
+      const r = await fetch('/api/ajnaya/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: texte,
+          pageSource: '/mobile',
+          scrollSection: 'hero_zone',
+          conversationHistory: historique.current,
+        }),
+      })
+      const d = await r.json().catch(() => null)
+      const reponse = d?.reply
+      if (!r.ok || typeof reponse !== 'string' || !reponse.trim()) throw new Error('pas de réponse')
+
+      historique.current = [
+        ...historique.current,
+        { role: 'user', content: texte },
+        { role: 'assistant', content: reponse },
+      ].slice(-10)
+      setMessages((m) => [...m, { de: 'elle', texte: reponse }])
+    } catch {
+      /* ⚠️ ON NE FABRIQUE PAS UNE RÉPONSE POUR BOUCHER LE TROU.
+         On dit ce qui se passe, et on ouvre la porte qui, elle, fonctionne. */
+      setMessages((m) => [...m, {
+        de: 'elle',
+        texte: "Je n'arrive pas à répondre ici tout de suite. Écris-moi sur WhatsApp, je te réponds directement.",
+      }])
+    } finally {
+      setEnAttente(false)
+    }
   }
 
   return (
@@ -58,79 +104,51 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
       <div className={s.surtitre}>FOREAS DRIVER · POUR CHAUFFEURS VTC</div>
 
       <h1 id="titre-zone" className={s.titreZone}>
-        Tu roules où<br />ce soir&nbsp;?
+        {validee ? <>Tu roules à<br />{validee}&nbsp;?</> : <>Tu roules où<br />ce soir&nbsp;?</>}
       </h1>
 
-      <form
-        className={s.champBloc}
-        onSubmit={(e) => { e.preventDefault(); valider(zone) }}
-      >
-        <label htmlFor="zone" className={s.champLabel}>Ta zone</label>
-        <div className={s.champRangee}>
-          <input
-            id="zone"
-            className={s.champ}
-            type="text"
-            value={zone}
-            onChange={(e) => setZone(e.target.value)}
-            placeholder="Roissy, Bastille, Lyon…"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="words"
-            enterKeyHint="go"
-          />
-          <button type="submit" className={s.champBouton} disabled={!zone.trim()}>
-            Voir
-          </button>
-        </div>
+      {!validee && (
+        <form className={s.champBloc} onSubmit={(e) => { e.preventDefault(); valider(zone) }}>
+          <label htmlFor="zone" className={s.champLabel}>Ta zone</label>
+          <div className={s.champRangee}>
+            <input
+              id="zone"
+              className={s.champ}
+              type="text"
+              value={zone}
+              onChange={(e) => setZone(e.target.value)}
+              placeholder="Roissy, Bastille, Lyon…"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="words"
+              enterKeyHint="go"
+            />
+            <button type="submit" className={s.champBouton} disabled={!zone.trim()}>Voir</button>
+          </div>
 
-        {!validee && (
           <div className={s.puces}>
             {ZONES_SUGGEREES.map((z) => (
-              <button key={z} type="button" className={s.puce} onClick={() => valider(z)}>
-                {z}
-              </button>
+              <button key={z} type="button" className={s.puce} onClick={() => valider(z)}>{z}</button>
             ))}
           </div>
-        )}
-      </form>
-
-      {validee && (
-        <div className={s.reponse} role="status">
-          <div className={s.reponseZone}>{validee}</div>
-
-          {/* La vente. Vraie partout, pour tout le monde, sans aucune mesure. */}
-          <p className={s.reponseFort}>
-            Le piège, ce n&apos;est pas de trouver une course.
-            <br />C&apos;est de prendre la mauvaise.
-          </p>
-          <p className={s.reponseTexte}>
-            Une course à <b>34 €</b> peut te payer moins qu&apos;une course à <b>12 €</b>.
-            Tout dépend du temps qu&apos;elle te prend.
-          </p>
-          <p className={s.reponseTexte}>
-            Envoie-moi une course. Je te dis ce qu&apos;elle t&apos;a vraiment payé.
-          </p>
-
-          <a className={s.actionWa} href={lienWhatsApp}>
-            Envoyer une course à Ajnaya
-          </a>
-          {/* ⚠️ NE JAMAIS ÉCRIRE « sans carte » ICI. Le garde du canon l'a bloqué,
-              et il a raison : la phrase parlait de la conversation WhatsApp, mais
-              un visiteur la lit à dix centimètres du bouton d'essai — et l'essai,
-              lui, demande une carte. Une phrase vraie au mauvais endroit devient
-              une promesse fausse. */}
-          <p className={s.souslAction}>Elle répond tout de suite. Tu écris, c&apos;est tout.</p>
-        </div>
+        </form>
       )}
 
-      <div className={s.suite}>
-        Voir comment elle répond
-        <svg className={s.chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </div>
+      {validee && (
+        <>
+          <div className={s.telBloc}>
+            <TelephoneAjnaya messages={messages} enAttente={enAttente} onEnvoyer={envoyer} />
+          </div>
+
+          <a className={s.actionWa} href={lienWhatsApp}>Continuer sur WhatsApp</a>
+          <p className={s.souslAction}>
+            Elle répond tout de suite. Tu écris, c&apos;est tout.{' '}
+            <button type="button" className={s.lienNu} onClick={() => { setValidee(null); setMessages([]) }}>
+              Changer de zone
+            </button>
+          </p>
+        </>
+      )}
     </section>
   )
 }
