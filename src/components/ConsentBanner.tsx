@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import Link from 'next/link'
 import {
   acceptAdvertisingConsent,
   rejectAdvertisingConsent,
@@ -94,13 +93,7 @@ export function ConsentBanner() {
           silence, aucun n'est une fermeture interprétée. */}
       <div className="mx-auto flex max-w-4xl items-center gap-3">
         <p className="min-w-0 flex-1 text-[13px] leading-[17px] text-text-primary">
-          On ne touche ni à tes courses, ni à tes messages.{' '}
-          <Link
-            href="/confidentialite"
-            className="whitespace-nowrap text-accent-cyan underline underline-offset-2"
-          >
-            Détails
-          </Link>
+          On ne touche pas à tes courses.
         </p>
 
         <button
