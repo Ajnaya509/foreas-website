@@ -68,35 +68,70 @@ export function ConsentBanner() {
       ref={banner}
       role="dialog"
       aria-label="Choix publicitaire"
-      className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-glass-border bg-glass-high px-4 pt-3.5 backdrop-blur-md"
-      style={{ paddingBottom: 'calc(0.875rem + env(safe-area-inset-bottom, 0px))' }}
+      className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-glass-border bg-glass-high px-3 pt-2.5 backdrop-blur-md"
+      style={{ paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      <div className="mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-        <p className="flex-1 text-[13px] leading-snug text-text-secondary sm:text-sm sm:leading-relaxed">
-          <span className="font-semibold text-text-primary">Choisis la mesure publicitaire.</span>{' '}
-          Avec ton accord, Meta et TikTok nous indiquent quelle annonce mène à un essai ou un abonnement. Refuser ne change rien à FOREAS. Tu peux changer d’avis quand tu veux.{' '}
-          <Link href="/confidentialite" className="text-accent-cyan underline underline-offset-2 hover:text-accent-cyan-ice">
-            Gérer mon choix
+      {/* ⚠️ BANDEAU COMPACT — décision de Chandler du 03/09.
+          Il passe de 157 à ~68 points de haut. Ces 89 points reviennent au
+          téléphone, qui redevient lisible. Le détail complet part derrière
+          « Détails » : informer n'oblige pas à tout écrire sur l'écran.
+
+          ⚠️ CE QUI NE BOUGE PAS, ET POURQUOI.
+          « Non » et « Oui » gardent EXACTEMENT le même poids : même taille,
+          même couleur, même bordure. C'est le seul endroit du site où la règle
+          « une seule action principale » est volontairement suspendue.
+          Un consentement où le oui est plus gros que le non n'est pas un
+          consentement, et la CNIL le dit avant nous.
+
+          ⚠️ LA CROIX REFUSE. ELLE NE FERME PAS.
+          Chandler la voulait discrète, presque invisible. C'est acceptable —
+          À CONDITION qu'elle refuse. Une croix discrète qui ACCEPTE, ou qui
+          esquive le choix pour reposer la question plus tard, serait un piège :
+          on rendrait le refus difficile tout en gardant le oui facile.
+          Ici le refus reste disponible deux fois, en clair et en discret. */}
+      <div className="mx-auto flex max-w-4xl items-center gap-3">
+        <p className="min-w-0 flex-1 text-[12.5px] leading-[16px] text-text-secondary">
+          Quelle pub t&apos;a amené&nbsp;? Le dire à Meta et TikTok nous évite de payer les autres.{' '}
+          <Link
+            href="/confidentialite"
+            className="whitespace-nowrap text-accent-cyan underline underline-offset-2"
+          >
+            Détails
           </Link>
         </p>
-        <div className="grid grid-cols-1 gap-2 min-[390px]:grid-cols-2 sm:flex sm:flex-shrink-0">
+
+        <div className="flex flex-shrink-0 gap-2">
           <button
             type="button"
             disabled={busy === 'reject'}
             onClick={reject}
-            className="min-h-11 rounded-xl border border-glass-border-high bg-glass-low px-4 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-obsidian"
+            className="min-h-11 min-w-[52px] rounded-full border border-glass-border-high bg-glass-low px-4 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
           >
-            Refuser la mesure publicitaire
+            Non
           </button>
           <button
             type="button"
             disabled={busy === 'accept'}
             onClick={accept}
-            className="min-h-11 rounded-xl border border-glass-border-high bg-glass-low px-4 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-foreas-obsidian"
+            className="min-h-11 min-w-[52px] rounded-full border border-glass-border-high bg-glass-low px-4 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
           >
-            Autoriser la mesure publicitaire
+            Oui
           </button>
         </div>
+
+        {/* La croix discrète. Elle REFUSE — voir l'en-tête.
+            Son nom accessible dit ce qu'elle fait, pour que personne ne se
+            trompe : discrète à l'œil ne veut pas dire ambiguë. */}
+        <button
+          type="button"
+          onClick={reject}
+          aria-label="Refuser et fermer"
+          className="flex h-11 w-8 flex-shrink-0 items-center justify-center text-white/[0.14] transition-colors hover:text-white/40 focus-visible:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="h-3.5 w-3.5" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
       </div>
       {error && <p className="mx-auto mt-2 max-w-4xl border-l border-danger pl-3 text-xs text-danger" role="alert">{error}</p>}
     </div>

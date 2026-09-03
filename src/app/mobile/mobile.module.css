@@ -266,7 +266,7 @@
   display: flex; flex-direction: column;
   background: #060610;
   overflow: hidden;
-  padding: calc(env(safe-area-inset-top) + 26px) 20px
+  padding: calc(env(safe-area-inset-top) + 18px) 20px
            calc(env(safe-area-inset-bottom) + var(--bandeau, 0px) + 14px);
 }
 
@@ -385,14 +385,21 @@
      À 350, le facteur passe à 0,68 et le texte à 10 px : on lit.
      Le téléphone est le héros de cet écran ; c'est à lui qu'on donne la place. */
   flex: none;
-  width: 100%; max-width: 350px;
-  margin: 10px auto 0;
+  /* ⚠️ PLEINE LARGEUR, MOINS RIEN. C'est le but : on doit voir un TÉLÉPHONE
+     dans le téléphone, pas une vignette. À 373 points, l'app à l'intérieur
+     tourne à 0,73 — un texte de 15 px se lit à 11 px, comme dans la vraie app.
+     Le bloc sort des marges de la page volontairement : le téléphone est le
+     héros de cet écran, pas un élément de plus dans une colonne. */
+  width: calc(100% + 40px); max-width: none;
+  margin: 8px -20px 0;
   display: flex; justify-content: center;
 }
 
 /* Le titre rétrécit une fois la zone choisie : il a fait son travail, et
    chaque ligne qu'il garde est une ligne que le téléphone perd. */
-.titreZonePetit { font-size: 25px; letter-spacing: -1px; line-height: 1.05; }
+/* Une fois la zone choisie, le titre a fait son travail. Chaque ligne qu'il
+   garde est une ligne que le téléphone perd. */
+.titreZonePetit { font-size: 22px; letter-spacing: -.8px; line-height: 1.06; }
 
 /* Un lien écrit comme du texte, mais qui reste une vraie commande :
    48 px de haut réels, focus visible. On ne rabote jamais une cible. */
