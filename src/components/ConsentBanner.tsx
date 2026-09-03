@@ -91,17 +91,14 @@ export function ConsentBanner() {
           Ici le refus reste disponible deux fois, en clair et en discret. */}
       <div className="mx-auto flex max-w-4xl items-center gap-3">
         <p className="min-w-0 flex-1 text-[12.5px] leading-[16px] text-text-secondary">
-          {/* ⚠️ ON PART DE SON INTÉRÊT, PAS DU NÔTRE — consigne de Chandler.
-              Le mot « pub » disparaît : ce n'est pas son problème.
-              Ce qui l'est : est-ce que ça lui coûte quelque chose. Non.
-              La phrase le dit en premier, et c'est vrai. */}
-          <span className="font-semibold text-text-primary">Ça ne change rien pour toi.</span>{' '}
-          Ça change tout pour nous.{' '}
-          {/* ⚠️ « Meta et TikTok » RESTE, ET CE N'EST PAS NÉGOCIABLE.
-              Sans dire qui reçoit la donnée, ce n'est plus un consentement :
-              c'est une case qu'on fait cocher. Trois mots suffisent, et le
-              détail complet part derrière le lien. */}
-          <span className="text-text-secondary/70">Meta et TikTok ·</span>{' '}
+          {/* ⚠️ ON RÉPOND À LA PEUR QU'IL A VRAIMENT — texte choisi par Chandler.
+              Sa crainte n'est pas la mesure : c'est qu'on lise ses courses.
+              Y répondre AVANT qu'il pose la question désamorce tout.
+              Et c'est vrai : ni les courses, ni les messages ne partent nulle part. */}
+          <span className="font-semibold text-text-primary">On ne touche ni à tes courses, ni à tes messages.</span>{' '}
+          {/* ⚠️ « Meta et TikTok » RESTE. Sans dire qui reçoit la donnée, ce n'est
+              plus un accord : c'est une case qu'on fait cocher. */}
+          <span className="text-text-secondary/60">Meta et TikTok ·</span>{' '}
           <Link
             href="/confidentialite"
             className="whitespace-nowrap text-accent-cyan underline underline-offset-2"
@@ -125,7 +122,7 @@ export function ConsentBanner() {
             onClick={accept}
             className="min-h-11 min-w-[52px] rounded-full border border-glass-border-high bg-glass-low px-4 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
           >
-            Oui
+            OK
           </button>
         </div>
 
@@ -136,7 +133,7 @@ export function ConsentBanner() {
           type="button"
           onClick={reject}
           aria-label="Refuser et fermer"
-          className="flex h-11 w-8 flex-shrink-0 items-center justify-center text-white/[0.14] transition-colors hover:text-white/40 focus-visible:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+          className="flex h-11 w-7 flex-shrink-0 items-center justify-center text-white/[0.055] transition-colors hover:text-white/35 focus-visible:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="h-3.5 w-3.5" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
