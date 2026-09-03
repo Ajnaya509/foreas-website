@@ -809,7 +809,7 @@ export default function AjnayaPhoneDemo({
   return (
     <div
       className={s.racine}
-      style={ajusteHauteur && !immersif ? { height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' } : undefined}
+      style={undefined}
     >
       {/* ⚠️ EN MODE AJUSTÉ, CETTE LIGNE DISPARAÎT ENTIÈREMENT.
           Mesuré : elle mangeait 105 px de haut pour une pastille verte et un

@@ -253,13 +253,16 @@
 
 .ecran1 {
   position: relative;
-  /* ⚠️ HAUTEUR FIXE, PAS `min-height` — ET C'EST LA CORRECTION DU BUG.
-     Avec `min-height`, la colonne grandit pour contenir le téléphone et le
-     pousse sous le bandeau de consentement puis sous la barre de Safari.
-     Avec une hauteur ferme, c'est le TÉLÉPHONE qui s'adapte à la place
-     restante. Mesuré sur iPhone 16 : Safari prend ~150 points, le bandeau
-     ~155 de plus. Il reste ~270 points, pas 633. */
-  height: 100svh;
+  /* ⚠️ REVENU À `min-height`, ET C'EST UN ARBITRAGE, PAS UN RETOUR EN ARRIÈRE.
+     Avec une hauteur ferme, le téléphone tenait dans l'écran — mais il ne
+     faisait plus que 184 points de large : le texte de l'app tombait à 7 px,
+     illisible avant qu'on clique dessus. Chandler l'a vu tout de suite.
+     Choix assumé : le téléphone reprend sa vraie largeur et redevient LISIBLE,
+     et la page défile normalement pour aller chercher ce qui suit.
+     Ce qui reste interdit, c'est le RECOUVREMENT : le téléphone ne doit
+     jamais mordre sur le bouton d'en dessous. C'est le flux qui l'en empêche
+     maintenant, pas une hauteur imposée. */
+  min-height: 100svh;
   display: flex; flex-direction: column;
   background: #060610;
   overflow: hidden;
@@ -376,17 +379,20 @@
    en plein écran lisible — on comprend qu'on VIENT d'entrer quelque part. */
 .telBloc {
   position: relative; z-index: 3;
-  /* Il prend TOUT ce qui reste, et pas un pixel de plus.
-     `min-height: 0` est obligatoire : sans lui, un enfant en flex refuse de
-     descendre sous sa taille de contenu et déborde en silence. */
-  flex: 1 1 auto; min-height: 0;
-  margin: 14px 0 0;
-  display: flex; align-items: flex-start; justify-content: center;
+  /* ⚠️ LA LARGEUR COMMANDE, PAS LA HAUTEUR.
+     À 184 points de large, l'app à l'intérieur était réduite d'un facteur 0,47 :
+     un texte de 15 px tombait à 7 px. On ne lit pas 7 px sur un téléphone.
+     À 350, le facteur passe à 0,68 et le texte à 10 px : on lit.
+     Le téléphone est le héros de cet écran ; c'est à lui qu'on donne la place. */
+  flex: none;
+  width: 100%; max-width: 350px;
+  margin: 10px auto 0;
+  display: flex; justify-content: center;
 }
 
 /* Le titre rétrécit une fois la zone choisie : il a fait son travail, et
    chaque ligne qu'il garde est une ligne que le téléphone perd. */
-.titreZonePetit { font-size: 27px; letter-spacing: -1.1px; line-height: 1.04; }
+.titreZonePetit { font-size: 25px; letter-spacing: -1px; line-height: 1.05; }
 
 /* Un lien écrit comme du texte, mais qui reste une vraie commande :
    48 px de haut réels, focus visible. On ne rabote jamais une cible. */
