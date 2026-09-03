@@ -465,24 +465,57 @@ export default function AjnayaPhoneDemo({
           naturelle de l'image. Il faut la poser à TOUS les étages. */}
       <div
         className={`${s.scene} ${immersif ? s.immersif : ''}`}
-        style={ajusteHauteur && !immersif ? { height: '100%', minHeight: 0, alignItems: 'flex-start' } : undefined}
+        style={
+          immersif
+            ? { position: 'fixed', inset: 0, zIndex: 1000, display: 'block', perspective: 'none', minHeight: 0 }
+            : ajusteHauteur
+              ? { height: '100%', minHeight: 0, alignItems: 'flex-start' }
+              : undefined
+        }
       >
         <div
           className={`${s.arrivee} ${arrive ? s.on : ''}`}
-          style={ajusteHauteur && !immersif ? { height: '100%' } : undefined}
+          style={
+            immersif
+              ? {
+                  /* ⚠️ `animation: none` D'ABORD, SINON `transform: none` NE SERT À RIEN.
+                     `.arrivee.on` joue `ajArrive` en `fill-mode: both` : la
+                     dernière image de l'animation RESTE appliquée pour toujours,
+                     et une animation passe DEVANT un style en ligne.
+                     Mesuré : la taille calculée disait 393 × 852, le rectangle
+                     réellement dessiné 321 × 654. L'écart, c'était elle.
+                     Un style en ligne n'a pas le dernier mot en CSS. */
+                  animation: 'none',
+                  position: 'absolute', inset: 0, opacity: 1, transform: 'none',
+                }
+              : ajusteHauteur ? { height: '100%' } : undefined
+          }
         >
           {/* Le voile qui coupe le site quand on entre dans l'application. */}
           {immersif && <div className={s.voile} onClick={sortir} aria-hidden="true" />}
 
           <div
             className={s.tel}
-            style={ajusteHauteur && !immersif ? {
-              width: 'auto', height: '100%', maxWidth: '100%',
-              /* Le flottement est coupé ici : il translate le téléphone de
-                 quelques pixels et le fait mordre sur ce qui suit quand la
-                 place est comptée au pixel près. */
-              animation: 'none',
-            } : undefined}
+            style={
+              immersif
+                ? {
+                    /* ⚠️ `filter: none` N'EST PAS COSMÉTIQUE, C'EST LA CORRECTION.
+                       `.tel` porte deux `drop-shadow`. Or un `filter` sur un
+                       élément crée un BLOC CONTENEUR pour ses descendants en
+                       `position: fixed` — ils cessent de se caler sur l'écran
+                       et se calent sur lui. Mesuré : `.tel` faisait 4 px de
+                       large, et l'app calculait donc `width: 100%` = 0.
+                       C'est ce qui rendait le plein écran illisible.
+                       On retire l'ombre : de toute façon, en plein écran, ce
+                       n'est plus un objet posé qui doit projeter une ombre. */
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%', maxWidth: 'none', margin: 0,
+                    filter: 'none', animation: 'none', transform: 'none',
+                  }
+                : ajusteHauteur
+                  ? { width: 'auto', height: '100%', maxWidth: '100%', animation: 'none' }
+                  : undefined
+            }
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {!immersif && <img
@@ -512,7 +545,11 @@ export default function AjnayaPhoneDemo({
               />
             )}
 
-            <div className={s.ecran} ref={ecranRef}>
+            <div
+              className={s.ecran}
+              ref={ecranRef}
+              style={immersif ? { position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: 0 } : undefined}
+            >
               <div
                 className={s.app}
                 ref={appRef}
