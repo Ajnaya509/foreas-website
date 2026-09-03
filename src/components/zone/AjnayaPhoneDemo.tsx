@@ -126,6 +126,7 @@ export default function AjnayaPhoneDemo({
   onEssaiClick,
   onWhatsAppClick,
   immersifPossible = false,
+  ajusteHauteur = false,
 }: {
   /** La zone tapée par le chauffeur. Un changement relance la conversation. */
   zone: string
@@ -139,6 +140,16 @@ export default function AjnayaPhoneDemo({
    * Seul `/mobile` l'active, où l'écriture est le but.
    */
   immersifPossible?: boolean
+  /**
+   * ⚠️ LE TÉLÉPHONE SE DIMENSIONNE PAR LA HAUTEUR, PAS PAR LA LARGEUR.
+   * Sur un iPhone en Safari, la barre du navigateur prend ~150 points et le
+   * bandeau de consentement ~155 de plus. Un téléphone calé sur la largeur
+   * (320 px → 633 de haut) ne rentre pas dans les ~270 qui restent : il est
+   * coupé en deux et son champ de saisie finit sous le bandeau.
+   * Mesuré sur iPhone 16 le 03/09 — c'est le bug que Chandler a vu.
+   * Ici, il prend la hauteur disponible et sa largeur en découle.
+   */
+  ajusteHauteur?: boolean
 }) {
   const ecranRef = useRef<HTMLDivElement | null>(null)
   const appRef = useRef<HTMLDivElement | null>(null)
@@ -427,7 +438,7 @@ export default function AjnayaPhoneDemo({
     <div className={s.racine}>
       <p className={`${s.vivant} ${arrive ? s.on : ''}`}>
         <span className={s.pt} />
-        <em>Reproduction réelle de FOREAS Driver</em>
+        {!ajusteHauteur && <em>Reproduction réelle de FOREAS Driver</em>}
       </p>
 
       <div className={`${s.scene} ${immersif ? s.immersif : ''}`}>
@@ -435,7 +446,10 @@ export default function AjnayaPhoneDemo({
           {/* Le voile qui coupe le site quand on entre dans l'application. */}
           {immersif && <div className={s.voile} onClick={sortir} aria-hidden="true" />}
 
-          <div className={s.tel}>
+          <div
+            className={s.tel}
+            style={ajusteHauteur ? { width: 'auto', height: '100%', maxWidth: '100%' } : undefined}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {!immersif && <img
               src="/demo/ajnaya-cadre.png"
@@ -444,6 +458,7 @@ export default function AjnayaPhoneDemo({
               /* C'est elle qui donne sa taille au téléphone : dès qu'elle est
                  là, on remesure. Ne pas s'en remettre au seul observateur. */
               onLoad={poserEchelle}
+              style={ajusteHauteur ? { height: '100%', width: 'auto', display: 'block' } : undefined}
             />}
             {/* ⚠️ AU REPOS, TOUT L'ÉCRAN EST LA COMMANDE.
                 Le téléphone est réduit d'un facteur ~0,62 : le champ ne mesure

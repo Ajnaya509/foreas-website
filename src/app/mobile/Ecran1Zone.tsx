@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import AjnayaPhoneDemo from '@/components/zone/AjnayaPhoneDemo'
 import s from './mobile.module.css'
 
@@ -39,6 +39,29 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
   const [zone, setZone] = useState('')
   const [validee, setValidee] = useState<string | null>(null)
 
+  /* ⚠️ ON MESURE LE BANDEAU DE CONSENTEMENT, ON NE DEVINE PAS SA HAUTEUR.
+     Il fait 155 points quand le texte tient sur 4 lignes, 230 quand il en
+     prend 6 — ça dépend de la largeur, de la langue et du réglage de taille
+     de texte. Une valeur écrite en dur marche sur un téléphone et coupe le
+     champ de saisie sur un autre. C'est exactement le bug vu sur iPhone 16. */
+  useEffect(() => {
+    const mesurer = () => {
+      const b = document.querySelector<HTMLElement>('[class*="fixed"][class*="bottom-0"]')
+      const h = b && b.offsetHeight > 0 ? b.offsetHeight : 0
+      document.documentElement.style.setProperty('--bandeau', `${h}px`)
+    }
+    mesurer()
+    const ro = new ResizeObserver(mesurer)
+    const b = document.querySelector('[class*="fixed"][class*="bottom-0"]')
+    if (b) ro.observe(b)
+    /* Le bandeau peut arriver APRÈS nous (il attend le consentement stocké),
+       et il peut disparaître quand on répond. On surveille les deux. */
+    const mo = new MutationObserver(mesurer)
+    mo.observe(document.body, { childList: true })
+    window.addEventListener('resize', mesurer)
+    return () => { ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', mesurer) }
+  }, [])
+
   const valider = (valeur: string) => {
     const propre = valeur.trim()
     if (!propre) return
@@ -54,7 +77,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
 
       <div className={s.surtitre}>FOREAS DRIVER · POUR CHAUFFEURS VTC</div>
 
-      <h1 id="titre-zone" className={s.titreZone}>
+      <h1 id="titre-zone" className={`${s.titreZone} ${validee ? s.titreZonePetit : ''}`}>
         {validee ? <>Tu roules à<br />{validee}&nbsp;?</> : <>Tu roules où<br />ce soir&nbsp;?</>}
       </h1>
 
@@ -95,7 +118,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
                 divergent au premier changement. Il n'y en a qu'un.
                 `immersifPossible` est la seule différence : ici on écrit
                 dedans, sur `/ou-ca-paie` on le regarde jouer. */}
-            <AjnayaPhoneDemo zone={validee} immersifPossible />
+            <AjnayaPhoneDemo zone={validee} immersifPossible ajusteHauteur />
           </div>
 
           <a className={s.actionWa} href={lienWhatsApp}>Continuer sur WhatsApp</a>

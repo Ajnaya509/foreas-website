@@ -253,11 +253,18 @@
 
 .ecran1 {
   position: relative;
-  min-height: 100svh;
+  /* ⚠️ HAUTEUR FIXE, PAS `min-height` — ET C'EST LA CORRECTION DU BUG.
+     Avec `min-height`, la colonne grandit pour contenir le téléphone et le
+     pousse sous le bandeau de consentement puis sous la barre de Safari.
+     Avec une hauteur ferme, c'est le TÉLÉPHONE qui s'adapte à la place
+     restante. Mesuré sur iPhone 16 : Safari prend ~150 points, le bandeau
+     ~155 de plus. Il reste ~270 points, pas 633. */
+  height: 100svh;
+  display: flex; flex-direction: column;
   background: #060610;
   overflow: hidden;
-  padding: calc(env(safe-area-inset-top) + 34px) 20px calc(env(safe-area-inset-bottom) + 40px);
-  display: flex; flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 26px) 20px
+           calc(env(safe-area-inset-bottom) + var(--bandeau, 0px) + 14px);
 }
 
 .titreZone {
@@ -369,9 +376,17 @@
    en plein écran lisible — on comprend qu'on VIENT d'entrer quelque part. */
 .telBloc {
   position: relative; z-index: 3;
-  margin: 20px auto 0;
-  width: 100%; max-width: 320px;
+  /* Il prend TOUT ce qui reste, et pas un pixel de plus.
+     `min-height: 0` est obligatoire : sans lui, un enfant en flex refuse de
+     descendre sous sa taille de contenu et déborde en silence. */
+  flex: 1 1 auto; min-height: 0;
+  margin: 14px 0 0;
+  display: flex; align-items: flex-start; justify-content: center;
 }
+
+/* Le titre rétrécit une fois la zone choisie : il a fait son travail, et
+   chaque ligne qu'il garde est une ligne que le téléphone perd. */
+.titreZonePetit { font-size: 27px; letter-spacing: -1.1px; line-height: 1.04; }
 
 /* Un lien écrit comme du texte, mais qui reste une vraie commande :
    48 px de haut réels, focus visible. On ne rabote jamais une cible. */
