@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import s from './ajnayaPhone.module.css'
 import { typePourZone } from './ajnayaSavoir'
 import { materialiser, mouvementReduit } from './ajnayaPoussiere'
@@ -439,6 +440,360 @@ export default function AjnayaPhoneDemo({
      `height: 100%` remonte la chaîne des parents et s'arrête au PREMIER qui n'a
      pas de hauteur ferme. En oublier un seul, c'est comme n'en avoir posé aucun —
      la mesure était rigoureusement identique avant et après ma correction. */
+  /* ══ LE PORTAIL ═══════════════════════════════════════════════════════════
+     ⚠️ EN PLEIN ÉCRAN, LE TÉLÉPHONE SORT DE LA PAGE. Ce n'est pas une élégance,
+     c'est la seule façon fiable.
+
+     Mesuré sur iPhone 16 : `.telBloc` porte `z-index: 3`, ce qui crée un
+     CONTEXTE D'EMPILEMENT. Tout `z-index` posé à l'intérieur — même 10000 —
+     reste prisonnier de ce contexte et ne peut pas dépasser un frère de
+     `.telBloc` placé plus loin dans la page. Résultat : le texte du site
+     (« Elle répond tout de suite », « Changer de zone ») se lisait PAR-DESSUS
+     la conversation, et le bandeau de consentement à 9999 enterrait le champ.
+
+     Empiler des `z-index` plus grands ne corrige jamais ça. Il faut SORTIR de
+     la boîte. Le portail rend l'application directement dans le corps du
+     document : plus aucun parent ne peut la contraindre — ni empilement, ni
+     `overflow`, ni `filter`, ni `transform`. */
+  const scene = (
+  <div
+    className={`${s.scene} ${immersif ? s.immersif : ''}`}
+    style={
+      immersif
+        ? {
+            position: 'fixed', inset: 0, display: 'block', perspective: 'none', minHeight: 0,
+            /* ⚠️ AU-DESSUS DU BANDEAU DE CONSENTEMENT, QUI EST À 9999.
+               Mesuré sur iPhone : à 1000, le bandeau passait devant et
+               enterrait le champ de saisie. Le bandeau n'est pas supprimé
+               pour autant — il réapparaît intact dès qu'on ressort. */
+            zIndex: 10000,
+            /* ⚠️ FOND OPAQUE OBLIGATOIRE. Sans lui, le texte de la page
+               (« Elle répond tout de suite », « Changer de zone ») se lisait
+               PAR-DESSUS la conversation. Une application ne laisse pas voir
+               la page qui la porte. */
+            background: '#000',
+          }
+        : ajusteHauteur
+          ? { height: '100%', minHeight: 0, alignItems: 'flex-start' }
+          : undefined
+    }
+  >
+    <div
+      className={`${s.arrivee} ${arrive ? s.on : ''}`}
+      style={
+        immersif
+          ? {
+              /* ⚠️ `animation: none` D'ABORD, SINON `transform: none` NE SERT À RIEN.
+                 `.arrivee.on` joue `ajArrive` en `fill-mode: both` : la
+                 dernière image de l'animation RESTE appliquée pour toujours,
+                 et une animation passe DEVANT un style en ligne.
+                 Mesuré : la taille calculée disait 393 × 852, le rectangle
+                 réellement dessiné 321 × 654. L'écart, c'était elle.
+                 Un style en ligne n'a pas le dernier mot en CSS. */
+              animation: 'none',
+              position: 'absolute', inset: 0, opacity: 1, transform: 'none',
+            }
+          : ajusteHauteur ? { height: '100%' } : undefined
+      }
+    >
+      {/* Le voile qui coupe le site quand on entre dans l'application. */}
+      {immersif && (
+        <div
+          className={s.voile}
+          onClick={sortir}
+          aria-hidden="true"
+          style={{ zIndex: 9999 }}
+        />
+      )}
+
+      <div
+        className={s.tel}
+        style={
+          immersif
+            ? {
+                /* ⚠️ `filter: none` N'EST PAS COSMÉTIQUE, C'EST LA CORRECTION.
+                   `.tel` porte deux `drop-shadow`. Or un `filter` sur un
+                   élément crée un BLOC CONTENEUR pour ses descendants en
+                   `position: fixed` — ils cessent de se caler sur l'écran
+                   et se calent sur lui. Mesuré : `.tel` faisait 4 px de
+                   large, et l'app calculait donc `width: 100%` = 0.
+                   C'est ce qui rendait le plein écran illisible.
+                   On retire l'ombre : de toute façon, en plein écran, ce
+                   n'est plus un objet posé qui doit projeter une ombre. */
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%', maxWidth: 'none', margin: 0,
+                filter: 'none', animation: 'none', transform: 'none',
+              }
+            : ajusteHauteur
+              ? { width: 'auto', height: '100%', maxWidth: '100%', animation: 'none' }
+              : undefined
+        }
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {!immersif && <img
+          src="/demo/ajnaya-cadre.png"
+          alt=""
+          aria-hidden="true"
+          /* C'est elle qui donne sa taille au téléphone : dès qu'elle est
+             là, on remesure. Ne pas s'en remettre au seul observateur. */
+          onLoad={poserEchelle}
+          style={ajusteHauteur ? { height: '100%', width: 'auto', display: 'block' } : undefined}
+        />}
+        {/* ⚠️ AU REPOS, TOUT L'ÉCRAN EST LA COMMANDE.
+            Le téléphone est réduit d'un facteur ~0,62 : le champ ne mesure
+            plus que 30 px de haut à l'écran réel, contre 48 exigés — la
+            charte prend le plus exigeant des deux minimums parce que le
+            téléphone de référence est un Galaxy A05. Une cible de 30 px
+            n'est pas une cible, c'est un piège à pouce.
+            On ne grossit pas le champ, ça casserait l'échelle de l'app :
+            c'est l'écran entier qui devient touchable. */}
+        {immersifPossible && !immersif && (
+          <button
+            ref={declencheur}
+            type="button"
+            className={s.ouvrir}
+            onClick={entrer}
+            aria-label="Écrire à Ajnaya"
+          />
+        )}
+
+        <div
+          className={s.ecran}
+          ref={ecranRef}
+          style={immersif ? { position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: 0 } : undefined}
+        >
+          <div
+            className={s.app}
+            ref={appRef}
+            /* ⚠️ RIEN N'EST TOUCHABLE DANS L'APP TANT QU'ON N'EST PAS EN PLEIN ÉCRAN.
+               Reproduit sur iPhone 16 le 03/09 : `readOnly` NE SUFFIT PAS.
+               Sur iOS un champ en lecture seule reste focusable et ouvre
+               quand même le clavier. Le doigt tombait à côté de la zone
+               d'ouverture, atterrissait sur le champ, iOS faisait défiler
+               la page pour dégager le clavier — et le téléphone sortait de
+               l'écran. C'était ça, le « bug dégueulasse ».
+               Ici, la seule chose qui répond au doigt est la zone
+               d'ouverture posée par-dessus. */
+            style={immersifPossible && !immersif ? { pointerEvents: 'none' } : undefined}
+          >
+            {/* ── LE FOND : CINQ couches, pas deux. Et les halos ne sont
+                   PAS des radiaux — voir la feuille de style. ────────── */}
+            <div className={s['aj-fond']}>
+              <i className={`${s['aj-trainee']} ${s['aj-t1']}`} />
+              <i className={`${s['aj-trainee']} ${s['aj-t2']}`} />
+              <i className={s['h-violet']} />
+              <i className={s['h-cyan']} />
+              <i className={s['h-wash']} />
+              <i className={s['h-grain']} />
+            </div>
+
+            <header className={s['aj-head']}>
+              {immersif && (
+                <button type="button" className={s.fermer} onClick={sortir} aria-label="Revenir au site">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              )}
+              <div className={s['aj-orbe']}>
+                <span className={s.anneau} />
+                {/* L'œil d'Ajnaya — SVG repris trait pour trait d'AjnayaEyeAvatar. */}
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="ajFond"><stop offset="0" stopColor="#0D1526" /><stop offset="1" stopColor="#080C18" /></radialGradient>
+                    <radialGradient id="ajHalo"><stop offset="0" stopColor="#00D4FF" stopOpacity=".25" /><stop offset=".6" stopColor="#6C3CE0" stopOpacity=".10" /><stop offset="1" stopColor="#6C3CE0" stopOpacity="0" /></radialGradient>
+                    <radialGradient id="ajScl" fx=".45" fy=".46"><stop offset="0" stopColor="#F0F4FF" /><stop offset=".7" stopColor="#D8E0F0" /><stop offset="1" stopColor="#B8C4D8" /></radialGradient>
+                    <radialGradient id="ajIris" fx=".46" fy=".46"><stop offset="0" stopColor="#6DEAFF" /><stop offset=".45" stopColor="#00D4FF" /><stop offset=".7" stopColor="#6C3CE0" /><stop offset="1" stopColor="#4A25A0" /></radialGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="48" fill="url(#ajFond)" />
+                  <circle cx="50" cy="50" r="35" fill="url(#ajHalo)" />
+                  <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="url(#ajScl)" />
+                  <circle cx="50" cy="50" r="17" fill="url(#ajIris)" />
+                  <circle cx="50" cy="50" r="17" fill="none" stroke="#3A1A80" strokeWidth="1.5" opacity=".4" />
+                  <circle cx="50" cy="50" r="6.5" fill="#050510" />
+                  <ellipse cx="44" cy="44" rx="4" ry="3.5" fill="#fff" opacity=".85" />
+                  <circle cx="55" cy="55" r="1.8" fill="#fff" opacity=".5" />
+                  <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="none" stroke="#2A3A52" strokeWidth="1.5" opacity=".6" />
+                  <path d="M 18 50 C 30 33 41 27 50 27 C 59 27 70 33 82 50" fill="none" stroke="#1A2540" strokeWidth="2" strokeLinecap="round" opacity=".7" />
+                  <circle cx="22" cy="38" r="1.2" fill="#6DEAFF" opacity=".5" />
+                  <circle cx="78" cy="42" r="1" fill="#8C52FF" opacity=".4" />
+                  <circle cx="50" cy="22" r=".8" fill="#00D4FF" opacity=".3" />
+                </svg>
+              </div>
+              <div className={s['aj-id']}>
+                <div className={s['aj-nom']}>Ajnaya</div>
+                {/* ⚠️ L'app écrit « Prête, {prénom} ». Ici le visiteur n'a
+                    pas de prénom connu : on garde l'état, sans la personne. */}
+                <div className={s['aj-etat']}><i />En ligne</div>
+              </div>
+              <button className={s['aj-aide']} type="button" aria-label="Aide">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm.9 15.1h-1.8v-1.8h1.8v1.8zm1.86-6.96l-.81.83c-.65.66-1.05 1.2-1.05 2.53h-1.8v-.45c0-.98.4-1.87 1.05-2.52l1.12-1.14c.33-.32.53-.77.53-1.27a1.8 1.8 0 10-3.6 0H8.4a3.6 3.6 0 117.2 0c0 .72-.29 1.37-.76 1.84z" /></svg>
+              </button>
+              <div className={s['aj-pense']}><i /></div>
+            </header>
+
+            <div className={s['aj-fil']} ref={filRef} aria-live="polite">
+              {/* ── LA CARTE D'ESTIMATION — bord haut DOUBLE : une lumière
+                     pleine largeur, PUIS un filet en retrait de 18 px. ── */}
+              <div className={s['aj-banniere']}>
+                <span className={s.lum} />
+                <span className={s.filet} />
+                <div className={s.gauche}>
+                  <div className={s['aj-sous']}>
+                    <span className={s['aj-approx']}>≈</span>
+                    <span className={s['aj-montant']}>32</span>
+                    <span className={s['aj-unite']}>€/h</span>
+                  </div>
+                  <div className={s['aj-zone']}>
+                    Autour de {nomLieu} · {savoir.etat}
+                  </div>
+                </div>
+                <div className={s['aj-droite']}>
+                  <span className={s['aj-tampon']}>estimation · {heures.hh}</span>
+                  <span className={s.chev}>›</span>
+                </div>
+              </div>
+
+              <div className={s['aj-frise']}>
+                <div className={s.titre}>
+                  Les zones rentables, heure par heure
+                  {/* ⚠️ LE MOT « EXEMPLE » EST À L'ÉCRAN, PAS SEULEMENT EN COMMENTAIRE.
+                      Le grincheux du 03/09 a eu raison : le fichier disait honnêtement
+                      « 31/44/52 sont des EXEMPLES », et l'écran ne le disait nulle part.
+                      Un commentaire juste au-dessus d'un écran qui ment est un faux témoin,
+                      pas une protection. */}
+                  <span className={s['aj-exemple']}>exemple</span>
+                </div>
+                <p className={s['aj-promesse']}>
+                  Ajnaya sait où ça paie autour de <b>{nomLieu}</b> — <b>cette heure-ci, et les deux qui suivent</b>.
+                </p>
+                <div className={s['aj-piste']}>
+                  <div className={s['aj-points']}>
+                    <div className={`${s['aj-tiers']} ${s.d}`}><span className={`${s['aj-point']} ${s.on}`} /></div>
+                    <div className={`${s['aj-tiers']} ${s.m}`}><span className={`${s['aj-point']} ${s.futur}`} /></div>
+                    <div className={`${s['aj-tiers']} ${s.f}`}><span className={`${s['aj-point']} ${s.futur}`} /></div>
+                  </div>
+                </div>
+                <div className={s['aj-heures']}>
+                  {/* ⚠️ 31/44/52 €/h sont des EXEMPLES, pas des mesures. En
+                      euros et non en pourcentage : un « +61 % » ne se dépense pas. */}
+                  <div className={`${s['aj-tiers']} ${s.d}`}>
+                    <span className={s['aj-heure']}>{heures.h1}</span><span className={s.val}>31 €/h</span>
+                  </div>
+                  <div className={`${s['aj-tiers']} ${s.m} ${s.floue}`}>
+                    <span className={s['aj-heure']}>{heures.h2}</span><span className={s.val}>44 €/h</span>
+                  </div>
+                  <div className={`${s['aj-tiers']} ${s.f} ${s.floue}`}>
+                    <span className={s['aj-heure']}>{heures.h3}</span><span className={s.val}>52 €/h</span>
+                  </div>
+                </div>
+                {/* ⚠️ CE VERROU N'EXISTE PAS DANS L'APP — voir l'en-tête. */}
+                <div className={s['aj-verrou']} onClick={onEssaiClick} role="button" tabIndex={0}
+                     onKeyDown={(e) => e.key === 'Enter' && onEssaiClick?.()}>
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7a5 5 0 00-10 0v2H5v13h14V9h-2zM9 7a3 3 0 016 0v2H9V7zm4 9.7V19h-2v-2.3a2 2 0 112 0z" /></svg>
+                  {/* ⚠️ NE JAMAIS ÉCRIRE « réservées aux abonnés ». C'était faux deux fois :
+                      ce verrou n'existe pas dans l'app, et les chiffres floutés derrière
+                      ne sont mesurés nulle part. On vendait donc l'ouverture d'un vide.
+                      Dans l'app, un point éteint veut dire « rien de mesuré », jamais « bloqué ». */}
+                  <span>Exemple. Dans l'app, ces heures viennent de <b>ce qui est mesuré</b>.</span>
+                  <span className={s.fl}>›</span>
+                </div>
+              </div>
+
+              <div className={s['aj-jour']}>{heures.jour}</div>
+
+              {lignes.map((l, li) => (
+                <div key={l.id} className={`${s['aj-ligne']} ${s[l.qui === 'toi' ? 'toi' : 'elle']}`}>
+                  <div className={s.etiq}>{l.etiq}</div>
+                  <div className={s['aj-bulle']}>
+                    {l.blocs.map((b, bi) =>
+                      l.qui === 'toi' ? (
+                        <div key={bi} className={s['aj-bloc']} dangerouslySetInnerHTML={{ __html: b.html }} />
+                      ) : (
+                        <div key={bi}>
+                          {b.tag && (
+                            <span className={`${s['aj-bloc']} ${s.tag} ${s[b.tag.couleur]}`}>{b.tag.texte}</span>
+                          )}
+                          <BlocPoussiere html={b.html} index={li * 3 + bi} />
+                        </div>
+                      ),
+                    )}
+                  </div>
+
+                  {/* ── LES DEUX PORTES — après le savoir, jamais avant.
+                         La dette est créée : on a donné un calcul et un geste. ── */}
+                  {l.sorties && (
+                    <>
+                      <button className={`${s['aj-chip']} ${s.essai}`} type="button" onClick={onEssaiClick}>
+                        <span className={s.ico}>
+                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" /></svg>
+                        </span>
+                        <span className={s.lib}>Essayer 3 jours — 0 € aujourd&apos;hui</span>
+                        <span className={s.chev}>›</span>
+                      </button>
+                      <button className={`${s['aj-chip']} ${s.wa}`} type="button" onClick={onWhatsAppClick}>
+                        <span className={s.ico}>
+                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
+                        </span>
+                        <span className={s.lib}>Poser ma question sur WhatsApp</span>
+                        <span className={s.chev}>›</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+
+              {attente && (
+                <p className={s['aj-chuchote']}>Ajnaya rassemble ce qu&rsquo;elle sait…</p>
+              )}
+            </div>
+
+            <footer className={s['aj-dock']}>
+              <i className={s['aj-hair']} />
+              <div className={s['aj-sugg']}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8" /></svg>
+                Voir ma zone sur la carte
+              </div>
+              <div className={s['aj-row']}>
+                <button
+                  className={`${s['aj-mic']} ${ecoute ? s.ecoute : ''}`}
+                  type="button"
+                  aria-label="Parler"
+                  onClick={dicter}
+                >
+                  {ecoute ? (
+                    <span className={s['aj-onde']}><i /><i /><i /><i /></span>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 003-3V5a3 3 0 00-6 0v6a3 3 0 003 3z" /><path d="M17 11a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-3.08A7 7 0 0019 11h-2z" /></svg>
+                  )}
+                </button>
+                <input
+                  ref={champRef}
+                  className={s['aj-champ']}
+                  type="text"
+                  /* L'invite s'écrit toute seule en plein écran. On anime
+                     l'attribut lui-même : un calque posé par-dessus se
+                     décale dès que la police ou l'échelle bougent. */
+                  placeholder={invite}
+                  autoComplete="off"
+                  value={saisie}
+                  readOnly={immersifPossible && !immersif}
+                  tabIndex={immersifPossible && !immersif ? -1 : 0}
+                  onChange={(e) => setSaisie(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && envoyer()}
+                />
+                <button className={s['aj-send']} type="button" aria-label="Envoyer" onClick={envoyer}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                </button>
+              </div>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  )
+
   return (
     <div
       className={s.racine}
@@ -463,342 +818,9 @@ export default function AjnayaPhoneDemo({
           et `.arrivee` aucune hauteur. Un `height: 100%` posé sur l'enfant remonte
           la chaîne, ne trouve aucune hauteur ferme, et retombe sur la taille
           naturelle de l'image. Il faut la poser à TOUS les étages. */}
-      <div
-        className={`${s.scene} ${immersif ? s.immersif : ''}`}
-        style={
-          immersif
-            ? {
-                position: 'fixed', inset: 0, display: 'block', perspective: 'none', minHeight: 0,
-                /* ⚠️ AU-DESSUS DU BANDEAU DE CONSENTEMENT, QUI EST À 9999.
-                   Mesuré sur iPhone : à 1000, le bandeau passait devant et
-                   enterrait le champ de saisie. Le bandeau n'est pas supprimé
-                   pour autant — il réapparaît intact dès qu'on ressort. */
-                zIndex: 10000,
-                /* ⚠️ FOND OPAQUE OBLIGATOIRE. Sans lui, le texte de la page
-                   (« Elle répond tout de suite », « Changer de zone ») se lisait
-                   PAR-DESSUS la conversation. Une application ne laisse pas voir
-                   la page qui la porte. */
-                background: '#000',
-              }
-            : ajusteHauteur
-              ? { height: '100%', minHeight: 0, alignItems: 'flex-start' }
-              : undefined
-        }
-      >
-        <div
-          className={`${s.arrivee} ${arrive ? s.on : ''}`}
-          style={
-            immersif
-              ? {
-                  /* ⚠️ `animation: none` D'ABORD, SINON `transform: none` NE SERT À RIEN.
-                     `.arrivee.on` joue `ajArrive` en `fill-mode: both` : la
-                     dernière image de l'animation RESTE appliquée pour toujours,
-                     et une animation passe DEVANT un style en ligne.
-                     Mesuré : la taille calculée disait 393 × 852, le rectangle
-                     réellement dessiné 321 × 654. L'écart, c'était elle.
-                     Un style en ligne n'a pas le dernier mot en CSS. */
-                  animation: 'none',
-                  position: 'absolute', inset: 0, opacity: 1, transform: 'none',
-                }
-              : ajusteHauteur ? { height: '100%' } : undefined
-          }
-        >
-          {/* Le voile qui coupe le site quand on entre dans l'application. */}
-          {immersif && (
-            <div
-              className={s.voile}
-              onClick={sortir}
-              aria-hidden="true"
-              style={{ zIndex: 9999 }}
-            />
-          )}
-
-          <div
-            className={s.tel}
-            style={
-              immersif
-                ? {
-                    /* ⚠️ `filter: none` N'EST PAS COSMÉTIQUE, C'EST LA CORRECTION.
-                       `.tel` porte deux `drop-shadow`. Or un `filter` sur un
-                       élément crée un BLOC CONTENEUR pour ses descendants en
-                       `position: fixed` — ils cessent de se caler sur l'écran
-                       et se calent sur lui. Mesuré : `.tel` faisait 4 px de
-                       large, et l'app calculait donc `width: 100%` = 0.
-                       C'est ce qui rendait le plein écran illisible.
-                       On retire l'ombre : de toute façon, en plein écran, ce
-                       n'est plus un objet posé qui doit projeter une ombre. */
-                    position: 'absolute', inset: 0,
-                    width: '100%', height: '100%', maxWidth: 'none', margin: 0,
-                    filter: 'none', animation: 'none', transform: 'none',
-                  }
-                : ajusteHauteur
-                  ? { width: 'auto', height: '100%', maxWidth: '100%', animation: 'none' }
-                  : undefined
-            }
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {!immersif && <img
-              src="/demo/ajnaya-cadre.png"
-              alt=""
-              aria-hidden="true"
-              /* C'est elle qui donne sa taille au téléphone : dès qu'elle est
-                 là, on remesure. Ne pas s'en remettre au seul observateur. */
-              onLoad={poserEchelle}
-              style={ajusteHauteur ? { height: '100%', width: 'auto', display: 'block' } : undefined}
-            />}
-            {/* ⚠️ AU REPOS, TOUT L'ÉCRAN EST LA COMMANDE.
-                Le téléphone est réduit d'un facteur ~0,62 : le champ ne mesure
-                plus que 30 px de haut à l'écran réel, contre 48 exigés — la
-                charte prend le plus exigeant des deux minimums parce que le
-                téléphone de référence est un Galaxy A05. Une cible de 30 px
-                n'est pas une cible, c'est un piège à pouce.
-                On ne grossit pas le champ, ça casserait l'échelle de l'app :
-                c'est l'écran entier qui devient touchable. */}
-            {immersifPossible && !immersif && (
-              <button
-                ref={declencheur}
-                type="button"
-                className={s.ouvrir}
-                onClick={entrer}
-                aria-label="Écrire à Ajnaya"
-              />
-            )}
-
-            <div
-              className={s.ecran}
-              ref={ecranRef}
-              style={immersif ? { position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: 0 } : undefined}
-            >
-              <div
-                className={s.app}
-                ref={appRef}
-                /* ⚠️ RIEN N'EST TOUCHABLE DANS L'APP TANT QU'ON N'EST PAS EN PLEIN ÉCRAN.
-                   Reproduit sur iPhone 16 le 03/09 : `readOnly` NE SUFFIT PAS.
-                   Sur iOS un champ en lecture seule reste focusable et ouvre
-                   quand même le clavier. Le doigt tombait à côté de la zone
-                   d'ouverture, atterrissait sur le champ, iOS faisait défiler
-                   la page pour dégager le clavier — et le téléphone sortait de
-                   l'écran. C'était ça, le « bug dégueulasse ».
-                   Ici, la seule chose qui répond au doigt est la zone
-                   d'ouverture posée par-dessus. */
-                style={immersifPossible && !immersif ? { pointerEvents: 'none' } : undefined}
-              >
-                {/* ── LE FOND : CINQ couches, pas deux. Et les halos ne sont
-                       PAS des radiaux — voir la feuille de style. ────────── */}
-                <div className={s['aj-fond']}>
-                  <i className={`${s['aj-trainee']} ${s['aj-t1']}`} />
-                  <i className={`${s['aj-trainee']} ${s['aj-t2']}`} />
-                  <i className={s['h-violet']} />
-                  <i className={s['h-cyan']} />
-                  <i className={s['h-wash']} />
-                  <i className={s['h-grain']} />
-                </div>
-
-                <header className={s['aj-head']}>
-                  {immersif && (
-                    <button type="button" className={s.fermer} onClick={sortir} aria-label="Revenir au site">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-                        <path d="M6 6l12 12M18 6L6 18" />
-                      </svg>
-                    </button>
-                  )}
-                  <div className={s['aj-orbe']}>
-                    <span className={s.anneau} />
-                    {/* L'œil d'Ajnaya — SVG repris trait pour trait d'AjnayaEyeAvatar. */}
-                    <svg viewBox="0 0 100 100" aria-hidden="true">
-                      <defs>
-                        <radialGradient id="ajFond"><stop offset="0" stopColor="#0D1526" /><stop offset="1" stopColor="#080C18" /></radialGradient>
-                        <radialGradient id="ajHalo"><stop offset="0" stopColor="#00D4FF" stopOpacity=".25" /><stop offset=".6" stopColor="#6C3CE0" stopOpacity=".10" /><stop offset="1" stopColor="#6C3CE0" stopOpacity="0" /></radialGradient>
-                        <radialGradient id="ajScl" fx=".45" fy=".46"><stop offset="0" stopColor="#F0F4FF" /><stop offset=".7" stopColor="#D8E0F0" /><stop offset="1" stopColor="#B8C4D8" /></radialGradient>
-                        <radialGradient id="ajIris" fx=".46" fy=".46"><stop offset="0" stopColor="#6DEAFF" /><stop offset=".45" stopColor="#00D4FF" /><stop offset=".7" stopColor="#6C3CE0" /><stop offset="1" stopColor="#4A25A0" /></radialGradient>
-                      </defs>
-                      <circle cx="50" cy="50" r="48" fill="url(#ajFond)" />
-                      <circle cx="50" cy="50" r="35" fill="url(#ajHalo)" />
-                      <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="url(#ajScl)" />
-                      <circle cx="50" cy="50" r="17" fill="url(#ajIris)" />
-                      <circle cx="50" cy="50" r="17" fill="none" stroke="#3A1A80" strokeWidth="1.5" opacity=".4" />
-                      <circle cx="50" cy="50" r="6.5" fill="#050510" />
-                      <ellipse cx="44" cy="44" rx="4" ry="3.5" fill="#fff" opacity=".85" />
-                      <circle cx="55" cy="55" r="1.8" fill="#fff" opacity=".5" />
-                      <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="none" stroke="#2A3A52" strokeWidth="1.5" opacity=".6" />
-                      <path d="M 18 50 C 30 33 41 27 50 27 C 59 27 70 33 82 50" fill="none" stroke="#1A2540" strokeWidth="2" strokeLinecap="round" opacity=".7" />
-                      <circle cx="22" cy="38" r="1.2" fill="#6DEAFF" opacity=".5" />
-                      <circle cx="78" cy="42" r="1" fill="#8C52FF" opacity=".4" />
-                      <circle cx="50" cy="22" r=".8" fill="#00D4FF" opacity=".3" />
-                    </svg>
-                  </div>
-                  <div className={s['aj-id']}>
-                    <div className={s['aj-nom']}>Ajnaya</div>
-                    {/* ⚠️ L'app écrit « Prête, {prénom} ». Ici le visiteur n'a
-                        pas de prénom connu : on garde l'état, sans la personne. */}
-                    <div className={s['aj-etat']}><i />En ligne</div>
-                  </div>
-                  <button className={s['aj-aide']} type="button" aria-label="Aide">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm.9 15.1h-1.8v-1.8h1.8v1.8zm1.86-6.96l-.81.83c-.65.66-1.05 1.2-1.05 2.53h-1.8v-.45c0-.98.4-1.87 1.05-2.52l1.12-1.14c.33-.32.53-.77.53-1.27a1.8 1.8 0 10-3.6 0H8.4a3.6 3.6 0 117.2 0c0 .72-.29 1.37-.76 1.84z" /></svg>
-                  </button>
-                  <div className={s['aj-pense']}><i /></div>
-                </header>
-
-                <div className={s['aj-fil']} ref={filRef} aria-live="polite">
-                  {/* ── LA CARTE D'ESTIMATION — bord haut DOUBLE : une lumière
-                         pleine largeur, PUIS un filet en retrait de 18 px. ── */}
-                  <div className={s['aj-banniere']}>
-                    <span className={s.lum} />
-                    <span className={s.filet} />
-                    <div className={s.gauche}>
-                      <div className={s['aj-sous']}>
-                        <span className={s['aj-approx']}>≈</span>
-                        <span className={s['aj-montant']}>32</span>
-                        <span className={s['aj-unite']}>€/h</span>
-                      </div>
-                      <div className={s['aj-zone']}>
-                        Autour de {nomLieu} · {savoir.etat}
-                      </div>
-                    </div>
-                    <div className={s['aj-droite']}>
-                      <span className={s['aj-tampon']}>estimation · {heures.hh}</span>
-                      <span className={s.chev}>›</span>
-                    </div>
-                  </div>
-
-                  <div className={s['aj-frise']}>
-                    <div className={s.titre}>
-                      Les zones rentables, heure par heure
-                      {/* ⚠️ LE MOT « EXEMPLE » EST À L'ÉCRAN, PAS SEULEMENT EN COMMENTAIRE.
-                          Le grincheux du 03/09 a eu raison : le fichier disait honnêtement
-                          « 31/44/52 sont des EXEMPLES », et l'écran ne le disait nulle part.
-                          Un commentaire juste au-dessus d'un écran qui ment est un faux témoin,
-                          pas une protection. */}
-                      <span className={s['aj-exemple']}>exemple</span>
-                    </div>
-                    <p className={s['aj-promesse']}>
-                      Ajnaya sait où ça paie autour de <b>{nomLieu}</b> — <b>cette heure-ci, et les deux qui suivent</b>.
-                    </p>
-                    <div className={s['aj-piste']}>
-                      <div className={s['aj-points']}>
-                        <div className={`${s['aj-tiers']} ${s.d}`}><span className={`${s['aj-point']} ${s.on}`} /></div>
-                        <div className={`${s['aj-tiers']} ${s.m}`}><span className={`${s['aj-point']} ${s.futur}`} /></div>
-                        <div className={`${s['aj-tiers']} ${s.f}`}><span className={`${s['aj-point']} ${s.futur}`} /></div>
-                      </div>
-                    </div>
-                    <div className={s['aj-heures']}>
-                      {/* ⚠️ 31/44/52 €/h sont des EXEMPLES, pas des mesures. En
-                          euros et non en pourcentage : un « +61 % » ne se dépense pas. */}
-                      <div className={`${s['aj-tiers']} ${s.d}`}>
-                        <span className={s['aj-heure']}>{heures.h1}</span><span className={s.val}>31 €/h</span>
-                      </div>
-                      <div className={`${s['aj-tiers']} ${s.m} ${s.floue}`}>
-                        <span className={s['aj-heure']}>{heures.h2}</span><span className={s.val}>44 €/h</span>
-                      </div>
-                      <div className={`${s['aj-tiers']} ${s.f} ${s.floue}`}>
-                        <span className={s['aj-heure']}>{heures.h3}</span><span className={s.val}>52 €/h</span>
-                      </div>
-                    </div>
-                    {/* ⚠️ CE VERROU N'EXISTE PAS DANS L'APP — voir l'en-tête. */}
-                    <div className={s['aj-verrou']} onClick={onEssaiClick} role="button" tabIndex={0}
-                         onKeyDown={(e) => e.key === 'Enter' && onEssaiClick?.()}>
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7a5 5 0 00-10 0v2H5v13h14V9h-2zM9 7a3 3 0 016 0v2H9V7zm4 9.7V19h-2v-2.3a2 2 0 112 0z" /></svg>
-                      {/* ⚠️ NE JAMAIS ÉCRIRE « réservées aux abonnés ». C'était faux deux fois :
-                          ce verrou n'existe pas dans l'app, et les chiffres floutés derrière
-                          ne sont mesurés nulle part. On vendait donc l'ouverture d'un vide.
-                          Dans l'app, un point éteint veut dire « rien de mesuré », jamais « bloqué ». */}
-                      <span>Exemple. Dans l'app, ces heures viennent de <b>ce qui est mesuré</b>.</span>
-                      <span className={s.fl}>›</span>
-                    </div>
-                  </div>
-
-                  <div className={s['aj-jour']}>{heures.jour}</div>
-
-                  {lignes.map((l, li) => (
-                    <div key={l.id} className={`${s['aj-ligne']} ${s[l.qui === 'toi' ? 'toi' : 'elle']}`}>
-                      <div className={s.etiq}>{l.etiq}</div>
-                      <div className={s['aj-bulle']}>
-                        {l.blocs.map((b, bi) =>
-                          l.qui === 'toi' ? (
-                            <div key={bi} className={s['aj-bloc']} dangerouslySetInnerHTML={{ __html: b.html }} />
-                          ) : (
-                            <div key={bi}>
-                              {b.tag && (
-                                <span className={`${s['aj-bloc']} ${s.tag} ${s[b.tag.couleur]}`}>{b.tag.texte}</span>
-                              )}
-                              <BlocPoussiere html={b.html} index={li * 3 + bi} />
-                            </div>
-                          ),
-                        )}
-                      </div>
-
-                      {/* ── LES DEUX PORTES — après le savoir, jamais avant.
-                             La dette est créée : on a donné un calcul et un geste. ── */}
-                      {l.sorties && (
-                        <>
-                          <button className={`${s['aj-chip']} ${s.essai}`} type="button" onClick={onEssaiClick}>
-                            <span className={s.ico}>
-                              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" /></svg>
-                            </span>
-                            <span className={s.lib}>Essayer 3 jours — 0 € aujourd&apos;hui</span>
-                            <span className={s.chev}>›</span>
-                          </button>
-                          <button className={`${s['aj-chip']} ${s.wa}`} type="button" onClick={onWhatsAppClick}>
-                            <span className={s.ico}>
-                              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
-                            </span>
-                            <span className={s.lib}>Poser ma question sur WhatsApp</span>
-                            <span className={s.chev}>›</span>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ))}
-
-                  {attente && (
-                    <p className={s['aj-chuchote']}>Ajnaya rassemble ce qu&rsquo;elle sait…</p>
-                  )}
-                </div>
-
-                <footer className={s['aj-dock']}>
-                  <i className={s['aj-hair']} />
-                  <div className={s['aj-sugg']}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8" /></svg>
-                    Voir ma zone sur la carte
-                  </div>
-                  <div className={s['aj-row']}>
-                    <button
-                      className={`${s['aj-mic']} ${ecoute ? s.ecoute : ''}`}
-                      type="button"
-                      aria-label="Parler"
-                      onClick={dicter}
-                    >
-                      {ecoute ? (
-                        <span className={s['aj-onde']}><i /><i /><i /><i /></span>
-                      ) : (
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 003-3V5a3 3 0 00-6 0v6a3 3 0 003 3z" /><path d="M17 11a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-3.08A7 7 0 0019 11h-2z" /></svg>
-                      )}
-                    </button>
-                    <input
-                      ref={champRef}
-                      className={s['aj-champ']}
-                      type="text"
-                      /* L'invite s'écrit toute seule en plein écran. On anime
-                         l'attribut lui-même : un calque posé par-dessus se
-                         décale dès que la police ou l'échelle bougent. */
-                      placeholder={invite}
-                      autoComplete="off"
-                      value={saisie}
-                      readOnly={immersifPossible && !immersif}
-                      tabIndex={immersifPossible && !immersif ? -1 : 0}
-                      onChange={(e) => setSaisie(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && envoyer()}
-                    />
-                    <button className={s['aj-send']} type="button" aria-label="Envoyer" onClick={envoyer}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
-                    </button>
-                  </div>
-                </footer>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {immersif && typeof document !== 'undefined'
+        ? createPortal(scene, document.body)
+        : scene}
     </div>
   )
 }
