@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Ecran1Zone from './Ecran1Zone'
+import Soudure from './Soudure'
 import s from './mobile.module.css'
 
 /**
@@ -54,6 +55,27 @@ export default function AccueilMobile() {
           par cœur. La réponse vend, et elle ne lit aucune table. */}
       <Ecran1Zone lienWhatsApp="/wa?s=hero_zone" />
 
+      {/* ══ LA SOUDURE ══════════════════════════════════════════════════════
+          La vidéo de l'habitacle joue, la caméra avance vers le téléphone dont
+          l'écran est noir, puis cet écran noir grandit jusqu'à remplir celui du
+          visiteur — et la vraie notification apparaît dedans.
+          Le téléphone de la voiture devient le sien, sans coupure visible. */}
+      <Soudure
+        enfants={
+      <div className={s.notif} role="status">
+        <div className={s.notifIcone} aria-hidden="true">F</div>
+        <div className={s.notifCorps}>
+          <div className={s.notifHaut}>
+            <span className={s.notifApp}>FOREAS Driver</span>
+            <span className={s.notifHeure}>maintenant</span>
+          </div>
+          <div className={s.notifTitre}>Course proposée — 12,40 €</div>
+          <p className={s.notifTexte}>Regarde ce qu&apos;elle paie avant d&apos;accepter.</p>
+        </div>
+      </div>
+        }
+      />
+
       <main className={s.scene}>
       <div className={s.halos} aria-hidden="true" />
       <div className={s.grain} aria-hidden="true" />
@@ -75,19 +97,6 @@ export default function AccueilMobile() {
       </svg>
 
       <div className={s.voile} aria-hidden="true" />
-
-      {/* ══ LA NOTIFICATION — elle descend du bord haut, comme le fait le système ══ */}
-      <div className={s.notif} role="status">
-        <div className={s.notifIcone} aria-hidden="true">F</div>
-        <div className={s.notifCorps}>
-          <div className={s.notifHaut}>
-            <span className={s.notifApp}>FOREAS Driver</span>
-            <span className={s.notifHeure}>maintenant</span>
-          </div>
-          <div className={s.notifTitre}>Course proposée — 12,40 €</div>
-          <p className={s.notifTexte}>Regarde ce qu&apos;elle paie avant d&apos;accepter.</p>
-        </div>
-      </div>
 
       {/* ══ LA BULLE — quatre lignes, des nombres qu'un enfant suit ══ */}
       <div className={s.bulle}>

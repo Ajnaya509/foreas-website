@@ -1,0 +1,90 @@
+/*
+ * LA SOUDURE — style.
+ *
+ * ⚠️ LE FOND EST EXACTEMENT LE NOIR DE L'ÉCRAN FILMÉ.
+ * C'est toute l'astuce : quand l'écran noir du téléphone grandit jusqu'à
+ * remplir la page, il n'y a aucune frontière à voir. Si ce fond était d'un
+ * autre noir, un liseré apparaîtrait au moment exact de la soudure.
+ */
+
+.soudure {
+  position: relative;
+  min-height: 100svh;      /* jamais 100vh : Safari compte les barres qui partent */
+  background: #060610;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+/* ══ LE CADRE DE LA VIDÉO ══════════════════════════════════════════════════
+   On refait « couvrir » à la main, au lieu d'`object-fit: cover`.
+   Raison : avec `cover`, la boîte de l'élément et l'image affichée n'ont pas
+   la même taille, et les pourcentages mesurés sur l'image ne tombent plus
+   au bon endroit. Ici, la boîte A l'aspect de la vidéo — donc 39,26 % de sa
+   largeur, c'est vraiment l'écran du téléphone. */
+.cadre {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  transform: scale(1);
+  transform-origin: 49.3% 49.6%;   /* le centre de l'écran filmé, mesuré */
+  transition: transform 1000ms cubic-bezier(.4, 0, .2, 1);
+  will-change: transform;
+}
+/* ⚠️ LA TAILLE EST POSÉE EN JAVASCRIPT, PAS ICI — ET C'EST VOULU.
+   La version CSS `width: max(100vw, calc(100svh * 540/960))` a été essayée :
+   la hauteur obéissait, la largeur restait collée à 100vw. Une règle qui
+   marche à moitié est pire qu'une règle absente, parce qu'on croit l'avoir.
+   Le JavaScript calcule les deux et les écrit en pixels. Déterministe.
+   Les valeurs ci-dessous ne servent que le temps du premier affichage. */
+.video {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw; height: 100svh;
+  object-fit: cover;
+  /* ⚠️ SANS CETTE LIGNE, RIEN NE MARCHE — ET ÇA NE SE VOIT PAS.
+     Le style global porte `video { max-width: 100% }`. Le cadre fait la largeur
+     de l'écran, donc la vidéo était ramenée à 375 px alors que le JavaScript
+     lui écrivait bien 456,75 px : le style en ligne était juste, la valeur
+     calculée était fausse, et l'agrandissement tombait à côté de l'écran.
+     Une valeur écrite n'est pas une valeur appliquée. */
+  max-width: none; max-height: none;
+  display: block;
+  background: #060610;
+}
+
+/* ══ LE MOMENT DE LA SOUDURE ═══════════════════════════════════════════════
+   Le cadre grandit du facteur calculé en JavaScript. L'écran noir remplit
+   tout. Puis la vidéo s'efface — elle est de toute façon entièrement noire
+   à ce moment, donc son effacement ne se voit pas, et la carte graphique
+   se libère. */
+.fini .cadre {
+  transform: scale(var(--k, 2.4));
+}
+.fini .video {
+  opacity: 0;
+  transition: opacity 420ms linear 820ms;
+}
+
+/* ══ LA VRAIE INTERFACE ════════════════════════════════════════════════════
+   Couche séparée, jamais agrandie, donc jamais floue. */
+.reel {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 390px;
+  padding: 0 20px;
+  /* Elle vient du HAUT : une notification tombe, elle ne monte pas. */
+  opacity: 0; transform: translateY(-16px);
+  pointer-events: none;
+}
+.fini .reel {
+  opacity: 1; transform: translateY(0);
+  pointer-events: auto;
+  transition: opacity 520ms ease-out 760ms, transform 520ms cubic-bezier(.16,1,.3,1) 760ms;
+}
+
+/* ══ MOUVEMENT RÉDUIT — on saute directement au résultat ═══════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .cadre { transition: none !important; }
+  .video { display: none !important; }
+  .reel { opacity: 1 !important; transform: none !important; pointer-events: auto !important; transition: none !important; }
+}
