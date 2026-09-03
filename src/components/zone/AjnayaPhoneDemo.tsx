@@ -496,15 +496,27 @@ export default function AjnayaPhoneDemo({
           : ajusteHauteur ? { height: '100%' } : undefined
       }
     >
-      {/* Le voile qui coupe le site quand on entre dans l'application. */}
-      {immersif && (
-        <div
-          className={s.voile}
-          onClick={sortir}
-          aria-hidden="true"
-          style={{ zIndex: 9999 }}
-        />
-      )}
+      {/* ⚠️ LE VOILE EST SUPPRIMÉ, ET C'ÉTAIT LUI, L'ÉCRAN SOMBRE.
+          Je l'avais posé pour « couper le site » en entrant dans l'application.
+          Mais il était un ENFANT de la scène, à z-index 9999, avec un fond noir
+          à 90 %. Dans le contexte d'empilement de la scène, il passait donc
+          devant l'application au lieu de couper la page derrière : tout
+          l'écran ressortait à un quart de sa luminosité.
+
+          Et il m'a fait perdre trois passes, parce que le DOM disait la vérité
+          et que je ne l'écoutais pas : toutes les opacités valaient 1, tous les
+          textes étaient en rgb(248,250,252). J'ai accusé `will-change`, la
+          composition d'iOS, le clavier. Le coupable était un élément que je
+          croyais avoir retiré — mon remplacement précédent n'avait pas trouvé
+          sa cible, et je ne l'avais pas vérifié.
+
+          La preuve qui a tranché : la même maquette sur `/ou-ca-paie`, dans le
+          même simulateur, s'affiche parfaitement lumineuse. Quand deux pages
+          partagent un composant et qu'une seule est sombre, ce n'est jamais
+          le navigateur.
+
+          Le fond opaque de la scène coupe déjà le site, et le portail la sort
+          de la page. La sortie reste la croix et la touche Échap. */}
 
       <div
         className={s.tel}
