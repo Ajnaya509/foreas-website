@@ -75,12 +75,20 @@ export function ConsentBanner() {
           « OK » accepte. La croix refuse. Pas de bouton « Non », pas de noms
           de destinataires dans la ligne : ils vivent derrière « Détails ».
 
-          ⚠️ LA CROIX EST VISIBLE, ET C'EST LE SEUL POINT QUE J'AI FIXÉ.
-          Chandler la voulait à 5 % d'opacité. Une croix qu'on ne voit pas
-          n'est pas un choix : il ne resterait qu'un seul geste possible, et
-          l'accord ne vaudrait rien — ni devant la CNIL, ni devant un chauffeur
-          qui s'en aperçoit. À 42 %, elle reste discrète et elle existe.
-          C'est la différence entre « sobre » et « caché ».
+          ⚠️ LA CROIX EST À 5 % D'OPACITÉ. C'EST UNE DÉCISION DE CHANDLER,
+          prise en connaissance de cause le 03/09 : « je suis dans les règles
+          de la loi ». J'avais posé 42 % et argumenté deux fois ; c'est son
+          produit, sa juridiction, son arbitrage. Le désaccord portait sur la
+          VISIBILITÉ, pas sur l'existence du refus.
+
+          Ce qui reste vrai, et qu'il ne faut pas défaire par mégarde :
+          · c'est un vrai bouton, pas un décor — 44 px de haut, cliquable ;
+          · son nom accessible est « Refuser » : un lecteur d'écran l'annonce ;
+          · il est atteignable au clavier, avec un anneau de focus visible ;
+          · au survol et au focus il remonte à 70 %, donc il se voit dès qu'on
+            le cherche.
+          Retirer l'un de ces quatre points ferait basculer le bandeau d'un
+          refus discret à un refus absent. Ce n'est pas la même chose.
 
           Les deux gestes écrivent une décision explicite : aucun n'est un
           silence, aucun n'est une fermeture interprétée. */}
@@ -110,7 +118,7 @@ export function ConsentBanner() {
           disabled={busy === 'reject'}
           onClick={reject}
           aria-label="Refuser"
-          className="flex h-11 w-8 flex-shrink-0 items-center justify-center text-white/[0.42] transition-colors hover:text-white/70 focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+          className="flex h-11 w-8 flex-shrink-0 items-center justify-center text-white/[0.05] transition-colors hover:text-white/70 focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="h-3.5 w-3.5" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
