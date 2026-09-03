@@ -467,7 +467,19 @@ export default function AjnayaPhoneDemo({
         className={`${s.scene} ${immersif ? s.immersif : ''}`}
         style={
           immersif
-            ? { position: 'fixed', inset: 0, zIndex: 1000, display: 'block', perspective: 'none', minHeight: 0 }
+            ? {
+                position: 'fixed', inset: 0, display: 'block', perspective: 'none', minHeight: 0,
+                /* ⚠️ AU-DESSUS DU BANDEAU DE CONSENTEMENT, QUI EST À 9999.
+                   Mesuré sur iPhone : à 1000, le bandeau passait devant et
+                   enterrait le champ de saisie. Le bandeau n'est pas supprimé
+                   pour autant — il réapparaît intact dès qu'on ressort. */
+                zIndex: 10000,
+                /* ⚠️ FOND OPAQUE OBLIGATOIRE. Sans lui, le texte de la page
+                   (« Elle répond tout de suite », « Changer de zone ») se lisait
+                   PAR-DESSUS la conversation. Une application ne laisse pas voir
+                   la page qui la porte. */
+                background: '#000',
+              }
             : ajusteHauteur
               ? { height: '100%', minHeight: 0, alignItems: 'flex-start' }
               : undefined
@@ -492,7 +504,14 @@ export default function AjnayaPhoneDemo({
           }
         >
           {/* Le voile qui coupe le site quand on entre dans l'application. */}
-          {immersif && <div className={s.voile} onClick={sortir} aria-hidden="true" />}
+          {immersif && (
+            <div
+              className={s.voile}
+              onClick={sortir}
+              aria-hidden="true"
+              style={{ zIndex: 9999 }}
+            />
+          )}
 
           <div
             className={s.tel}
