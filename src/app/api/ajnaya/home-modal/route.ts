@@ -34,6 +34,7 @@ import { citationDe } from '@/lib/consentements.prive'
 // Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
 // que de dégrader.
 import { clientServeurOuNull, cleServeurOuVide } from '@/lib/supabaseServeur'
+import { resolveSiteIdentity } from '@/lib/identityGate'
 
 import { temoignagePubliableParNom } from '@/lib/consentements.prive'
 export const runtime = 'nodejs'
@@ -304,41 +305,6 @@ async function getZoneData(zone: string): Promise<ZoneData | null> {
   }
 }
 
-// ─── Résolution d'identité (anonyme dès le fingerprint) ───────────────────────
-// Brief AJNAYA_FIX_TUNNEL_SITE_HOME_MODAL §Chantier B : rattacher CHAQUE funnel_event
-// à une PERSONNE pour que le DG puisse relancer un lâcheur. resolve_identity(p_visitor_id)
-// crée/résout une identité (user_type='anonymous') depuis le fingerprint + renvoie son id.
-// P0.h — passe par la porte unique `@/lib/identityGate` (RPC resolve_identity),
-// la même que WhatsApp, l'app et /api/identity/capture. Plus aucun accès direct
-// à identity_bridge depuis le site.
-async function resolveIdentityId(opts: {
-  identity_id: string | null
-  visitor_id: string | null
-  device_cookie_id: string | null
-}): Promise<string | null> {
-  // Déjà résolu côté client / tour précédent → on garde la même identité.
-  if (opts.identity_id) return opts.identity_id
-  // Sans aucune clé anonyme, ne PAS créer d'identité orpheline (non re-matchable).
-  if (!opts.visitor_id && !opts.device_cookie_id) return null
-  try {
-    const sb = await getSupabase()
-    if (!sb) return null
-    const { resolveIdentity } = await import('@/lib/identityGate')
-    const resolution = await resolveIdentity(sb, {
-      visitor_id: opts.visitor_id,
-      device_cookie_id: opts.device_cookie_id,
-      canal: 'home_modal',
-    })
-    // `conflict` : appareil porté par plusieurs personnes identifiées. On préfère
-    // un funnel_event sans identité qu'un funnel_event collé au mauvais chauffeur
-    // (qui déclencherait une relance du DG vers quelqu'un qui n'a rien demandé).
-    if (resolution.status !== 'resolved') return null
-    return resolution.identity.identity_id
-  } catch {
-    return null
-  }
-}
-
 // ─── Record funnel event (fire and forget) ────────────────────────────────────
 // identityId rattache l'événement à une PERSONNE (colonne identity_id, plus jamais NULL).
 async function recordFunnelEvent(
@@ -546,7 +512,11 @@ export async function POST(request: NextRequest) {
     // Résout (ou crée) l'identité dès maintenant, AVANT le 1er funnel event, pour
     // que TOUTES les étapes portent le même identity_id (suivi + relance par le DG).
     const ab_variant = (body as { ab_variant?: string }).ab_variant ?? null
-    const resolvedIdentityId = await resolveIdentityId({ identity_id, visitor_id, device_cookie_id })
+    const resolvedIdentityId = await resolveSiteIdentity(request, {
+      canal: 'home_modal',
+      visitor_id,
+      claimed_identity_id: identity_id,
+    })
 
     // Origine du visiteur (utm_*/fbclid/gclid/ttclid/ctwa_clid/_fbc/_fbp), lue
     // côté serveur depuis les cookies 1ère partie. Avant P0.h, le cerveau
@@ -617,7 +587,7 @@ export async function POST(request: NextRequest) {
         const result = await callPieuvreBrain({
           tentacle: 'widget_site',
           canal: 'web',
-          identity_id: resolvedIdentityId ?? identity_id,
+          identity_id: resolvedIdentityId,
           session_id,
           message: { role: 'user', text: message, type: 'text' },
           context: extendedContext,
@@ -647,12 +617,18 @@ export async function POST(request: NextRequest) {
           pieuvreLandmarks = result.landmarks as ZoneLandmark[]
         }
       } catch (err) {
-        console.warn('[home-modal] Pieuvre error, falling back:', (err as Error).message)
+        console.warn('[home-modal] Pieuvre error:', (err as Error).message)
       }
     }
 
     // 3. Fallback — Haiku direct avec prompt sales-grade
     if (!text) {
+      if (
+        process.env.PIEUVRE_BRAIN_ENABLED === 'true' &&
+        process.env.PIEUVRE_BRAIN_STRICT === 'true'
+      ) {
+        return NextResponse.json({ error: 'pieuvre_indisponible' }, { status: 503 })
+      }
       const apiKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
       if (!apiKey) {
         return NextResponse.json(
@@ -735,7 +711,7 @@ export async function POST(request: NextRequest) {
       show_wa_cta,
       turn_next,
       testimonials,
-      identity_id: pieuvreIdentityId ?? resolvedIdentityId ?? identity_id,
+      identity_id: pieuvreIdentityId ?? resolvedIdentityId,
       // Pieuvre v1.1 — exposés pour tracking client (Meta CAPI fbq dimensions)
       clarify_branch_detected: pieuvreClarifyBranch,
       modal_zone_category: zoneCategory,

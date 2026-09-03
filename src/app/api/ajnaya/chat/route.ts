@@ -10,6 +10,8 @@ import { isSameOriginRequest, hasValidBearer, forbiddenOrigin } from '@/lib/api-
 // Le client vient maintenant de src/lib/supabaseServeur.ts, qui refuse plutôt
 // que de dégrader.
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
+import { resolveSiteIdentity } from '@/lib/identityGate'
+import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 
 export const runtime = 'nodejs'
 
@@ -430,9 +432,12 @@ export async function POST(request: NextRequest) {
     const openaiMode = isOpenAIFormat(body)
     const llmModel = 'claude-haiku-4-5-20251001'
 
-    // Check API key
+    const pieuvreEnabled = process.env.PIEUVRE_BRAIN_ENABLED === 'true'
+    const pieuvreStrict = pieuvreEnabled && process.env.PIEUVRE_BRAIN_STRICT === 'true'
+
+    // La clé Anthropic locale n'est pas nécessaire quand P15 est l'unique cerveau.
     const apiKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
-    if (!apiKey || apiKey === 'à_remplir_par_le_user') {
+    if ((!apiKey || apiKey === 'à_remplir_par_le_user') && !pieuvreEnabled) {
       if (openaiMode) {
         return createSSEStream('Désolé, je suis temporairement indisponible.', llmModel)
       }
@@ -448,6 +453,7 @@ export async function POST(request: NextRequest) {
     let sessionId: string | null
     let prospectId: string | null
     let identityId: string | null = null   // v58 — propagation pour canal_memory
+    let visitorId: string | null = null
     let device: string
 
     if (openaiMode) {
@@ -474,7 +480,8 @@ export async function POST(request: NextRequest) {
       conversationHistory = body.conversationHistory || []
       sessionId = body.sessionId || null
       prospectId = body.prospectId || null
-      identityId = body.identityId || null  // v58 — propagation Pieuvre canal_memory
+      identityId = body.identityId || body.identity_id || null
+      visitorId = body.visitor_id || body.visitorId || null
       device = body.device || 'mobile'
     }
 
@@ -483,6 +490,25 @@ export async function POST(request: NextRequest) {
         return createSSEStream('Je n\'ai pas compris, tu peux répéter ?', llmModel)
       }
       return NextResponse.json({ error: 'Message requis' }, { status: 400 })
+    }
+
+    // Le navigateur peut proposer une identité, jamais la choisir. Le badge
+    // httpOnly ou l'empreinte résolue par la porte canonique font autorité.
+    const claimedIdentityId = identityId
+    identityId = openaiMode
+      ? null
+      : await resolveSiteIdentity(request, {
+          canal: 'widget',
+          visitor_id: visitorId,
+          claimed_identity_id: claimedIdentityId,
+        })
+    const acquisition = readAcquisitionFromRequest(request)
+    const acquisitionMeta = Object.fromEntries(
+      Object.entries(acquisition).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+    )
+    if (identityId) {
+      const sbAcq = await getSupabase()
+      if (sbAcq) await persistAcquisition(sbAcq, identityId, 'widget_chat', acquisition)
     }
 
     // 1. Load closing script
@@ -499,13 +525,13 @@ export async function POST(request: NextRequest) {
 
     // 4a. PIEUVRE BRAIN (feature flag) — routes through N8N Pieuvre Responder when enabled
     //     PIEUVRE_BRAIN_ENABLED=true → call Pieuvre, on null fallback to Haiku below
-    if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
+    if (pieuvreEnabled) {
       try {
         const { callPieuvreBrain } = await import('@/lib/pieuvre-client')
         const pieuvreResult = await callPieuvreBrain({
           tentacle: 'widget_site',
           canal: openaiMode ? 'voice_agent' : 'web',
-          identity_id: null, // Pieuvre will resolve/create from canal_memory
+          identity_id: identityId,
           session_id: sessionId || 'unknown',
           message: { role: 'user', text: userMessage, type: openaiMode ? 'voice' : 'text' },
           context: {
@@ -513,11 +539,12 @@ export async function POST(request: NextRequest) {
             scroll_section: scrollSection,
             heat_score: heatScore,
             history_last_10: conversationHistory.slice(-10).map(h => ({ role: h.role, text: h.text })),
+            ...(visitorId ? { visitor_id: visitorId } : {}),
           },
           meta: {
             device,
-            utm: {},
-            user_agent: '',
+            utm: acquisitionMeta,
+            user_agent: request.headers.get('user-agent') || '',
           },
         })
 
@@ -564,13 +591,21 @@ export async function POST(request: NextRequest) {
             suggest_handoff: pieuvreResult.suggest_handoff ?? null,
           })
         }
-        // null → fall through to Haiku direct path below
+        // null → le mode strict refuse toute seconde personnalité.
       } catch (pieuvreErr) {
-        console.warn('[ajnaya/chat] Pieuvre branch error, falling back to Haiku:', (pieuvreErr as Error).message)
+        console.warn('[ajnaya/chat] Pieuvre branch error:', (pieuvreErr as Error).message)
+      }
+      if (pieuvreStrict) {
+        if (openaiMode) return createSSEStream('Ajnaya est momentanément indisponible.', 'pieuvre')
+        return NextResponse.json({ error: 'pieuvre_indisponible' }, { status: 503 })
       }
     }
 
     // 4b. Call Claude API (Haiku direct — default path or Pieuvre fallback)
+    if (!apiKey || apiKey === 'à_remplir_par_le_user') {
+      if (openaiMode) return createSSEStream('Ajnaya est momentanément indisponible.', 'indisponible')
+      return NextResponse.json({ error: 'ANTHROPIC_API_KEY non configuré' }, { status: 503 })
+    }
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
       model: llmModel,

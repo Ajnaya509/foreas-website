@@ -1,207 +1,137 @@
 import { NextRequest } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { isSameOriginRequest, forbiddenOrigin } from '@/lib/api-guard'
-import {
-  loadClosingScript, loadProspect, saveMessage, writeCanalMemory, updateProspect,
-  detectSentiment, detectObjection, estimateCost, buildSystemPrompt, DEFAULT_SYSTEM_PROMPT,
-} from '@/lib/ajnayaChatCore'
+import { callPieuvreBrain } from '@/lib/pieuvre-client'
+import { resolveSiteIdentity } from '@/lib/identityGate'
+import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
- * POST /api/ajnaya/chat/stream — version STREAMING (SSE) du chat widget site.
- * Contrat : FOREAS-SHARED/AJNAYA_CONTRACTS.md §7 + BRIEF_STREAMING_AJNAYA_2026-07-09.md.
- *
- * ⚠️ MÊME ROUTAGE QUE /api/ajnaya/chat (pas de cerveau parallèle — NORTH_STAR §4) :
- *   - PIEUVRE_BRAIN_ENABLED=true  → PROXY du stream Railway (vraie persona Pieuvre, streamée).
- *                                   Si indispo → event error → le widget replie sur /chat (Pieuvre).
- *   - sinon                       → stream Haiku local (le MÊME cerveau que le repli /chat Haiku).
- * Events : meta → delta* → tts → done  (ou error). `done.full_text` == Σ`delta`. /chat non-stream = filet.
+ * Flux du site au lancement : un seul cerveau, P15.
+ * P15 répond d'un bloc ; on garde le contrat SSE du navigateur avec un delta
+ * unique. Aucun autre modèle ne prend la parole si la Pieuvre est indisponible.
  */
 
-const LLM_MODEL = 'claude-haiku-4-5-20251001'
-const RAILWAY = 'https://foreas-stripe-backend-production.up.railway.app'
 const enc = new TextEncoder()
-const sse = (event: string, data: unknown) => enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-const PAD = `:${' '.repeat(2048)}\n\n` // anti-buffer edge
+const PAD = `:${' '.repeat(2048)}\n\n`
+const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
 
 const SSE_HEADERS = {
   'Content-Type': 'text/event-stream; charset=utf-8',
   'Cache-Control': 'no-cache, no-transform',
-  'Connection': 'keep-alive',
+  Connection: 'keep-alive',
   'X-Accel-Buffering': 'no',
   'Content-Encoding': 'identity',
 }
 
-// Réponse SSE à un seul event terminal `error` → le client bascule sur /chat (filet).
-function sseError(code: string, message = 'stream indisponible') {
-  return new Response(enc.encode(PAD + `event: error\ndata: ${JSON.stringify({ message, code })}\n\n`), { headers: SSE_HEADERS })
+function sseError(code: string, message = 'Ajnaya est momentanément indisponible.') {
+  return new Response(enc.encode(PAD + sse('error', { code, message })), { headers: SSE_HEADERS })
 }
 
 export async function POST(request: NextRequest) {
-  // GARDE — route payante (streaming Anthropic). Appelée uniquement par nos pages
-  // via `src/lib/ajnayaStream.ts` (téléphone vivant de /experience).
-  if (!isSameOriginRequest(request)) {
-    return forbiddenOrigin()
+  if (!isSameOriginRequest(request)) return forbiddenOrigin()
+
+  let body: Record<string, unknown>
+  try {
+    body = await request.json()
+  } catch {
+    return sseError('bad_request', 'Message illisible.')
   }
 
-  let body: Record<string, unknown> = {}
-  try { body = await request.json() } catch { /* handled below */ }
+  const userMessage = typeof body.message === 'string' ? body.message.trim() : ''
+  if (!userMessage) return sseError('bad_request', 'Message requis.')
+  if (process.env.PIEUVRE_BRAIN_ENABLED !== 'true') return sseError('pieuvre_disabled')
 
-  const userMessage = typeof body.message === 'string' ? body.message : ''
-  const pageSource = (body.pageSource as string) || '/'
-  const scrollSection = (body.scrollSection as string) || 'hero'
+  const pageSource = typeof body.pageSource === 'string' ? body.pageSource : '/'
+  const scrollSection = typeof body.scrollSection === 'string' ? body.scrollSection : 'hero'
   const heatScore = Number(body.heatScore) || 0
-  const messageCount = Number(body.messageCount) || 0
-  const conversationHistory = Array.isArray(body.conversationHistory)
-    ? (body.conversationHistory as Array<{ role: string; text: string }>) : []
-  const sessionId = (body.sessionId as string) || null
-  const prospectId = (body.prospectId as string) || null
-  const identityId = (body.identityId as string) || null
-  const visitorId = (body.visitor_id as string) || null
-  const device = (body.device as string) || 'mobile'
-  // Donnée réelle optionnelle (ex. zone-stats) → transmise en live_context au cerveau Pieuvre,
-  // pour que la réponse streamée soit ancrée sur de vrais chiffres, jamais une supposition du LLM.
-  const liveContext = (body.liveContext && typeof body.liveContext === 'object') ? body.liveContext as Record<string, unknown> : undefined
+  const sessionId = typeof body.sessionId === 'string' && body.sessionId
+    ? body.sessionId
+    : `site-stream-${Date.now()}`
+  const visitorId = typeof body.visitor_id === 'string'
+    ? body.visitor_id
+    : typeof body.visitorId === 'string' ? body.visitorId : null
+  const claimedIdentityId = typeof body.identityId === 'string'
+    ? body.identityId
+    : typeof body.identity_id === 'string' ? body.identity_id : null
+  const device = typeof body.device === 'string' ? body.device : 'mobile'
+  const history = Array.isArray(body.conversationHistory)
+    ? (body.conversationHistory as Array<{ role?: string; text?: string }>)
+        .filter((item) => typeof item?.text === 'string')
+        .slice(-10)
+        .map((item) => ({
+          role: item.role === 'ajnaya' ? 'assistant' : item.role || 'user',
+          text: item.text as string,
+        }))
+    : []
+  const liveContext = body.liveContext && typeof body.liveContext === 'object'
+    ? body.liveContext as Record<string, unknown>
+    : undefined
 
-  if (!userMessage) return sseError('bad_request', 'Message requis')
-
-  // ─── Cerveau Pieuvre (prod) : proxy du stream Railway ────────────────────────
-  if (process.env.PIEUVRE_BRAIN_ENABLED === 'true') {
-    const key = process.env.FOREAS_SERVICE_KEY || process.env.PIEUVRE_API_KEY || ''
-    if (key) {
-      try {
-        const rw = await fetch(`${RAILWAY}/api/ajnaya/chat/stream`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-FOREAS-SERVICE-KEY': key, 'Accept-Encoding': 'identity' },
-          body: JSON.stringify({
-            message: userMessage, text: userMessage,
-            context: {
-              channel: 'widget_site', platform: 'web', session_id: sessionId, identity_id: identityId,
-              page_source: pageSource, scroll_section: scrollSection, heat_score: heatScore,
-              ...(visitorId ? { visitor_id: visitorId } : {}),
-              ...(liveContext ? { live_context: liveContext } : {}),
-            },
-            history: conversationHistory.map(h => ({ role: h.role === 'ajnaya' ? 'assistant' : h.role, content: h.text })),
-          }),
-          // abandon client + timeout 1er octet 8s (Railway muet → sseError → repli /chat, jamais d'écran figé)
-          signal: (AbortSignal as { any?: (s: AbortSignal[]) => AbortSignal }).any?.([request.signal, AbortSignal.timeout(8000)]) ?? AbortSignal.timeout(8000),
-        })
-        if (rw.ok && (rw.headers.get('content-type') || '').includes('text/event-stream') && rw.body) {
-          return new Response(rw.body, { headers: SSE_HEADERS }) // pass-through Pieuvre streamé
-        }
-      } catch { /* → error ci-dessous → repli /chat */ }
-    }
-    // Pas de stream Pieuvre dispo (clé absente / Railway KO) → repli /chat (cerveau Pieuvre N8N)
-    return sseError('pieuvre_stream_unavailable')
+  const identityId = await resolveSiteIdentity(request, {
+    canal: 'widget',
+    visitor_id: visitorId,
+    claimed_identity_id: claimedIdentityId,
+  })
+  const acquisition = readAcquisitionFromRequest(request)
+  const acquisitionMeta = Object.fromEntries(
+    Object.entries(acquisition).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+  )
+  if (identityId) {
+    const sb = clientServeurOuNull()
+    if (sb) await persistAcquisition(sb, identityId, 'widget_stream', acquisition)
   }
 
-  // ─── Mode Haiku (PIEUVRE_BRAIN off) : stream local, cohérent avec /chat Haiku ────
-  const apiKey = process.env.FOREAS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
-  if (!apiKey || apiKey === 'à_remplir_par_le_user') return sseError('no_api_key', 'LLM indisponible')
+  const context = {
+    page_source: pageSource,
+    scroll_section: scrollSection,
+    heat_score: heatScore,
+    history_last_10: history,
+    ...(visitorId ? { visitor_id: visitorId } : {}),
+    ...(liveContext ? { live_context: liveContext } : {}),
+  } as Parameters<typeof callPieuvreBrain>[0]['context']
 
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      let closed = false
-      const send = (event: string, data: unknown) => { if (!closed) controller.enqueue(sse(event, data)) }
-      const end = () => { if (!closed) { closed = true; controller.close() } }
-      if (!closed) controller.enqueue(enc.encode(PAD))
-
-      send('meta', { session_id: sessionId, llm_model: LLM_MODEL, identity_id: identityId })
-
-      const scriptPrompt = await loadClosingScript()
-      const systemBase = scriptPrompt || DEFAULT_SYSTEM_PROMPT
-      const prospect = prospectId ? await loadProspect(prospectId) : null
-      let systemPrompt = buildSystemPrompt(
-        systemBase, pageSource, scrollSection, prospect as Record<string, unknown> | null,
-        heatScore, messageCount, conversationHistory,
-      )
-      if (liveContext) {
-        const lc = liveContext as {
-          zone?: Record<string, unknown>
-          now?: { day?: string; time?: string; bucket?: string }
-          visitor?: { returning?: boolean; visit_count?: number; zones_seen_before?: string[] }
-        }
-        // Instructions explicites plutôt qu'un dump JSON brut — un modèle n'infère pas fiablement
-        // "on est lundi, pas vendredi" depuis un ISO enfoui dans un objet (bug remonté 13/07).
-        if (lc.now) {
-          systemPrompt += `\n\n⏰ MOMENT RÉEL : on est ${lc.now.day} ${lc.now.time} (${lc.now.bucket}). Reste STRICTEMENT cohérent avec ce moment — ne mentionne jamais un autre jour/moment (ex : si on est lundi, ne parle jamais de "vendredi soir").`
-        }
-        if (lc.visitor?.returning) {
-          systemPrompt += `\n\n👋 CHAUFFEUR DÉJÀ VU : ${lc.visitor.visit_count} visite(s), zones déjà explorées : ${(lc.visitor.zones_seen_before || []).join(', ')}. Fais-lui savoir avec humour et légèreté que tu le reconnais — une pirouette, jamais un aveu robotique du type "j'ai vos données".`
-        }
-        if (lc.zone) {
-          systemPrompt += `\n\n📍 DONNÉE ZONE RÉELLE (utilise ces chiffres, jamais d'autre chiffre inventé) : ${JSON.stringify(lc.zone)}. Dès cette première réponse sur la zone, sois percutant et donne explicitement envie de continuer sur WhatsApp.`
-        }
-      }
-
-      let fullText = ''
-      let usage = { input_tokens: 0, output_tokens: 0 }
-      try {
-        const anthropic = new Anthropic({ apiKey })
-        const llmStream = anthropic.messages.stream({
-          model: LLM_MODEL, max_tokens: 200, temperature: 0.7,
-          system: systemPrompt, messages: [{ role: 'user', content: userMessage }],
-        })
-
-        for await (const ev of llmStream) {
-          if (request.signal.aborted) { llmStream.abort(); break }
-          if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta' && ev.delta.text) {
-            fullText += ev.delta.text
-            send('delta', { text: ev.delta.text })
-          }
-        }
-        if (request.signal.aborted) { return end() } // client parti → pas d'event terminal
-
-        const finalMsg = await llmStream.finalMessage().catch(() => null)
-        if (finalMsg?.usage) usage = { input_tokens: finalMsg.usage.input_tokens, output_tokens: finalMsg.usage.output_tokens }
-        if (!fullText.trim()) { send('error', { message: 'Réponse vide', code: 'empty' }); return end() }
-
-        // Side-effects IDENTIQUES à /chat (log + mémoire + prospect complet)
-        const sentiment = detectSentiment(userMessage)
-        const objection = detectObjection(userMessage)
-        const hasConversionLink = fullText.includes('/tarifs2')
-        const conversionEvent = hasConversionLink && /essai|tester|prix|combien|commencer|inscri/i.test(userMessage)
-        const currentProspectId = prospectId || (prospect as { id?: string } | null)?.id || null
-
-        saveMessage({ prospect_id: currentProspectId, tentacle: 'widget_site', channel: 'web_widget', direction: 'inbound', content: userMessage, sentiment, objection_detected: objection, metadata: { sessionId, pageSource, scrollSection, device, heatScore, stream: true } })
-        saveMessage({ prospect_id: currentProspectId, tentacle: 'widget_site', channel: 'web_widget', direction: 'outbound', content: fullText, llm_model: LLM_MODEL, llm_tokens: usage.output_tokens, llm_cost_usd: estimateCost(usage.input_tokens, usage.output_tokens), conversion_event: conversionEvent, metadata: { sessionId, stream: true } })
-        if (identityId) {
-          const nowISO = new Date().toISOString()
-          writeCanalMemory(identityId, 'web', {
-            last_user_msg: { text: userMessage, at: nowISO, page_source: pageSource },
-            last_user_intent: { sentiment, objection_detected: objection, has_conversion_link: hasConversionLink, at: nowISO },
-            last_ajnaya_msg: { text: fullText, llm_model: LLM_MODEL, at: nowISO },
-            hot_score_peak: { value: heatScore, at: nowISO, scroll_section: scrollSection },
-          })
-        }
-        if (currentProspectId) {
-          const p = prospect as { conversations_count?: number; status?: string; objections?: unknown } | null
-          const updates: Record<string, unknown> = { conversations_count: (p?.conversations_count || 0) + 1, last_conversation_at: new Date().toISOString() }
-          if (objection && p) {
-            const existing = Array.isArray(p.objections) ? (p.objections as string[]) : []
-            if (!existing.includes(objection)) updates.objections = [...existing, objection]
-          }
-          if (heatScore > 20 && p?.status === 'new') updates.status = 'warm'
-          updateProspect(currentProspectId, updates)
-        }
-
-        const ttsText = fullText.replace(/\[[\w\s]+\]\s*/g, '')
-        send('tts', { tts_text: ttsText, audio_url: null })
-        send('done', {
-          full_text: fullText,
-          pieuvre_reply: { text: fullText, tts_text: ttsText, llm_model: LLM_MODEL, audio_url: null },
-          expects_voice_response: false, intent_detected: objection || null, next_actions: [],
-          prospect_id: currentProspectId, should_capture_phone: messageCount >= 3 && !prospectId, conversion_event: conversionEvent,
-        })
-        return end()
-      } catch (err) {
-        send('error', { message: (err as Error).message || 'Erreur LLM', code: 'llm_error' })
-        return end()
-      }
+  const result = await callPieuvreBrain({
+    tentacle: 'widget_site',
+    canal: 'web',
+    identity_id: identityId,
+    session_id: sessionId,
+    message: { role: 'user', text: userMessage, type: 'text' },
+    context,
+    meta: {
+      device,
+      utm: acquisitionMeta,
+      user_agent: request.headers.get('user-agent') || '',
     },
   })
+  if (!result?.reply?.text) return sseError('pieuvre_indisponible')
 
-  return new Response(stream, { headers: SSE_HEADERS })
+  const fullText = result.reply.text
+  const canonicalIdentityId = result.identity_id || identityId
+  let responseBody = PAD
+  responseBody += sse('meta', {
+    session_id: sessionId,
+    llm_model: result.reply.llm_model,
+    identity_id: canonicalIdentityId,
+  })
+  responseBody += sse('delta', { text: fullText })
+  if (result.reply.tts_text || result.reply.audio_url) {
+    responseBody += sse('tts', {
+      tts_text: result.reply.tts_text || fullText,
+      audio_url: result.reply.audio_url || null,
+    })
+  }
+  responseBody += sse('done', {
+    full_text: fullText,
+    pieuvre_reply: result.reply,
+    intent_detected: result.intent_detected ?? null,
+    next_actions: result.next_actions ?? [],
+    prospect_id: result.prospect_id ?? null,
+    should_capture_phone: result.should_capture_phone ?? false,
+    conversion_event: false,
+  })
+
+  return new Response(enc.encode(responseBody), { headers: SSE_HEADERS })
 }

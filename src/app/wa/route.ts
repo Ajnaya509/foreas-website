@@ -2,6 +2,12 @@ import { NextResponse, after, type NextRequest } from 'next/server'
 import { buildWAMessage, type WhatsAppSection } from '@/lib/whatsappLink'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { identiteDepuisBadge, reserverLaParole } from '@/lib/escalier'
+import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
+import {
+  WHATSAPP_HANDOFF_COOKIE,
+  readWhatsAppHandoffCookie,
+  whatsappHandoffSecrets,
+} from '@/lib/whatsappHandoffProof'
 
 /**
  * FOREAS — LE PASSAGE VERS WHATSAPP.
@@ -42,7 +48,7 @@ import { identiteDepuisBadge, reserverLaParole } from '@/lib/escalier'
  *   1. on valide la section demandée contre la liste fermée ;
  *   2. on lit `foreas_vid` (il ne quitte jamais le serveur) ;
  *   3. on compte l'événement `WhatsAppClick`, avec l'origine ;
- *   4. on compose le message avec « (réf …) » attendu par la Pieuvre ;
+ *   4. on compose uniquement la phrase humaine choisie par le chauffeur ;
  *   5. on redirige vers le numéro officiel, et lui seul.
  *
  * ─────────────────────────────────────────────────────────────────────────────
@@ -149,13 +155,7 @@ function texteAffichable(v: string | null, max: number): string | undefined {
   return t
 }
 
-/**
- * Une référence est un identifiant technique, jamais une phrase.
- *
- * ⚠️ Elle part telle quelle dans « (réf …) ». Sans ce filtre, `sid` était le
- * chemin le plus court pour écrire ce qu'on veut dans le message du chauffeur.
- * La Pieuvre lit `/réf ([\w-]+)/` : on n'accepte donc rien d'autre.
- */
+/** Identifiant de session conservé côté serveur, jamais ajouté au message. */
 function referenceValide(v: string | null, max: number): string | undefined {
   if (!v) return undefined
   const t = v.trim().slice(0, max)
@@ -183,6 +183,21 @@ const PARAMETRES_ORIGINE = [
 ] as const
 
 export async function GET(request: NextRequest) {
+  // Un passage privé préparé dans ce même navigateur doit d'abord prouver le
+  // numéro. Le billet reste dans le cookie httpOnly : ni l'adresse ni le texte
+  // WhatsApp ne le voient. Un lien /wa ordinaire, sans billet, reste instantané.
+  const rawPending = request.cookies.get(WHATSAPP_HANDOFF_COOKIE)?.value
+  const secrets = whatsappHandoffSecrets()
+  const pending = secrets
+    ? readWhatsAppHandoffCookie(rawPending, secrets.cookieSecret)
+    : null
+  if (pending) {
+    const verification = new URL('/whatsapp-verification', request.nextUrl.origin)
+    const response = NextResponse.redirect(verification, 307)
+    response.headers.set('Cache-Control', 'no-store')
+    return response
+  }
+
   const q = request.nextUrl.searchParams
 
   const section = sectionValide(q.get('s'))
@@ -194,13 +209,8 @@ export async function GET(request: NextRequest) {
    * `sid` est l'identifiant de la conversation en cours sur le site, fabriqué
    * par le navigateur. `foreas_vid` est le badge appareil, lu ici, jamais servi.
    *
-   * Quand une conversation existe, c'est ELLE qui part dans « (réf …) » :
-   * retrouver ce que le chauffeur vient de dire vaut mieux que retrouver son
-   * appareil. La Pieuvre ne sait lire qu'UNE référence — en mettre deux
-   * casserait son motif `/réf ([\w-]+)/`.
-   *
-   * Les deux sont malgré tout enregistrés dans l'événement, donc la jointure
-   * reste possible quel que soit le bout par lequel on arrive.
+   * Les deux restent enregistrés dans l'événement côté serveur. Aucun des deux
+   * ne part dans le message, car le chauffeur pourrait l'effacer ou le recopier.
    */
   const sessionConversation = referenceValide(q.get('sid'), 80)
   const brut = Number(q.get('a'))
@@ -214,7 +224,6 @@ export async function GET(request: NextRequest) {
     zone,
     slot: creneau,
     amount,
-    ref: sessionConversation ?? badge ?? undefined,
   })
   const destination = `https://wa.me/${NUMERO}?text=${encodeURIComponent(message)}`
 
@@ -222,6 +231,10 @@ export async function GET(request: NextRequest) {
   // suit ne peut empêcher le chauffeur d'arriver sur WhatsApp.
   const reponse = NextResponse.redirect(destination, 307)
   reponse.headers.set('Cache-Control', 'no-store')
+  if (rawPending) {
+    // Billet faux ou expiré : il ne bloque jamais le WhatsApp sans mémoire.
+    reponse.cookies.set(WHATSAPP_HANDOFF_COOKIE, '', { path: '/', maxAge: 0 })
+  }
 
   const prefetch =
     request.headers.get('sec-purpose')?.includes('prefetch') ||
@@ -279,6 +292,7 @@ export async function GET(request: NextRequest) {
         const v = q.get(nom) ?? depuis?.get(nom)
         if (v) origine[nom] = v.slice(0, 120)
       }
+      const acquisition = { ...readAcquisitionFromRequest(request), ...origine }
 
       const charge = {
         page: propre(q.get('p'), 200) ?? null,
@@ -287,6 +301,8 @@ export async function GET(request: NextRequest) {
         promesse: propre(q.get('o'), 120) ?? null, // l'emplacement du bouton
         variante: null,
         origine,
+        // Un clic et une référence prouvent une origine de campagne, jamais une personne.
+        preuve_de_personne: false,
         // Le consentement se décide côté navigateur. On ne le devine pas ici :
         // une valeur inventée vaudrait moins que rien.
         consentement: null,
@@ -297,7 +313,7 @@ export async function GET(request: NextRequest) {
           montant: amount ?? null,
           // Les deux bouts de la jointure, côte à côte, toujours.
           session_conversation: sessionConversation ?? null,
-          reference_envoyee: sessionConversation ? 'conversation' : badge ? 'appareil' : 'aucune',
+          reference_envoyee: 'aucune_visible',
         },
         event_id: null,
       }
@@ -343,6 +359,9 @@ export async function GET(request: NextRequest) {
       // remplacé un piège par le même piège, à un niveau d'imbrication près.
       try {
         const identite = await identiteDepuisBadge(badge)
+        if (identite) {
+          await persistAcquisition(sb, identite, 'whatsapp_click', acquisition)
+        }
         await reserverLaParole(identite, 'whatsapp', 'répondre au message entrant', 60)
       } catch (e) {
         console.warn('[wa] escalier :', (e as Error)?.message)

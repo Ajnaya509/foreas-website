@@ -9,8 +9,6 @@ import { sendWidgetAnalytics, getSessionId, getDevice, type WidgetMessage } from
 import { speakText, stopSpeaking, unlockAudio, prefetchTTS, playBlob } from '@/lib/tts'
 import { useAnyOverlayOpen } from '@/lib/overlayStore'
 import { streamAjnayaChat } from '@/lib/ajnayaStream'
-import { getStoredVisitorId } from '@/lib/observe'
-import { getCachedVisitorId } from '@/lib/zoneFingerprint'
 
 // ─── Contextual welcome messages ──────────────────────────────────────────────
 const WELCOME_MESSAGES: Record<string, string> = {
@@ -163,7 +161,7 @@ export default function AjnayaWidget() {
   // New states for LLM integration
   const [prospectId, setProspectId] = useState<string | null>(null)
   const [identityId, setIdentityId] = useState<string | null>(null)       // identity_bridge.id
-  const [whatsappHandoffUrl, setWhatsappHandoffUrl] = useState<string | null>(null) // wa.me URL after handoff
+  const [whatsappHandoffUrl, setWhatsappHandoffUrl] = useState<string | null>(null) // vérification privée, puis /wa
   const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isListening, setIsListening] = useState(false)
@@ -416,95 +414,69 @@ export default function AjnayaWidget() {
     if (/prix|tarif|coût|combien|essai|gratuit/i.test(text)) setHeatScore(s => s + 5)
     else setHeatScore(s => s + 2)
 
-    // Phone number interception — capture + Identity Bridge hash server-side
+    // Le numéro tapé ne devient une identité qu'APRÈS le code SMS. Avant cette
+    // preuve, on ne crée pas de prospect au nom d'une victime, on ne remplit pas
+    // son carnet et on n'envoie pas de Lead Meta à sa place.
     if (PHONE_REGEX.test(text.replace(/[\s.\-()]/g, '').trim()) && !phoneCaptureDone) {
       const cleaned = text.replace(/[\s.\-()]/g, '')
+      let verificationPrepared = false
       setTyping(true)
 
-      let capturedIdentityId: string | null = null
-
       try {
-        // 1. Create/retrieve prospect first if needed
-        if (!prospectId) {
-          const res = await fetch('/api/ajnaya/prospect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: cleaned, source: 'widget_site', pageSource: pathname }),
-          })
-          const data = await res.json()
-          if (data.prospectId) setProspectId(data.prospectId)
-        }
-
-        // 2. Identité — porte unique (resolve_identity côté base, via /api/identity/capture).
-        //    `visitor_id` est la MÊME empreinte que celle envoyée à /api/observe :
-        //    sans elle, la personne déjà connue en anonyme repart en identité neuve.
-        const captureRes = await fetch('/api/identity/capture', {
+        const lastAjnayaMsg = [...messages].reverse().find(m => m.role === 'ajnaya')?.text || ''
+        const handoffRes = await fetch('/api/app/issue-handoff', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            phone_raw: cleaned,
-            prospect_id: prospectId,
-            canal: 'widget',
-            page_source: pathname,
-            visitor_id: getStoredVisitorId() ?? getCachedVisitorId(),
+            // Pure information de comparaison : la route relit le badge serveur
+            // et ignore cet UUID s'il ne correspond pas.
+            identity_id: identityId,
+            target_canal: 'whatsapp',
+            source_canal: 'widget',
+            phone_e164: cleaned,
+            state: {
+              last_messages: messages.slice(-6).map(m => ({ role: m.role, text: m.text })),
+              intent: 'phone_captured',
+              heat_score: heatScore,
+              url_pre_landing: pathname,
+              prospect_id: prospectId,
+              prompt_for_next_canal: `Tu discutais avec Ajnaya sur le site FOREAS (${pathname}).${lastAjnayaMsg ? ` On parlait de : "${lastAjnayaMsg.slice(0, 80)}".` : ''}`,
+            },
           }),
         })
-        if (captureRes.ok) {
-          // ── 23/08 v2 — LA CAPTURE NE REND PLUS L'IDENTITÉ ────────────────
-          // `/api/identity/capture` renvoyait `identity_id`, `is_known` et
-          // `merged` au navigateur À PARTIR D'UN NUMÉRO SIMPLEMENT TAPÉ.
-          // Taper le numéro de quelqu'un ne prouve rien — c'est le geste exact
-          // de l'attaquant. La route ne répond donc plus que « c'est fait ».
-          //
-          // On retombe sur l'identité que le flux de conversation a déjà
-          // résolue côté serveur (`onMeta`). Si elle n'existe pas encore, on
-          // n'invente rien : le bouton WhatsApp garde son lien de repli, et le
-          // passage se créera au prochain échange. Un passage manquant ne coûte
-          // aujourd'hui aucun contexte — un passage `UNBOUND` n'en porte pas.
-          await captureRes.json().catch(() => ({}))
-          if (identityId) capturedIdentityId = identityId
-        }
-
-        // 3. Issue WhatsApp handoff — build wa.me URL carrying conversation state
-        if (capturedIdentityId) {
-          const lastAjnayaMsg = [...messages].reverse().find(m => m.role === 'ajnaya')?.text || ''
-          const handoffRes = await fetch('/api/app/issue-handoff', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              identity_id: capturedIdentityId,
-              target_canal: 'whatsapp',
-              source_canal: 'widget',
-              state: {
-                last_messages: messages.slice(-6).map(m => ({ role: m.role, text: m.text })),
-                intent: 'phone_captured',
-                heat_score: heatScore,
-                url_pre_landing: pathname,
-                prompt_for_next_canal: `Salut ! Tu discutais avec Ajnaya sur le site FOREAS (${pathname}). Je reprends là où on en était. ${lastAjnayaMsg ? `On parlait de : "${lastAjnayaMsg.slice(0, 80)}"` : 'Une question ?'}`,
-              },
-            }),
-          })
-          if (handoffRes.ok) {
-            const handoffData = await handoffRes.json()
-            if (handoffData.ok && handoffData.deeplink) {
-              setWhatsappHandoffUrl(handoffData.deeplink)
-            }
+        if (handoffRes.ok) {
+          const handoffData = await handoffRes.json()
+          if (handoffData.ok && handoffData.deeplink) {
+            setWhatsappHandoffUrl(handoffData.deeplink)
+            verificationPrepared = handoffData.verification_required === true
           }
+        } else {
+          // Le chauffeur peut toujours parler à Ajnaya. En cas de panne OTP,
+          // on perd la reprise privée, jamais le chemin WhatsApp.
+          setWhatsappHandoffUrl(`/wa?s=final&p=${encodeURIComponent(pathname)}&i=ajnaya&o=widget_sans_memoire`)
         }
-      } catch { /* silent — never block UX */ }
+      } catch {
+        setWhatsappHandoffUrl(`/wa?s=final&p=${encodeURIComponent(pathname)}&i=ajnaya&o=widget_sans_memoire`)
+      }
 
       setTyping(false)
       setHasAskedPhone(true)
       setPhoneCaptureDone(true)
       setPhonePromptPending(false)
       const replyTs = new Date().toISOString()
-      const phoneReply = { role: 'ajnaya' as const, text: "Parfait ! Clique sur le bouton ci-dessous, on continue sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)", timestamp: replyTs }
+      const phoneReplyText = verificationPrepared
+        ? "Parfait. Clique dessous, entre le code reçu par SMS, puis je reprends avec toi sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)"
+        : "Je n'ai pas pu sécuriser la reprise. Tu peux quand même me parler sur WhatsApp, mais je repartirai sans ta conversation privée."
+      const phoneReply = { role: 'ajnaya' as const, text: phoneReplyText, timestamp: replyTs }
       setMessages(prev => [...prev, phoneReply])
       analyticsMessages.current.push({ role: 'ajnaya', text: phoneReply.text, timestamp: replyTs })
 
       if (voiceEnabled) {
         setIsAudioPlaying(true)
-        speakText("Parfait ! Je t'attends sur WhatsApp.").finally(() => setIsAudioPlaying(false))
+        speakText(verificationPrepared
+          ? "Parfait. Vérifie le code reçu par SMS, puis je te retrouve sur WhatsApp."
+          : "Je n'ai pas pu sécuriser la reprise. Tu peux quand même me parler sur WhatsApp.")
+          .finally(() => setIsAudioPlaying(false))
       }
       sendingRef.current = false
       return

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { AdvertisingConsentSettings } from '@/components/AdvertisingConsentSettings'
 
 export default function ConfidentialitePage() {
   return (
@@ -215,6 +216,8 @@ export default function ConfidentialitePage() {
                 L&apos;application mobile FOREAS n&apos;utilise pas de cookies publicitaires. Des traceurs techniques strictement nécessaires au fonctionnement du Service peuvent être utilisés (maintien de session, préférences). Le site web foreas.xyz peut utiliser des cookies d&apos;analyse de performance anonyme.
               </p>
             </div>
+
+            <AdvertisingConsentSettings />
 
             <div className="p-5 md:p-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
               <h2 className="font-title text-lg md:text-xl font-semibold text-white/90 mb-3">9. Mineurs</h2>

@@ -56,10 +56,9 @@ export interface OptionsPassage {
    * le navigateur lui-même (`getSessionId()`), ne désigne aucune personne, et
    * relie le message WhatsApp à la discussion que le chauffeur vient d'avoir.
    *
-   * Quand il existe, c'est LUI qui part dans « (réf …) » : retrouver la
-   * conversation vaut mieux que retrouver l'appareil. Le passage enregistre
-   * quand même les DEUX dans l'événement, donc la jointure reste possible des
-   * deux côtés.
+   * Quand il existe, le passage l'enregistre côté serveur avec le badge appareil.
+   * Aucun des deux n'est ajouté au message WhatsApp : un texte modifiable ne
+   * prouve jamais l'identité de la personne qui l'envoie.
    */
   sessionConversation?: string | null
   /** Le montant réglé par le chauffeur lui-même (message `pain`). */

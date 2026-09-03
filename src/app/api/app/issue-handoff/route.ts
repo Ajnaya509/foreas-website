@@ -1,10 +1,17 @@
-import crypto from 'crypto'
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 // 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
 // une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
 // elle ne correspond pas à l'adresse canonique de la page.
 import { URL_SITE } from '@/lib/site'
+import { normalizePhoneE164, resolveSiteIdentity } from '@/lib/identityGate'
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
+import {
+  WHATSAPP_HANDOFF_COOKIE,
+  WHATSAPP_HANDOFF_TTL_SECONDS,
+  phoneHmac,
+  signWhatsAppHandoffCookie,
+  whatsappHandoffSecrets,
+} from '@/lib/whatsappHandoffProof'
 
 export const runtime = 'nodejs'
 
@@ -29,9 +36,9 @@ export const runtime = 'nodejs'
  *
  * Response: {
  *   ok:          true,
- *   token:       string,           // UUID stored in handoff_tokens
+ *   token:       string,           // App seulement
  *   deeplink:    string,           // foreas://handoff?token=<uuid> (app)
- *                                  // or https://wa.me/33780732216?text=<uuid> (whatsapp)
+ *                                  // ou /whatsapp-verification (WhatsApp)
  *   webFallback: string            // https://foreas.xyz/go?deeplink=<uuid>
  * }
  */
@@ -50,16 +57,11 @@ export const runtime = 'nodejs'
  * C'est ce qui rend inerte l'attaque la plus simple : inscrire le numéro d'une
  * victime, puis attendre qu'elle écrive.
  */
-function hmacNumero(e164: string): { hmac: string; version: number } | null {
-  const secret = process.env.PASSAGE_HMAC_SECRET || process.env.OBSERVE_HMAC_SALT || ''
-  // Pas de secret = pas d'empreinte. On ne retombe JAMAIS sur un SHA simple :
-  // 15 chiffres se parcourent en entier, un hachage nu ne protège rien.
-  if (!secret) return null
-  return {
-    hmac: crypto.createHmac('sha256', secret).update(e164).digest('hex'),
-    version: Number(process.env.PASSAGE_HMAC_VERSION || 1),
-  }
-}
+const BACKEND_URL = (
+  process.env.FOREAS_BACKEND_URL ||
+  process.env.BACKEND_URL ||
+  'https://foreas-stripe-backend-production.up.railway.app'
+).replace(/\/+$/, '')
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,14 +80,22 @@ export async function POST(req: NextRequest) {
       phone_e164?: string
     }
 
-    if (!identity_id || typeof identity_id !== 'string') {
-      return NextResponse.json({ error: 'missing_identity_id' }, { status: 400 })
-    }
-
     // Validate UUID format
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!UUID_RE.test(identity_id)) {
+    if (target_canal !== 'whatsapp' && (!identity_id || !UUID_RE.test(identity_id))) {
       return NextResponse.json({ error: 'invalid_identity_id_format' }, { status: 400 })
+    }
+
+    // WhatsApp n'accepte jamais l'UUID envoyé par le navigateur. Le serveur relit
+    // le badge httpOnly du Site et décide lui-même de l'identité de départ.
+    const serverIdentityId = target_canal === 'whatsapp'
+      ? await resolveSiteIdentity(req, {
+          canal: 'widget',
+          claimed_identity_id: typeof identity_id === 'string' ? identity_id : null,
+        })
+      : identity_id!
+    if (!serverIdentityId) {
+      return NextResponse.json({ error: 'identity_unresolved' }, { status: 409 })
     }
 
     const resolvedState = state || {}
@@ -142,20 +152,68 @@ export async function POST(req: NextRequest) {
 
     // Le numéro visé, s'il a été saisi. Normalisé puis empreinté côté serveur :
     // il n'est jamais stocké en clair, et l'empreinte reste une donnée personnelle.
-    const numeroVise = typeof phone_e164 === 'string' && /^\+\d{8,15}$/.test(phone_e164.trim())
-      ? phone_e164.trim()
-      : null
-    const empreinte = numeroVise ? hmacNumero(numeroVise) : null
+    const numeroVise = typeof phone_e164 === 'string' ? normalizePhoneE164(phone_e164) : null
+    const secrets = whatsappHandoffSecrets()
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // Sans numéro prouvable, WhatsApp reste disponible mais ouvre une nouvelle
+    // discussion. Aucun contexte privé n'est préparé, donc rien ne peut être
+    // attribué à la mauvaise personne.
+    if (target_canal === 'whatsapp' && !numeroVise) {
+      return NextResponse.json({
+        ok: true,
+        deeplink: '/wa?s=experience_phone&p=%2F&i=ajnaya&o=telephone_vivant',
+        verification_required: false,
+        context_carried: false,
+      })
+    }
+    if (target_canal === 'whatsapp' && !secrets) {
+      return NextResponse.json({ error: 'verification_not_configured' }, { status: 503 })
+    }
+
+    const empreinte = numeroVise && secrets
+      ? {
+          hmac: phoneHmac(numeroVise, secrets.phoneSecret),
+          version: Number(process.env.PASSAGE_HMAC_VERSION || 1),
+        }
+      : null
+
+    // Réutilise le service OTP Twilio déjà vivant dans le backend. Le jeton de
+    // cette session ne ressort jamais dans le JSON ni dans une adresse.
+    let otpSessionToken: string | null = null
+    if (target_canal === 'whatsapp' && numeroVise) {
+      try {
+        const otpResponse = await fetch(`${BACKEND_URL}/api/auth/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: numeroVise }),
+          cache: 'no-store',
+          signal: AbortSignal.timeout(10_000),
+        })
+        const otpBody = await otpResponse.json().catch(() => null) as {
+          success?: boolean
+          sessionToken?: string
+        } | null
+        if (otpResponse.ok && otpBody?.success === true &&
+            typeof otpBody.sessionToken === 'string' && UUID_RE.test(otpBody.sessionToken)) {
+          otpSessionToken = otpBody.sessionToken
+        }
+      } catch {
+        // Réponse maîtrisée juste en dessous. Aucun passage n'est créé.
+      }
+      if (!otpSessionToken) {
+        return NextResponse.json({ error: 'otp_not_sent' }, { status: 503 })
+      }
+    }
+
+    const supabase = clientServeurOuNull()
+    if (!supabase) {
+      return NextResponse.json({ error: 'database_not_configured' }, { status: 503 })
+    }
 
     const { data, error } = await supabase
       .from('handoff_tokens')
       .insert({
-        identity_id,
+        identity_id: serverIdentityId,
         source_canal,
         target_canal,
         state: resolvedState,
@@ -174,9 +232,12 @@ export async function POST(req: NextRequest) {
         // n'est pas une preuve — c'est la CIBLE d'une preuve à venir.
         ...(empreinte ? { phone_hmac: empreinte.hmac, hmac_version: empreinte.version } : {}),
         lien_etat: 'UNBOUND',
-        claim_method: target_canal === 'whatsapp' ? 'numero_entrant' : 'jeton_app',
+        claim_method: target_canal === 'whatsapp' ? 'twilio_verify_pending' : 'jeton_app',
+        ...(target_canal === 'whatsapp'
+          ? { expires_at: new Date(Date.now() + WHATSAPP_HANDOFF_TTL_SECONDS * 1000).toISOString() }
+          : {}),
       })
-      .select('token, short_code')
+      .select('token')
       .single()
 
     if (error || !data) {
@@ -186,40 +247,11 @@ export async function POST(req: NextRequest) {
 
     const token = data.token as string
 
-    // ── 23/08 — UN MESSAGE QUE PERSONNE N'ENVERRA TEL QUEL N'EST PAS UN PONT ──
-    // Le texte prérempli était l'identifiant BRUT du billet :
-    //     16ef60af-384b-434d-bac3-5228fd0ced71
-    // Il est parti tel quel une seule fois : parce que Chandler testait. Un
-    // chauffeur l'efface — ça ne ressemble à rien et on n'envoie pas ça à
-    // quelqu'un. Et c'était aussi le billet EN CLAIR dans la conversation.
-    //
-    // Le message porte maintenant DEUX choses, dans cet ordre d'importance :
-    //   1. LA PHRASE DU CHAUFFEUR — même retapée de mémoire ou raccourcie, le
-    //      sujet survit. C'est elle qui fait le travail.
-    //   2. un code COURT (6 caractères, ni 0/O ni 1/I/L) qui relie le numéro au
-    //      visiteur du site. Il ne sert QU'AU PREMIER message : ensuite le
-    //      numéro est connu et tout se résout par lui.
-    //
-    // Si le chauffeur efface le code, on perd le lien — pas le sujet. Et on ne
-    // fera semblant de reconnaître personne.
-    const code = (data as { short_code?: string }).short_code || ''
-    const sujet = (resolvedState.question_chauffeur as string | undefined) || ''
-
-    // ⛔ PLUS AUCUNE RÉFÉRENCE TECHNIQUE. Le code court de ce matin était un
-    // progrès de lisibilité, pas de sécurité : un texte que le chauffeur peut
-    // modifier ne peut porter aucune autorité, quelle que soit sa forme.
-    // Le message ne sert plus qu'à une chose : être une phrase que le chauffeur
-    // accepte d'envoyer. S'il la réécrit entièrement, rien n'est perdu — la
-    // liaison, elle, vit côté serveur.
-    void code
-    const texteWhatsApp = sujet
-      ? `Salut Ajnaya, on parlait de : « ${sujet.slice(0, 120)} ». Je continue ici.`
-      : `Salut Ajnaya, je continue ici la conversation commencée sur foreas.xyz.`
-
-    // Build deeplink per target canal
+    // Le billet WhatsApp ne quitte jamais le serveur. Le navigateur reçoit
+    // seulement la page de vérification ; l'App garde son jeton historique.
     const deeplink =
       target_canal === 'whatsapp'
-        ? `https://wa.me/33780732216?text=${encodeURIComponent(texteWhatsApp)}`
+        ? '/whatsapp-verification'
         : `foreas://handoff?token=${token}`
 
     const webFallback = `${URL_SITE}/go?deeplink=${token}`
@@ -228,10 +260,12 @@ export async function POST(req: NextRequest) {
     try {
       await supabase.from('pieuvre_analytics_events').insert({
         event_name: 'widget.handoff_issued',
-        identity_id,
+        identity_id: serverIdentityId,
         canal_source: source_canal,
         processed: false,
-        meta: { token, target_canal, source_canal, identity_id },
+        meta: target_canal === 'whatsapp'
+          ? { target_canal, source_canal, identity_id: serverIdentityId, verification: 'pending' }
+          : { token, target_canal, source_canal, identity_id: serverIdentityId },
         ts: Date.now(),
       })
     } catch { /* silent — analytics never blocks handoff */ }
@@ -243,7 +277,40 @@ export async function POST(req: NextRequest) {
     // numéro entrant, côté serveur. Le rendre ici ne ferait que le remettre dans
     // un texte, c'est-à-dire recréer exactement la faille qu'on ferme.
     if (target_canal === 'whatsapp') {
-      return NextResponse.json({ ok: true, deeplink })
+      if (!otpSessionToken || !numeroVise || !empreinte || !secrets) {
+        return NextResponse.json({ error: 'verification_not_prepared' }, { status: 503 })
+      }
+      const page = typeof resolvedState.url_pre_landing === 'string'
+        ? resolvedState.url_pre_landing.slice(0, 120)
+        : '/'
+      const section = source_canal === 'widget' && resolvedState.intent === 'experience_phone_continue'
+        ? 'experience_phone'
+        : 'final'
+      const nextParams = new URLSearchParams({ s: section, p: page, i: 'ajnaya', o: 'reprise_verifiee' })
+      const cookieValue = signWhatsAppHandoffCookie({
+        version: 1,
+        handoffToken: token,
+        otpSessionToken,
+        phoneE164: numeroVise,
+        phoneHmac: empreinte.hmac,
+        identityIdAtIssue: serverIdentityId,
+        nextPath: `/wa?${nextParams.toString()}`,
+        expiresAtMs: Date.now() + WHATSAPP_HANDOFF_TTL_SECONDS * 1000,
+      }, secrets.cookieSecret)
+      const response = NextResponse.json({
+        ok: true,
+        deeplink,
+        verification_required: true,
+        context_carried: false,
+      })
+      response.cookies.set(WHATSAPP_HANDOFF_COOKIE, cookieValue, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: WHATSAPP_HANDOFF_TTL_SECONDS,
+      })
+      return response
     }
     return NextResponse.json({ ok: true, token, deeplink, webFallback })
   } catch (err) {

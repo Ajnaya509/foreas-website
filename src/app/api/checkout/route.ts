@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { identiteDepuisCookie, monterUneMarche } from '@/lib/escalier'
-import { consentementPublicitaire } from '@/lib/meta-capi'
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
+import { syncAdvertisingConsentAtCheckout } from '@/lib/advertisingConsentServer'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, resoudreFormule } from '@/lib/offre'
@@ -256,31 +257,12 @@ export async function POST(request: NextRequest) {
       billing_address_collection: isElements ? 'auto' : 'required',
       locale: 'fr',
       /**
-       * ── 24/08/2026 — LE CONSENTEMENT PUBLICITAIRE VOYAGE JUSQU'AU WEBHOOK ──
-       *
-       * Le webhook Stripe lit déjà `session.metadata.foreas_consent` avant
-       * d'envoyer quoi que ce soit à Meta, et refuse par défaut. Mais PERSONNE
-       * ne l'écrivait : la garde était donc parfaite et l'attribution d'un vrai
-       * achat, perdue à coup sûr. Le webhook le disait lui-même, en toutes
-       * lettres, en attendant que cette ligne existe. La voici.
-       *
-       * ⚠️ DEUX RÈGLES QUI NE BOUGENT PAS.
-       *
-       * 1. LE PAIEMENT NE DÉPEND PAS DU PISTAGE. On enregistre le choix, on ne
-       *    le demande pas, et un refus n'empêche rien : il vaut `refused`, la
-       *    session part, l'argent passe. Conditionner un achat à un accord
-       *    publicitaire serait un consentement extorqué — donc nul.
-       *
-       * 2. ON N'ÉCRIT QUE CE QU'ON A LU. Le cookie est la seule source ; en son
-       *    absence c'est `refused`, jamais un vide qu'on pourrait relire comme
-       *    un accord plus tard.
-       *
-       * C'est ici, sur la SESSION, et pas dans `subscription_data.metadata` :
-       * Stripe ne recopie pas l'un dans l'autre — le piège déjà payé hier avec
-       * l'identité.
+       * Le paiement ne transporte plus un « oui » lu dans un cookie. Stripe
+       * n'est pas la source du consentement : P29 relit la preuve serveur
+       * courante sur l'identité canonique avant tout envoi publicitaire.
        */
       metadata: {
-        foreas_consent: consentementPublicitaire(cookieHeader) ? 'accepted' : 'refused',
+        foreas_measurement_source: 'p29_private_queue',
       },
       // client_reference_id carries the referral code for MLM attribution
       // Railway webhook reads this to create partner_referrals row
@@ -427,7 +409,14 @@ export async function POST(request: NextRequest) {
     * ferait dépendre le chemin principal de la latence de la base.
     */
     after(async () => {
-      await monterUneMarche(identiteVisiteur, 'paiement_commence', session.id, 'site')
+      const jobs: Promise<unknown>[] = [
+        monterUneMarche(identiteVisiteur, 'paiement_commence', session.id, 'site'),
+      ]
+      const sb = clientServeurOuNull()
+      if (sb) {
+        jobs.push(syncAdvertisingConsentAtCheckout(sb, identiteVisiteur, cookieHeader))
+      }
+      await Promise.allSettled(jobs)
     })
     /* ⚠️ 29/08 — LA SESSION RENVOIE DÉSORMAIS LA REMISE QU'ELLE PORTE VRAIMENT.
        Trouvé par l'audit adverse : un visiteur passé une fois par /r/<code>

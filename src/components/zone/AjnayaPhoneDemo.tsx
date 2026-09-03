@@ -383,7 +383,15 @@ export default function AjnayaPhoneDemo({
                   </div>
 
                   <div className={s['aj-frise']}>
-                    <div className={s.titre}>Les zones rentables, heure par heure</div>
+                    <div className={s.titre}>
+                      Les zones rentables, heure par heure
+                      {/* ⚠️ LE MOT « EXEMPLE » EST À L'ÉCRAN, PAS SEULEMENT EN COMMENTAIRE.
+                          Le grincheux du 03/09 a eu raison : le fichier disait honnêtement
+                          « 31/44/52 sont des EXEMPLES », et l'écran ne le disait nulle part.
+                          Un commentaire juste au-dessus d'un écran qui ment est un faux témoin,
+                          pas une protection. */}
+                      <span className={s['aj-exemple']}>exemple</span>
+                    </div>
                     <p className={s['aj-promesse']}>
                       Ajnaya sait où ça paie autour de <b>{nomLieu}</b> — <b>cette heure-ci, et les deux qui suivent</b>.
                     </p>
@@ -411,7 +419,11 @@ export default function AjnayaPhoneDemo({
                     <div className={s['aj-verrou']} onClick={onEssaiClick} role="button" tabIndex={0}
                          onKeyDown={(e) => e.key === 'Enter' && onEssaiClick?.()}>
                       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7a5 5 0 00-10 0v2H5v13h14V9h-2zM9 7a3 3 0 016 0v2H9V7zm4 9.7V19h-2v-2.3a2 2 0 112 0z" /></svg>
-                      <span>Les deux heures suivantes sont <b>réservées aux abonnés</b>.</span>
+                      {/* ⚠️ NE JAMAIS ÉCRIRE « réservées aux abonnés ». C'était faux deux fois :
+                          ce verrou n'existe pas dans l'app, et les chiffres floutés derrière
+                          ne sont mesurés nulle part. On vendait donc l'ouverture d'un vide.
+                          Dans l'app, un point éteint veut dire « rien de mesuré », jamais « bloqué ». */}
+                      <span>Exemple. Dans l'app, ces heures viennent de <b>ce qui est mesuré</b>.</span>
                       <span className={s.fl}>›</span>
                     </div>
                   </div>

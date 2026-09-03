@@ -1,5 +1,7 @@
 import crypto from 'crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { NextRequest } from 'next/server'
+import { clientServeurOuNull } from './supabaseServeur'
 
 /**
  * identityGate — LA PORTE UNIQUE d'identité du site.
@@ -278,4 +280,44 @@ export async function resolveIdentity(
   }
 
   return { status: 'resolved', identity: deviceShared ? { ...identity, device_shared: true } : identity }
+}
+
+type SiteIdentityInput = {
+  canal: IdentityCanal
+  visitor_id?: string | null
+  claimed_identity_id?: string | null
+}
+
+/**
+ * Résout l'identité d'une requête du site depuis les seules ancres que le
+ * serveur peut vérifier. Une identité envoyée par la page n'est jamais une
+ * autorité. Le badge httpOnly gagne sur l'empreinte JavaScript.
+ */
+export async function resolveSiteIdentity(
+  request: NextRequest,
+  input: SiteIdentityInput,
+): Promise<string | null> {
+  const deviceCookieId = request.cookies.get('foreas_vid')?.value ?? null
+  const visitorId = input.visitor_id ?? null
+  if (!deviceCookieId && !visitorId) return null
+
+  try {
+    const sb = clientServeurOuNull()
+    if (!sb) return null
+    const resolution = await resolveIdentity(sb, {
+      visitor_id: deviceCookieId ? null : visitorId,
+      device_cookie_id: deviceCookieId,
+      canal: input.canal,
+    })
+    if (resolution.status !== 'resolved') return null
+
+    const serverIdentityId = resolution.identity.identity_id
+    if (input.claimed_identity_id && input.claimed_identity_id !== serverIdentityId) {
+      console.warn(`[${input.canal}] identité client ignorée : désaccord avec le badge serveur`)
+    }
+    return serverIdentityId
+  } catch (error) {
+    console.warn(`[${input.canal}] résolution d'identité impossible :`, (error as Error).message)
+    return null
+  }
 }

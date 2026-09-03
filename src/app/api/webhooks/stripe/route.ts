@@ -5,12 +5,6 @@ import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { construireSignaux, verifierCumulEssai, enregistrerEssai } from '@/lib/essaisAccordes'
 import { annulerEnvoiProgramme } from '@/lib/email'
 import { provisionDriverAccount, activerAccesChauffeur } from '@/lib/provisionDriverAccount'
-import { sendCAPIEvent } from '@/lib/meta-capi'
-import { sendTikTokEvent } from '@/lib/tiktok-events-api'
-// 20/08/2026 — adresses passées par src/lib/site.ts : l'apex redirige (307), donc
-// une adresse sans « www » écrite en dur fait un saut de plus, et côté publicité
-// elle ne correspond pas à l'adresse canonique de la page.
-import { URL_SITE } from '@/lib/site'
 // ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
 // Cette route retombait sur la clé publique quand la clé serveur manquait.
 // Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
@@ -856,31 +850,8 @@ export async function POST(request: Request) {
         }
       }
 
-      // 3. Meta CAPI — StartTrial (trial) + Subscribe (conversion signal)
-      //    Signal crucial pour optimiser campagnes CTWA Meta Advantage+
-      // ⚠️ 21/08/2026 — CE MONTANT ÉTAIT LE PRIX CATALOGUE, JAMAIS L'ENCAISSÉ.
-      //
-      // `checkout.session.completed` NE PROUVE AUCUN PAIEMENT : il prouve qu'une
-      // session s'est terminée. Avec un essai, zéro euro a été prélevé ; avec un
-      // coupon de parrainage à 100 %, zéro aussi.
-      //
-      // On envoyait pourtant le prix du mois plein, DEUX FOIS — « essai démarré »
-      // et « abonné » — donc les régies comptaient deux ventes pleines pour un
-      // euro jamais encaissé.
-      //
-      // ⚠️ ET ON NE PEUT PAS « METTRE LE BON MONTANT » ICI : le seul chiffre juste
-      // est celui de la facture, que cet événement ne porte pas. Recalculer
-      // depuis la remise des métadonnées serait faux aussi — cette donnée est
-      // absente des liens fabriqués hors dépôt, et ignore le coupon Stripe
-      // réellement appliqué.
-      //
-      // Donc : ZÉRO, pour tous les cas, et un seul événement — le démarrage.
-      // Le montant réel partira quand le Site traitera l'encaissement, ce qui
-      // suppose d'abord de trancher qui, du Site ou du serveur, en est
-      // propriétaire. Voir la question ouverte pour Chandler.
-      const purchaseValue = 0
-      const currency = subscription?.items.data[0]?.price?.currency?.toUpperCase() || 'EUR'
-      const nameParts = (session.customer_details?.name || '').split(' ')
+      // 3. La mesure publicitaire est maintenant la responsabilite exclusive
+      //    de la file privee P29, jamais de ce webhook Stripe.
       // ── 23/08 — L'ESCALIER MONTE ICI, ET SEULEMENT SUR CE QUE STRIPE DIT ──
       // L'identité voyage dans les métadonnées : ce webhook n'a ni cookie ni
       // session, il ne peut pas la deviner. Sans elle, on ne monte rien —
@@ -919,82 +890,10 @@ export async function POST(request: Request) {
         )
       })
 
-      const capiUserData = {
-        email: session.customer_details?.email || undefined,
-        phone: phone || undefined,
-        firstName: nameParts[0] || undefined,
-        lastName: nameParts.slice(1).join(' ') || undefined,
-        city: city || undefined,
-        country: 'FR',
-        externalId: session.customer as string | undefined,
-      }
-      // ⚠️ 21/08/2026 — « FIRE-AND-FORGET » VOULAIT DIRE « PEUT-ÊTRE JAMAIS ».
-      //
-      // Ces trois envois partaient sans `await` et sans rien pour les retenir.
-      // L'intention était bonne — ne jamais bloquer un paiement pour une pub qui
-      // échoue — mais sur cet hébergeur la fonction est GELÉE dès que la réponse
-      // est renvoyée. Les requêtes en vol pouvaient donc ne jamais partir, et le
-      // taux de perte est inconnu.
-      //
-      // `after()` est fait exactement pour ça : le travail s'exécute APRÈS la
-      // réponse, sans la retarder, et l'hébergeur garde la fonction en vie.
-      //
-      // ⚠️ CE N'EST PAS `await` QU'IL FALLAIT. Attendre rendrait le webhook
-      // dépendant de la latence de Meta et de TikTok : un incident chez eux
-      // ferait expirer la livraison côté Stripe, et une panne de MESURE
-      // deviendrait une perte de PAIEMENT. On ne troque pas l'un contre l'autre.
-      //
-      // Chaque envoi porte maintenant un identifiant dérivé de l'événement
-      // Stripe. Il est STABLE : si le même événement repassait, ou si le
-      // navigateur envoyait le même achat de son côté, les plateformes
-      // reconnaîtraient un doublon au lieu de compter deux ventes.
-      const tiktokUserData = {
-        email: capiUserData.email,
-        phone: capiUserData.phone,
-        externalId: capiUserData.externalId,
-      }
-      // ── 23/08 — UN WEBHOOK N'A PAS DE COOKIE ────────────────────────────
-      // L'accord publicitaire se donne dans le NAVIGATEUR, au moment du
-      // paiement. Ici, on est côté Stripe : il faut donc que l'accord ait été
-      // ENREGISTRÉ à ce moment-là, dans les métadonnées de la session.
-      //
-      // Tant qu'il n'y est pas, rien ne part : refus par défaut. Conséquence
-      // assumée et NOMMÉE — l'attribution d'un vrai achat est perdue jusqu'à ce
-      // que `/api/checkout` inscrive le consentement dans la session.
-      // Mieux vaut une attribution manquante qu'un envoi non consenti.
-      const accordPub =
-        (session.metadata as Record<string, string> | null)?.foreas_consent === 'accepted'
-
-      after(async () => {
-        await Promise.allSettled([
-          sendCAPIEvent({
-            consentement: accordPub,
-            eventName: 'StartTrial',
-            eventId: `${event.id}-starttrial`,
-            userData: capiUserData,
-            customData: {
-              value: purchaseValue,
-              currency,
-              contentName: planInfo.name,
-              orderId: session.subscription as string,
-            },
-            eventSourceUrl: session.url || `${URL_SITE}/tarifs2`,
-            actionSource: 'website',
-          }),
-          // ⚠️ 21/08/2026 — LES DEUX ÉVÉNEMENTS « ABONNÉ » ONT ÉTÉ RETIRÉS D'ICI.
-          //
-          // Ils affirmaient un abonnement PAYÉ sur un événement qui ne prouve
-          // aucun paiement : avec un essai, zéro euro a été prélevé ; avec un
-          // coupon de parrainage à 100 %, zéro aussi. Les régies comptaient donc
-          // DEUX ventes pleines pour un euro jamais encaissé — « essai démarré »
-          // et « abonné », tous deux valorisés au prix du mois plein.
-          //
-          // Ils reviendront sur l'événement de FACTURE, avec le montant
-          // réellement payé. Ce qui suppose d'abord de trancher qui, du Site ou
-          // du serveur, possède cet effet : le serveur traite déjà les factures.
-          // Deux propriétaires du même effet, c'est de l'argent compté deux fois.
-        ])
-      })
+      // Aucun envoi publicitaire ne part d'une copie de consentement stockee
+      // dans Stripe. P29 cree et garde la conversion privee ; son travailleur
+      // relit l'identite, l'accord courant, le paiement net et le remboursement
+      // avant que le futur expediteur dedie puisse envoyer une seule fois.
 
       // 4. TODO: SMS via Twilio
       // if (phone) {

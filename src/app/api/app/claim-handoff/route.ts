@@ -1,6 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash, createHmac } from 'crypto'
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
 
 export const runtime = 'nodejs'
 
@@ -66,10 +66,10 @@ export async function POST(req: NextRequest) {
       }
       const hmac = createHmac('sha256', secret).update(brut).digest('hex')
 
-      const clientNum = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      )
+      const clientNum = clientServeurOuNull()
+      if (!clientNum) {
+        return NextResponse.json({ error: 'base_indisponible' }, { status: 503 })
+      }
 
       // Consommation ATOMIQUE : le filtre `lien_etat='BOUND'` est DANS l'update.
       // Vérifier puis agir de part et d'autre d'une attente n'est pas atomique —
@@ -127,10 +127,9 @@ export async function POST(req: NextRequest) {
      * Le nœud n8n envoie `phone_e164` depuis toujours. Cette route contenait
      * ZÉRO occurrence du mot « phone » : le numéro était transmis puis jeté.
      *
-     * Le billet reste un jeton AU PORTEUR — il voyage dans un lien
-     * `wa.me/...?text=<uuid>`, c'est sa nature, on ne peut pas la changer. Mais
-     * on peut enregistrer QUI l'a réclamé, pour qu'un vol laisse une trace au
-     * lieu d'être invisible.
+     * Ce chemin au jeton ne sert plus à WhatsApp. Il reste pour l'App, dont le
+     * lien est ouvert sous session. WhatsApp passe exclusivement par le numéro
+     * entrant et un billet BOUND prouvé côté serveur.
      *
      * On garde une EMPREINTE tronquée, jamais le numéro : un numéro en clair
      * dans une table de jetons serait une donnée personnelle de plus à
@@ -149,16 +148,6 @@ export async function POST(req: NextRequest) {
 
     // Validate UUID format — prevents injection / unexpected queries
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    // 23/08 — le message prérempli ne porte plus l'UUID brut mais un code court
-    // (6 caractères, alphabet sans 0/O ni 1/I/L). Même alphabet ici, en dur :
-    // accepter « n'importe quoi de 6 caractères » ouvrirait une porte au hasard.
-    const CODE_COURT_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/i
-
-    const clientResolution = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    )
-
     if (!UUID_RE.test(token)) {
       // 23/08 v2 — LE CODE COURT EST RETIRÉ, PAS ADAPTÉ.
       // Il avait été ajouté ce matin pour rendre le message lisible. C'était un
@@ -171,10 +160,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'invalid_token_format' }, { status: 400 })
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = clientServeurOuNull()
+    if (!supabase) {
+      return NextResponse.json({ error: 'base_indisponible' }, { status: 503 })
+    }
 
     // Resolve client IP (Vercel forwards real IP in x-forwarded-for)
     const forwardedFor = req.headers.get('x-forwarded-for')

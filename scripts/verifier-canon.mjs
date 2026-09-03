@@ -1625,8 +1625,8 @@ for (const chemin of fichiers(RACINE)) {
 // ─────────────────────────────────────────────────────────────────────────────
 // CE QUE LA RÈGLE EXIGE MAINTENANT, ET POURQUOI CHAQUE POINT EXISTE
 //
-// 1. Aucun composant ne sert d'adresse `wa.me` : elles portent la référence, donc
-//    la fuite. Tout passe par `/wa`, où le cookie reste côté serveur.
+// 1. Aucun composant ne sert d'adresse `wa.me`. Tout passe par `/wa`, où le
+//    cookie et la session restent côté serveur.
 // 2. Le passage lit bien le cookie et redirige vers le numéro officiel.
 // 3. Aucun composant ne compte `WhatsAppClick` côté navigateur : le passage
 //    compte déjà. Deux comptages pour un clic est pire qu'aucun — ça inspire
@@ -1660,10 +1660,9 @@ for (const chemin of fichiers(RACINE)) {
         quoi: 'une adresse WhatsApp est construite hors du passage `/wa`',
         extrait: 'wa.me/ écrit dans ce fichier',
         pourquoi:
-          'un lien `wa.me` servi dans le HTML doit porter sa référence pour être ' +
-          'rattachable — donc publier le badge appareil, cookie `httpOnly`, en clair ' +
-          'dans le DOM. Passe par `lienPassageWhatsApp()` : le serveur lit le cookie ' +
-          'au clic, il ne quitte jamais le serveur.',
+          'un lien `wa.me` servi dans le HTML contourne la mesure centrale. Passe ' +
+          'par `lienPassageWhatsApp()` : le serveur lit le cookie au clic, sans le ' +
+          'publier ni l’ajouter au message.',
       })
     }
 
@@ -1673,8 +1672,8 @@ for (const chemin of fichiers(RACINE)) {
         quoi: '`buildWAUrl()` appelé hors du passage `/wa`',
         extrait: 'buildWAUrl(',
         pourquoi:
-          'ce constructeur rend une adresse `wa.me` complète, qui ne peut être ' +
-          'rattachée qu’en publiant une référence dans le HTML. Utilise ' +
+          'ce constructeur rend une adresse `wa.me` complète et contourne le ' +
+          'passage serveur. Utilise ' +
           '`lienPassageWhatsApp()` depuis `src/lib/passageWhatsApp.ts`.',
       })
     }
@@ -1746,6 +1745,18 @@ for (const chemin of fichiers(RACINE)) {
             'viser le bon numéro, et surtout REDIRIGER quoi qu’il arrive.',
         })
       }
+    }
+
+    const constructeur = readFileSync('src/lib/whatsappLink.ts', 'utf8')
+    if (/\(réf\s|opts\.ref|ref\?:\s*string/.test(constructeur) || /ref:\s*sessionConversation/.test(wa)) {
+      infractions.push({
+        fichier: CHEMIN_WA,
+        quoi: 'un code technique peut encore partir dans le message WhatsApp',
+        extrait: '(réf …) / opts.ref / ref: sessionConversation',
+        pourquoi:
+          'le chauffeur peut effacer ou recopier ce texte. L’identité et l’origine ' +
+          'doivent rester côté serveur ; WhatsApp prouve ensuite son propre numéro.',
+      })
     }
   }
 }

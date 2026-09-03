@@ -27,14 +27,6 @@ export interface BuildWAOptions {
   zone?: string
   slot?: string
   amount?: number
-  /**
-   * Code de raccordement modal ↔ WhatsApp (= session_id du modal home).
-   * Ajouté discrètement en fin de message : "(réf hm-xxxx)".
-   * La Pieuvre (wa_inbound_router) le lit en regex /réf ([\w-]+)/ pour
-   * retrouver la zone + l'historique funnel de la session web du prospect.
-   * Sans lui, le prospect arrive sur WhatsApp en parfait inconnu.
-   */
-  ref?: string
 }
 
 /**
@@ -55,9 +47,10 @@ export function buildWAUrl(opts: BuildWAOptions): string {
  * la Pieuvre matche dessus en regex pour router (voir SPEC §6.2).
  */
 export function buildWAMessage(opts: BuildWAOptions): string {
-  const base = buildWAMessageBase(opts)
-  // Code de raccordement discret en fin de message (lu par la Pieuvre en regex).
-  return opts.ref ? `${base} (réf ${opts.ref})` : base
+  // Aucun identifiant technique ne part dans la bouche du chauffeur.
+  // L'origine reste enregistrée côté serveur par `/wa`; WhatsApp prouve ensuite
+  // son propre numéro. Un texte modifiable ne vaut jamais preuve d'identité.
+  return buildWAMessageBase(opts)
 }
 
 function buildWAMessageBase(opts: BuildWAOptions): string {
@@ -126,8 +119,8 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
          « J'ai commencé et je me suis arrêté » est un fait qu'il assume ;
          « tu as abandonné ton panier » serait notre vocabulaire, pas le sien —
          et le mettre dans sa bouche le ferait sonner faux dès le premier mot.
-         La référence « (réf …) » est ajoutée par l'appelant : c'est elle qui
-         permet à Ajnaya de savoir où il s'était arrêté. */
+         Le clic et son origine restent enregistrés côté serveur par `/wa`.
+         Ils ne sont jamais recopiés dans le message du chauffeur. */
       return `Salut Ajnaya. J'ai commencé sur le site et je me suis arrêté. J'ai deux questions avant de tester.`
 
     default:

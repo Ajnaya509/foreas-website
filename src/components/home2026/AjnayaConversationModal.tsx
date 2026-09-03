@@ -853,10 +853,8 @@ export default function AjnayaConversationModal({
   /**
    * ⚠️ 22/08/2026 — CE BOUTON PASSE MAINTENANT PAR `/wa`.
    *
-   * L'identifiant de conversation reste la référence envoyée dans le message :
-   * il relie WhatsApp à la discussion que le chauffeur vient d'avoir, ce qui vaut
-   * mieux que son appareil. Le passage enregistre en plus le badge appareil dans
-   * l'événement, donc la jointure existe des deux côtés.
+   * L'identifiant de conversation et le badge appareil sont enregistrés côté
+   * serveur au clic. Aucun code technique ne part dans le message du chauffeur.
    *
    * Ce qui change : le clic est compté côté serveur, y compris sans JavaScript,
    * et l'origine (campagne, parrain) est relue dans le `Referer`.
