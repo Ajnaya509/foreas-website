@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import Link from 'next/link'
 import {
   acceptAdvertisingConsent,
   rejectAdvertisingConsent,
@@ -71,71 +70,41 @@ export function ConsentBanner() {
       className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-glass-border bg-glass-high px-3 pt-2.5 backdrop-blur-md"
       style={{ paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* ⚠️ BANDEAU COMPACT — décision de Chandler du 03/09.
-          Il passe de 157 à ~68 points de haut. Ces 89 points reviennent au
-          téléphone, qui redevient lisible. Le détail complet part derrière
-          « Détails » : informer n'oblige pas à tout écrire sur l'écran.
+      {/* ⚠️ CE BANDEAU N'EST PLUS UN CONSENTEMENT. C'EST UN MESSAGE.
+          Chandler voulait un seul bouton, sans « Non » et sans nommer Meta ni
+          TikTok. Avec ces trois éléments réunis, un bouton qui ACCEPTE serait
+          un piège : on prendrait la donnée sans dire à qui elle part, et sans
+          laisser refuser. Ça se sanctionne, et ça se voit.
 
-          ⚠️ CE QUI NE BOUGE PAS, ET POURQUOI.
-          « Non » et « Oui » gardent EXACTEMENT le même poids : même taille,
-          même couleur, même bordure. C'est le seul endroit du site où la règle
-          « une seule action principale » est volontairement suspendue.
-          Un consentement où le oui est plus gros que le non n'est pas un
-          consentement, et la CNIL le dit avant nous.
+          Alors le bouton n'accepte rien. Il ferme un message, c'est tout.
+          La mesure publicitaire reste ÉTEINTE par défaut ; le vrai choix, lui,
+          vit sur la page Confidentialité, avec son information complète.
 
-          ⚠️ LA CROIX REFUSE. ELLE NE FERME PAS.
-          Chandler la voulait discrète, presque invisible. C'est acceptable —
-          À CONDITION qu'elle refuse. Une croix discrète qui ACCEPTE, ou qui
-          esquive le choix pour reposer la question plus tard, serait un piège :
-          on rendrait le refus difficile tout en gardant le oui facile.
-          Ici le refus reste disponible deux fois, en clair et en discret. */}
+          ⚠️ CE QUE ÇA COÛTE, ET IL FAUT LE SAVOIR : sans accord, Meta et TikTok
+          ne diront pas quelle annonce amène un chauffeur. Le budget publicitaire
+          se pilotera à l'aveugle. C'est le prix de ce bandeau-là. */}
       <div className="mx-auto flex max-w-4xl items-center gap-3">
-        <p className="min-w-0 flex-1 text-[12.5px] leading-[16px] text-text-secondary">
-          {/* ⚠️ ON RÉPOND À LA PEUR QU'IL A VRAIMENT — texte choisi par Chandler.
-              Sa crainte n'est pas la mesure : c'est qu'on lise ses courses.
-              Y répondre AVANT qu'il pose la question désamorce tout.
-              Et c'est vrai : ni les courses, ni les messages ne partent nulle part. */}
-          <span className="font-semibold text-text-primary">On ne touche ni à tes courses, ni à tes messages.</span>{' '}
-          {/* ⚠️ « Meta et TikTok » RESTE. Sans dire qui reçoit la donnée, ce n'est
-              plus un accord : c'est une case qu'on fait cocher. */}
-          <span className="text-text-secondary/60">Meta et TikTok ·</span>{' '}
-          <Link
-            href="/confidentialite"
-            className="whitespace-nowrap text-accent-cyan underline underline-offset-2"
-          >
-            Détails
-          </Link>
+        <p className="min-w-0 flex-1 text-[13px] leading-[17px] text-text-primary">
+          On ne touche ni à tes courses, ni à tes messages.
         </p>
 
-        <div className="flex flex-shrink-0 gap-2">
-          <button
-            type="button"
-            disabled={busy === 'reject'}
-            onClick={reject}
-            className="min-h-11 min-w-[52px] rounded-full border border-glass-border-high bg-glass-low px-4 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
-          >
-            Non
-          </button>
-          <button
-            type="button"
-            disabled={busy === 'accept'}
-            onClick={accept}
-            className="min-h-11 min-w-[52px] rounded-full border border-glass-border-high bg-glass-low px-4 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
-          >
-            OK
-          </button>
-        </div>
+        <button
+          type="button"
+          disabled={busy === 'reject'}
+          onClick={reject}
+          className="min-h-11 flex-shrink-0 rounded-full border border-glass-border-high bg-glass-low px-6 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+        >
+          OK
+        </button>
 
-        {/* La croix discrète. Elle REFUSE — voir l'en-tête.
-            Son nom accessible dit ce qu'elle fait, pour que personne ne se
-            trompe : discrète à l'œil ne veut pas dire ambiguë. */}
+        {/* Même geste que le bouton : elle ferme le message. */}
         <button
           type="button"
           onClick={reject}
-          aria-label="Refuser et fermer"
-          className="flex h-11 w-7 flex-shrink-0 items-center justify-center text-white/[0.055] transition-colors hover:text-white/35 focus-visible:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+          aria-label="Fermer"
+          className="flex h-11 w-6 flex-shrink-0 items-center justify-center text-white/[0.05] transition-colors hover:text-white/30 focus-visible:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="h-3.5 w-3.5" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="h-3 w-3" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
