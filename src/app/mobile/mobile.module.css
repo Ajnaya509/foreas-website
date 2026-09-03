@@ -1,0 +1,245 @@
+/*
+ * L'ACCUEIL MOBILE — « le site ne montre pas un téléphone, il devient le sien ».
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * L'IDÉE, ET ELLE TIENT EN UNE PHRASE
+ *
+ * Sur ordinateur, on montre un chauffeur dans son habitacle qui reçoit une course :
+ * la personne est assise devant un grand écran, elle regarde une scène.
+ * Sur mobile, elle TIENT DÉJÀ le téléphone. Lui montrer un téléphone dans un écran,
+ * c'est mettre un cadre autour de sa propre main.
+ * Donc la notification n'arrive pas dans une image : elle arrive sur SON écran.
+ *
+ * ⚠️ CE FICHIER NE DÉPEND D'AUCUNE VIDÉO. La vidéo Seedance viendra derrière, en
+ * arrière-plan, chargée après. Si elle ne charge jamais, la page vend quand même.
+ * Moins d'un visiteur mobile sur deux fait défiler une page (45,2 %, Contentsquare,
+ * 99 milliards de sessions) : tout ce qui compte doit tenir sans elle, tout de suite.
+ *
+ * ⚠️ 100svh ET JAMAIS 100vh. Sur Safari mobile, 100vh compte les barres qui
+ * disparaissent : la page saute au premier défilement.
+ *
+ * ⚠️ TOUT S'ARRÊTE SI LE MOUVEMENT EST RÉDUIT. La compréhension ne dépend
+ * d'aucune animation : à la fin de chaque mouvement, l'écran est le même.
+ */
+
+.scene {
+  position: relative;
+  min-height: 100svh;
+  background: #060610;
+  overflow: hidden;
+  /* ⚠️ La réserve du bas n'est pas décorative : le bandeau de consentement
+     s'installe ici, et il ne doit jamais recouvrir une commande. */
+  padding: calc(env(safe-area-inset-top) + 14px) 20px calc(env(safe-area-inset-bottom) + 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══ LES COUCHES DU FOND ═══════════════════════════════════════════════════
+   Trois, pas plus. Un halo violet, un halo cyan, un grain. Le grain casse les
+   bandes que les écrans OLED font apparaître sur un dégradé sombre. */
+.halos { position: absolute; inset: 0; pointer-events: none; }
+.halos::before, .halos::after { content: ''; position: absolute; border-radius: 50%; }
+.halos::before {
+  width: 420px; height: 420px; top: -150px; left: -140px;
+  background: radial-gradient(circle, rgba(140,82,255,.26) 0%, transparent 68%);
+  filter: blur(30px);
+}
+.halos::after {
+  width: 360px; height: 360px; top: 40px; right: -150px;
+  background: radial-gradient(circle, rgba(0,212,255,.16) 0%, transparent 68%);
+  filter: blur(30px);
+}
+.grain {
+  position: absolute; inset: 0; pointer-events: none;
+  background: rgba(255,255,255,.012);
+}
+
+/* ══ LA LIGNE QUI SLALOME ══════════════════════════════════════════════════
+   Elle part de la notification et descend derrière tout le reste.
+   Un seul tracé SVG, dessiné une fois. Aucune animation liée au défilement :
+   sur un Android milieu de gamme, une animation au défilement saccade. */
+.fil { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.filTrace {
+  fill: none; stroke: url(#filDegrade); stroke-width: 1.5; stroke-linecap: round;
+  stroke-dasharray: 1400; stroke-dashoffset: 1400;
+  animation: tracer 2600ms cubic-bezier(.16,1,.3,1) 900ms forwards;
+}
+@keyframes tracer { to { stroke-dashoffset: 0; } }
+
+/* ══ LA NOTIFICATION ═══════════════════════════════════════════════════════
+   Elle a la forme d'une vraie notification de téléphone : coins très arrondis,
+   fond translucide flouté, icône ronde, nom de l'app, heure. Elle descend du
+   bord haut de l'écran, comme le fait le système. */
+.notif {
+  position: relative; z-index: 3;
+  width: 100%; max-width: 358px; margin: 0 auto;
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 13px 14px;
+  border-radius: 22px;
+  background: rgba(30, 32, 44, .82);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 18px 44px rgba(0,0,0,.62);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  transform: translateY(-120px); opacity: 0;
+  animation: descendre 760ms cubic-bezier(.16,1,.3,1) 260ms forwards;
+}
+@keyframes descendre { to { transform: translateY(0); opacity: 1; } }
+
+.notifIcone {
+  flex: none; width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-size: 19px; font-weight: 800; color: #fff; line-height: 1;
+}
+.notifCorps { flex: 1; min-width: 0; }
+.notifHaut { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+.notifApp {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 12px; font-weight: 700; color: #F8FAFC; letter-spacing: .01em;
+}
+.notifHeure {
+  margin-left: auto; font-size: 11px; color: rgba(248,250,252,.44);
+  font-variant-numeric: tabular-nums;
+}
+.notifTitre {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 14.5px; font-weight: 600; color: #F8FAFC; line-height: 1.3;
+}
+.notifTexte {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 14px; color: rgba(248,250,252,.72); line-height: 1.38; margin-top: 1px;
+}
+
+/* ══ LE VOILE ══════════════════════════════════════════════════════════════
+   L'écran s'assombrit APRÈS l'arrivée de la notification. C'est ce qui isole
+   la notification du reste et fait comprendre « regarde ça ». */
+.voile {
+  position: absolute; inset: 0; z-index: 2;
+  background: #04040A; opacity: 0;
+  animation: assombrir 900ms ease-out 900ms forwards;
+  pointer-events: none;
+}
+@keyframes assombrir { to { opacity: .58; } }
+
+/* ══ LA BULLE QUI EXPLIQUE ═════════════════════════════════════════════════
+   Quatre lignes. Des nombres qu'un enfant suit. Aucun mot compliqué. */
+.bulle {
+  position: relative; z-index: 3;
+  width: 100%; max-width: 358px; margin: 14px auto 0;
+  padding: 15px 18px 13px;
+  border-radius: 24px;
+  background: rgba(17,21,40,.86);
+  border: 1px solid rgba(0,212,255,.22);
+  box-shadow: 0 22px 50px rgba(0,0,0,.5);
+  opacity: 0; transform: translateY(18px);
+  animation: monter 700ms cubic-bezier(.16,1,.3,1) 2600ms forwards;
+}
+@keyframes monter { to { opacity: 1; transform: translateY(0); } }
+
+.bulleLigne {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 15.5px; line-height: 26px; color: rgba(248,250,252,.72);
+}
+.bulleLigne b {
+  font-weight: 700; color: #F8FAFC; font-variant-numeric: tabular-nums;
+  font-size: 17px;
+}
+.bulleTrait { height: 1px; background: rgba(255,255,255,.09); margin: 11px 0; }
+.bulleVerdict {
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.bulleVerdictMot {
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-size: 30px; font-weight: 900; letter-spacing: -.5px; color: #10B981;
+  line-height: 1;
+}
+.bulleVerdictChiffre {
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-size: 34px; font-weight: 900; letter-spacing: -1.2px; color: #F8FAFC;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.bulleTampon {
+  margin-top: 9px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 11px; line-height: 15px; color: rgba(248,250,252,.45);
+}
+
+/* ══ LE TITRE ══════════════════════════════════════════════════════════════ */
+/* ⚠️ PAS DE `margin-top: auto` ICI, ET C'EST UNE LEÇON DÉJÀ PAYÉE.
+   Coller le bloc au bas de l'écran met le bouton exactement là où le bandeau de
+   consentement s'installe. C'est le défaut du 21/08 : le bouton principal était
+   inatteignable pour TOUS les nouveaux visiteurs — les seuls qui comptent.
+   Le contenu s'enchaîne, et l'écran réserve la place du bandeau plus bas. */
+.titreBloc {
+  position: relative; z-index: 3; margin-top: 20px; padding-top: 0;
+  opacity: 0; animation: apparaitre 800ms ease-out 3400ms forwards;
+}
+@keyframes apparaitre { to { opacity: 1; } }
+
+.surtitre {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 10px; font-weight: 800; letter-spacing: .25em;
+  text-transform: uppercase; color: #00D4FF; margin-bottom: 12px;
+}
+.titre {
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-size: 40px; font-weight: 900; letter-spacing: -2px; line-height: .94;
+  color: #F8FAFC; margin: 0;
+}
+.sousTitre {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 15.5px; line-height: 1.4; color: rgba(248,250,252,.72);
+  margin: 12px 0 0; max-width: 330px;
+}
+
+/* ══ L'ACTION ══════════════════════════════════════════════════════════════ */
+.action {
+  position: relative; z-index: 3; margin-top: 18px;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 52%, #B494FF 100%);
+  box-shadow: 0 0 26px rgba(140,82,255,.34);
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-size: 20px; font-weight: 800; letter-spacing: .2px; color: #fff;
+  border: 0; cursor: pointer; text-decoration: none;
+  transition: transform 140ms var(--ease-standard, ease);
+}
+.action:active { transform: scale(.975); }
+
+.souslAction {
+  position: relative; z-index: 3; margin-top: 12px; text-align: center;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 12.5px; line-height: 18px; color: rgba(248,250,252,.45);
+}
+.souslAction a { color: rgba(248,250,252,.72); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ══ L'INVITE À DESCENDRE ══════════════════════════════════════════════════ */
+.suite {
+  position: relative; z-index: 3; margin-top: 22px; text-align: center;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 12px; color: rgba(248,250,252,.32);
+  opacity: 0; animation: apparaitre 700ms ease-out 4200ms forwards;
+}
+.chevron { display: block; margin: 6px auto 0; width: 16px; height: 16px; opacity: .5;
+  animation: respirer 2200ms ease-in-out 4800ms infinite; }
+@keyframes respirer { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+/* ══ 320 px — le petit écran doit tenir ════════════════════════════════════ */
+@media (max-width: 360px) {
+  .titre { font-size: 40px; }
+  .bulleVerdictChiffre { font-size: 30px; }
+  .notifTitre, .notifTexte { font-size: 13.5px; }
+}
+
+/* ══ MOUVEMENT RÉDUIT — tout est immédiatement à sa place ══════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .notif, .bulle, .titreBloc, .suite {
+    animation: none !important; opacity: 1 !important; transform: none !important;
+  }
+  .voile { animation: none !important; opacity: .58 !important; }
+  .filTrace { animation: none !important; stroke-dashoffset: 0 !important; }
+  .chevron { animation: none !important; }
+}
