@@ -311,12 +311,10 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
               disent donc la même chose — c'est ça qui fait la confiance.
               ⚠️ Tutoiement : la règle de voix chauffeur, tenue partout. */}
           <p className={s.explique}>
-            Ajnaya connaît le <b>rythme de ta zone</b> : quand la demande tombe,
-            et quand elle repart. Tu attends moins, tu roules moins à vide.
+            Ajnaya connaît le <b>rythme de ta zone</b>. Moins d&apos;attente,
+            moins de vide.
           </p>
-          <p className={s.rassure}>
-            Réponse immédiate. Rien à installer, rien à créer.
-          </p>
+          <p className={s.rassure}>Réponse immédiate. Ni compte, ni installation.</p>
 
         </form>
       )}

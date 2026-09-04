@@ -574,6 +574,23 @@
    Le prix reste collé en bas : c'est lui qui ferme l'écran. L'espace qui reste
    au-dessus de lui n'est plus une anomalie — il est du même ordre que les
    autres, donc il se lit comme du silence, pas comme un trou. */
+/* ⚠️ L'ÉCRAN D'ACCUEIL NE PREND PLUS TOUTE LA HAUTEUR, ET C'EST VOULU.
+   Chandler, 04/09 : « je pense que l'on fera intervenir la prochaine section
+   plus tôt, tout simplement ». Un écran qui s'arrête pile au bord ne dit pas
+   qu'il y a une suite — et moins d'un visiteur mobile sur deux fait défiler
+   spontanément. En laissant dépasser le haut de la section suivante, on ne
+   demande rien : on montre qu'il y a autre chose, et le pouce suit tout seul.
+   150 points : le bandeau de consentement en couvre 69, il en reste 81
+   réellement visibles. En dessous, on ne verrait rien dépasser du tout.
+   ⚠️ Et on retire la réserve du bandeau : elle protégeait la ligne de prix
+   quand la section touchait le bas de l'écran. Ce n'est plus le cas — le
+   bandeau flotte maintenant au-dessus de la section SUIVANTE. La garder
+   coûterait 69 points de vide pour ne rien protéger. */
+.ecran1Attente {
+  height: calc(100svh - 150px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+}
+
 .ecran1Attente .titreHero {
   margin-top: 0;
   font-size: 58px; letter-spacing: -3px; line-height: .92;
@@ -618,6 +635,11 @@
    par l'`overflow: hidden` de la section, sans erreur, sans trace.
    Ici on resserre ce qui doit l'être, et rien d'autre. */
 @media (max-height: 700px) {
+  /* Sur un petit écran, la ligne de prix arrivait à 3 points du bord de la
+     section : elle tenait, mais sans respirer. On rend 30 points à l'accueil
+     et il reste 51 points de la section suivante visibles sous le bandeau —
+     assez pour qu'on voie qu'il y a une suite. */
+  .ecran1Attente { height: calc(100svh - 120px); }
   .ecran1Attente .titreHero { font-size: 46px; letter-spacing: -2.4px; }
   .ecran1Attente .sousHero { font-size: 17px; line-height: 23px; }
   .ecran1Attente .explique { font-size: 15px; line-height: 22px; }
