@@ -552,26 +552,77 @@
    titre respire — il n'y a rien d'autre à regarder, donc rien d'autre à
    décider. Le vide n'est pas de la place perdue : c'est lui qui tient l'œil.
    `padding-bottom` garde sa réserve pour le bandeau de consentement. */
-/* ⚠️ DEUX MARGES AUTOMATIQUES, ET PAS `justify-content: center`.
-   Avec un simple centrage, le bloc flottait au milieu et il restait 260 points
-   de noir sous lui — c'est ce que Chandler appelle « elle est vide ».
-   Ici, `margin-top: auto` sur le titre ET sur la ligne de prix partage l'espace
-   libre en deux parts égales : le titre descend du bord haut, le prix se colle
-   au bas. L'écran est tenu par ses deux extrémités au lieu de flotter.
-   ⚠️ Et une marge automatique n'agit que dans SON conteneur : c'est pour ça que
-   la ligne de prix est sortie du formulaire. Posée dedans, elle ne bougeait pas
-   d'un pixel — mesuré. */
-.ecran1Attente .titreHero { margin-top: auto; }
-/* ⚠️ PAS DE `margin-top` ICI. Cette règle vient APRÈS celle qui pose la marge
-   automatique : y remettre une valeur l'annulait, et le titre restait collé en
-   haut avec 316 points de vide au milieu de l'écran. Mesuré. */
-.ecran1Attente .titreHero { font-size: 52px; letter-spacing: -2.6px; }
-.ecran1Attente .sousHero { font-size: 17px; line-height: 23px; margin-top: 14px; max-width: 340px; }
-.ecran1Attente .champBloc { margin-top: 30px; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ÉCRAN D'ACCUEIL — le titre en haut, et de l'air PARTOUT
+   ═══════════════════════════════════════════════════════════════════════════
+   Chandler, 04/09 : « Gagne plus, roule moins devrait être en haut, et tout
+   devrait être aéré ».
+
+   ⚠️ CE QUI N'ALLAIT PAS, ET C'ÉTAIT MESURABLE.
+   J'avais posé deux marges automatiques, l'une sur le titre, l'autre sur le
+   prix. Elles partagent l'espace libre en deux parts égales — donc le titre
+   descendait à 176 points du haut, les cinq éléments se serraient sur 350
+   points avec 14 à 30 points entre eux, et le reste tombait d'un bloc : 158
+   points de trou juste avant le prix. Un écran où les écarts vont de 14 à 158
+   ne se lit pas comme une composition, il se lit comme un oubli.
+
+   CE QU'ON FAIT À LA PLACE. Le titre commence en HAUT, et les écarts entre les
+   idées deviennent réguliers et larges — 26 entre le titre et sa suite (ils
+   forment une seule idée), puis 62, 46, 20. Le texte grossit avec eux : à 58 px
+   le titre remplit deux lignes pleines, et l'explication passe à 16 px, taille
+   à laquelle elle se lit d'un coup d'œil dans une voiture.
+   Le prix reste collé en bas : c'est lui qui ferme l'écran. L'espace qui reste
+   au-dessus de lui n'est plus une anomalie — il est du même ordre que les
+   autres, donc il se lit comme du silence, pas comme un trou. */
+.ecran1Attente .titreHero {
+  margin-top: 0;
+  font-size: 58px; letter-spacing: -3px; line-height: .92;
+}
+/* ⚠️ DES ÉCARTS EN `clamp()`, ET PAS EN PIXELS FIXES.
+   Avec des valeurs fixes assez larges pour remplir un iPhone 16, un iPhone SE
+   (667 points, soit 500 utiles une fois le bandeau posé) verrait le bas de
+   l'écran COUPÉ NET : `.ecran1` a une hauteur ferme et `overflow: hidden`,
+   donc rien ne dépasse — ça disparaît, en silence.
+   `clamp(plancher, part de la hauteur, plafond)` fait respirer l'écran quand
+   il y a de la place et resserre quand il n'y en a pas. Mesuré : 26/105/89/28
+   sur un iPhone 16, 21/87/73/23 sur un SE. */
+.ecran1Attente .sousHero {
+  font-size: 19px; line-height: 26px; max-width: 350px;
+  margin-top: clamp(18px, 3.2vh, 34px);
+  color: rgba(248,250,252,.68);
+}
+/* Le plus grand écart de l'écran est celui qui isole LA seule chose à faire. */
+.ecran1Attente .champBloc { margin-top: clamp(30px, 13vh, 110px); }
+.ecran1Attente .explique {
+  margin-top: clamp(24px, 11vh, 92px);
+  font-size: 16px; line-height: 24px; max-width: 350px;
+}
+.ecran1Attente .rassure { margin-top: clamp(14px, 3.4vh, 28px); font-size: 13px; }
+
+/* Le champ grandit avec le reste : à 58 px de titre, une barre de 56 paraît
+   rabougrie. 62 points de haut, et on ne descend jamais sous 17 px de texte —
+   en dessous de 16, iOS zoome tout seul au premier appui. */
+.ecran1Attente .champ { height: 62px; }
+.ecran1Attente .champRangee .champBouton { height: 52px; }
 
 @media (max-width: 360px) {
-  .ecran1Attente .titreHero { font-size: 44px; }
-  .ecran1Attente .sousHero { font-size: 15.5px; line-height: 21px; }
+  .ecran1Attente .titreHero { font-size: 46px; letter-spacing: -2.4px; }
+  .ecran1Attente .sousHero { font-size: 17px; line-height: 23px; }
+  .ecran1Attente .explique { font-size: 15px; line-height: 22px; }
+}
+
+/* ⚠️ ON RÈGLE SUR LA HAUTEUR, PAS SUR LA LARGEUR — ET C'EST MESURÉ.
+   Un iPhone SE fait 375 points de LARGE (donc aucune règle « max-width: 360 »
+   ne le touche) mais seulement 667 de HAUT. Avec les tailles de l'iPhone 16, la
+   ligne de prix y finissait 2 points SOUS le bandeau de consentement : coupée
+   par l'`overflow: hidden` de la section, sans erreur, sans trace.
+   Ici on resserre ce qui doit l'être, et rien d'autre. */
+@media (max-height: 700px) {
+  .ecran1Attente .titreHero { font-size: 46px; letter-spacing: -2.4px; }
+  .ecran1Attente .sousHero { font-size: 17px; line-height: 23px; }
+  .ecran1Attente .explique { font-size: 15px; line-height: 22px; }
+  .ecran1Attente .champ { height: 56px; }
+  .ecran1Attente .champRangee .champBouton { height: 46px; }
 }
 
 @media (max-width: 360px) {
