@@ -547,9 +547,20 @@
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-/* En attente : le téléphone n'a pas encore gagné sa place. Il prend ce qui
-   reste, jamais moins de 190 points — en dessous on ne verrait plus l'œil. */
-.telBlocAttente { min-height: 190px; }
+/* ══ LE PREMIER ÉCRAN, AVANT LE LIEU ══════════════════════════════════════
+   Un seul objectif : dire où il roule. Le bloc est centré verticalement et le
+   titre respire — il n'y a rien d'autre à regarder, donc rien d'autre à
+   décider. Le vide n'est pas de la place perdue : c'est lui qui tient l'œil.
+   `padding-bottom` garde sa réserve pour le bandeau de consentement. */
+.ecran1Attente { justify-content: center; }
+.ecran1Attente .titreHero { font-size: 52px; letter-spacing: -2.6px; margin-top: 0; }
+.ecran1Attente .sousHero { font-size: 17px; line-height: 23px; margin-top: 14px; max-width: 340px; }
+.ecran1Attente .champBloc { margin-top: 30px; }
+
+@media (max-width: 360px) {
+  .ecran1Attente .titreHero { font-size: 44px; }
+  .ecran1Attente .sousHero { font-size: 15.5px; line-height: 21px; }
+}
 
 @media (max-width: 360px) {
   .titreHero { font-size: 37px; }

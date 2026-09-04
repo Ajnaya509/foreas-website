@@ -182,7 +182,18 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
 
 
   return (
-    <section ref={sectionRef} className={s.ecran1} aria-labelledby="titre-zone">
+    <section
+      ref={sectionRef}
+      /* ⚠️ UN SEUL OBJECTIF PAR ÉCRAN, ET ÇA SE VOIT DANS LA MISE EN PAGE.
+         Tant qu'il n'a pas donné son lieu, il n'y a qu'une chose à faire sur
+         cette page : la dire. Le bloc est donc calé au MILIEU de l'écran, pas
+         collé en haut — le vide autour n'est pas de la place perdue, c'est ce
+         qui empêche l'œil d'aller chercher autre chose.
+         Dès que le lieu est donné, on repasse en haut : le téléphone a besoin
+         de toute la hauteur, et il devient le nouvel objectif unique. */
+      className={`${s.ecran1} ${validee ? '' : s.ecran1Attente}`}
+      aria-labelledby="titre-zone"
+    >
       <div className={s.halos} aria-hidden="true" />
       <div className={s.grain} aria-hidden="true" />
 
@@ -202,8 +213,16 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
           geste. C'est le mécanisme, pas une promesse chiffrée — donc rien à
           vérifier, rien à démentir.
           La phrase de la course n'est pas perdue : elle vit plus bas, à sa
-          place, au-dessus de la scène qui montre justement une course. */}
-      <div className={s.surtitre}>FOREAS DRIVER · POUR CHAUFFEURS VTC</div>
+          place, au-dessus de la scène qui montre justement une course.
+
+          ⚠️ LE SURTITRE « FOREAS DRIVER · POUR CHAUFFEURS VTC » EST SUPPRIMÉ.
+          Chandler, 04/09 : « c'est inutile et ça disperse la concentration
+          cognitive, on veut un objectif par section, pas plus ».
+          Il avait raison sur le fond : il annonçait à qui on parle à quelqu'un
+          qui SAIT déjà qui il est — il vient de cliquer une publicité pour
+          chauffeurs. Il coûtait 22 points de haut et une première lecture pour
+          zéro décision. La marque n'est pas perdue : elle est écrite dans le
+          téléphone, sur le bouton d'essai, et dans le pied de page. */}
 
       {!validee ? (
         <>
@@ -276,26 +295,31 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
         </form>
       )}
 
-      {/* ══ LE TÉLÉPHONE EST LÀ DÈS LE CHARGEMENT ════════════════════════════
+      {/* ══ LE TÉLÉPHONE N'ARRIVE QU'AVEC LE LIEU ════════════════════════════
+          Décision de Chandler, tenue depuis le 03/09 et redite le 04/09 :
+          « le mockup doit apparaître lorsque le visiteur a tapé le lieu ».
+          C'est ce qui donne son sens à l'arrivée en pivot : le téléphone
+          n'existe pas avant la question, il ARRIVE en réponse. Affiché d'emblée,
+          il n'est plus une réponse — c'est une image de plus à regarder, et le
+          premier écran repart avec deux objectifs au lieu d'un.
+
           ⚠️ C'EST LE MÊME TÉLÉPHONE QUE `/ou-ca-paie`, PAS UNE COPIE. J'en
           avais fabriqué un deuxième, plus pauvre : deux téléphones, c'est deux
-          vérités qui divergent au premier changement.
-          Tant qu'il n'a pas donné sa zone, Ajnaya n'invente rien : elle affiche
-          une seule phrase, la même que la barre au-dessus. */}
-      <div className={`${s.telBloc} ${validee ? '' : s.telBlocAttente}`}>
-        <AjnayaPhoneDemo
-          zone={validee ?? ''}
-          immersifPossible={!!validee}
-          ajusteHauteur
-          onEssaiClick={() => { window.location.href = '/tarifs3' }}
-          onWhatsAppClick={() => { window.location.href = lienWhatsApp }}
-        />
-      </div>
-
-      {/* Les portes n'apparaissent qu'APRÈS avoir donné quelque chose.
-          Vendre avant d'avoir répondu, c'est le geste qui sent l'amateur. */}
+          vérités qui divergent au premier changement. */}
       {validee && (
         <>
+          <div className={s.telBloc}>
+            <AjnayaPhoneDemo
+              zone={validee}
+              immersifPossible
+              ajusteHauteur
+              onEssaiClick={() => { window.location.href = '/tarifs3' }}
+              onWhatsAppClick={() => { window.location.href = lienWhatsApp }}
+            />
+          </div>
+
+          {/* Les portes n'apparaissent qu'APRÈS avoir donné quelque chose.
+              Vendre avant d'avoir répondu, c'est le geste qui sent l'amateur. */}
           <div className={s.portes}>
             <a className={s.porteEssai} href="/tarifs3">Essayer 3 jours — 0 €</a>
             <a className={s.porteWa} href={lienWhatsApp}>Parler à Ajnaya</a>
