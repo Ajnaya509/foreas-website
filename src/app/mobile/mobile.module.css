@@ -1,36 +1,18 @@
 /*
  * L'ACCUEIL MOBILE — le style du premier écran.
  *
- * ⚠️ 04/09/2026 — UNE PARTIE DE CE FICHIER NE SERT PLUS, ET IL FAUT LE SAVOIR.
- * La page avait trois temps : le hero, une vidéo d'habitacle qui se soudait à
- * l'écran du visiteur, puis un second hero. Les deux derniers ont été retirés
- * (le doublon d'abord, la vidéo ensuite, sur demande de Chandler). Il ne reste
- * que le hero, suivi directement de la page de vente.
+ * Il ne reste QUE le hero : le visiteur tape sa zone, la réponse s'affiche,
+ * et la page de vente commence juste en dessous, séparée par une courte ligne
+ * en dégradé.
  *
- * Les styles de la scène supprimée sont encore ici : `.scene`, `.voile`,
- * `.fil`, `.bulle*`, `.titreBloc`, `.surtitre`, `.titre`, `.sousTitre`,
- * `.action`, `.suite`, `.chevron`. Ils ne sont plus rendus par personne.
- * Ils n'ont pas été supprimés d'un coup parce que le hero, lui, est en
- * production et qu'une suppression à l'aveugle sur des noms proches
- * (`.titre` / `.titreHero` / `.titreZone`) casse ce qu'elle prétend nettoyer.
- * À retirer dans une passe dédiée, en vérifiant chaque nom à l'écran.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * L'IDÉE, ET ELLE TIENT EN UNE PHRASE — ⚠️ HISTORIQUE, plus d'application
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * L'IDÉE, ET ELLE TIENT EN UNE PHRASE
- *
- * Sur ordinateur, on montre un chauffeur dans son habitacle qui reçoit une course :
- * la personne est assise devant un grand écran, elle regarde une scène.
- * Sur mobile, elle TIENT DÉJÀ le téléphone. Lui montrer un téléphone dans un écran,
- * c'est mettre un cadre autour de sa propre main.
- * Donc la notification n'arrive pas dans une image : elle arrive sur SON écran.
- *
- * ⚠️ CE FICHIER NE DÉPEND D'AUCUNE VIDÉO. La vidéo Seedance viendra derrière, en
- * arrière-plan, chargée après. Si elle ne charge jamais, la page vend quand même.
- * Moins d'un visiteur mobile sur deux fait défiler une page (45,2 %, Contentsquare,
- * 99 milliards de sessions) : tout ce qui compte doit tenir sans elle, tout de suite.
+ * ⚠️ 04/09/2026 — LES DEUX SCÈNES QUI SUIVAIENT ONT ÉTÉ RETIRÉES, ET LEURS
+ * STYLES AVEC. D'abord un second hero qui répétait mot pour mot le premier
+ * (même titre, même bouton, même prix), puis la vidéo d'habitacle qui se
+ * soudait à l'écran du visiteur. 52 règles et 6 animations sont parties avec
+ * elles, vérifiées une par une : une règle n'a été supprimée que si TOUS ses
+ * sélecteurs ne parlaient QUE de classes devenues orphelines. Un sélecteur
+ * mixte comme `.ecran1Attente .titreHero` est resté.
+ * Tout est dans l'historique git si une de ces scènes revient un jour.
  *
  * ⚠️ 100svh ET JAMAIS 100vh. Sur Safari mobile, 100vh compte les barres qui
  * disparaissent : la page saute au premier défilement.
@@ -38,18 +20,6 @@
  * ⚠️ TOUT S'ARRÊTE SI LE MOUVEMENT EST RÉDUIT. La compréhension ne dépend
  * d'aucune animation : à la fin de chaque mouvement, l'écran est le même.
  */
-
-.scene {
-  position: relative;
-  min-height: 100svh;
-  background: #060610;
-  overflow: hidden;
-  /* ⚠️ La réserve du bas n'est pas décorative : le bandeau de consentement
-     s'installe ici, et il ne doit jamais recouvrir une commande. */
-  padding: calc(env(safe-area-inset-top) + 14px) 20px calc(env(safe-area-inset-bottom) + 40px);
-  display: flex;
-  flex-direction: column;
-}
 
 /* ══ LES COUCHES DU FOND ═══════════════════════════════════════════════════
    Trois, pas plus. Un halo violet, un halo cyan, un grain. Le grain casse les
@@ -71,79 +41,17 @@
   background: rgba(255,255,255,.012);
 }
 
-/* ══ LA LIGNE QUI SLALOME ══════════════════════════════════════════════════
-   Elle part de la notification et descend derrière tout le reste.
-   Un seul tracé SVG, dessiné une fois. Aucune animation liée au défilement :
-   sur un Android milieu de gamme, une animation au défilement saccade. */
-.fil { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-.filTrace {
-  fill: none; stroke: url(#filDegrade); stroke-width: 1.5; stroke-linecap: round;
-  stroke-dasharray: 1400; stroke-dashoffset: 1400;
-  animation: tracer 2600ms cubic-bezier(.16,1,.3,1) 900ms forwards;
-}
-@keyframes tracer { to { stroke-dashoffset: 0; } }
-
 /* ══ LA NOTIFICATION ═══════════════════════════════════════════════════════
    Elle a la forme d'une vraie notification de téléphone : coins très arrondis,
    fond translucide flouté, icône ronde, nom de l'app, heure. Elle descend du
    bord haut de l'écran, comme le fait le système. */
-@keyframes descendre { to { transform: translateY(0); opacity: 1; } }
-
 
 /* ══ LE VOILE ══════════════════════════════════════════════════════════════
    L'écran s'assombrit APRÈS l'arrivée de la notification. C'est ce qui isole
    la notification du reste et fait comprendre « regarde ça ». */
-.voile {
-  position: absolute; inset: 0; z-index: 2;
-  background: #04040A; opacity: 0;
-  animation: assombrir 900ms ease-out 900ms forwards;
-  pointer-events: none;
-}
-@keyframes assombrir { to { opacity: .58; } }
 
 /* ══ LA BULLE QUI EXPLIQUE ═════════════════════════════════════════════════
    Quatre lignes. Des nombres qu'un enfant suit. Aucun mot compliqué. */
-.bulle {
-  position: relative; z-index: 3;
-  width: 100%; max-width: 358px; margin: 14px auto 0;
-  padding: 15px 18px 13px;
-  border-radius: 24px;
-  background: rgba(17,21,40,.86);
-  border: 1px solid rgba(0,212,255,.22);
-  box-shadow: 0 22px 50px rgba(0,0,0,.5);
-  opacity: 0; transform: translateY(18px);
-  animation: monter 700ms cubic-bezier(.16,1,.3,1) 2600ms forwards;
-}
-@keyframes monter { to { opacity: 1; transform: translateY(0); } }
-
-.bulleLigne {
-  display: flex; align-items: baseline; justify-content: space-between;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 15.5px; line-height: 26px; color: rgba(248,250,252,.72);
-}
-.bulleLigne b {
-  font-weight: 700; color: #F8FAFC; font-variant-numeric: tabular-nums;
-  font-size: 17px;
-}
-.bulleTrait { height: 1px; background: rgba(255,255,255,.09); margin: 11px 0; }
-.bulleVerdict {
-  display: flex; align-items: baseline; justify-content: space-between;
-}
-.bulleVerdictMot {
-  font-family: var(--font-genos), system-ui, sans-serif;
-  font-size: 30px; font-weight: 900; letter-spacing: -.5px; color: #10B981;
-  line-height: 1;
-}
-.bulleVerdictChiffre {
-  font-family: var(--font-genos), system-ui, sans-serif;
-  font-size: 34px; font-weight: 900; letter-spacing: -1.2px; color: #F8FAFC;
-  font-variant-numeric: tabular-nums; line-height: 1;
-}
-.bulleTampon {
-  margin-top: 9px;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 11px; line-height: 15px; color: rgba(248,250,252,.45);
-}
 
 /* ══ LE TITRE ══════════════════════════════════════════════════════════════ */
 /* ⚠️ PAS DE `margin-top: auto` ICI, ET C'EST UNE LEÇON DÉJÀ PAYÉE.
@@ -151,73 +59,10 @@
    consentement s'installe. C'est le défaut du 21/08 : le bouton principal était
    inatteignable pour TOUS les nouveaux visiteurs — les seuls qui comptent.
    Le contenu s'enchaîne, et l'écran réserve la place du bandeau plus bas. */
-.titreBloc {
-  position: relative; z-index: 3; margin-top: 20px; padding-top: 0;
-  opacity: 0; animation: apparaitre 800ms ease-out 3400ms forwards;
-}
-@keyframes apparaitre { to { opacity: 1; } }
-
-.surtitre {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 10px; font-weight: 800; letter-spacing: .25em;
-  text-transform: uppercase; color: #00D4FF; margin-bottom: 12px;
-}
-.titre {
-  font-family: var(--font-genos), system-ui, sans-serif;
-  font-size: 40px; font-weight: 900; letter-spacing: -2px; line-height: .94;
-  color: #F8FAFC; margin: 0;
-}
-.sousTitre {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 15.5px; line-height: 1.4; color: rgba(248,250,252,.72);
-  margin: 12px 0 0; max-width: 330px;
-}
-
-/* ══ L'ACTION ══════════════════════════════════════════════════════════════ */
-.action {
-  position: relative; z-index: 3; margin-top: 18px;
-  display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 56px; border-radius: 16px;
-  background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 52%, #B494FF 100%);
-  box-shadow: 0 0 26px rgba(140,82,255,.34);
-  font-family: var(--font-genos), system-ui, sans-serif;
-  font-size: 20px; font-weight: 800; letter-spacing: .2px; color: #fff;
-  border: 0; cursor: pointer; text-decoration: none;
-  transition: transform 140ms var(--ease-standard, ease);
-}
-.action:active { transform: scale(.975); }
-
-.souslAction {
-  position: relative; z-index: 3; margin-top: 12px; text-align: center;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 12.5px; line-height: 18px; color: rgba(248,250,252,.45);
-}
-.souslAction a { color: rgba(248,250,252,.72); text-decoration: underline; text-underline-offset: 3px; }
-
-/* ══ L'INVITE À DESCENDRE ══════════════════════════════════════════════════ */
-.suite {
-  position: relative; z-index: 3; margin-top: 22px; text-align: center;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 12px; color: rgba(248,250,252,.32);
-  opacity: 0; animation: apparaitre 700ms ease-out 4200ms forwards;
-}
-.chevron { display: block; margin: 6px auto 0; width: 16px; height: 16px; opacity: .5;
-  animation: respirer 2200ms ease-in-out 4800ms infinite; }
-@keyframes respirer { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 
 /* ══ 320 px — le petit écran doit tenir ════════════════════════════════════ */
-@media (max-width: 360px) {
-  .titre { font-size: 40px; }
-  .bulleVerdictChiffre { font-size: 30px; }
-}
 
 /* ══ MOUVEMENT RÉDUIT — tout est immédiatement à sa place ══════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  .voile { animation: none !important; opacity: .58 !important; }
-  .filTrace { animation: none !important; stroke-dashoffset: 0 !important; }
-  .chevron { animation: none !important; }
-}
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ÉCRAN 1 — LA QUESTION DE ZONE
@@ -246,19 +91,8 @@
            calc(env(safe-area-inset-bottom) + var(--bandeau, 0px) + 14px);
 }
 
-.titreZone {
-  position: relative; z-index: 3;
-  font-family: var(--font-genos), system-ui, sans-serif;
-  font-size: 52px; font-weight: 900; letter-spacing: -2.2px; line-height: .92;
-  color: #F8FAFC; margin: 10px 0 0;
-}
-
 .champBloc { position: relative; z-index: 3; margin-top: 26px; }
-.champLabel {
-  display: block; margin-bottom: 8px;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 12px; font-weight: 600; color: rgba(248,250,252,.52);
-}
+
 .champRangee { display: flex; gap: 10px; }
 
 /* ⚠️ 17 px MINIMUM, ET CE N'EST PAS UN GOÛT.
@@ -289,70 +123,6 @@
 .champBouton:disabled { opacity: .34; cursor: default; }
 .champBouton:not(:disabled):active { transform: scale(.96); }
 
-/* Les puces : il n'a même pas besoin de taper. */
-.puces { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.puce {
-  min-height: 40px; padding: 0 14px; border-radius: 999px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.12);
-  color: rgba(248,250,252,.78); cursor: pointer;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 14px; font-weight: 500;
-}
-.puce:active { background: rgba(0,212,255,.12); border-color: rgba(0,212,255,.42); }
-
-/* ══ LA RÉPONSE ═══════════════════════════════════════════════════════════
-   Elle vend. Elle ne contient aucun chiffre de zone : la vente vient du
-   problème, qui est vrai partout, jamais d'une mesure qu'on n'a pas. */
-.reponse {
-  position: relative; z-index: 3; margin-top: 24px;
-  padding: 20px 18px 18px; border-radius: 22px;
-  background: rgba(17,21,40,.86);
-  border: 1px solid rgba(0,212,255,.22);
-  box-shadow: 0 20px 46px rgba(0,0,0,.5);
-  opacity: 0; transform: translateY(14px);
-  animation: monter 560ms cubic-bezier(.16,1,.3,1) forwards;
-}
-.reponseZone {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 11px; font-weight: 800; letter-spacing: .18em;
-  text-transform: uppercase; color: #00D4FF; margin-bottom: 12px;
-}
-.reponseFort {
-  font-family: var(--font-genos), system-ui, sans-serif;
-  font-size: 27px; font-weight: 900; letter-spacing: -.9px; line-height: 1.06;
-  color: #F8FAFC; margin: 0 0 14px;
-}
-.reponseTexte {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 15.5px; line-height: 1.45; color: rgba(248,250,252,.72); margin: 0 0 12px;
-}
-.reponseTexte b { color: #F8FAFC; font-weight: 700; font-variant-numeric: tabular-nums; }
-
-.actionWa {
-  /* `flex: none` : la fenêtre du téléphone prend tout le reste, le bouton, lui,
-     garde ses 54 points quoi qu'il arrive. C'est le défaut du 21/08 —
-     un bouton principal inatteignable pour tous les nouveaux visiteurs. */
-  flex: none;
-  display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 54px; margin-top: 12px; border-radius: 15px;
-  background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 52%, #B494FF 100%);
-  box-shadow: 0 0 24px rgba(140,82,255,.32);
-  font-family: var(--font-genos), system-ui, sans-serif;
-  font-size: 19px; font-weight: 800; color: #fff; text-decoration: none;
-  transition: transform 140ms ease;
-}
-.actionWa:active { transform: scale(.975); }
-
-@media (max-width: 360px) {
-  .titreZone { font-size: 45px; }
-  .reponseFort { font-size: 24px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .reponse { animation: none !important; opacity: 1 !important; transform: none !important; }
-}
-
-
 /* ══ LE TÉLÉPHONE DANS L'ÉCRAN DE ZONE ════════════════════════════════════
    Il occupe la place, mais on voit qu'il appartient au site : il garde son
    châssis, son ombre et son léger flottement. C'est ce qui rend le passage
@@ -376,10 +146,6 @@
   margin: 10px -20px 0;
   display: block;
 }
-
-
-
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LA CONSIGNE — une fois la zone donnée, il n'y a plus qu'une chose à dire.
@@ -423,7 +189,6 @@
   .consigneSous { font-size: 13.5px; }
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════════
    LES DEUX PORTES — hors du téléphone, toujours à l'écran
    ═══════════════════════════════════════════════════════════════════════════
@@ -464,7 +229,6 @@
   .porteWa { font-size: 15px; }
   .sousPortes { font-size: 11px; }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LE HAUT DE PAGE — la copie forte, dès le chargement
@@ -572,8 +336,20 @@
      laissent que 435 — et `.ecran1` a `overflow: hidden`, donc la ligne de
      prix disparaîtrait sans que rien ne le signale. C'est exactement le
      défaut du 03/09, corrigé une fois déjà. */
-  height: calc(100svh - clamp(140px, 27svh, 232px));
-  padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+  /* ⚠️ LA HAUTEUR SUIT LE CONTENU, PLUS L'ÉCRAN — ET C'EST CE QUI SUPPRIME LE
+     TROU. Tant qu'on découpait un pourcentage de l'écran, la ligne de prix
+     restait collée au bas par sa marge automatique : sur un iPhone 16 il
+     restait 133 points de vide juste avant elle, soit trois fois le plus grand
+     des autres écarts. Ce n'est plus un silence, c'est un oubli.
+     En laissant l'accueil se dimensionner sur ce qu'il contient, chaque écart
+     est celui qu'on a écrit, et la section suivante remonte d'autant. Un écran
+     plus grand ne fabrique plus de vide : il montre plus de la suite. */
+  height: auto;
+  /* ⚠️ CE REMBOURRAGE PORTE LA LIGNE EN DÉGRADÉ. Il valait 14 points quand la
+     hauteur de l'accueil était ferme : la ligne, posée à 18 du bas, remontait
+     alors PAR-DESSUS « 3 jours pour voir ». Elle doit avoir sa place à elle,
+     et de l'air des deux côtés. */
+  padding-bottom: calc(env(safe-area-inset-bottom) + 46px);
 }
 
 /* ══ LA COUTURE — une barre violet · cyan · violet ═════════════════════════
@@ -585,7 +361,7 @@
 .ecran1Attente::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: 18px;
   left: 50%;
   transform: translateX(-50%);
   /* ⚠️ COURTE, ET CENTRÉE. Une barre qui traverse tout l'écran se lit comme un
@@ -615,7 +391,7 @@
    sur un iPhone 16, 21/87/73/23 sur un SE. */
 .ecran1Attente .sousHero {
   font-size: 19px; line-height: 26px; max-width: 350px;
-  margin-top: clamp(18px, 3.2vh, 34px);
+  margin-top: clamp(13px, 2.3vh, 24px);
   color: rgba(248,250,252,.68);
 }
 /* Le plus grand écart de l'écran est celui qui isole LA seule chose à faire. */
@@ -623,12 +399,12 @@
    Il isole LA seule chose à faire. Trop court, la barre se noie dans le titre ;
    trop long, elle descend hors de vue et l'écran paraît vide.
    Mesuré : 105 points avant, 58 après — la barre remonte d'autant. */
-.ecran1Attente .champBloc { margin-top: clamp(22px, 7vh, 58px); }
+.ecran1Attente .champBloc { margin-top: clamp(17px, 5vh, 42px); }
 .ecran1Attente .explique {
-  margin-top: clamp(20px, 6.2vh, 52px);
+  margin-top: clamp(15px, 4.4vh, 37px);
   font-size: 16px; line-height: 24px; max-width: 350px;
 }
-.ecran1Attente .rassure { margin-top: clamp(14px, 3.4vh, 28px); font-size: 13px; }
+.ecran1Attente .rassure { margin-top: clamp(10px, 2.4vh, 20px); font-size: 13px; }
 
 /* Le champ grandit avec le reste : à 58 px de titre, une barre de 56 paraît
    rabougrie. 62 points de haut, et on ne descend jamais sous 17 px de texte —
@@ -649,11 +425,14 @@
    par l'`overflow: hidden` de la section, sans erreur, sans trace.
    Ici on resserre ce qui doit l'être, et rien d'autre. */
 @media (max-height: 700px) {
-  /* Sur un petit écran, la ligne de prix arrivait à 3 points du bord de la
-     section : elle tenait, mais sans respirer. On rend 30 points à l'accueil
-     et il reste 51 points de la section suivante visibles sous le bandeau —
-     assez pour qu'on voie qu'il y a une suite. */
-  .ecran1Attente { height: calc(100svh - 120px); }
+  /* ⚠️ CETTE RÈGLE GAGNE SUR LA DÉCOUPE PROPORTIONNELLE AU-DESSUS, et c'est
+     voulu : sur un écran court, 28 % de la hauteur retirés couperaient la
+     ligne de prix — et `.ecran1` a `overflow: hidden`, donc elle
+     disparaîtrait en silence.
+     Mesuré sur iPhone SE (375 × 667) après le resserrement du 04/09 : la
+     ligne de prix finit à 14 points du bord. Depuis que l'accueil se
+     dimensionne sur son contenu, il n'y a plus rien à découper ici : ce sont
+     les tailles de texte ci-dessous qui font le travail. */
   .ecran1Attente .titreHero { font-size: 46px; letter-spacing: -2.4px; }
   .ecran1Attente .sousHero { font-size: 17px; line-height: 23px; }
   .ecran1Attente .explique { font-size: 15px; line-height: 22px; }
@@ -665,7 +444,6 @@
   .titreHero { font-size: 37px; }
   .sousHero { font-size: 14.5px; line-height: 20px; }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SOUS LA BARRE — ce qu'elle fait, et pourquoi on peut la croire
@@ -695,14 +473,15 @@
   .rassure { font-size: 11.5px; }
 }
 
-
 /* Le prix, collé au bas de l'écran d'accueil. Jamais un bouton : l'objectif
    de cet écran reste unique. `margin-top: auto` le pousse au fond du bloc,
    et la réserve du bandeau de consentement est déjà dans le rembourrage
    de `.ecran1` — il ne peut donc pas passer dessous. */
 .prixHero {
   position: relative; z-index: 3; flex: none;
-  margin: auto 0 0; padding-top: 26px;
+  /* Plus de `margin-top: auto` : c'est lui qui poussait le prix au fond et
+     ouvrait le trou. Un écart écrit, du même ordre que les autres. */
+  margin: clamp(22px, 5vh, 42px) 0 0; padding-top: 0;
   font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 12.5px; line-height: 18px; color: rgba(248,250,252,.34);
 }
