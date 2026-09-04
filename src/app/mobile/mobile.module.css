@@ -448,3 +448,45 @@
   .consigneTitre { font-size: 28px; }
   .consigneSous { font-size: 13.5px; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES DEUX PORTES — hors du téléphone, toujours à l'écran
+   ═══════════════════════════════════════════════════════════════════════════
+   `flex: none` : la fenêtre du téléphone prend tout le reste, les portes gardent
+   leurs 54 points quoi qu'il arrive. C'est le défaut du 21/08 — un bouton
+   principal inatteignable pour tous les nouveaux visiteurs.
+   Deux et pas une : celle qui existait envoyait hors du site avant qu'il ait vu
+   un prix. Celle de gauche encaisse, celle de droite ouvre la conversation.
+   Les deux à 54 points : la hauteur totale de la page ne bouge pas d'un point. */
+.portes { flex: none; display: flex; gap: 10px; margin-top: 12px; }
+
+.porteEssai, .porteWa {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  height: 54px; border-radius: 15px; text-decoration: none;
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-weight: 800; letter-spacing: .2px; line-height: 1;
+  transition: transform 140ms ease;
+}
+.porteEssai:active, .porteWa:active { transform: scale(.975); }
+
+.porteEssai {
+  flex: 1.45; font-size: 18px; color: #fff;
+  background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 52%, #B494FF 100%);
+  box-shadow: 0 0 24px rgba(140,82,255,.32);
+}
+/* Le vert de WhatsApp, tel quel : c'est un repère, pas une couleur de charte.
+   Texte sombre dessus — sur ce vert, du blanc tombe sous le contraste exigé. */
+.porteWa { flex: 1; font-size: 17px; background: #25D366; color: #06210F; }
+
+.sousPortes {
+  flex: none; margin: 9px 0 0; text-align: center;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 11.5px; line-height: 16px; color: rgba(248,250,252,.45);
+}
+
+@media (max-width: 360px) {
+  .porteEssai { font-size: 16px; }
+  .porteWa { font-size: 15px; }
+  .sousPortes { font-size: 11px; }
+}

@@ -84,23 +84,45 @@
 .h-grain{inset:0;background:rgba(255,255,255,.006);}
 
 /* ── L'EN-TÊTE — NU. Pas de plaque, pas de bordure, pas de flou. ──── */
+/* ⚠️ L'ŒIL GRANDIT, L'EN-TÊTE NON. ET C'EST LA CLÉ.
+   Chandler, 04/09 : « Ajnaya n'a pas d'œil mais son icône à la place ».
+   Vérifié dans l'app : elle a bien un œil — AjnayaScreenOptimized.tsx monte
+   AjnayaLottieAvatar, qui n'est qu'un alias d'AjnayaEyeAvatar, et ce dernier
+   dessine une amande, un iris cyan→violet, une pupille et des cils. Le site le
+   reprend trait pour trait. Ce n'est donc pas une icône qui manque : c'est
+   l'œil, ÉCRASÉ. Réduit à 0,76, il ne faisait plus que 23 points à l'écran :
+   à cette taille l'amande et les cils se fondent et ça se lit comme un
+   pictogramme, pas comme un regard.
+   Il passe à 39 px de code, soit 30 points vus — exactement ce que voit un
+   chauffeur dans la vraie app. Et on reprend les 12 px sur le rembourrage :
+   10+40+10 = 60 avant, 6+52+6 = 64 après, soit 3 points. */
 .aj-head{position:relative;z-index:1;display:flex;align-items:center;gap:10px;
-  padding:10px 16px;background:transparent;overflow:hidden;flex:none;}
-.aj-orbe{width:40px;height:40px;border-radius:20px;flex:none;
+  padding:6px 16px;background:transparent;overflow:hidden;flex:none;}
+.aj-orbe{width:52px;height:52px;border-radius:26px;flex:none;
   background:rgba(26,16,48,.9);border:1px solid rgba(140,82,255,.45);
   box-shadow:0 0 9px rgba(140,82,255,.25);
   display:flex;align-items:center;justify-content:center;position:relative;}
-/* l'anneau cyan fait 30 px, pas 40 : l'œil est en retrait de 5 px */
-.aj-orbe .anneau{position:absolute;width:30px;height:30px;border-radius:15px;
+/* l'anneau reste en retrait — le rapport 40:30 de l'app devient 52:39 */
+.aj-orbe .anneau{position:absolute;width:39px;height:39px;border-radius:19.5px;
   border:1.5px solid #6DEAFF;opacity:.4;pointer-events:none;}
-.aj-orbe svg{width:30px;height:30px;display:block;}
+/* Le halo respire QUAND ELLE PARLE, comme dans l'app (opacité .4 → .8 → .25). */
+.aj-orbe .anneau.respire{animation:ajOeilRespire 2200ms ease-in-out infinite;}
+@keyframes ajOeilRespire{0%{opacity:.4}35%{opacity:.8}100%{opacity:.25}}
+.aj-orbe svg{width:39px;height:39px;display:block;}
 .aj-id{flex:1;min-width:0;}
 /* 19 px et 800 : le style écrase TYPO.h3 (17) juste après le spread. */
 .aj-nom{font-family:var(--app-texte);font-size:19px;line-height:24px;font-weight:800;
   letter-spacing:-.4px;color:#F8FAFC;}
 /* 12 px mais lineHeight 14 HÉRITÉ du token : il n'est pas écrasé. */
-.aj-etat{display:flex;align-items:center;gap:6px;font-size:12px;line-height:14px;
-  letter-spacing:0;color:rgba(248,250,252,.55);margin-top:1px;}
+/* ⚠️ UNE SEULE LIGNE, JAMAIS DEUX. Elle porte maintenant le nom de la zone,
+   et un nom long ferait passer l'en-tête à deux lignes : le fil perdrait
+   14 points sans que personne le voie venir. `nowrap` + coupure aux points
+   de suspension. */
+.aj-etat{display:flex;align-items:center;gap:5px;font-size:12px;line-height:14px;
+  letter-spacing:0;color:rgba(248,250,252,.55);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.aj-etat b{color:#F8FAFC;font-weight:700;}
+.aj-etat .pt{opacity:.45;}
 /* 6 px de couleur pleine. Ni glow, ni ombre, ni bordure.
    ⚠️ Le texte de l'app est « Prête, {prénom} ». Sur le SITE, le visiteur
       n'a pas de prénom connu : afficher un prénom en dur serait un faux.
@@ -293,6 +315,7 @@
 .aj-jour{text-align:center;font-size:11px;color:rgba(248,250,252,.38);margin:10px 0 12px;}
 
 @media (prefers-reduced-motion:reduce){
+  .aj-orbe .anneau.respire{animation:none!important;}
   .aj-pense i,.aj-trainee,.aj-orbe svg,.h-violet{animation:none!important;}
 }
 
@@ -330,8 +353,14 @@
    autre chose, et il faut l'assumer : Ajnaya SAIT prédire, et c'est ce
    savoir-là qui se paie. Le premier créneau est donné, les deux suivants
    sont voilés — on montre la marchandise avant de demander. */
-.aj-frise .titre{font-size:10px;line-height:14px;font-weight:800;letter-spacing:2.5px;
-  text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:5px;}
+/* ⚠️ IL EXISTE DEUX DÉFINITIONS DE `.aj-frise .titre` ET DE `.aj-verrou` DANS
+   CE FICHIER (l'autre est ~100 lignes plus haut). C'est CELLE-CI qui gagne,
+   parce qu'elle vient après. Modifier l'autre ne produit rien, sans erreur. */
+.aj-frise .titre{font-size:10px;line-height:14px;font-weight:800;letter-spacing:1.6px;
+  text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px;
+  display:flex;align-items:center;white-space:nowrap;overflow:hidden;}
+/* `.aj-promesse` n'est plus rendue — la phrase qui recopiait ce qu'il tapait
+   a été retirée. Les règles restent pour `/ou-ca-paie`, qui l'affiche encore. */
 .aj-promesse{font-size:12.5px;line-height:17px;color:rgba(248,250,252,.72);
   margin:0 0 13px;}
 .aj-promesse b{color:#00D4FF;font-weight:700;}
@@ -340,13 +369,16 @@
 .aj-tiers.floue .val, .aj-tiers.floue .aj-heure{filter:blur(4.5px);opacity:.75;
   user-select:none;}
 .aj-point.futur{border-color:#8C52FF;}
-.aj-verrou{margin-top:11px;display:flex;align-items:center;gap:9px;cursor:pointer;
-  padding:10px 12px;border-radius:13px;
+/* ⚠️ SUR UNE SEULE LIGNE. `text-wrap: balance` fabriquait trois lignes étroites
+   « pour faire joli » : c'est lui qui coûtait 32 points de haut. Il saute.
+   `nowrap` garantit la ligne unique quelle que soit la largeur. */
+.aj-verrou{margin-top:9px;display:flex;align-items:center;gap:8px;cursor:pointer;
+  padding:7px 11px;border-radius:11px;
   background:linear-gradient(96deg,rgba(140,82,255,.16),rgba(0,212,255,.10));
   border:1px solid rgba(140,82,255,.30);}
-.aj-verrou svg{width:14px;height:14px;color:#8C52FF;flex:none;}
+.aj-verrou svg{width:13px;height:13px;color:#8C52FF;flex:none;}
 .aj-verrou span{font-size:11.5px;line-height:16px;color:rgba(248,250,252,.8);
-  flex:1;text-wrap:balance;}
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .aj-verrou b{color:#F8FAFC;font-weight:700;}
 .aj-verrou .fl{color:#00D4FF;font-weight:700;font-size:14px;}
 

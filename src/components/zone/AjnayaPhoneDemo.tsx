@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import s from './ajnayaPhone.module.css'
-import { typePourZone } from './ajnayaSavoir'
+import { typePourZone, reconnaitreLieu, replique, type Repli } from './ajnayaSavoir'
 import { materialiser, mouvementReduit } from './ajnayaPoussiere'
 
 /**
@@ -177,6 +177,23 @@ export default function AjnayaPhoneDemo({
   const [zoneCourante, setZoneCourante] = useState(zone)
   const [ecoute, setEcoute] = useState(false)
   const [immersif, setImmersif] = useState(false)
+  /* ⚠️ SA PHRASE ET SA ZONE SONT DEUX CHOSES, ET LES CONFONDRE FAISAIT AMATEUR.
+     Une seule variable, `zoneCourante`, faisait trois métiers : le nom du lieu,
+     la clé du savoir, et le contenu de son message. Il tapait « comment tu peux
+     savoir ? » et l'écran affichait, en toutes lettres, « Ajnaya sait où ça
+     paie autour de comment tu peux savoir ». Orly — sa vraie question —
+     disparaissait de l'écran. Chandler : « ça fait amateur ».
+     Désormais : `demande` porte SA phrase, `zoneCourante` ne bouge que si on
+     reconnaît un lieu, et `tour` force la conversation à se rejouer même quand
+     il repose deux fois la même question (React ignore une écriture identique —
+     c'est ce silence qui rendait le micro muet). */
+  const [demande, setDemande] = useState('')
+  const [horsZone, setHorsZone] = useState<Repli | null>(null)
+  const [tour, setTour] = useState(0)
+  /* Il vit HORS de `minuteurs.current` : voir le commentaire dans `envoyer()`. */
+  const sortieRef = useRef<number | null>(null)
+  /* L'œil de l'app n'est animé que quand elle parle. */
+  const [parle, setParle] = useState(false)
   const [invite, setInvite] = useState('Parle ou tape…')
   const declencheur = useRef<HTMLButtonElement | null>(null)
   const champRef = useRef<HTMLInputElement | null>(null)
@@ -267,6 +284,8 @@ export default function AjnayaPhoneDemo({
     return () => ro.disconnect()
   }, [poserEchelle])
 
+  useEffect(() => () => { if (sortieRef.current) window.clearTimeout(sortieRef.current) }, [])
+
   /* ══ LE PLEIN ÉCRAN ═══════════════════════════════════════════════════════
      Le téléphone quitte son châssis et prend tout l'écran. Le clavier monte,
      le champ vient se poser dessus. À partir de là, on est DANS l'application. */
@@ -302,6 +321,13 @@ export default function AjnayaPhoneDemo({
   const doigtLeve = useCallback(
     (e: React.PointerEvent) => {
       if (!immersifPossible || immersif) return
+      /* ⚠️ UN APPUI SUR UNE COMMANDE NE DOIT PAS OUVRIR LE PLEIN ÉCRAN.
+         Les portes de vente vivent DANS l'écran, qui porte ce geste. Mesuré sur
+         le vrai site : un appui sur « Essayer 3 jours — 0 € aujourd'hui »
+         ouvrait l'écran noir au lieu de la caisse. Le jour où les portes sont
+         branchées, ce serait pire : deux actions au même appui. */
+      const cible = e.target as HTMLElement | null
+      if (cible && cible.closest('button, a, [role="button"]')) return
       const d = appui.current
       const distance = Math.hypot(e.clientX - d.x, e.clientY - d.y)
       const duree = e.timeStamp - d.t
@@ -361,6 +387,24 @@ export default function AjnayaPhoneDemo({
     const surEchap = (e: KeyboardEvent) => { if (e.key === 'Escape') sortir() }
     window.addEventListener('keydown', surEchap)
 
+    /* ⚠️ LE CORPS FIGÉ PEUT PARTIR DANS LE CACHE DE RETOUR ARRIÈRE.
+       Le verrou est rendu UNIQUEMENT dans le nettoyage de cet effet. Or si le
+       chauffeur quitte la page depuis le plein écran — la porte WhatsApp, la
+       porte d'essai — Safari met la page telle quelle dans son cache mémoire :
+       corps en `position: fixed`, décalé de -Ypx. Il revient avec le bouton
+       Retour et retrouve une page bloquée qu'il ne peut plus faire défiler.
+       `pagehide` et pas `unload` : `unload` est ignoré par ce cache — s'en
+       servir revient à ne rien poser du tout. La restitution est écrite une
+       fois et appelée deux fois : elle doit donc être sans effet la seconde. */
+    const rendre = () => {
+      b.style.position = avant.position
+      b.style.top = avant.top
+      b.style.width = avant.width
+      b.style.overflow = avant.overflow
+    }
+    const surSortie = () => rendre()
+    window.addEventListener('pagehide', surSortie)
+
     /* Le focus vient APRÈS le passage en plein écran. Dans l'autre ordre, le
        clavier monte pendant que la mise en page bouge encore : c'est le saut. */
     const t = window.setTimeout(() => champRef.current?.focus(), 70)
@@ -370,11 +414,9 @@ export default function AjnayaPhoneDemo({
       vv?.removeEventListener('scroll', coller)
       window.removeEventListener('resize', coller)
       window.removeEventListener('keydown', surEchap)
+      window.removeEventListener('pagehide', surSortie)
       window.clearTimeout(t)
-      b.style.position = avant.position
-      b.style.top = avant.top
-      b.style.width = avant.width
-      b.style.overflow = avant.overflow
+      rendre()
       window.scrollTo(0, yPage)   // on lui rend sa place, à la ligne près
       app.style.transform = ''
       app.style.height = ''
@@ -442,11 +484,30 @@ export default function AjnayaPhoneDemo({
     [],
   )
 
-  /* Le fil descend à chaque ajout : sinon la dernière bulle naît hors champ. */
+  /* ══ LE FIL SE CALE SUR SA QUESTION, PAS SUR LE BAS ═══════════════════════
+     ⚠️ AVANT, ON COLLAIT EN BAS SANS CONDITION. Résultat mesuré : à l'arrivée de
+     la réponse, sa propre question était 476 px au-dessus du bord haut et il
+     lisait le milieu d'une phrase. Chandler : « le mockup n'ancre pas en haut ».
+     Maintenant on pose le HAUT de sa dernière question en haut du cadre : il
+     voit sa question, puis la réponse en dessous, dans l'ordre où ça s'écrit.
+     ⚠️ `immersif` est dans les dépendances, et ce n'est pas décoratif : passer
+     en plein écran DÉMONTE et REMONTE tout le téléphone (élément normal d'un
+     côté, portail de l'autre — React reconstruit). Sans cette dépendance, le
+     fil revenait au sommet et affichait la frise au lieu de la conversation. */
   useEffect(() => {
     const f = filRef.current
-    if (f) f.scrollTop = f.scrollHeight
-  }, [lignes, attente])
+    if (!f) return
+    const poser = () => {
+      const q = f.querySelectorAll<HTMLElement>('[data-ancre="question"]')
+      const derniere = q[q.length - 1]
+      f.scrollTop = derniere ? Math.max(0, derniere.offsetTop - 6) : f.scrollHeight
+    }
+    poser()
+    /* Le passage en plein écran change la hauteur du cadre APRÈS le rendu :
+       une image plus tard, la position calculée ne vaut plus rien. */
+    const id = window.requestAnimationFrame(poser)
+    return () => window.cancelAnimationFrame(id)
+  }, [lignes, attente, immersif])
 
   /* ══ LA CONVERSATION ══════════════════════════════════════════════════════ */
   useEffect(() => {
@@ -457,13 +518,47 @@ export default function AjnayaPhoneDemo({
     const hh = lireHorloge().hh
     const nom = (zoneCourante || '').trim() || 'ma zone'
 
-    setLignes([{ id: 'q', qui: 'toi', etiq: `Toi · ${hh}`, blocs: [{ html: `Ça donne quoi ${nom} ?` }] }])
+    /* SA phrase, telle qu'il l'a tapée. Plus jamais réécrite à sa place :
+       « Ça donne quoi comment tu peux savoir ? ? » — deux points
+       d'interrogation, français cassé, signé de son nom. */
+    const saQuestion = demande ? echapper(demande) : `Ça donne quoi ${nom} ?`
+    setLignes([{ id: 'q', qui: 'toi', etiq: `Toi · ${hh}`, blocs: [{ html: saQuestion }] }])
     /* ⚠️ Le chuchotement, pas un « … » ni un rouet : dans l'app il n'y a ni
        bulle d'attente, ni indicateur de chargement, jamais. */
     setAttente(true)
 
+    /* ══ CE N'EST PAS UN LIEU : elle répond, la zone ne bouge pas ══════════ */
+    if (horsZone) {
+      const r = horsZone
+      plusTard(620, () => {
+        setAttente(false)
+        setParle(true)
+        setLignes((l) => [
+          ...l,
+          { id: 'hv', qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${r.verdict}</b>` }] },
+        ])
+        plusTard(820, () => {
+          setLignes((l) => [
+            ...l,
+            {
+              id: 'hc',
+              qui: 'elle',
+              etiq: 'Ajnaya',
+              blocs: [{ html: r.corps, tag: { texte: r.etiq, couleur: 'c' } }],
+              /* ⚠️ AUCUNE PORTE APRÈS UNE INCOMPRÉHENSION. Vendre juste après
+                 avoir échoué à comprendre, c'est le geste qui sent l'amateur. */
+              sorties: r.porte,
+            },
+          ])
+          plusTard(400, () => setParle(false))
+        })
+      })
+      return () => { minuteurs.current.forEach(clearTimeout); minuteurs.current = [] }
+    }
+
     plusTard(620, () => {
       setAttente(false)
+      setParle(true)
       setLignes((l) => [
         ...l,
         { id: 'v', qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${t.verdict}</b>` }] },
@@ -488,11 +583,12 @@ export default function AjnayaPhoneDemo({
             ...l,
             { id: 'b', qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: t.bascule }], sorties: true },
           ])
+          plusTard(400, () => setParle(false))
         })
       })
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoneCourante])
+  }, [zoneCourante, tour])
 
   /* Le téléphone n'existe pas avant la question. Il ARRIVE — c'est le moment
      qui fait « ah ». UNE SEULE FOIS : le rejouer à chaque question deviendrait
@@ -504,12 +600,51 @@ export default function AjnayaPhoneDemo({
 
   useEffect(() => setZoneCourante(zone), [zone])
 
-  const envoyer = () => {
-    const v = saisie.trim()
-    if (!v) return
-    setZoneCourante(v)
-    setSaisie('')
-  }
+  /* ⚠️ ÉCHAPPER SA PHRASE AVANT DE L'AFFICHER. Les bulles sont rendues en HTML
+     brut (le savoir contient du <b> volontaire). Sans ça, un chauffeur qui tape
+     un chevron casse la bulle — et n'importe qui peut injecter du balisage. */
+  const echapper = (x: string) =>
+    x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  const envoyer = useCallback(
+    (texteBrut?: string) => {
+      const v = (texteBrut ?? saisie).trim()
+      if (!v) return
+      setSaisie('')
+      setDemande(v)
+      const lieu = reconnaitreLieu(v)
+      if (lieu) {
+        /* SEUL cas où la zone bouge. */
+        setHorsZone(null)
+        setZoneCourante(lieu)
+      } else {
+        /* La zone ne bouge pas. Elle répond quand même, sans réseau. */
+        setHorsZone(replique(v, nomLieu))
+      }
+      /* ⚠️ LE COMPTEUR EST OBLIGATOIRE. Sans lui, reposer la même question
+         n'écrit rien : React ignore une écriture identique, l'effet ne se
+         rejoue pas, et l'écran reste figé sans la moindre erreur. */
+      setTour((n) => n + 1)
+      /* ⚠️ ET ON RESSORT SUR LE SITE — c'est la demande de Chandler :
+         « lorsque l'on a fini d'écrire le mockup ne se remet pas sur le site,
+         or c'est le but ». Il sort tout de suite après avoir posé sa question,
+         et la réponse s'écrit sous ses yeux sur le téléphone reposé : il revient
+         sur la page AVEC quelque chose, pas les mains vides.
+
+         ⚠️ SURTOUT PAS `plusTard()` ICI, ET C'EST MESURÉ.
+         `plusTard` range son minuteur dans `minuteurs.current`, et l'effet de
+         conversation vide cette liste à chaque tour. Or `setTour` déclenche
+         justement cet effet : le minuteur de sortie était donc tué une
+         milliseconde après avoir été posé. Relevé : on restait en plein écran,
+         sans la moindre erreur. Ce minuteur-ci vit à part. */
+      if (immersif) {
+        if (sortieRef.current) window.clearTimeout(sortieRef.current)
+        sortieRef.current = window.setTimeout(() => setImmersif(false), 260)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [saisie, nomLieu, immersif],
+  )
 
   /* La dictée : le micro passe en écoute, l'égaliseur bat, la phrase s'écrit
      MOT À MOT à un rythme irrégulier — c'est ce rythme qui la rend crédible. */
@@ -527,8 +662,12 @@ export default function AjnayaPhoneDemo({
       } else {
         plusTard(500, () => {
           setEcoute(false)
-          setZoneCourante(nomLieu)
-          plusTard(400, () => setSaisie(''))
+          /* ⚠️ AVANT, ON ÉCRIVAIT `setZoneCourante(nomLieu)` — c'est-à-dire la
+             valeur QU'ELLE AVAIT DÉJÀ. React ignore une écriture identique,
+             donc la conversation ne se rejouait jamais : le micro dictait une
+             phrase et il ne se passait rien du tout. Zéro erreur, zéro trace.
+             Maintenant on passe par le même chemin que le clavier. */
+          envoyer(phrase.join(' '))
         })
       }
     }
@@ -728,7 +867,7 @@ export default function AjnayaPhoneDemo({
                 </button>
               )}
               <div className={s['aj-orbe']}>
-                <span className={s.anneau} />
+                <span className={parle ? `${s.anneau} ${s.respire}` : s.anneau} />
                 {/* L'œil d'Ajnaya — SVG repris trait pour trait d'AjnayaEyeAvatar. */}
                 <svg viewBox="0 0 100 100" aria-hidden="true">
                   <defs>
@@ -742,7 +881,9 @@ export default function AjnayaPhoneDemo({
                   <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="url(#ajScl)" />
                   <circle cx="50" cy="50" r="17" fill="url(#ajIris)" />
                   <circle cx="50" cy="50" r="17" fill="none" stroke="#3A1A80" strokeWidth="1.5" opacity=".4" />
-                  <circle cx="50" cy="50" r="6.5" fill="#050510" />
+                  {/* La pupille se resserre quand elle parle — comme dans l'app
+                      (AjnayaEyeAvatar.tsx : 5 en parole, 6,5 au calme). */}
+                  <circle cx="50" cy="50" r={parle ? 5 : 6.5} fill="#050510" />
                   <ellipse cx="44" cy="44" rx="4" ry="3.5" fill="#fff" opacity=".85" />
                   <circle cx="55" cy="55" r="1.8" fill="#fff" opacity=".5" />
                   <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="none" stroke="#2A3A52" strokeWidth="1.5" opacity=".6" />
@@ -756,12 +897,28 @@ export default function AjnayaPhoneDemo({
                 <div className={s['aj-nom']}>Ajnaya</div>
                 {/* ⚠️ L'app écrit « Prête, {prénom} ». Ici le visiteur n'a
                     pas de prénom connu : on garde l'état, sans la personne. */}
-                <div className={s['aj-etat']}><i />En ligne</div>
+                {/* ⚠️ LE NOM DE LA ZONE VIT ICI, ET C'EST STRUCTUREL.
+                    Il était dans la bande « ≈ 32 €/h » que Chandler fait retirer.
+                    Sans cette ligne, après quatre secondes de conversation, le
+                    lieu qu'il a demandé n'est plus écrit NULLE PART à l'écran —
+                    c'est exactement le défaut corrigé le 03/09, rouvert par un
+                    correctif juste. Elle est hors du fil : elle ne peut pas
+                    défiler, donc elle ne peut pas partir.
+                    Et le point dit l'état, comme dans l'app : violet quand elle
+                    cherche, cyan quand elle écoute, vert sinon. */}
+                <div className={s['aj-etat']}>
+                  <i style={{ background: ecoute ? '#00D4FF' : attente ? '#8C52FF' : '#10B981' }} />
+                  <b>{nomLieu}</b>
+                  <span className={s.pt}>·</span>
+                  <span>{savoir.etat}</span>
+                </div>
               </div>
               <button className={s['aj-aide']} type="button" aria-label="Aide">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm.9 15.1h-1.8v-1.8h1.8v1.8zm1.86-6.96l-.81.83c-.65.66-1.05 1.2-1.05 2.53h-1.8v-.45c0-.98.4-1.87 1.05-2.52l1.12-1.14c.33-.32.53-.77.53-1.27a1.8 1.8 0 10-3.6 0H8.4a3.6 3.6 0 117.2 0c0 .72-.29 1.37-.76 1.84z" /></svg>
               </button>
-              <div className={s['aj-pense']}><i /></div>
+              {/* Elle ne « pense » que quand elle pense. Ce trait qui courait
+                  en permanence volait la vedette à l'œil. */}
+              {attente && <div className={s['aj-pense']}><i /></div>}
             </header>
 
             {/* ══ LA RÉPONSE, ÉPINGLÉE HORS DU FIL ═══════════════════════════
@@ -776,39 +933,95 @@ export default function AjnayaPhoneDemo({
                 plus bouger. C'est ça, « mettre en exergue ce qu'on lui a demandé ».
                 Le fond doit être opaque : translucide, le texte qui défile
                 dessous se lirait au travers. */}
-            <div className={`${s['aj-banniere']} ${s.epinglee}`}>
-              <span className={s.lum} />
-              <span className={s.filet} />
-              <div className={s.gauche}>
-                <div className={s['aj-sous']}>
-                  <span className={s['aj-approx']}>≈</span>
-                  <span className={s['aj-montant']}>32</span>
-                  <span className={s['aj-unite']}>€/h</span>
-                </div>
-                <div className={s['aj-zone']}>
-                  Autour de {nomLieu} · {savoir.etat}
-                </div>
-              </div>
-              <div className={s['aj-droite']}>
-                <span className={s['aj-tampon']}>estimation · {heures.hh}</span>
-                <span className={s.chev}>›</span>
-              </div>
-            </div>
-
+            {/* ⚠️ LA BANDE « ≈ 32 €/h » EST RETIRÉE — Chandler, 04/09 :
+                « retire le 32 € par heure, la bande complète qui prend un espace
+                énorme ». Mesurée : 81 points de haut sur les 554 de l'écran,
+                soit 15 % de la surface pour un nombre identique à Roissy et à
+                Meaux. Rendus au fil : le contenu visible passe de 42 % à 55 %.
+                CE QU'ON GARDE DE SON ACQUIS : la garantie que la zone demandée
+                ne peut pas sortir du cadre. Elle vit maintenant dans l'en-tête,
+                sur la ligne d'état, hors du fil.
+                OÙ IRA LE VRAI CHIFFRE quand la Pieuvre parlera : sur cette même
+                ligne d'état, à droite. Un seul endroit, déjà en face du lieu. */}
             <div className={s['aj-fil']} ref={filRef} aria-live="polite">
+
+              <div className={s['aj-jour']}>{heures.jour}</div>
+
+              {lignes.map((l, li) => (
+                <div
+                  key={l.id}
+                  className={`${s['aj-ligne']} ${s[l.qui === 'toi' ? 'toi' : 'elle']}`}
+                  /* C'est SUR SA QUESTION que le fil se cale, pas sur le bas. */
+                  data-ancre={l.qui === 'toi' ? 'question' : undefined}
+                >
+                  <div className={s.etiq}>{l.etiq}</div>
+                  <div className={s['aj-bulle']}>
+                    {l.blocs.map((b, bi) =>
+                      l.qui === 'toi' ? (
+                        <div key={bi} className={s['aj-bloc']} dangerouslySetInnerHTML={{ __html: b.html }} />
+                      ) : (
+                        <div key={bi}>
+                          {b.tag && (
+                            <span className={`${s['aj-bloc']} ${s.tag} ${s[b.tag.couleur]}`}>{b.tag.texte}</span>
+                          )}
+                          <BlocPoussiere html={b.html} index={li * 3 + bi} />
+                        </div>
+                      ),
+                    )}
+                  </div>
+
+                  {/* ── LES DEUX PORTES — après le savoir, jamais avant.
+                         La dette est créée : on a donné un calcul et un geste. ── */}
+                  {l.sorties && (
+                    <>
+                      <button className={`${s['aj-chip']} ${s.essai}`} type="button"
+                              onPointerUp={(e) => e.stopPropagation()} onClick={onEssaiClick}>
+                        <span className={s.ico}>
+                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" /></svg>
+                        </span>
+                        <span className={s.lib}>Essayer 3 jours — 0 € aujourd&apos;hui</span>
+                        <span className={s.chev}>›</span>
+                      </button>
+                      <button className={`${s['aj-chip']} ${s.wa}`} type="button"
+                              onPointerUp={(e) => e.stopPropagation()} onClick={onWhatsAppClick}>
+                        <span className={s.ico}>
+                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
+                        </span>
+                        <span className={s.lib}>Poser ma question sur WhatsApp</span>
+                        <span className={s.chev}>›</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+
+              {attente && (
+                <p className={s['aj-chuchote']}>Ajnaya rassemble ce qu&rsquo;elle sait…</p>
+              )}
+
+              {/* ══ LA FRISE PASSE APRÈS LA RÉPONSE, ET C'EST UN CHOIX ═══════
+                  Elle était le PREMIER enfant du fil. Comme le fil se cale
+                  désormais sur SA question, elle défilait hors du cadre au bout
+                  d'une demi-seconde : gardée, raccourcie… et jamais vue.
+                  Ici elle arrive à sa place dans le récit : il pose sa question,
+                  il reçoit une vraie réponse de métier — gratuite — et ENSUITE
+                  seulement il voit ce que l'app sait faire en plus.
+                  On donne avant de montrer ce qui se paie. */}
               <div className={s['aj-frise']}>
+                {/* ⚠️ LE MOT « EXEMPLE » EST À L'ÉCRAN, PAS SEULEMENT EN COMMENTAIRE.
+                    Un commentaire juste au-dessus d'un écran qui ment est un faux
+                    témoin, pas une protection. Il reste à la même taille que les
+                    montants qu'il corrige : une mise en garde plus petite que ce
+                    qu'elle corrige ne corrige rien. */}
                 <div className={s.titre}>
                   Les zones rentables, heure par heure
-                  {/* ⚠️ LE MOT « EXEMPLE » EST À L'ÉCRAN, PAS SEULEMENT EN COMMENTAIRE.
-                      Le grincheux du 03/09 a eu raison : le fichier disait honnêtement
-                      « 31/44/52 sont des EXEMPLES », et l'écran ne le disait nulle part.
-                      Un commentaire juste au-dessus d'un écran qui ment est un faux témoin,
-                      pas une protection. */}
                   <span className={s['aj-exemple']}>exemple</span>
                 </div>
-                <p className={s['aj-promesse']}>
-                  Ajnaya sait où ça paie autour de <b>{nomLieu}</b> — <b>cette heure-ci, et les deux qui suivent</b>.
-                </p>
+                {/* ⚠️ LA PHRASE DE PROMESSE EST RETIRÉE, ET C'EST ELLE QUI FAISAIT
+                    AMATEUR. Elle disait « Ajnaya sait où ça paie autour de {lieu} »
+                    en recopiant tout ce qu'il avait tapé : « autour de comment tu
+                    peux savoir ». Le lieu est maintenant écrit une seule fois, dans
+                    l'en-tête, et il y est juste. 26 points de haut rendus au fil. */}
                 <div className={s['aj-piste']}>
                   <div className={s['aj-points']}>
                     <div className={`${s['aj-tiers']} ${s.d}`}><span className={`${s['aj-point']} ${s.on}`} /></div>
@@ -831,63 +1044,22 @@ export default function AjnayaPhoneDemo({
                 </div>
                 {/* ⚠️ CE VERROU N'EXISTE PAS DANS L'APP — voir l'en-tête. */}
                 <div className={s['aj-verrou']} onClick={onEssaiClick} role="button" tabIndex={0}
+                     onPointerUp={(e) => e.stopPropagation()}
                      onKeyDown={(e) => e.key === 'Enter' && onEssaiClick?.()}>
                   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7a5 5 0 00-10 0v2H5v13h14V9h-2zM9 7a3 3 0 016 0v2H9V7zm4 9.7V19h-2v-2.3a2 2 0 112 0z" /></svg>
                   {/* ⚠️ NE JAMAIS ÉCRIRE « réservées aux abonnés ». C'était faux deux fois :
                       ce verrou n'existe pas dans l'app, et les chiffres floutés derrière
                       ne sont mesurés nulle part. On vendait donc l'ouverture d'un vide.
                       Dans l'app, un point éteint veut dire « rien de mesuré », jamais « bloqué ». */}
-                  <span>Exemple. Dans l'app, ces heures viennent de <b>ce qui est mesuré</b>.</span>
+                  {/* ⚠️ UNE SEULE LIGNE — Chandler, 04/09 : « la petite bande avec
+                      le cadenas prend trop d'espace au lieu de tenir sur une ligne ».
+                      Elle en prenait trois : 32 points rendus au fil.
+                      Le mot « exemple » RESTE : c'est la seule mise en garde de
+                      l'écran, elle ne peut pas disparaître pour gagner de la place. */}
+                  <span>Exemple. Dans l&apos;app, c&apos;est <b>mesuré</b>.</span>
                   <span className={s.fl}>›</span>
                 </div>
               </div>
-
-              <div className={s['aj-jour']}>{heures.jour}</div>
-
-              {lignes.map((l, li) => (
-                <div key={l.id} className={`${s['aj-ligne']} ${s[l.qui === 'toi' ? 'toi' : 'elle']}`}>
-                  <div className={s.etiq}>{l.etiq}</div>
-                  <div className={s['aj-bulle']}>
-                    {l.blocs.map((b, bi) =>
-                      l.qui === 'toi' ? (
-                        <div key={bi} className={s['aj-bloc']} dangerouslySetInnerHTML={{ __html: b.html }} />
-                      ) : (
-                        <div key={bi}>
-                          {b.tag && (
-                            <span className={`${s['aj-bloc']} ${s.tag} ${s[b.tag.couleur]}`}>{b.tag.texte}</span>
-                          )}
-                          <BlocPoussiere html={b.html} index={li * 3 + bi} />
-                        </div>
-                      ),
-                    )}
-                  </div>
-
-                  {/* ── LES DEUX PORTES — après le savoir, jamais avant.
-                         La dette est créée : on a donné un calcul et un geste. ── */}
-                  {l.sorties && (
-                    <>
-                      <button className={`${s['aj-chip']} ${s.essai}`} type="button" onClick={onEssaiClick}>
-                        <span className={s.ico}>
-                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" /></svg>
-                        </span>
-                        <span className={s.lib}>Essayer 3 jours — 0 € aujourd&apos;hui</span>
-                        <span className={s.chev}>›</span>
-                      </button>
-                      <button className={`${s['aj-chip']} ${s.wa}`} type="button" onClick={onWhatsAppClick}>
-                        <span className={s.ico}>
-                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
-                        </span>
-                        <span className={s.lib}>Poser ma question sur WhatsApp</span>
-                        <span className={s.chev}>›</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              ))}
-
-              {attente && (
-                <p className={s['aj-chuchote']}>Ajnaya rassemble ce qu&rsquo;elle sait…</p>
-              )}
             </div>
 
             <footer className={s['aj-dock']}>
@@ -924,7 +1096,16 @@ export default function AjnayaPhoneDemo({
                   onChange={(e) => setSaisie(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && envoyer()}
                 />
-                <button className={s['aj-send']} type="button" aria-label="Envoyer" onClick={envoyer}>
+                <button
+                  className={s['aj-send']}
+                  type="button"
+                  aria-label="Envoyer"
+                  /* ⚠️ `stopPropagation` : ce bouton vit DANS l'écran, qui porte
+                     le geste d'ouverture du plein écran. Sans ça, un appui ferait
+                     partir DEUX actions — mesuré. */
+                  onPointerUp={(e) => e.stopPropagation()}
+                  onClick={() => envoyer()}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
                 </button>
               </div>
