@@ -25,7 +25,14 @@
      elle passe de 50 % à 20 % de l'écran. */
   align-items: end;
   justify-items: center;
-  padding-bottom: 20svh;
+  /* 04/09, Chandler : « enlève cet espace noir et rapproche la section verdict
+     au maximum du hero ». La notification descend au ras du bas. Le noir qui
+     restait derrière elle passe de 306 à 51 points.
+     Ce n'est pas dangereux pour l'effet : la vidéo, elle, garde ses 100svh
+     (`.cadre` est en `inset: 0`), et ce qui déborde au-dessus et en dessous
+     est du MÊME noir #060610 — le hero comme la première scène. Il n'y a donc
+     rien de neuf à voir pendant le zoom. */
+  padding-bottom: 6svh;
 }
 
 /* ══ LES DEUX FONDUS — c'est là que la coupure se voyait ═══════════════════

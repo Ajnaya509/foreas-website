@@ -82,7 +82,7 @@
    après la notification : la première scène n'a pas à en rajouter 82 de plus.
    Mesuré sur iPhone 16 : 612 pt de vide avant « LE VERDICT ». On en retire ce
    qui nous appartient ; le reste vient de la géométrie de la soudure. */
-.vente > .scene:first-child{padding-top:16px}
+.vente > .scene:first-child{padding-top:0}
 /* Un halo par MODULE, jamais par section (R1 : un seul foyer lumineux). */
 .vente .halo::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(60% 40% at 108% 8%,rgba(140,82,255,.10),transparent 70%)}
