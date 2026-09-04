@@ -671,11 +671,30 @@ export default function AjnayaPhoneDemo({
     [saisie, nomLieu, immersif],
   )
 
-  /* La dictée : le micro passe en écoute, l'égaliseur bat, la phrase s'écrit
-     MOT À MOT à un rythme irrégulier — c'est ce rythme qui la rend crédible. */
-  const dicter = () => {
-    if (ecoute) return
-    setEcoute(true)
+  /* ══ LA DICTÉE — ELLE ÉCOUTE VRAIMENT ════════════════════════════════════
+     Chandler, 04/09 : « il faut que whisper fonctionne ».
+
+     Le micro utilise la reconnaissance vocale DU TÉLÉPHONE
+     (`webkitSpeechRecognition` : la dictée d'Apple sur iPhone, celle de Google
+     sur Android). Ce que le chauffeur dit s'écrit dans le champ pendant qu'il
+     parle, puis part dans la conversation comme s'il l'avait tapé.
+
+     ⚠️ POURQUOI PAS UN APPEL À WHISPER. Il faudrait enregistrer le son,
+     l'envoyer à un serveur et attendre la réponse — donc une clé, une route,
+     un délai, et un écran qui ne marche plus quand le réseau tombe. Ce
+     composant n'a AUCUN appel réseau, et c'est ce qui le rend increvable : la
+     page vend même hors ligne. La dictée du système fait le même travail,
+     sur l'appareil, sans rien demander à personne.
+
+     ⚠️ ET IL Y A TOUJOURS UN REPLI. Navigateur sans l'API, micro refusé, rien
+     d'entendu, page servie en http : dans tous ces cas on rejoue la phrase
+     d'exemple mot à mot, comme avant. Un micro qui ne fait RIEN quand on
+     appuie dessus est pire qu'un micro qui simule — l'un se répare, l'autre
+     passe pour une panne du site. */
+  const ecouteRef = useRef<any>(null)
+
+  /** Le repli : la phrase d'exemple s'écrit mot à mot, à un rythme irrégulier. */
+  const dicterEnExemple = useCallback(() => {
     const phrase = `Et si je reste sur ${nomLieu} ?`.split(' ')
     let i = 0
     setSaisie('')
@@ -697,7 +716,66 @@ export default function AjnayaPhoneDemo({
       }
     }
     mot()
-  }
+  }, [nomLieu, plusTard, envoyer])
+
+  const dicter = useCallback(() => {
+    /* Un second appui coupe l'écoute et envoie ce qui a été compris. */
+    if (ecoute) {
+      try { ecouteRef.current?.stop() } catch { /* déjà arrêtée */ }
+      return
+    }
+
+    const Moteur =
+      typeof window !== 'undefined'
+        ? (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
+        : undefined
+
+    setEcoute(true)
+    setSaisie('')
+
+    if (!Moteur) { dicterEnExemple(); return }
+
+    let entendu = ''
+    let fini = false
+    const r = new Moteur()
+    ecouteRef.current = r
+    r.lang = 'fr-FR'
+    r.continuous = false
+    /* Les résultats intermédiaires écrivent AU FIL DE LA PAROLE. Sans eux, le
+       champ reste vide jusqu'à la fin et on croit que le micro est mort. */
+    r.interimResults = true
+    r.maxAlternatives = 1
+
+    r.onresult = (e: any) => {
+      let texte = ''
+      for (let i = 0; i < e.results.length; i++) texte += e.results[i][0].transcript
+      entendu = texte.trim()
+      setSaisie(entendu)
+    }
+    /* ⚠️ `onerror` NE FERME PAS L'ÉCOUTE : `onend` part TOUJOURS derrière lui.
+       Traiter la fin aux deux endroits enverrait le message deux fois. */
+    r.onerror = () => { /* micro refusé, silence, réseau : `onend` s'en charge */ }
+    r.onend = () => {
+      if (fini) return
+      fini = true
+      ecouteRef.current = null
+      setEcoute(false)
+      if (entendu) envoyer(entendu)
+      /* Rien entendu — micro refusé, silence, ou page en http : on montre au
+         moins ce que le geste FAIT, plutôt que de laisser un écran mort. */
+      else { setEcoute(true); dicterEnExemple() }
+    }
+
+    try {
+      r.start()
+    } catch {
+      ecouteRef.current = null
+      dicterEnExemple()
+    }
+  }, [ecoute, dicterEnExemple, envoyer])
+
+  /* Quitter la page pendant qu'elle écoute laisserait le micro allumé. */
+  useEffect(() => () => { try { ecouteRef.current?.stop() } catch { /* rien à couper */ } }, [])
 
   /* ⚠️ LA RACINE AUSSI. C'est l'étage que j'avais oublié, et il suffisait à tout
      casser : mesuré, elle faisait 681 px dans une boîte de 431.
@@ -903,22 +981,46 @@ export default function AjnayaPhoneDemo({
               )}
               <div className={s['aj-orbe']}>
                 <span className={parle ? `${s.anneau} ${s.respire}` : s.anneau} />
-                {/* ⚠️ 04/09 — IL N'Y A VOLONTAIREMENT AUCUNE ICÔNE ICI.
-                    L'orbe garde son fond et son anneau, rien de plus.
+                {/* LA MARQUE AJNAYA — deux traits, l'angle du slash FOREAS.
+                    ════════════════════════════════════════════════════════════
+                    Chandler a envoyé une capture de son app le 04/09 : l'icône
+                    d'Ajnaya, dans l'en-tête comme dans la barre d'onglets, est
+                    faite de DEUX TRAITS OBLIQUES arrondis, en dégradé
+                    cyan → violet.
 
-                    Il y a eu un œil, repris d'`AjnayaEyeAvatar` — le composant
-                    que l'app affiche en tête de l'écran Ajnaya. Chandler l'a
-                    fait retirer. J'ai ensuite posé le glyphe `sparkles`, celui
-                    que la barre d'onglets nomme dans
-                    `FOREAS-Clean/src/components/navigation/FoTabBar.tsx:54` —
-                    ce n'était pas non plus la bonne.
+                    ⚠️ ELLE N'EST PAS DANS LE DÉPÔT QUE JE PEUX LIRE.
+                    `FOREAS-Clean/src/components/navigation/FoTabBar.tsx:54`
+                    nomme encore le glyphe `sparkles` d'Ionicons, et l'écran
+                    Ajnaya affiche `AjnayaEyeAvatar` (un œil). Aucun des deux
+                    n'est ce qu'on voit sur sa capture : son téléphone tourne
+                    une version plus récente que la copie locale.
 
-                    Ce sont les deux SEULES marques Ajnaya que l'app dessine :
-                    l'œil dans l'écran, les étincelles dans l'onglet. Aucune
-                    autre n'existe dans le dépôt. Sa consigne : « si tu ne la
-                    trouves pas, mets rien, c'est mieux ». Une icône approchante
-                    serait une troisième marque — et trois marques pour une
-                    seule identité, c'est la garantie qu'aucune n'est la bonne. */}
+                    Donc ce tracé est REDESSINÉ d'après la capture, avec une
+                    seule chose qui ne soit pas à l'œil : l'inclinaison. C'est
+                    exactement celle du slash de la marque — 21,4609°, la valeur
+                    vérifiée dans `LogoForeas.tsx`, dont le commentaire raconte
+                    qu'une copie faite à la main était tombée à 14,93°, « six
+                    degrés et demi d'écart, visibles à l'œil nu ».
+
+                    ⚠️ À CONFIRMER PAR CHANDLER, et à remplacer par le vrai
+                    fichier le jour où le dépôt de l'app est à jour. */}
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="ajFond"><stop offset="0" stopColor="#0D1526" /><stop offset="1" stopColor="#080C18" /></radialGradient>
+                    <radialGradient id="ajHalo"><stop offset="0" stopColor="#00D4FF" stopOpacity=".26" /><stop offset=".6" stopColor="#6C3CE0" stopOpacity=".11" /><stop offset="1" stopColor="#6C3CE0" stopOpacity="0" /></radialGradient>
+                    <linearGradient id="ajTraits" x1="1" y1="0" x2="0" y2="1">
+                      <stop offset="0" stopColor="#6DEAFF" /><stop offset=".5" stopColor="#00D4FF" /><stop offset="1" stopColor="#8C52FF" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="48" fill="url(#ajFond)" />
+                  <circle cx="50" cy="50" r="36" fill="url(#ajHalo)" />
+                  {/* Les deux extrémités sont arrondies : sur la capture, les
+                      traits n'ont pas de coupe nette. */}
+                  <g stroke="url(#ajTraits)" strokeWidth="9.5" strokeLinecap="round" fill="none">
+                    <path d="M 71 20 L 49 76" />
+                    <path d="M 44.6 40 L 27.4 84" />
+                  </g>
+                </svg>
               </div>
               <div className={s['aj-id']}>
                 <div className={s['aj-nom']}>Ajnaya</div>
