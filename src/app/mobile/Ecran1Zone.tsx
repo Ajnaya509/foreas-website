@@ -44,12 +44,28 @@ import s from './mobile.module.css'
 
 const ZONES_SUGGEREES = ['Roissy CDG', 'Orly', 'La Défense', 'Bastille', 'Gare de Lyon']
 
+/* ⚠️ L'INVITE S'ÉCRIT TOUTE SEULE, ET CE N'EST PAS UN EFFET.
+   Un champ vide ne dit pas ce qu'on attend dedans. Un champ où un nom de lieu
+   s'écrit lettre à lettre le dit sans un mot de plus, et il montre en même
+   temps qu'on comprend les vrais noms du métier.
+   Un seul minuteur, et l'indice vit dans un `ref` : sur un `state`, chaque
+   rendu de la page le remettrait à zéro et l'écriture bégaierait. Piège déjà
+   payé sur le champ du téléphone. */
+const RYTHME_MS = 62
+const PAUSE_PLEIN = 22   // tours d'attente une fois le mot écrit
+const PAUSE_VIDE = 4
+
 export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
   const sectionRef = useRef<HTMLElement | null>(null)
   const champRef = useRef<HTMLInputElement | null>(null)
   const rappel = useRef<number | null>(null)
   const [zone, setZone] = useState('')
   const [validee, setValidee] = useState<string | null>(null)
+  const [invite, setInvite] = useState('')
+  const iLieu = useRef(0)
+  const iLettre = useRef(0)
+  const sens = useRef<1 | -1>(1)
+  const pause = useRef(6)
 
   /* ⚠️ ON MESURE LE BANDEAU DE CONSENTEMENT, ON NE DEVINE PAS SA HAUTEUR.
      Il fait 155 points quand le texte tient sur 4 lignes, 230 quand il en
@@ -126,6 +142,31 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
   /* Sans ça, quitter la page pendant les 450 ms tire un défilement sur la suivante. */
   useEffect(() => () => { if (rappel.current) window.clearTimeout(rappel.current) }, [])
 
+  /* L'invite qui s'écrit toute seule. S'arrête dès qu'il tape, et pour de bon
+     dès qu'il a donné sa zone. Coupée aussi si le mouvement est réduit : une
+     animation qui tourne en boucle est exactement ce que ce réglage refuse. */
+  useEffect(() => {
+    if (validee) return
+    if (typeof window !== 'undefined'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setInvite('Roissy, Bastille, Lyon…')
+      return
+    }
+    const battement = window.setInterval(() => {
+      if (pause.current > 0) { pause.current -= 1; return }
+      const mot = ZONES_SUGGEREES[iLieu.current]
+      iLettre.current += sens.current
+      if (iLettre.current >= mot.length) { sens.current = -1; pause.current = PAUSE_PLEIN }
+      else if (iLettre.current <= 0) {
+        sens.current = 1
+        pause.current = PAUSE_VIDE
+        iLieu.current = (iLieu.current + 1) % ZONES_SUGGEREES.length
+      }
+      setInvite(ZONES_SUGGEREES[iLieu.current].slice(0, Math.max(0, iLettre.current)))
+    }, RYTHME_MS)
+    return () => window.clearInterval(battement)
+  }, [validee])
+
   const valider = (valeur: string) => {
     const propre = valeur.trim()
     if (!propre) return
@@ -145,21 +186,65 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
       <div className={s.halos} aria-hidden="true" />
       <div className={s.grain} aria-hidden="true" />
 
-      {/* Le surtitre et la grande question ne servent QUE tant qu'on n'a pas
-          la zone. Une fois qu'elle est donnée, chaque ligne qu'ils gardent est
-          une ligne que le téléphone perd — et le téléphone est le seul
-          argument de cet écran. */}
-      {!validee && (
+      {/* ══ LE HAUT DE PAGE ══════════════════════════════════════════════════
+          Décision de Chandler, 04/09 : la copie forte passe EN HAUT, visible
+          dès le chargement, et le téléphone est là avec elle.
+
+          ⚠️ LE SOUS-TITRE A CHANGÉ, ET C'EST VOULU.
+          Chandler voulait garder « Une course arrive. Tu as huit secondes pour
+          dire oui ou non. » Mais cette phrase annonce une COURSE, alors que le
+          geste demandé juste en dessous est de donner une ZONE, et que la
+          réponse du téléphone porte sur la zone. Un sous-titre qui annonce
+          autre chose que ce que fait le bouton, c'est une promesse cassée dans
+          les trois secondes.
+          Celui-ci fait le pont : il explique le titre (rouler moins ET gagner
+          plus, c'est possible si c'est l'endroit qui compte) et il amène le
+          geste. C'est le mécanisme, pas une promesse chiffrée — donc rien à
+          vérifier, rien à démentir.
+          La phrase de la course n'est pas perdue : elle vit plus bas, à sa
+          place, au-dessus de la scène qui montre justement une course. */}
+      <div className={s.surtitre}>FOREAS DRIVER · POUR CHAUFFEURS VTC</div>
+
+      {!validee ? (
         <>
-          <div className={s.surtitre}>FOREAS DRIVER · POUR CHAUFFEURS VTC</div>
-          <h1 id="titre-zone" className={s.titreZone}>Tu roules où<br />ce soir&nbsp;?</h1>
+          <h1 id="titre-zone" className={s.titreHero}>
+            Gagne plus.<br />Roule moins.
+          </h1>
+          <p className={s.sousHero}>
+            Rouler plus ne paie plus. <b>Être au bon endroit, oui.</b>
+          </p>
         </>
+      ) : (
+        <div className={s.consigne}>
+          <div className={s.consigneTexte}>
+            <h1 id="titre-zone" className={s.consigneTitre}>Touche l&apos;écran.</h1>
+            <p className={s.consigneSous}>
+              Tu parles à Ajnaya <b>dans l&apos;app que tu auras</b>.
+            </p>
+          </div>
+          {/* Écrit court pour que « Touche l'écran. » tienne sur UNE ligne. */}
+          <button
+            type="button"
+            className={s.changer}
+            aria-label="Changer de zone"
+            onClick={() => setValidee(null)}
+          >
+            Changer
+          </button>
+        </div>
       )}
 
       {!validee && (
         <form className={s.champBloc} onSubmit={(e) => { e.preventDefault(); valider(zone) }}>
-          <label htmlFor="zone" className={s.champLabel}>Ta zone</label>
+          {/* Le libellé reste pour les lecteurs d'écran : l'invite qui s'écrit
+              toute seule ne se lit pas à voix haute, et un champ sans nom est
+              un champ inutilisable au clavier. */}
+          <label htmlFor="zone" className={s.champLabelCache}>Ta zone</label>
           <div className={s.champRangee}>
+            <svg className={s.loupe} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.6-3.6" />
+            </svg>
             <input
               id="zone"
               ref={champRef}
@@ -167,14 +252,21 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
               type="text"
               value={zone}
               onChange={(e) => setZone(e.target.value)}
-              placeholder="Roissy, Bastille, Lyon…"
+              /* L'invite s'écrit lettre à lettre. Elle dit ce qu'on attend
+                 dedans SANS une ligne de texte en plus, et elle montre au
+                 passage qu'on connaît les vrais noms du métier. */
+              placeholder={invite || ' '}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="words"
               enterKeyHint="go"
+              aria-describedby="aide-zone"
             />
             <button type="submit" className={s.champBouton} disabled={!zone.trim()}>Voir</button>
           </div>
+          <span id="aide-zone" className={s.champLabelCache}>
+            Tape le nom de ta zone, par exemple Roissy CDG ou Bastille.
+          </span>
 
           <div className={s.puces}>
             {ZONES_SUGGEREES.map((z) => (
@@ -184,67 +276,26 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
         </form>
       )}
 
+      {/* ══ LE TÉLÉPHONE EST LÀ DÈS LE CHARGEMENT ════════════════════════════
+          ⚠️ C'EST LE MÊME TÉLÉPHONE QUE `/ou-ca-paie`, PAS UNE COPIE. J'en
+          avais fabriqué un deuxième, plus pauvre : deux téléphones, c'est deux
+          vérités qui divergent au premier changement.
+          Tant qu'il n'a pas donné sa zone, Ajnaya n'invente rien : elle affiche
+          une seule phrase, la même que la barre au-dessus. */}
+      <div className={`${s.telBloc} ${validee ? '' : s.telBlocAttente}`}>
+        <AjnayaPhoneDemo
+          zone={validee ?? ''}
+          immersifPossible={!!validee}
+          ajusteHauteur
+          onEssaiClick={() => { window.location.href = '/tarifs3' }}
+          onWhatsAppClick={() => { window.location.href = lienWhatsApp }}
+        />
+      </div>
+
+      {/* Les portes n'apparaissent qu'APRÈS avoir donné quelque chose.
+          Vendre avant d'avoir répondu, c'est le geste qui sent l'amateur. */}
       {validee && (
         <>
-          {/* ══ LA CONSIGNE ═══════════════════════════════════════════════════
-              Deux lignes, et elles disent exactement ce qu'il doit faire et où
-              il se trouve. Ce qui était là avant — « Tu roules à Roissy CDG ? »
-              en gros, puis « Elle répond tout de suite. Tu écris, c'est tout. »
-              en bas — coûtait 145 points de haut pour ne rien demander.
-              La zone n'a pas besoin d'être répétée : elle est écrite DANS le
-              téléphone, deux centimètres plus bas (« Autour de Roissy CDG »). */}
-          <div className={s.consigne}>
-            <div className={s.consigneTexte}>
-              <h1 id="titre-zone" className={s.consigneTitre}>Touche l&apos;écran.</h1>
-              <p className={s.consigneSous}>
-                Tu parles à Ajnaya <b>dans l&apos;app que tu auras</b>.
-              </p>
-            </div>
-            {/* Écrit court pour que « Touche l'écran. » tienne sur UNE ligne :
-                sur deux, le titre volait 32 points au téléphone. Le nom complet
-                reste dans l'étiquette lue par les lecteurs d'écran. */}
-            <button
-              type="button"
-              className={s.changer}
-              aria-label="Changer de zone"
-              onClick={() => setValidee(null)}
-            >
-              Changer
-            </button>
-          </div>
-
-          <div className={s.telBloc}>
-            {/* ⚠️ C'EST LE MÊME TÉLÉPHONE QUE `/ou-ca-paie`, PAS UNE COPIE.
-                J'en avais fabriqué un deuxième, plus pauvre : orbe perdue,
-                traînées perdues, onde vocale perdue, cinq couches de fond
-                réduites à une. Deux téléphones, c'est deux vérités qui
-                divergent au premier changement. Il n'y en a qu'un.
-                `immersifPossible` est la seule différence : ici on écrit
-                dedans, sur `/ou-ca-paie` on le regarde jouer. */}
-            {/* ⚠️ LES DEUX MAINS SONT PASSÉES, ET ELLES NE L'ÉTAIENT PAS.
-                Mesuré le 03/09 : `onEssaiClick` et `onWhatsAppClick` valaient
-                `undefined` ici, alors que les deux autres pages du site les
-                branchent. Les trois portes DANS le téléphone — « Essayer 3 jours
-                — 0 € aujourd'hui », « Poser ma question sur WhatsApp » et le
-                cadenas — ne faisaient donc rien du tout. Pire : l'appui était
-                détourné et ouvrait le plein écran noir à la place.
-                C'est le défaut que les cinq jurés ont cité en premier, tous. */}
-            <AjnayaPhoneDemo
-              zone={validee}
-              immersifPossible
-              ajusteHauteur
-              onEssaiClick={() => { window.location.href = '/tarifs3' }}
-              onWhatsAppClick={() => { window.location.href = lienWhatsApp }}
-            />
-          </div>
-
-          {/* ⚠️ DEUX PORTES, PAS UNE. Il n'y en avait qu'une, et elle envoyait
-              hors du site avant qu'il ait vu un prix. Elles sont hors du fil,
-              donc toujours à l'écran, et le prix est écrit dessous : le jury a
-              relevé qu'aucun montant n'apparaissait sur cet écran.
-              ⚠️ « Sans compte » et non « sans carte » : le garde-fou du dépôt
-              (scripts/verifier-canon.mjs) interdit la seconde formule, et il
-              arrête la fabrication AVANT que Next démarre. */}
           <div className={s.portes}>
             <a className={s.porteEssai} href="/tarifs3">Essayer 3 jours — 0 €</a>
             <a className={s.porteWa} href={lienWhatsApp}>Parler à Ajnaya</a>

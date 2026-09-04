@@ -490,3 +490,68 @@
   .porteWa { font-size: 15px; }
   .sousPortes { font-size: 11px; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE HAUT DE PAGE — la copie forte, dès le chargement
+   ═══════════════════════════════════════════════════════════════════════════
+   Budget de hauteur, mesuré sur iPhone 16 (647 points visibles dans Safari) :
+     18 rembourrage · 22 surtitre · 78 titre · 42 sous-titre · 70 barre ·
+     52 puces · 83 bas de page avec le bandeau  =  365
+   Il reste 282 points pour le téléphone. C'est peu, et c'est assez : on y voit
+   la découpe de l'écran, l'œil, « Ajnaya · En ligne » et sa phrase. Le but de
+   cet état n'est pas de faire lire une conversation — c'est de faire
+   comprendre, sans un mot de plus, qu'il y a quelqu'un derrière la barre.
+   Dès qu'il donne sa zone, le titre et la barre s'effacent et le téléphone
+   récupère les 200 points qu'ils occupaient. */
+
+.titreHero {
+  position: relative; z-index: 3; flex: none;
+  font-family: var(--font-genos), system-ui, sans-serif;
+  font-size: 42px; font-weight: 900; letter-spacing: -2px; line-height: .93;
+  color: #F8FAFC; margin: 8px 0 0;
+}
+.sousHero {
+  position: relative; z-index: 3; flex: none;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 15.5px; line-height: 21px; color: rgba(248,250,252,.62);
+  margin: 10px 0 0; max-width: 330px;
+}
+.sousHero b { color: #F8FAFC; font-weight: 700; }
+
+/* La barre façon moteur de recherche : une loupe, un champ, un bouton.
+   ⚠️ 17 px dans le champ. En dessous de 16, iOS zoome tout seul au premier
+   appui et casse la mise en page — et on ne corrige JAMAIS ça avec
+   `user-scalable=no` : ça interdirait d'agrandir le texte, que la charte
+   exige jusqu'à 200 %. */
+.champBloc { flex: none; }
+.champRangee { position: relative; }
+.loupe {
+  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  width: 19px; height: 19px; color: rgba(248,250,252,.38);
+  pointer-events: none; z-index: 1;
+}
+.champRangee .champ { padding-left: 44px; padding-right: 84px; }
+.champRangee .champBouton {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  height: 46px; padding: 0 18px; font-size: 18px;
+}
+.champRangee .champBouton:not(:disabled):active { transform: translateY(-50%) scale(.96); }
+
+/* Le libellé existe pour les lecteurs d'écran, pas pour l'œil : l'invite qui
+   s'écrit toute seule dit déjà ce qu'on attend, et une ligne de plus coûterait
+   20 points au téléphone. On ne met JAMAIS `display: none` — ça le retirerait
+   aussi des lecteurs d'écran, et le champ n'aurait plus de nom. */
+.champLabelCache {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* En attente : le téléphone n'a pas encore gagné sa place. Il prend ce qui
+   reste, jamais moins de 190 points — en dessous on ne verrait plus l'œil. */
+.telBlocAttente { min-height: 190px; }
+
+@media (max-width: 360px) {
+  .titreHero { font-size: 37px; }
+  .sousHero { font-size: 14.5px; line-height: 20px; }
+}

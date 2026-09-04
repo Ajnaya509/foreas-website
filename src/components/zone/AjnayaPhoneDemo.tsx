@@ -518,6 +518,27 @@ export default function AjnayaPhoneDemo({
     const hh = lireHorloge().hh
     const nom = (zoneCourante || '').trim() || 'ma zone'
 
+    /* ══ AVANT LA ZONE : ELLE ATTEND, ELLE NE JOUE PAS ════════════════════
+       Chandler, 04/09 : le téléphone doit être visible DÈS LE CHARGEMENT.
+       Mais jouer la conversation avec « ta zone » à la place d'un lieu, ce
+       serait afficher « Ça donne quoi ta zone ? » — une question que personne
+       n'a posée, signée de son nom. On montre donc Ajnaya prête, et une seule
+       phrase qui dit exactement quoi faire. Elle reprend mot pour mot ce que
+       demande la barre de recherche juste au-dessus : deux endroits, une seule
+       consigne. Aucune porte ici — on ne vend rien avant d'avoir donné. */
+    if (!(zoneCourante || '').trim()) {
+      setAttente(false)
+      setLignes([
+        {
+          id: 'attente',
+          qui: 'elle',
+          etiq: 'Ajnaya',
+          blocs: [{ html: 'Dis-moi <b>où tu roules ce soir</b>. Je te dis ce que ça change.' }],
+        },
+      ])
+      return () => { minuteurs.current.forEach(clearTimeout); minuteurs.current = [] }
+    }
+
     /* SA phrase, telle qu'il l'a tapée. Plus jamais réécrite à sa place :
        « Ça donne quoi comment tu peux savoir ? ? » — deux points
        d'interrogation, français cassé, signé de son nom. */
@@ -845,7 +866,17 @@ export default function AjnayaPhoneDemo({
                style, `.aj-head` et `.aj-dock` en mode posé). Bonus : un doigt
                posé sur l'en-tête ou sur la barre traverse et fait défiler la
                PAGE — le visiteur n'est jamais prisonnier du téléphone. */
-            data-pose={immersifPossible && !immersif ? 'oui' : undefined}
+            /* ⚠️ `!immersif` SEUL, ET PLUS `immersifPossible && !immersif`.
+               Le téléphone est maintenant affiché AVANT que la zone soit
+               donnée, et là `immersifPossible` vaut false : la barre du bas
+               redevenait touchable. Un doigt sur « Parle ou tape… » aurait
+               donné le focus au faux champ — et sur iOS un champ en lecture
+               seule ouvre quand même le clavier, iOS fait défiler la page pour
+               le dégager, le téléphone sort de l'écran. C'est exactement le
+               « bug dégueulasse » du 03/09, qui serait revenu par la porte de
+               derrière. Hors plein écran, on n'écrit jamais dans la maquette :
+               la règle est la même sur toutes les pages. */
+            data-pose={!immersif ? 'oui' : undefined}
           >
             {/* ── LE FOND : CINQ couches, pas deux. Et les halos ne sont
                    PAS des radiaux — voir la feuille de style. ────────── */}
@@ -908,9 +939,20 @@ export default function AjnayaPhoneDemo({
                     cherche, cyan quand elle écoute, vert sinon. */}
                 <div className={s['aj-etat']}>
                   <i style={{ background: ecoute ? '#00D4FF' : attente ? '#8C52FF' : '#10B981' }} />
-                  <b>{nomLieu}</b>
-                  <span className={s.pt}>·</span>
-                  <span>{savoir.etat}</span>
+                  {/* ⚠️ AVANT QU'IL AIT DEMANDÉ, ON N'AFFICHE PAS D'ÉTAT DE ZONE.
+                      Sans zone, `nomLieu` retombe sur « ta zone » et le savoir
+                      sur son repli, « calme » — l'en-tête affichait donc
+                      « ta zone · calme », c'est-à-dire un état inventé sur un
+                      lieu qui n'existe pas. On dit « En ligne », qui est vrai. */}
+                  {(zoneCourante || '').trim() ? (
+                    <>
+                      <b>{nomLieu}</b>
+                      <span className={s.pt}>·</span>
+                      <span>{savoir.etat}</span>
+                    </>
+                  ) : (
+                    <span>En ligne</span>
+                  )}
                 </div>
               </div>
               <button className={s['aj-aide']} type="button" aria-label="Aide">
@@ -999,6 +1041,9 @@ export default function AjnayaPhoneDemo({
                 <p className={s['aj-chuchote']}>Ajnaya rassemble ce qu&rsquo;elle sait…</p>
               )}
 
+              {/* La frise ne montre ce qui se paie qu'APRÈS avoir donné. */}
+              {!!(zoneCourante || '').trim() && (
+              <>
               {/* ══ LA FRISE PASSE APRÈS LA RÉPONSE, ET C'EST UN CHOIX ═══════
                   Elle était le PREMIER enfant du fil. Comme le fil se cale
                   désormais sur SA question, elle défilait hors du cadre au bout
@@ -1060,6 +1105,8 @@ export default function AjnayaPhoneDemo({
                   <span className={s.fl}>›</span>
                 </div>
               </div>
+              </>
+              )}
             </div>
 
             <footer className={s['aj-dock']}>
