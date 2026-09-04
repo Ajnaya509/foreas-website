@@ -1,0 +1,340 @@
+/*
+ * LA PAGE DE VENTE — le style, porté depuis `public/page-vente.html`.
+ *
+ * ⚠️ CHAQUE RÈGLE EST DESCENDANTE DE `.vente`, ET CE N'EST PAS COSMÉTIQUE.
+ * Dans un module CSS, une classe est renommée, mais un sélecteur d'élément nu
+ * (`h2 {}`, `p {}`) reste GLOBAL. Écrit tel quel, ce fichier aurait repeint
+ * tous les titres et tous les paragraphes du site. Le conteneur `.vente` les
+ * enferme.
+ *
+ * ⚠️ LA MAQUETTE `public/page-vente.html` RESTE LA RÉFÉRENCE VISUELLE.
+ * Toute retouche se fait là-bas d'abord, puis se reporte ici.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOREAS — PAGE DE VENTE · maquette autonome
+   ═══════════════════════════════════════════════════════════════════════════
+   Ce fichier existe pour être ouvert, lu et corrigé au pixel AVANT d'aller
+   dans le site. Il ne dépend d'aucun serveur.
+
+   ⚠️ IL COMMENCE SOUS LE HERO. Le hero actuel de /mobile n'est pas ici : il ne
+   bouge pas, et le reproduire ici ferait diverger deux vérités.
+
+   LES RÈGLES QUI ONT COMMANDÉ CHAQUE VALEUR (DESIGN_SYSTEM_MASTER v4.2)
+   · fond du site #060610 — jamais le noir de l'app
+   · texte #F8FAFC — le blanc pur n'existe plus ; encre #05070F sur aplat cyan
+   · 1 · 1 · 1 par scène : un accent, une profondeur, un mouvement
+   · R10 : UNE vedette par page. Ici c'est S3, et rien d'autre ne bouge
+   · R2 : aucun chrome qui s'anime en boucle
+   · cibles ≥ 44 px · texte porteur ≥ 11 px · tampon 10,5 px / opacité 0,62
+   · Genos = ce qu'on NOMME · Inter = ce qu'on LIT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.vente{
+  --fond:#060610;
+  --encre:#F8FAFC;
+  --encre-2:rgba(248,250,252,.72);
+  --encre-3:rgba(248,250,252,.52);
+  --tampon:rgba(248,250,252,.62);
+  --cyan:#00D4FF;
+  --violet:#8C52FF;
+  --sur-accent:#05070F;
+  --verre:rgba(17,21,40,.88);
+  --verre-bas:rgba(17,21,40,.55);
+  --filet:rgba(255,255,255,.08);
+  --filet-fort:rgba(255,255,255,.18);
+  --ambre:#FFB547;
+  --ambre-filet:rgba(255,181,71,.50);
+  --ambre-texte:#F4D6AA;
+  --ambre-fond:rgba(255,181,71,.08);
+  --vert:#10B981;
+  --titre:'Genos',system-ui,sans-serif;
+  --lire:'Inter',system-ui,-apple-system,sans-serif;
+}
+
+.vente, .vente *{box-sizing:border-box}
+/* ⚠️ LES TAILLES SONT EN `rem`, PAS EN PIXELS, ET C'EST UNE RÈGLE DE LA CHARTE.
+   §25 : « toute mise en page tient avec le texte à 200 % ». Un texte écrit en
+   pixels ne bouge PAS quand le chauffeur agrandit la police de son téléphone :
+   il reste petit, et la règle n'est pas tenue — sans que rien ne le signale.
+   La racine, elle, reste au réglage du navigateur : c'est elle qui commande. */
+.vente{
+  -webkit-text-size-adjust:100%;
+  margin:0;background:var(--fond);color:var(--encre);
+  font-family:var(--lire);font-size:0.9375rem;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+/* La page est dessinée pour le téléphone. Sur grand écran elle se pose au
+   centre — elle ne s'étire jamais (§27 : le grand écran compose, il n'étire pas). */
+.vente{max-width:430px;margin:0 auto;background:var(--fond);
+  position:relative;overflow-x:hidden}
+
+/* ── LA GRAMMAIRE D'UNE SCÈNE ─────────────────────────────────────────────
+   Chaque section est visiblement une scène : un filet d'un pixel la sépare de
+   la précédente. C'est ce qui donne le rythme au document de référence. */
+.vente .scene{padding:76px 20px;border-top:1px solid var(--filet);position:relative}
+.vente .scene:first-child{border-top:0}
+/* ⚠️ ET LE PREMIER ENFANT DE `.vente` AUSSI, quel qu'il soit. `:first-child`
+   ci-dessus ne suffit pas si une scène est précédée d'un commentaire rendu ou
+   d'un fragment : le filet réapparaîtrait pile à la jointure avec la vidéo. */
+.vente > :first-child{border-top:0}
+/* ⚠️ ET SON PADDING HAUT AUSSI. La soudure laisse déjà un demi-écran de noir
+   après la notification : la première scène n'a pas à en rajouter 82 de plus.
+   Mesuré sur iPhone 16 : 612 pt de vide avant « LE VERDICT ». On en retire ce
+   qui nous appartient ; le reste vient de la géométrie de la soudure. */
+.vente > .scene:first-child{padding-top:16px}
+/* Un halo par MODULE, jamais par section (R1 : un seul foyer lumineux). */
+.vente .halo::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(60% 40% at 108% 8%,rgba(140,82,255,.10),transparent 70%)}
+.vente .halo-g::before{background:radial-gradient(60% 40% at -12% 8%,rgba(0,212,255,.09),transparent 70%)}
+.vente .scene>*{position:relative;z-index:1}
+
+.vente .sur{font-family:var(--lire);font-size:0.625rem;font-weight:800;letter-spacing:.25em;
+  text-transform:uppercase;color:var(--cyan);margin:0 0 14px}
+.vente .sur-gris{color:var(--encre-3)}
+.vente h2{font-family:var(--titre);font-size:2.125rem;font-weight:800;letter-spacing:-1.2px;
+  line-height:1.02;margin:0;color:var(--encre);
+  /* Un titre ne doit jamais finir sur un mot seul. `balance` répartit les
+     lignes ; là où la coupure porte du sens, elle est écrite à la main. */
+  text-wrap:balance}
+.vente h3{font-family:var(--titre);font-size:1.375rem;font-weight:700;letter-spacing:-.5px;
+  margin:0 0 10px;color:var(--encre)}
+.vente p{margin:14px 0 0;color:var(--encre-2);font-size:0.9375rem;line-height:1.53}
+.vente p.grand{font-size:1rem;line-height:1.56}
+.vente b, .vente strong{color:var(--encre);font-weight:700}
+
+/* La gifle : un écran presque vide, un filet cyan à gauche du titre. */
+.vente .gifle{padding:82px 20px 68px}
+.vente .gifle h2{font-size:2.125rem;line-height:1.06;letter-spacing:-1.4px;
+  border-left:2px solid var(--cyan);padding-left:16px;margin-left:-18px}
+.vente .gifle p{max-width:330px}
+
+/* ── LE TAMPON D'HONNÊTETÉ ────────────────────────────────────────────────
+   Il est DANS la carte, jamais en bas de page. C'est la signature du document
+   que Chandler aime, et c'est ce qui le fait paraître professionnel. */
+.vente .tampon{font-size:0.6562rem;line-height:1.43;color:var(--tampon);margin-top:10px;
+  font-family:var(--lire)}
+
+/* ── LA CARTE ─────────────────────────────────────────────────────────────
+   Une seule matière de carte sur toute la page (R9 : jamais deux verres
+   empilés). La preuve claire, elle, n'est plus une carte dessinée : c'est la
+   capture d'écran elle-même. */
+.vente .carte-sombre{background:#0C0D19;border:1px solid var(--filet);border-radius:22px;
+  padding:18px;margin-top:22px}
+.vente .meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  font-size:0.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.vente .carte-sombre .meta{color:var(--encre-3)}
+/* ── LE CALCUL — la seule vedette de la page ─────────────────────────────── */
+.vente .calcul{margin-top:16px;font-variant-numeric:tabular-nums}
+.vente .calcul .l{display:flex;justify-content:space-between;gap:12px;
+  padding:7px 0;font-size:0.9062rem;color:var(--encre-2);
+  opacity:0;transform:translateY(6px)}
+.vente .calcul .l b{color:var(--encre);white-space:nowrap}
+.vente .calcul .t{border-top:1px solid var(--filet);margin-top:6px;padding-top:11px}
+.vente .joue .calcul .l{animation:monte 320ms cubic-bezier(.16,1,.3,1) both}
+.vente .joue .calcul .l:nth-child(1){animation-delay:60ms}
+.vente .joue .calcul .l:nth-child(2){animation-delay:190ms}
+.vente .joue .calcul .l:nth-child(3){animation-delay:320ms}
+.vente .joue .calcul .l:nth-child(4){animation-delay:470ms}
+.vente .joue .calcul .l:nth-child(5){animation-delay:600ms}
+@keyframes monte{to{opacity:1;transform:none}}
+
+.vente .verdict{display:flex;align-items:center;gap:10px;margin-top:16px}
+.vente .pastille{width:11px;height:11px;border-radius:6px;flex:none}
+.vente .pastille.non{background:#FF4D4D}
+.vente .pastille.oui{background:var(--vert)}
+.vente .verdict .mot{font-family:var(--titre);font-size:1.75rem;font-weight:800;
+  letter-spacing:-.4px;line-height:1}
+.vente .raison{font-size:0.9062rem;line-height:1.45;color:var(--encre-2);margin-top:8px}
+
+/* la phrase qui porte un module — jamais un titre, jamais un bouton */
+.vente .porte{margin-top:22px;font-size:1.0312rem;line-height:1.56;color:var(--encre);
+  font-weight:600;border-left:2px solid var(--violet);padding-left:14px}
+
+/* ── LES PILULES DE PREUVE ───────────────────────────────────────────────── */
+.vente .pilules{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.vente .pilule{font-size:0.6875rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:6px 12px;border-radius:999px;border:1px solid var(--filet-fort);
+  color:var(--encre-2)}
+.vente .pilule.test{border-color:var(--ambre-filet);color:#ffd394}
+
+/* ── L'ENCADRÉ D'HONNÊTETÉ — filet ambre à gauche ────────────────────────
+   C'est la signature visuelle de l'honnêteté dans le document de référence. */
+.vente .franc{border-left:3px solid var(--ambre);background:var(--ambre-fond);
+  border-radius:0 12px 12px 0;padding:13px 15px;margin-top:16px;
+  font-size:0.875rem;line-height:1.45;color:var(--ambre-texte)}
+
+/* ── LA BASCULE À DEUX CHOIX ─────────────────────────────────────────────── */
+.vente .bascule{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;
+  background:#090B13;border:1px solid var(--filet);border-radius:14px;margin-top:20px}
+.vente .bascule button{min-height:44px;border:0;border-radius:10px;background:transparent;
+  color:var(--encre-2);font-family:var(--titre);font-size:1.125rem;font-weight:700;
+  cursor:pointer}
+.vente .bascule button[aria-selected="true"], .vente .bascule button[aria-pressed="true"]{
+  background:rgba(248,250,252,.96);color:#05070f}
+.vente .bascule button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+.vente .pas{counter-reset:p;margin:18px 0 0;padding:0;list-style:none}
+.vente .pas li{counter-increment:p;display:grid;grid-template-columns:30px 1fr;gap:12px;
+  align-items:start;min-height:46px;font-size:0.9062rem;line-height:1.45;
+  color:var(--encre-2);padding:7px 0}
+.vente .pas li::before{content:counter(p);display:flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:15px;border:1px solid rgba(0,212,255,.40);
+  color:var(--cyan);font-size:0.7812rem;font-weight:700}
+
+/* ── LA LISTE NUMÉROTÉE 01 / 02 / 03 ─────────────────────────────────────── */
+.vente .faits{margin-top:20px}
+.vente .faits .f{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:16px 0;
+  border-top:1px solid var(--filet)}
+.vente .faits .f:first-child{border-top:0}
+.vente .faits .n{color:var(--cyan);font-size:0.8125rem;font-weight:700;
+  font-variant-numeric:tabular-nums}
+.vente .faits .f h4{margin:0 0 4px;font-size:0.9375rem;font-weight:700;color:var(--encre)}
+.vente .faits .f p{margin:0;font-size:0.875rem;line-height:1.43}
+
+/* ── CE QUE L'ÉCRAN DIT / CE QU'IL NE DIT PAS ─────────────────────────────
+   Deux lignes sous la vraie capture. Le trou est l'argument : on le montre,
+   on ne le raconte pas. */
+.vente .manque{margin-top:18px;border-top:1px solid var(--filet)}
+.vente .manque p{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+  flex-wrap:wrap;margin:0;padding:13px 0;border-bottom:1px solid var(--filet)}
+.vente .manque span{font-size:0.8438rem;color:var(--encre-3);flex:none}
+.vente .manque b{font-family:var(--titre);font-size:1.25rem;font-weight:800;
+  letter-spacing:-.4px;text-align:right;margin-left:auto;color:var(--encre)}
+.vente .manque b.creux{color:var(--ambre)}
+.vente .manque p.pile{display:block}
+.vente .manque p.pile b{display:block;text-align:left;margin-top:7px;font-size:1.375rem}
+
+/* ── LE DOCUMENT ──────────────────────────────────────────────────────────
+   Une feuille A4 affichée en entier fait une page et demie sur un téléphone :
+   le chauffeur scrolle un document complet avant d'atteindre le bouton. On
+   montre donc le haut — assez pour reconnaître un vrai document — et on lui
+   laisse la porte pour l'ouvrir en grand. Le fondu dit « ça continue ». */
+.vente .doc{margin:22px 0 0}
+.vente .doc .cadre{position:relative;display:block;overflow:hidden;border-radius:14px;
+  border:1px solid var(--filet)}
+.vente .doc img{width:100%;height:clamp(300px,52svh,440px);object-fit:cover;
+  object-position:top center;display:block}
+.vente .doc .cadre::after{content:'';position:absolute;inset:auto 0 0 0;height:110px;
+  pointer-events:none;
+  background:linear-gradient(to bottom,rgba(255,255,255,0) 0%,#ffffff 92%)}
+
+/* ── LE CARROUSEL DE VERDICTS ────────────────────────────────────────────── */
+.vente .rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
+  margin:20px -20px 0;padding:0 20px 4px;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch}
+.vente .rail::-webkit-scrollbar{display:none}
+.vente .rail .clip{position:relative;flex:none;width:214px;aspect-ratio:1080/1920;
+  border-radius:18px;scroll-snap-align:center;background:#060610;overflow:hidden;
+  border:1px solid var(--filet);padding:0;-webkit-appearance:none;appearance:none;
+  cursor:pointer}
+.vente .rail video{width:100%;height:100%;display:block;object-fit:cover}
+.vente .lire{position:absolute;left:10px;bottom:10px;width:36px;height:36px;
+  border-radius:999px;background:rgba(6,6,16,.74);
+  border:1px solid rgba(255,255,255,.20);display:grid;place-items:center}
+.vente .lire::before{content:'';width:0;height:0;margin-left:3px;
+  border-left:9px solid var(--encre);
+  border-top:6px solid transparent;border-bottom:6px solid transparent}
+.vente .clip.joue .lire{display:none}
+.vente .aide-rail{font-size:0.7812rem;color:var(--encre-3);margin-top:10px}
+
+/* ── LES BOUTONS — cinq sur toute la page ────────────────────────────────── */
+.vente .cta{display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:54px;margin-top:24px;border-radius:16px;text-decoration:none;
+  background:var(--cyan);color:var(--sur-accent);
+  font-family:var(--titre);font-size:1.25rem;font-weight:800;letter-spacing:.2px}
+.vente .cta.violet{background:linear-gradient(135deg,#00D4FF 0%,#8C52FF 52%,#B494FF 100%);
+  color:#fff;box-shadow:0 0 24px rgba(140,82,255,.30)}
+.vente .cta:active{transform:scale(.985)}
+.vente .sortie{display:inline-flex;align-items:center;min-height:44px;margin-top:6px;
+  font-size:0.875rem;color:var(--encre-3);text-decoration:underline;
+  text-underline-offset:3px}
+/* le lien du module court : jamais un bouton — ni fond, ni halo, ni ombre */
+.vente .lien{display:inline-flex;align-items:center;min-height:44px;margin-top:12px;
+  font-size:0.9375rem;color:var(--encre-2);text-decoration:underline;
+  text-underline-offset:3px}
+.vente a:focus-visible, .vente button:focus-visible, .vente summary:focus-visible{
+  outline:2px solid var(--cyan);outline-offset:2px;border-radius:8px}
+
+/* ── LE MODULE COURT ─────────────────────────────────────────────────────── */
+.vente .court{padding:56px 20px;border-top:1px solid var(--filet)}
+.vente .court h2{font-size:1.75rem;letter-spacing:-.9px}
+.vente .court .preuve{margin-top:14px;padding-left:13px;border-left:1px solid var(--filet);
+  font-size:0.8438rem;line-height:1.43;color:var(--encre-3)}
+
+/* ── LES LIMITES ─────────────────────────────────────────────────────────── */
+.vente .moins{margin-top:22px}
+.vente .moins .m{display:grid;grid-template-columns:30px 1fr;gap:13px;padding:16px 0;
+  border-top:1px solid var(--filet)}
+.vente .moins .m:first-child{border-top:0}
+.vente .moins .rond{width:26px;height:26px;border-radius:14px;border:1px solid var(--ambre-filet);
+  color:var(--ambre);display:flex;align-items:center;justify-content:center;
+  font-size:0.9375rem;line-height:1}
+.vente .moins h4{margin:0 0 3px;font-size:0.9375rem;font-weight:700;color:var(--encre)}
+.vente .moins p{margin:0;font-size:0.875rem;line-height:1.43}
+.vente .fait-cyan{margin-top:22px;border:1px solid rgba(0,212,255,.26);
+  background:rgba(0,212,255,.06);border-radius:16px;padding:15px;
+  font-size:0.9062rem;line-height:1.52;color:var(--encre-2)}
+
+/* ── LE PRIX ─────────────────────────────────────────────────────────────── */
+.vente .prix-carte{margin-top:18px;border:1px solid var(--filet);border-radius:20px;
+  padding:20px;background:var(--verre-bas)}
+.vente .prix-nom{font-size:0.6875rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--encre-3)}
+.vente .prix-val{font-family:var(--titre);font-size:2.75rem;font-weight:800;letter-spacing:-1.8px;
+  line-height:1;margin-top:10px;font-variant-numeric:tabular-nums;
+  /* À 200 % de texte sur 320 px, « par mois » sortait du cadre et se
+     faisait couper. Le montant et son unité passent à la ligne. */
+  display:flex;flex-wrap:wrap;align-items:baseline;column-gap:0}
+.vente .prix-eco{margin-top:8px;font-size:0.875rem;font-weight:600;color:var(--cyan)}
+.vente .prix-per{font-family:var(--lire);font-size:0.9375rem;font-weight:500;color:var(--encre-3);
+  margin-left:8px;letter-spacing:0}
+.vente .chrono{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));
+  gap:14px;margin-top:22px;position:relative;padding-top:26px}
+.vente .chrono::before{content:'';position:absolute;top:6px;left:6px;right:6px;height:1px;
+  background:var(--filet)}
+.vente .chrono .pt{position:relative}
+.vente .chrono .pt::before{content:'';position:absolute;top:-26px;left:0;width:13px;height:13px;
+  border-radius:999px;background:var(--cyan);border:3px solid var(--fond)}
+.vente .chrono h4{margin:0 0 5px;font-size:0.9062rem;font-weight:700;color:var(--encre)}
+.vente .chrono p{margin:0;font-size:0.8438rem;line-height:1.45}
+
+/* ── LES QUESTIONS ───────────────────────────────────────────────────────── */
+.vente details{border-top:1px solid var(--filet)}
+.vente details summary{list-style:none;cursor:pointer;min-height:60px;display:flex;
+  align-items:center;gap:14px;font-size:0.9375rem;font-weight:600;color:var(--encre);
+  padding:14px 0}
+.vente details summary::-webkit-details-marker{display:none}
+.vente details summary::after{content:'+';margin-left:auto;width:32px;height:32px;flex:none;
+  border-radius:17px;border:1px solid var(--filet-fort);color:var(--cyan);
+  display:flex;align-items:center;justify-content:center;font-size:1.0625rem}
+.vente details[open] summary::after{content:'\2212'}
+.vente details p{margin:0 0 16px;padding-right:46px}
+
+/* ── LA FIN ──────────────────────────────────────────────────────────────── */
+.vente .orbe{width:92px;height:92px;border-radius:50%;border:1px solid rgba(0,212,255,.45);
+  position:relative;margin-bottom:26px}
+.vente .orbe::before{content:'';position:absolute;inset:13px;border-radius:50%;
+  border:1px solid rgba(140,82,255,.45)}
+.vente .orbe::after{content:'';position:absolute;left:50%;top:50%;width:12px;height:12px;
+  margin:-6px 0 0 -6px;border-radius:6px;background:var(--cyan);
+  box-shadow:0 0 24px rgba(0,212,255,.7)}
+.vente footer{padding:48px 20px 56px;border-top:1px solid var(--filet)}
+.vente footer .liens{display:grid;gap:2px;margin-top:20px;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr))}
+.vente footer a{display:flex;align-items:center;min-height:44px;font-size:0.875rem;
+  color:var(--encre-2);text-decoration:none}
+.vente footer .mention{margin-top:20px;font-size:0.7812rem;line-height:1.45;color:var(--encre-3)}
+
+/* ── PETITS ÉCRANS : la page tient à 320 px sans rien perdre ─────────────── */
+@media (max-width:359px){
+  .vente .scene{padding:60px 16px}.vente .court{padding:46px 16px}.vente .gifle{padding:68px 16px 56px}
+  .vente h2{font-size:1.8125rem}.vente .gifle h2{font-size:1.75rem}.vente .prix-val{font-size:2.375rem}
+  .vente .rail .clip{width:184px}
+}
+
+/* ── MOUVEMENT RÉDUIT : la page reste COMPLÈTE, rien ne disparaît ────────── */
+@media (prefers-reduced-motion:reduce){
+  .vente .calcul .l{opacity:1!important;transform:none!important;animation:none!important}
+  .vente, .vente *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}

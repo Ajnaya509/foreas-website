@@ -13,7 +13,50 @@
   background: #060610;
   overflow: hidden;
   display: grid;
-  place-items: center;
+  /* ⚠️ LA NOTIFICATION N'EST PLUS AU CENTRE, ET C'EST MESURÉ.
+     Centrée dans un écran plein, elle laissait un demi-écran de noir derrière
+     elle — 612 points sur iPhone 16 avant la première phrase de la vente. Le
+     visiteur croit que la page est finie et il ferme.
+
+     Elle descend donc au quatre-cinquièmes de la hauteur. L'effet ne change
+     pas d'un pixel : le cadre de la vidéo est `position:absolute; inset:0`,
+     il ne dépend pas de cette grille. Ce qui bouge, c'est seulement l'endroit
+     où la vraie interface se pose sur le noir — et le noir qui reste après
+     elle passe de 50 % à 20 % de l'écran. */
+  align-items: end;
+  justify-items: center;
+  padding-bottom: 20svh;
+}
+
+/* ══ LES DEUX FONDUS — c'est là que la coupure se voyait ═══════════════════
+   Mesuré sur iPhone 16 le 04/09 : le hero s'arrête, l'image démarre, et la
+   frontière est une ligne franche en travers de l'écran. Idem en bas, où le
+   bord du cadre touche directement la première phrase de la vente.
+
+   Deux dégradés du fond de la page vers le transparent effacent les deux
+   bords : l'image semble naître du noir et y retourner. Ils sont AU-DESSUS de
+   la vidéo (z-index 1) et EN DESSOUS de la notification (z-index 2), sinon ils
+   la voileraient.
+
+   ⚠️ La hauteur est en `svh`, pas en pixels : un fondu de 96 px couvre un
+   sixième d'un iPhone SE et un neuvième d'un Pro Max — la même valeur ne fait
+   pas le même effet. */
+.soudure::before,
+.soudure::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 11svh;
+  z-index: 1;
+  pointer-events: none;
+}
+.soudure::before {
+  top: 0;
+  background: linear-gradient(to bottom, #060610 0%, rgba(6, 6, 16, 0) 100%);
+}
+.soudure::after {
+  bottom: 0;
+  background: linear-gradient(to top, #060610 0%, rgba(6, 6, 16, 0) 100%);
 }
 
 /* ══ LE CADRE DE LA VIDÉO ══════════════════════════════════════════════════

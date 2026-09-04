@@ -1,5 +1,5 @@
 import { NextResponse, after, type NextRequest } from 'next/server'
-import { buildWAMessage, type WhatsAppSection } from '@/lib/whatsappLink'
+import { buildWAMessage, type WhatsAppSection, type FonctionMobile } from '@/lib/whatsappLink'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { identiteDepuisBadge, reserverLaParole } from '@/lib/escalier'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
@@ -105,7 +105,37 @@ const SECTIONS: readonly WhatsAppSection[] = [
   'final',
   'experience_phone',
   'panier_abandonne',
+  'mobile_fonction',
+  'avant_paiement',
 ]
+
+/**
+ * Les onze fonctions que `mobile_fonction` peut désigner, via `f`.
+ *
+ * ⚠️ MÊME PIÈGE QUE LA LISTE AU-DESSUS, UN CRAN PLUS BAS. Déclarer la section
+ * sans lire `f` ne répare rien : les onze liens produiraient alors la même
+ * phrase générique, et on aurait cru avoir corrigé. La section dit QUI répond,
+ * `f` dit DE QUOI. Il faut les deux.
+ */
+const FONCTIONS: readonly FonctionMobile[] = [
+  'site',
+  'compta',
+  'objectif',
+  'zones',
+  'fil',
+  'ajnaya',
+  'regles',
+  'reglage',
+  'navigation',
+  'serie',
+  'parrainage',
+]
+
+function fonctionValide(v: string | null): FonctionMobile | undefined {
+  if ((FONCTIONS as readonly string[]).includes(v ?? '')) return v as FonctionMobile
+  if (v) console.warn(`[wa] fonction inconnue « ${v.slice(0, 40)} » — message générique`)
+  return undefined
+}
 
 function sectionValide(v: string | null): WhatsAppSection {
   if ((SECTIONS as readonly string[]).includes(v ?? '')) return v as WhatsAppSection
@@ -201,6 +231,7 @@ export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams
 
   const section = sectionValide(q.get('s'))
+  const fonction = fonctionValide(q.get('f'))
   const zone = texteAffichable(q.get('z'), 32)
   const creneau = texteAffichable(q.get('c'), 32)
   /**
@@ -224,6 +255,7 @@ export async function GET(request: NextRequest) {
     zone,
     slot: creneau,
     amount,
+    fonction,
   })
   const destination = `https://wa.me/${NUMERO}?text=${encodeURIComponent(message)}`
 

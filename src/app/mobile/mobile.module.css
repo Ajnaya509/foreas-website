@@ -587,8 +587,40 @@
    bandeau flotte maintenant au-dessus de la section SUIVANTE. La garder
    coûterait 69 points de vide pour ne rien protéger. */
 .ecran1Attente {
-  height: calc(100svh - 150px);
+  /* 04/09, Chandler : « rapproche du haut la barre de recherche, qu'au
+     chargement on voie le début de la prochaine section ». On découpe 232
+     points au lieu de 150 : le bandeau de consentement en couvre 69, il en
+     reste 163 réellement visibles de la vidéo — assez pour qu'on comprenne
+     qu'il y a une suite sans avoir à la chercher. */
+  /* ⚠️ LA DÉCOUPE EST PROPORTIONNELLE, PAS FIXE.
+     232 points retirés d'un iPhone 16 (852) laissent 620 pour un contenu qui
+     en demande 526 : ça passe. Les mêmes 232 retirés d'un SE (667) n'en
+     laissent que 435 — et `.ecran1` a `overflow: hidden`, donc la ligne de
+     prix disparaîtrait sans que rien ne le signale. C'est exactement le
+     défaut du 03/09, corrigé une fois déjà. */
+  height: calc(100svh - clamp(140px, 27svh, 232px));
   padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+}
+
+/* ══ LA COUTURE — une barre violet · cyan · violet ═════════════════════════
+   Demandée par Chandler le 04/09. Elle ne cache pas la jointure : elle
+   l'assume. Deux blocs du même noir se touchent sans elle, et la séparation
+   se lit comme un accident ; avec elle, c'est un choix.
+   Deux pixels, jamais plus : au-delà, ce n'est plus une couture, c'est un
+   bandeau — et la charte n'autorise qu'un seul accent par scène (R1). */
+.ecran1Attente::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(140, 82, 255, 0) 0%,
+    #8C52FF 18%,
+    #00D4FF 50%,
+    #8C52FF 82%,
+    rgba(140, 82, 255, 0) 100%);
 }
 
 .ecran1Attente .titreHero {
@@ -609,9 +641,13 @@
   color: rgba(248,250,252,.68);
 }
 /* Le plus grand écart de l'écran est celui qui isole LA seule chose à faire. */
-.ecran1Attente .champBloc { margin-top: clamp(30px, 13vh, 110px); }
+/* ⚠️ CET ÉCART A ÉTÉ RÉDUIT LE 04/09, ET C'EST LE PLUS SENSIBLE DE L'ÉCRAN.
+   Il isole LA seule chose à faire. Trop court, la barre se noie dans le titre ;
+   trop long, elle descend hors de vue et l'écran paraît vide.
+   Mesuré : 105 points avant, 58 après — la barre remonte d'autant. */
+.ecran1Attente .champBloc { margin-top: clamp(22px, 7vh, 58px); }
 .ecran1Attente .explique {
-  margin-top: clamp(24px, 11vh, 92px);
+  margin-top: clamp(20px, 6.2vh, 52px);
   font-size: 16px; line-height: 24px; max-width: 350px;
 }
 .ecran1Attente .rassure { margin-top: clamp(14px, 3.4vh, 28px); font-size: 13px; }

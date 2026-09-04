@@ -54,7 +54,15 @@ const AjnayaWidget = dynamic(() => import('@/components/AjnayaWidget'))
  * qui n'ont rien demandé, et personne ne s'en apercevrait avant de constater
  * qu'Ajnaya a disparu d'une page où elle était utile.
  */
-const PAGES_AVEC_LEUR_PROPRE_PORTE = new Set(['/'])
+const PAGES_AVEC_LEUR_PROPRE_PORTE = new Set([
+  '/',
+  /* 04/09/2026 — l'accueil mobile porte CINQ boutons vers Ajnaya et douze liens
+     de plus. Une bulle flottante par-dessus n'ajouterait pas une porte : elle
+     recouvrirait celles qui existent, et sur téléphone elle tombe pile sur le
+     bouton de bas de section. Décision de Chandler : « le widget Ajnaya doit
+     disparaître. » */
+  '/mobile',
+])
 
 /**
  * Les pages où le widget ne doit s'ouvrir SOUS AUCUNE FORME — pas parce qu'une
