@@ -248,7 +248,11 @@ export default function AjnayaPhoneDemo({
         const restant = fenetre.clientHeight - hautEcran
         /* La hauteur naturelle reste le plafond : sur un grand écran, le
            téléphone tient en entier et on ne l'étire surtout pas. */
-        const naturelle = tel.offsetHeight * 0.87439
+        /* 0,8920517 = la part de l'écran dans le châssis, LA MÊME que le
+           `height` de `.ecran` en CSS. Les deux valeurs doivent bouger
+           ensemble : si l'une change sans l'autre, l'écran se décale du cadre
+           et le décalage ne se voit qu'en bas, à quelques pixels près. */
+        const naturelle = tel.offsetHeight * 0.8920517
         const voulue = Math.max(HAUTEUR_ECRAN_MIN, Math.min(restant, naturelle))
         /* `floor` et non `round` : la hauteur du châssis est fractionnaire
            (698,77 px), donc le 6,221 % du bord haut l'est aussi. Arrondi au
@@ -899,37 +903,22 @@ export default function AjnayaPhoneDemo({
               )}
               <div className={s['aj-orbe']}>
                 <span className={parle ? `${s.anneau} ${s.respire}` : s.anneau} />
-                {/* ⚠️ CE N'EST PLUS UN ŒIL, C'EST L'ICÔNE DE L'APP.
-                    Chandler, 04/09 : « ajoute la véritable icône qu'il y a dans
-                    l'app dans l'onglet Ajnaya, qui remplace l'œil ».
+                {/* ⚠️ 04/09 — IL N'Y A VOLONTAIREMENT AUCUNE ICÔNE ICI.
+                    L'orbe garde son fond et son anneau, rien de plus.
 
-                    Elle est extraite du fichier de police que l'app charge
-                    vraiment — `Ionicons.ttf`, glyphe `sparkles` (0xF58C), celui
-                    que `FoTabBar.tsx` nomme à la ligne 54. Ce n'est donc pas un
-                    dessin qui ressemble : c'est le MÊME tracé, au point près.
-                    (Ionicons, licence MIT.)
+                    Il y a eu un œil, repris d'`AjnayaEyeAvatar` — le composant
+                    que l'app affiche en tête de l'écran Ajnaya. Chandler l'a
+                    fait retirer. J'ai ensuite posé le glyphe `sparkles`, celui
+                    que la barre d'onglets nomme dans
+                    `FOREAS-Clean/src/components/navigation/FoTabBar.tsx:54` —
+                    ce n'était pas non plus la bonne.
 
-                    ⚠️ L'AXE Y D'UNE POLICE MONTE, CELUI D'UN SVG DESCEND. Sans
-                    le `scale(1,-1)` ci-dessous, l'icône s'affiche à l'envers et
-                    hors du cadre — et comme elle reste symétrique de loin, on
-                    peut le rater. La translation de 448 remet le haut du glyphe
-                    (ascendante mesurée) sur le bord du cadre. */}
-                <svg viewBox="0 0 512 512" aria-hidden="true">
-                  <defs>
-                    <radialGradient id="ajFond"><stop offset="0" stopColor="#0D1526" /><stop offset="1" stopColor="#080C18" /></radialGradient>
-                    <radialGradient id="ajHalo"><stop offset="0" stopColor="#00D4FF" stopOpacity=".28" /><stop offset=".6" stopColor="#6C3CE0" stopOpacity=".12" /><stop offset="1" stopColor="#6C3CE0" stopOpacity="0" /></radialGradient>
-                    <linearGradient id="ajEtoiles" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0" stopColor="#6DEAFF" /><stop offset=".5" stopColor="#00D4FF" /><stop offset="1" stopColor="#8C52FF" />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="256" cy="256" r="246" fill="url(#ajFond)" />
-                  <circle cx="256" cy="256" r="200" fill="url(#ajHalo)" />
-                  {/* 0,74 laisse une marge autour du glyphe : posé à 1, il
-                      touche le bord du disque et l'icône paraît à l'étroit. */}
-                  <g transform="translate(256,256) scale(0.74,-0.74) translate(-256,-192)">
-                    <path d="M82 447Q87 449 92.5 447.0Q98 445 100 441Q102 439 110.5 417.0Q119 395 120.0 393.0Q121 391 143.0 382.5Q165 374 169 372Q175 369 175.5 361.0Q176 353 170 349Q168 347 145.0 338.0Q122 329 120.5 327.5Q119 326 110.0 303.0Q101 280 99 278Q95 272 87.5 272.5Q80 273 76 278Q74 281 65.5 304.0Q57 327 55.0 328.0Q53 329 30.5 338.0Q8 347 6 348Q0 352 0 360Q0 366 5 371Q7 373 30.5 382.0Q54 391 55.5 392.5Q57 394 66 417Q76 444 82 447ZM392 414Q400 418 407 414Q411 412 414.0 406.5Q417 401 426 376Q439 344 440.5 343.0Q442 342 471 331Q505 318 508 314Q512 309 511.5 302.5Q511 296 506 292Q503 289 473.5 278.0Q444 267 442 266Q439 264 425 229Q416 205 413.0 199.5Q410 194 405 193Q396 190 389 197Q386 200 374.5 229.5Q363 259 362 262Q360 265 356.5 266.5Q353 268 318 282Q293 291 290 297Q284 307 293 316Q295 318 327.0 330.0Q359 342 360.5 343.5Q362 345 374.0 376.0Q386 407 387.5 409.5Q389 412 392 414ZM200 318Q200 318 200 318Q214 323 225 312Q225 312 230 308L251 253Q272 199 274.0 196.5Q276 194 279.0 192.5Q282 191 333.5 171.0Q385 151 388 149Q394 145 398 138Q402 128 398 118Q394 110 387 106Q385 105 333.5 85.0Q282 65 279.0 63.5Q276 62 274.0 59.5Q272 57 251 3Q251 3 230 -52L225 -56Q218 -64 208 -64Q195 -64 188 -54Q186 -51 165.0 3.5Q144 58 141.5 61.0Q139 64 86.5 84.0Q34 104 30 105Q23 109 18 117Q14 126 17 135Q20 144 28 149Q31 151 83.5 171.0Q136 191 138.5 193.0Q141 195 142.5 196.5Q144 198 164.5 252.0Q185 306 187 309Q192 316 200 318Z" fill="url(#ajEtoiles)" />
-                  </g>
-                </svg>
+                    Ce sont les deux SEULES marques Ajnaya que l'app dessine :
+                    l'œil dans l'écran, les étincelles dans l'onglet. Aucune
+                    autre n'existe dans le dépôt. Sa consigne : « si tu ne la
+                    trouves pas, mets rien, c'est mieux ». Une icône approchante
+                    serait une troisième marque — et trois marques pour une
+                    seule identité, c'est la garantie qu'aucune n'est la bonne. */}
               </div>
               <div className={s['aj-id']}>
                 <div className={s['aj-nom']}>Ajnaya</div>
@@ -1051,77 +1040,21 @@ export default function AjnayaPhoneDemo({
               {/* La frise ne montre ce qui se paie qu'APRÈS avoir donné. */}
               {!!(zoneCourante || '').trim() && (
               <>
-              {/* ══ LA FRISE PASSE APRÈS LA RÉPONSE, ET C'EST UN CHOIX ═══════
-                  Elle était le PREMIER enfant du fil. Comme le fil se cale
-                  désormais sur SA question, elle défilait hors du cadre au bout
-                  d'une demi-seconde : gardée, raccourcie… et jamais vue.
-                  Ici elle arrive à sa place dans le récit : il pose sa question,
-                  il reçoit une vraie réponse de métier — gratuite — et ENSUITE
-                  seulement il voit ce que l'app sait faire en plus.
-                  On donne avant de montrer ce qui se paie. */}
-              <div className={s['aj-frise']}>
-                {/* ⚠️ LE MOT « EXEMPLE » EST À L'ÉCRAN, PAS SEULEMENT EN COMMENTAIRE.
-                    Un commentaire juste au-dessus d'un écran qui ment est un faux
-                    témoin, pas une protection. Il reste à la même taille que les
-                    montants qu'il corrige : une mise en garde plus petite que ce
-                    qu'elle corrige ne corrige rien. */}
-                <div className={s.titre}>
-                  Les zones rentables, heure par heure
-                  <span className={s['aj-exemple']}>exemple</span>
-                </div>
-                {/* ⚠️ LA PHRASE DE PROMESSE EST RETIRÉE, ET C'EST ELLE QUI FAISAIT
-                    AMATEUR. Elle disait « Ajnaya sait où ça paie autour de {lieu} »
-                    en recopiant tout ce qu'il avait tapé : « autour de comment tu
-                    peux savoir ». Le lieu est maintenant écrit une seule fois, dans
-                    l'en-tête, et il y est juste. 26 points de haut rendus au fil. */}
-                <div className={s['aj-piste']}>
-                  <div className={s['aj-points']}>
-                    <div className={`${s['aj-tiers']} ${s.d}`}><span className={`${s['aj-point']} ${s.on}`} /></div>
-                    <div className={`${s['aj-tiers']} ${s.m}`}><span className={`${s['aj-point']} ${s.futur}`} /></div>
-                    <div className={`${s['aj-tiers']} ${s.f}`}><span className={`${s['aj-point']} ${s.futur}`} /></div>
-                  </div>
-                </div>
-                <div className={s['aj-heures']}>
-                  {/* ⚠️ 31/44/52 €/h sont des EXEMPLES, pas des mesures. En
-                      euros et non en pourcentage : un « +61 % » ne se dépense pas. */}
-                  <div className={`${s['aj-tiers']} ${s.d}`}>
-                    <span className={s['aj-heure']}>{heures.h1}</span><span className={s.val}>31 €/h</span>
-                  </div>
-                  <div className={`${s['aj-tiers']} ${s.m} ${s.floue}`}>
-                    <span className={s['aj-heure']}>{heures.h2}</span><span className={s.val}>44 €/h</span>
-                  </div>
-                  <div className={`${s['aj-tiers']} ${s.f} ${s.floue}`}>
-                    <span className={s['aj-heure']}>{heures.h3}</span><span className={s.val}>52 €/h</span>
-                  </div>
-                </div>
-                {/* ⚠️ CE VERROU N'EXISTE PAS DANS L'APP — voir l'en-tête. */}
-                <div className={s['aj-verrou']} onClick={onEssaiClick} role="button" tabIndex={0}
-                     onPointerUp={(e) => e.stopPropagation()}
-                     onKeyDown={(e) => e.key === 'Enter' && onEssaiClick?.()}>
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7a5 5 0 00-10 0v2H5v13h14V9h-2zM9 7a3 3 0 016 0v2H9V7zm4 9.7V19h-2v-2.3a2 2 0 112 0z" /></svg>
-                  {/* ⚠️ NE JAMAIS ÉCRIRE « réservées aux abonnés ». C'était faux deux fois :
-                      ce verrou n'existe pas dans l'app, et les chiffres floutés derrière
-                      ne sont mesurés nulle part. On vendait donc l'ouverture d'un vide.
-                      Dans l'app, un point éteint veut dire « rien de mesuré », jamais « bloqué ». */}
-                  {/* ⚠️ UNE SEULE LIGNE — Chandler, 04/09 : « la petite bande avec
-                      le cadenas prend trop d'espace au lieu de tenir sur une ligne ».
-                      Elle en prenait trois : 32 points rendus au fil.
-                      Le mot « exemple » RESTE : c'est la seule mise en garde de
-                      l'écran, elle ne peut pas disparaître pour gagner de la place. */}
-                  <span>Exemple. Dans l&apos;app, c&apos;est <b>mesuré</b>.</span>
-                  <span className={s.fl}>›</span>
-                </div>
-              </div>
+              {/* ⚠️ 04/09 — LA FRISE « LES ZONES RENTABLES, HEURE PAR HEURE » A ÉTÉ
+                  RETIRÉE, sur demande de Chandler. Elle montrait trois créneaux
+                  avec 31 / 44 / 52 €/h marqués « exemple ».
+                  Ce qui reste dans le fil est ce qu'Ajnaya RÉPOND — pas une
+                  vitrine de ce qu'elle saura faire. Le téléphone y gagne la
+                  hauteur, et le récit n'a plus deux fins. */}
               </>
               )}
             </div>
 
             <footer className={s['aj-dock']}>
               <i className={s['aj-hair']} />
-              <div className={s['aj-sugg']}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8" /></svg>
-                Voir ma zone sur la carte
-              </div>
+              {/* ⚠️ 04/09 — « VOIR MA ZONE SUR LA CARTE » A ÉTÉ RETIRÉ.
+                  C'était une porte de plus au-dessus du champ de saisie, dans
+                  un écran qui n'en demande qu'une : lui parler. */}
               <div className={s['aj-row']}>
                 <button
                   className={`${s['aj-mic']} ${ecoute ? s.ecoute : ''}`}

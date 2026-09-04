@@ -54,7 +54,19 @@
 @keyframes ajFlotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 .tel > img{display:block;width:100%;height:auto;position:relative;z-index:2;
   pointer-events:none;user-select:none;}
-.ecran{position:absolute;z-index:1;overflow:hidden;left:12.037%;top:6.221%;width:76.445%;height:87.439%;border-radius:14.749%/6.871%;background:#000;}
+/* ⚠️ CES POURCENTAGES SUIVENT L'IMAGE DU CADRE, ET ELLE A CHANGÉ LE 04/09.
+   Le châssis mesurait 820 × 1528, soit un rapport de 1,86 — Chandler : « il ne
+   fait pas la taille d'un véritable téléphone, il a l'air légèrement trop
+   compacté ». C'était juste : un iPhone 16 fait 2,17.
+   L'image a été ALLONGÉE PAR LE MILIEU (250 px dupliqués depuis le plateau de
+   la tranche, y 710→830, où le bord mesure 32 px sans varier) : 820 × 1778,
+   rapport 2,168. Les coins, les boutons et l'épaisseur sont intacts — un
+   étirement les aurait déformés.
+   Les repères ci-dessous sont recalculés sur la NOUVELLE hauteur : la marge du
+   haut ne bouge pas en pixels, donc son pourcentage baisse ; l'écran, lui,
+   gagne les 250 px. Le rayon vertical suit la hauteur de l'écran, pas celle du
+   cadre — d'où les deux valeurs séparées par le `/`. */
+.ecran{position:absolute;z-index:1;overflow:hidden;left:12.037%;top:5.34628%;width:76.445%;height:89.20517%;border-radius:14.749%/5.78798%;background:#000;}
 
 /* la scène à l'échelle 1:1 de l'app, réduite d'un bloc */
 .app{position:absolute;top:0;left:0;width:393px;
