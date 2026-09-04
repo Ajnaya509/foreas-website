@@ -1024,44 +1024,47 @@ export default function AjnayaPhoneDemo({
               )}
               <div className={s['aj-orbe']}>
                 <span className={parle ? `${s.anneau} ${s.respire}` : s.anneau} />
-                {/* LA MARQUE AJNAYA — deux traits, l'angle du slash FOREAS.
+                {/* LE PRISME — la vraie icône d'Ajnaya, au tracé exact.
                     ════════════════════════════════════════════════════════════
-                    Chandler a envoyé une capture de son app le 04/09 : l'icône
-                    d'Ajnaya, dans l'en-tête comme dans la barre d'onglets, est
-                    faite de DEUX TRAITS OBLIQUES arrondis, en dégradé
-                    cyan → violet.
+                    Chandler, 05/09 : « l'icône de l'onglet Ajnaya — le Prisme,
+                    trois endroits : assets/rive/Ajnaya_Prism_v1.riv,
+                    AjnayaPrisme.tsx, IconesOnglets.tsx ».
 
-                    ⚠️ ELLE N'EST PAS DANS LE DÉPÔT QUE JE PEUX LIRE.
-                    `FOREAS-Clean/src/components/navigation/FoTabBar.tsx:54`
-                    nomme encore le glyphe `sparkles` d'Ionicons, et l'écran
-                    Ajnaya affiche `AjnayaEyeAvatar` (un œil). Aucun des deux
-                    n'est ce qu'on voit sur sa capture : son téléphone tourne
-                    une version plus récente que la copie locale.
+                    Les trois arcs sont RECOPIÉS, pas redessinés. Ils viennent de
+                    `tracesFamilles.ts`, géométrie `ajnaya_core` : grille 100×100,
+                    épaisseur 4,5, bouts et angles arrondis, aucune surface
+                    pleine — « trois chemins ouverts, construits autour d'un
+                    vide », dit son propre commentaire. Le dégradé est celui de
+                    la maison : violet royal #8C52FF → cyan électrique #00D4FF.
 
-                    Donc ce tracé est REDESSINÉ d'après la capture, avec une
-                    seule chose qui ne soit pas à l'œil : l'inclinaison. C'est
-                    exactement celle du slash de la marque — 21,4609°, la valeur
-                    vérifiée dans `LogoForeas.tsx`, dont le commentaire raconte
-                    qu'une copie faite à la main était tombée à 14,93°, « six
-                    degrés et demi d'écart, visibles à l'œil nu ».
+                    ⚠️ J'AVAIS ESSAYÉ DEUX FOIS DE LE DEVINER, ET DEUX FOIS FAUX.
+                    D'abord l'œil (`AjnayaEyeAvatar`), puis le glyphe `sparkles`
+                    d'Ionicons — les deux que la copie locale de l'app contient
+                    encore. Le Prisme n'y est pas : il vit dans
+                    `FOREAS-SecureBackup-2026-08-25/candidate-foreas-clean`.
+                    Une icône approchante n'est pas une icône : c'est une
+                    deuxième marque qui contredit la première.
 
-                    ⚠️ À CONFIRMER PAR CHANDLER, et à remplacer par le vrai
-                    fichier le jour où le dépôt de l'app est à jour. */}
+                    ⚠️ L'ANIMATION N'EST PAS REPRISE. Dans l'app, les trois arcs
+                    se TRACENT l'un après l'autre et respirent avec la voix.
+                    Ici c'est une image fixe : la page n'a droit qu'à une seule
+                    vedette (charte R10), et c'est le calcul. */}
                 <svg viewBox="0 0 100 100" aria-hidden="true">
                   <defs>
                     <radialGradient id="ajFond"><stop offset="0" stopColor="#0D1526" /><stop offset="1" stopColor="#080C18" /></radialGradient>
                     <radialGradient id="ajHalo"><stop offset="0" stopColor="#00D4FF" stopOpacity=".26" /><stop offset=".6" stopColor="#6C3CE0" stopOpacity=".11" /><stop offset="1" stopColor="#6C3CE0" stopOpacity="0" /></radialGradient>
-                    <linearGradient id="ajTraits" x1="1" y1="0" x2="0" y2="1">
-                      <stop offset="0" stopColor="#6DEAFF" /><stop offset=".5" stopColor="#00D4FF" /><stop offset="1" stopColor="#8C52FF" />
+                    {/* L'axe du dégradé suit celui du Prisme : [24,78] → [77,23]. */}
+                    <linearGradient id="ajPrisme" x1="24" y1="78" x2="77" y2="23" gradientUnits="userSpaceOnUse">
+                      <stop offset="0" stopColor="#8C52FF" /><stop offset="1" stopColor="#00D4FF" />
                     </linearGradient>
                   </defs>
                   <circle cx="50" cy="50" r="48" fill="url(#ajFond)" />
                   <circle cx="50" cy="50" r="36" fill="url(#ajHalo)" />
-                  {/* Les deux extrémités sont arrondies : sur la capture, les
-                      traits n'ont pas de coupe nette. */}
-                  <g stroke="url(#ajTraits)" strokeWidth="9.5" strokeLinecap="round" fill="none">
-                    <path d="M 71 20 L 49 76" />
-                    <path d="M 44.6 40 L 27.4 84" />
+                  <g stroke="url(#ajPrisme)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none"
+                     transform="translate(50,50) scale(0.82) translate(-50,-50)">
+                    <path d="M24 46C25 34 33 25 47 23" />
+                    <path d="M32 71C42 61 51 50 60 41C64 36 68 31 71 27" />
+                    <path d="M53 78C66 77 75 69 77 55" />
                   </g>
                 </svg>
               </div>
