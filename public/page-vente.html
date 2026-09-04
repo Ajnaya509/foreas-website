@@ -76,7 +76,7 @@ body{
 /* ── LA GRAMMAIRE D'UNE SCÈNE ─────────────────────────────────────────────
    Chaque section est visiblement une scène : un filet d'un pixel la sépare de
    la précédente. C'est ce qui donne le rythme au document de référence. */
-.scene{padding:76px 20px;border-top:1px solid var(--filet);position:relative}
+.scene{padding:62px 20px;border-top:1px solid var(--filet);position:relative}
 .scene:first-child{border-top:0}
 /* Un halo par MODULE, jamais par section (R1 : un seul foyer lumineux). */
 .halo::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
@@ -99,7 +99,7 @@ p.grand{font-size:1rem;line-height:1.56}
 b,strong{color:var(--encre);font-weight:700}
 
 /* La gifle : un écran presque vide, un filet cyan à gauche du titre. */
-.gifle{padding:82px 20px 68px}
+.gifle{padding:68px 20px 56px}
 .gifle h2{font-size:2.125rem;line-height:1.06;letter-spacing:-1.4px;
   border-left:2px solid var(--cyan);padding-left:16px;margin-left:-18px}
 .gifle p{max-width:330px}
@@ -252,7 +252,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
   outline:2px solid var(--cyan);outline-offset:2px;border-radius:8px}
 
 /* ── LE MODULE COURT ─────────────────────────────────────────────────────── */
-.court{padding:56px 20px;border-top:1px solid var(--filet)}
+.court{padding:46px 20px;border-top:1px solid var(--filet)}
 .court h2{font-size:1.75rem;letter-spacing:-.9px}
 .court .preuve{margin-top:14px;padding-left:13px;border-left:1px solid var(--filet);
   font-size:0.8438rem;line-height:1.43;color:var(--encre-3)}
@@ -323,7 +323,7 @@ footer .mention{margin-top:20px;font-size:0.7812rem;line-height:1.45;color:var(-
 
 /* ── PETITS ÉCRANS : la page tient à 320 px sans rien perdre ─────────────── */
 @media (max-width:359px){
-  .scene{padding:60px 16px}.court{padding:46px 16px}.gifle{padding:68px 16px 56px}
+  .scene{padding:50px 16px}.court{padding:38px 16px}.gifle{padding:56px 16px 46px}
   h2{font-size:1.8125rem}.gifle h2{font-size:1.75rem}.prix-val{font-size:2.375rem}
   .rail .clip{width:184px}
 }

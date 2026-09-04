@@ -72,7 +72,7 @@
 /* ── LA GRAMMAIRE D'UNE SCÈNE ─────────────────────────────────────────────
    Chaque section est visiblement une scène : un filet d'un pixel la sépare de
    la précédente. C'est ce qui donne le rythme au document de référence. */
-.vente .scene{padding:76px 20px;border-top:1px solid var(--filet);position:relative}
+.vente .scene{padding:62px 20px;border-top:1px solid var(--filet);position:relative}
 .vente .scene:first-child{border-top:0}
 /* ⚠️ ET LE PREMIER ENFANT DE `.vente` AUSSI, quel qu'il soit. `:first-child`
    ci-dessus ne suffit pas si une scène est précédée d'un commentaire rendu ou
@@ -107,7 +107,7 @@
 .vente b, .vente strong{color:var(--encre);font-weight:700}
 
 /* La gifle : un écran presque vide, un filet cyan à gauche du titre. */
-.vente .gifle{padding:82px 20px 68px}
+.vente .gifle{padding:68px 20px 56px}
 .vente .gifle h2{font-size:2.125rem;line-height:1.06;letter-spacing:-1.4px;
   border-left:2px solid var(--cyan);padding-left:16px;margin-left:-18px}
 .vente .gifle p{max-width:330px}
@@ -260,7 +260,7 @@
   outline:2px solid var(--cyan);outline-offset:2px;border-radius:8px}
 
 /* ── LE MODULE COURT ─────────────────────────────────────────────────────── */
-.vente .court{padding:56px 20px;border-top:1px solid var(--filet)}
+.vente .court{padding:46px 20px;border-top:1px solid var(--filet)}
 .vente .court h2{font-size:1.75rem;letter-spacing:-.9px}
 .vente .court .preuve{margin-top:14px;padding-left:13px;border-left:1px solid var(--filet);
   font-size:0.8438rem;line-height:1.43;color:var(--encre-3)}
@@ -331,7 +331,7 @@
 
 /* ── PETITS ÉCRANS : la page tient à 320 px sans rien perdre ─────────────── */
 @media (max-width:359px){
-  .vente .scene{padding:60px 16px}.vente .court{padding:46px 16px}.vente .gifle{padding:68px 16px 56px}
+  .vente .scene{padding:50px 16px}.vente .court{padding:38px 16px}.vente .gifle{padding:56px 16px 46px}
   .vente h2{font-size:1.8125rem}.vente .gifle h2{font-size:1.75rem}.vente .prix-val{font-size:2.375rem}
   .vente .rail .clip{width:184px}
 }
