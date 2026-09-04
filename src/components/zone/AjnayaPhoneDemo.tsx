@@ -899,29 +899,36 @@ export default function AjnayaPhoneDemo({
               )}
               <div className={s['aj-orbe']}>
                 <span className={parle ? `${s.anneau} ${s.respire}` : s.anneau} />
-                {/* L'œil d'Ajnaya — SVG repris trait pour trait d'AjnayaEyeAvatar. */}
-                <svg viewBox="0 0 100 100" aria-hidden="true">
+                {/* ⚠️ CE N'EST PLUS UN ŒIL, C'EST L'ICÔNE DE L'APP.
+                    Chandler, 04/09 : « ajoute la véritable icône qu'il y a dans
+                    l'app dans l'onglet Ajnaya, qui remplace l'œil ».
+
+                    Elle est extraite du fichier de police que l'app charge
+                    vraiment — `Ionicons.ttf`, glyphe `sparkles` (0xF58C), celui
+                    que `FoTabBar.tsx` nomme à la ligne 54. Ce n'est donc pas un
+                    dessin qui ressemble : c'est le MÊME tracé, au point près.
+                    (Ionicons, licence MIT.)
+
+                    ⚠️ L'AXE Y D'UNE POLICE MONTE, CELUI D'UN SVG DESCEND. Sans
+                    le `scale(1,-1)` ci-dessous, l'icône s'affiche à l'envers et
+                    hors du cadre — et comme elle reste symétrique de loin, on
+                    peut le rater. La translation de 448 remet le haut du glyphe
+                    (ascendante mesurée) sur le bord du cadre. */}
+                <svg viewBox="0 0 512 512" aria-hidden="true">
                   <defs>
                     <radialGradient id="ajFond"><stop offset="0" stopColor="#0D1526" /><stop offset="1" stopColor="#080C18" /></radialGradient>
-                    <radialGradient id="ajHalo"><stop offset="0" stopColor="#00D4FF" stopOpacity=".25" /><stop offset=".6" stopColor="#6C3CE0" stopOpacity=".10" /><stop offset="1" stopColor="#6C3CE0" stopOpacity="0" /></radialGradient>
-                    <radialGradient id="ajScl" fx=".45" fy=".46"><stop offset="0" stopColor="#F0F4FF" /><stop offset=".7" stopColor="#D8E0F0" /><stop offset="1" stopColor="#B8C4D8" /></radialGradient>
-                    <radialGradient id="ajIris" fx=".46" fy=".46"><stop offset="0" stopColor="#6DEAFF" /><stop offset=".45" stopColor="#00D4FF" /><stop offset=".7" stopColor="#6C3CE0" /><stop offset="1" stopColor="#4A25A0" /></radialGradient>
+                    <radialGradient id="ajHalo"><stop offset="0" stopColor="#00D4FF" stopOpacity=".28" /><stop offset=".6" stopColor="#6C3CE0" stopOpacity=".12" /><stop offset="1" stopColor="#6C3CE0" stopOpacity="0" /></radialGradient>
+                    <linearGradient id="ajEtoiles" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stopColor="#6DEAFF" /><stop offset=".5" stopColor="#00D4FF" /><stop offset="1" stopColor="#8C52FF" />
+                    </linearGradient>
                   </defs>
-                  <circle cx="50" cy="50" r="48" fill="url(#ajFond)" />
-                  <circle cx="50" cy="50" r="35" fill="url(#ajHalo)" />
-                  <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="url(#ajScl)" />
-                  <circle cx="50" cy="50" r="17" fill="url(#ajIris)" />
-                  <circle cx="50" cy="50" r="17" fill="none" stroke="#3A1A80" strokeWidth="1.5" opacity=".4" />
-                  {/* La pupille se resserre quand elle parle — comme dans l'app
-                      (AjnayaEyeAvatar.tsx : 5 en parole, 6,5 au calme). */}
-                  <circle cx="50" cy="50" r={parle ? 5 : 6.5} fill="#050510" />
-                  <ellipse cx="44" cy="44" rx="4" ry="3.5" fill="#fff" opacity=".85" />
-                  <circle cx="55" cy="55" r="1.8" fill="#fff" opacity=".5" />
-                  <path d="M 16 50 C 28 32 40 26 50 26 C 60 26 72 32 84 50 C 72 68 60 74 50 74 C 40 74 28 68 16 50 Z" fill="none" stroke="#2A3A52" strokeWidth="1.5" opacity=".6" />
-                  <path d="M 18 50 C 30 33 41 27 50 27 C 59 27 70 33 82 50" fill="none" stroke="#1A2540" strokeWidth="2" strokeLinecap="round" opacity=".7" />
-                  <circle cx="22" cy="38" r="1.2" fill="#6DEAFF" opacity=".5" />
-                  <circle cx="78" cy="42" r="1" fill="#8C52FF" opacity=".4" />
-                  <circle cx="50" cy="22" r=".8" fill="#00D4FF" opacity=".3" />
+                  <circle cx="256" cy="256" r="246" fill="url(#ajFond)" />
+                  <circle cx="256" cy="256" r="200" fill="url(#ajHalo)" />
+                  {/* 0,74 laisse une marge autour du glyphe : posé à 1, il
+                      touche le bord du disque et l'icône paraît à l'étroit. */}
+                  <g transform="translate(256,256) scale(0.74,-0.74) translate(-256,-192)">
+                    <path d="M82 447Q87 449 92.5 447.0Q98 445 100 441Q102 439 110.5 417.0Q119 395 120.0 393.0Q121 391 143.0 382.5Q165 374 169 372Q175 369 175.5 361.0Q176 353 170 349Q168 347 145.0 338.0Q122 329 120.5 327.5Q119 326 110.0 303.0Q101 280 99 278Q95 272 87.5 272.5Q80 273 76 278Q74 281 65.5 304.0Q57 327 55.0 328.0Q53 329 30.5 338.0Q8 347 6 348Q0 352 0 360Q0 366 5 371Q7 373 30.5 382.0Q54 391 55.5 392.5Q57 394 66 417Q76 444 82 447ZM392 414Q400 418 407 414Q411 412 414.0 406.5Q417 401 426 376Q439 344 440.5 343.0Q442 342 471 331Q505 318 508 314Q512 309 511.5 302.5Q511 296 506 292Q503 289 473.5 278.0Q444 267 442 266Q439 264 425 229Q416 205 413.0 199.5Q410 194 405 193Q396 190 389 197Q386 200 374.5 229.5Q363 259 362 262Q360 265 356.5 266.5Q353 268 318 282Q293 291 290 297Q284 307 293 316Q295 318 327.0 330.0Q359 342 360.5 343.5Q362 345 374.0 376.0Q386 407 387.5 409.5Q389 412 392 414ZM200 318Q200 318 200 318Q214 323 225 312Q225 312 230 308L251 253Q272 199 274.0 196.5Q276 194 279.0 192.5Q282 191 333.5 171.0Q385 151 388 149Q394 145 398 138Q402 128 398 118Q394 110 387 106Q385 105 333.5 85.0Q282 65 279.0 63.5Q276 62 274.0 59.5Q272 57 251 3Q251 3 230 -52L225 -56Q218 -64 208 -64Q195 -64 188 -54Q186 -51 165.0 3.5Q144 58 141.5 61.0Q139 64 86.5 84.0Q34 104 30 105Q23 109 18 117Q14 126 17 135Q20 144 28 149Q31 151 83.5 171.0Q136 191 138.5 193.0Q141 195 142.5 196.5Q144 198 164.5 252.0Q185 306 187 309Q192 316 200 318Z" fill="url(#ajEtoiles)" />
+                  </g>
                 </svg>
               </div>
               <div className={s['aj-id']}>

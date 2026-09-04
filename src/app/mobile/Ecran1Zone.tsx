@@ -369,15 +369,15 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
             />
           </div>
 
-          {/* Les portes n'apparaissent qu'APRÈS avoir donné quelque chose.
-              Vendre avant d'avoir répondu, c'est le geste qui sent l'amateur. */}
-          <div className={s.portes}>
-            <a className={s.porteEssai} href="/tarifs3">Essayer 3 jours — 0 €</a>
-            <a className={s.porteWa} href={lienWhatsApp}>Parler à Ajnaya</a>
-          </div>
-          <p className={s.sousPortes}>
-            0 € aujourd&apos;hui. Puis 29,99 €/mois, coupé en 1 clic. Sans compte pour écrire.
-          </p>
+          {/* ⚠️ 04/09 — LES DEUX BOUTONS QUI ÉTAIENT ICI ONT ÉTÉ RETIRÉS.
+              « Essayer 3 jours — 0 € » et « Parler à Ajnaya » s'empilaient sous
+              le téléphone et écrasaient la seule chose qu'on venait de lui
+              donner : sa réponse. Le premier écran repartait avec trois
+              objectifs au lieu d'un.
+              Les deux portes existent toujours, et deux fois plutôt qu'une :
+              DANS le téléphone (`onEssaiClick` / `onWhatsAppClick` ci-dessus),
+              et plus bas dans la page de vente, où elles arrivent après une
+              raison d'y aller. */}
         </>
       )}
     </section>
