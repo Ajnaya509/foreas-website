@@ -55,6 +55,21 @@ export interface BuildWAOptions {
   amount?: number
   /** Utilisé par la seule section `mobile_fonction`. Ignoré partout ailleurs. */
   fonction?: FonctionMobile
+  /**
+   * LA QUESTION QU'IL A DÉJÀ POSÉE SUR LE SITE.
+   *
+   * ⚠️ SANS ELLE, AJNAYA REDEMANDE TOUT ET LE CHAUFFEUR RÉPÈTE — c'est là
+   * qu'on les perd (fil PIEUVRE, brief du 04/09). Il a tapé « Roissy », il a
+   * lu une réponse, il appuie sur WhatsApp : si le message n'emporte que la
+   * zone, la conversation recommence à zéro et il a l'impression de parler à
+   * quelqu'un qui n'écoutait pas.
+   *
+   * Elle part EN CLAIR dans le message, pas en jeton. Un jeton obligerait
+   * Ajnaya à lire une table avant de répondre — donc une panne de base
+   * deviendrait une conversation vide. Le texte, lui, arrive toujours, et le
+   * chauffeur voit ce qu'il envoie : il peut le corriger avant d'appuyer.
+   */
+  question?: string
 }
 
 /**
@@ -82,13 +97,21 @@ export function buildWAMessage(opts: BuildWAOptions): string {
 }
 
 function buildWAMessageBase(opts: BuildWAOptions): string {
-  const { section, zone, slot, amount, fonction } = opts
+  const { section, zone, slot, amount, fonction, question } = opts
 
   switch (section) {
-    case 'hero_zone':
+    case 'hero_zone': {
+      /* ⚠️ SA QUESTION D'ABORD, LA NÔTRE ENSUITE — et jamais les deux.
+         Quand il a déjà écrit quelque chose sur le site, c'est CETTE
+         phrase-là qui part : la reformuler à sa place, c'est le geste qui
+         fait dire « on ne m'écoute pas » dès le premier message. */
+      const sienne = (question ?? '').trim()
+      if (zone && sienne) return `Salut Ajnaya. Je suis sur ${zone}. ${sienne}`
+      if (sienne) return `Salut Ajnaya. ${sienne}`
       return zone
         ? `Salut Ajnaya, je suis sur la zone ${zone}. Tu peux me donner le tarif horaire exact ${slot ?? 'pour ce soir'} ?`
         : `Salut Ajnaya, je veux le tarif horaire exact sur ma zone.`
+    }
 
     case 'pain':
       // ⚠️ 21/08/2026 — CE MESSAGE AFFIRMAIT UN NET QUE LA PAGE CONTREDISAIT.

@@ -135,7 +135,15 @@ export default function AjnayaPhoneDemo({
   /** La zone tapée par le chauffeur. Un changement relance la conversation. */
   zone: string
   onEssaiClick?: () => void
-  onWhatsAppClick?: () => void
+  /**
+   * ⚠️ IL REÇOIT LA DERNIÈRE QUESTION DU CHAUFFEUR, et ce n'est pas un
+   * confort. Sans elle, le message WhatsApp ne porte que la zone : Ajnaya
+   * redemande ce qu'il vient d'écrire, et il répète. C'est là qu'on les perd
+   * (brief du fil PIEUVRE, 04/09).
+   * La page décide ce qu'elle en fait — le téléphone se contente de dire ce
+   * qui a été demandé chez lui.
+   */
+  onWhatsAppClick?: (question?: string) => void
   /**
    * ⚠️ OPT-IN, ET C'EST VOLONTAIRE.
    * Sur `/ou-ca-paie` le téléphone est une DÉMONSTRATION qui se joue toute
@@ -513,6 +521,30 @@ export default function AjnayaPhoneDemo({
     return () => window.cancelAnimationFrame(id)
   }, [lignes, attente, immersif])
 
+  /**
+   * SA DERNIÈRE PHRASE, telle qu'il l'a écrite ou dictée.
+   *
+   * On la relit dans le FIL plutôt que dans un état à part : le fil est ce que
+   * l'écran montre. Une variable tenue en parallèle finirait par diverger de ce
+   * qu'il a sous les yeux — et il enverrait sur WhatsApp une question qu'il ne
+   * reconnaîtrait pas.
+   * Les blocs sont du HTML (les accents et les « & » y sont échappés) : on rend
+   * le texte, pas le balisage.
+   */
+  const derniereQuestion = useCallback((): string | undefined => {
+    for (let i = lignes.length - 1; i >= 0; i--) {
+      const l = lignes[i]
+      if (l.qui !== 'toi') continue
+      const html = l.blocs.map((b) => b.html).join(' ')
+      const texte = typeof document !== 'undefined'
+        ? (() => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent ?? '' })()
+        : html.replace(/<[^>]+>/g, ' ')
+      const propre = texte.replace(/\s+/g, ' ').trim()
+      if (propre) return propre.slice(0, 160)
+    }
+    return undefined
+  }, [lignes])
+
   /* ══ LA CONVERSATION ══════════════════════════════════════════════════════ */
   useEffect(() => {
     minuteurs.current.forEach(clearTimeout)
@@ -547,7 +579,18 @@ export default function AjnayaPhoneDemo({
        « Ça donne quoi comment tu peux savoir ? ? » — deux points
        d'interrogation, français cassé, signé de son nom. */
     const saQuestion = demande ? echapper(demande) : `Ça donne quoi ${nom} ?`
-    setLignes([{ id: 'q', qui: 'toi', etiq: `Toi · ${hh}`, blocs: [{ html: saQuestion }] }])
+    /* ⚠️ ON AJOUTE, ON NE REMPLACE PLUS — Chandler, 05/09 : « la conversation
+       doit se suivre tant qu'il n'y a pas de rechargement de la page ».
+       `setLignes([…])` écrasait tout le fil à chaque question : le chauffeur
+       posait une deuxième question et la première disparaissait, réponse
+       comprise. Il ne discutait pas avec elle, il repartait de zéro à chaque
+       fois — et rien ne le signalait.
+       Le message d'accueil (« Dis-moi où tu roules ») est retiré au premier
+       vrai échange : il demande ce qui vient d'être donné. */
+    setLignes((l) => [
+      ...l.filter((x) => x.id !== 'attente'),
+      { id: `${tour}-q`, qui: 'toi', etiq: `Toi · ${hh}`, blocs: [{ html: saQuestion }] },
+    ])
     /* ⚠️ Le chuchotement, pas un « … » ni un rouet : dans l'app il n'y a ni
        bulle d'attente, ni indicateur de chargement, jamais. */
     setAttente(true)
@@ -560,13 +603,13 @@ export default function AjnayaPhoneDemo({
         setParle(true)
         setLignes((l) => [
           ...l,
-          { id: 'hv', qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${r.verdict}</b>` }] },
+          { id: `${tour}-hv`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${r.verdict}</b>` }] },
         ])
         plusTard(820, () => {
           setLignes((l) => [
             ...l,
             {
-              id: 'hc',
+              id: `${tour}-hc`,
               qui: 'elle',
               etiq: 'Ajnaya',
               blocs: [{ html: r.corps, tag: { texte: r.etiq, couleur: 'c' } }],
@@ -586,14 +629,14 @@ export default function AjnayaPhoneDemo({
       setParle(true)
       setLignes((l) => [
         ...l,
-        { id: 'v', qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${t.verdict}</b>` }] },
+        { id: `${tour}-v`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${t.verdict}</b>` }] },
       ])
 
       plusTard(900, () => {
         setLignes((l) => [
           ...l,
           {
-            id: 'cg',
+            id: `${tour}-cg`,
             qui: 'elle',
             etiq: 'Ajnaya',
             blocs: [
@@ -606,7 +649,7 @@ export default function AjnayaPhoneDemo({
         plusTard(950, () => {
           setLignes((l) => [
             ...l,
-            { id: 'b', qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: t.bascule }], sorties: true },
+            { id: `${tour}-b`, qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: t.bascule }], sorties: true },
           ])
           plusTard(400, () => setParle(false))
         })
@@ -1123,7 +1166,8 @@ export default function AjnayaPhoneDemo({
                         <span className={s.chev}>›</span>
                       </button>
                       <button className={`${s['aj-chip']} ${s.wa}`} type="button"
-                              onPointerUp={(e) => e.stopPropagation()} onClick={onWhatsAppClick}>
+                              onPointerUp={(e) => e.stopPropagation()}
+                              onClick={() => onWhatsAppClick?.(derniereQuestion())}>
                         <span className={s.ico}>
                           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
                         </span>

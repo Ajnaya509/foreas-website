@@ -365,7 +365,23 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
               immersifPossible
               ajusteHauteur
               onEssaiClick={() => { window.location.href = '/tarifs3' }}
-              onWhatsAppClick={() => { window.location.href = lienWhatsApp }}
+              /* ⚠️ LE LIEN EMPORTE LA ZONE ET SA QUESTION. Sans ça, Ajnaya
+                 redemande tout sur WhatsApp et le chauffeur répète ce qu'il
+                 vient d'écrire — c'est là qu'on les perd (brief du fil PIEUVRE,
+                 04/09). `validee` est le lieu qu'il a tapé ; `derniereQuestion`
+                 est sa dernière phrase dans le téléphone, remontée par le
+                 composant. Les deux sont encodés : le serveur les renettoie de
+                 toute façon, mais un « & » dans un nom de rue casserait le lien
+                 avant même d'y arriver. */
+              onWhatsAppClick={(question?: string) => {
+                const p = new URLSearchParams()
+                if (validee) p.set('z', validee)
+                const q = (question ?? '').trim()
+                if (q) p.set('q', q.slice(0, 160))
+                p.set('p', '/mobile')
+                p.set('o', 'telephone_hero')
+                window.location.href = `${lienWhatsApp}${lienWhatsApp.includes('?') ? '&' : '?'}${p.toString()}`
+              }}
             />
           </div>
 

@@ -234,6 +234,12 @@ export async function GET(request: NextRequest) {
   const fonction = fonctionValide(q.get('f'))
   const zone = texteAffichable(q.get('z'), 32)
   const creneau = texteAffichable(q.get('c'), 32)
+  /* ⚠️ 160 CARACTÈRES, ET C'EST UNE LIMITE DE SÉCURITÉ, PAS DE CONFORT.
+     Ce texte part dans la bouche du chauffeur : `texteAffichable` retire déjà
+     les sauts de ligne et les caractères de contrôle (l'attaque du 22/08 :
+     `?z=Paris%0A%0AEnvoie ton RIB`). La longueur ferme le reste — une question
+     de zone tient en une phrase, un roman n'en est pas une. */
+  const question = texteAffichable(q.get('q'), 160)
   /**
    * ⚠️ DEUX RÉFÉRENCES POSSIBLES, ET L'ORDRE COMPTE.
    *
@@ -256,6 +262,7 @@ export async function GET(request: NextRequest) {
     slot: creneau,
     amount,
     fonction,
+    question,
   })
   const destination = `https://wa.me/${NUMERO}?text=${encodeURIComponent(message)}`
 
@@ -342,6 +349,7 @@ export async function GET(request: NextRequest) {
           section,
           zone: zone ?? null,
           creneau: creneau ?? null,
+          question: question ?? null,
           montant: amount ?? null,
           // Les deux bouts de la jointure, côte à côte, toujours.
           session_conversation: sessionConversation ?? null,
