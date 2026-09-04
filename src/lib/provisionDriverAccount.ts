@@ -167,11 +167,25 @@ export async function activerAccesChauffeur({
      Elle est posée par le déclencheur `handle_new_user()` au moment de la
      création du compte, quelques instants plus tôt. On tente donc, et si aucune
      ligne n'est touchée on le DIT — au lieu de conclure que tout va bien. */
+  /* ⚠️ TROIS CHAMPS, PAS DEUX. Le commentaire du webhook dit que l'app exige
+     `status` et `subscription_active` : c'est INCOMPLET, et le trou coûtait
+     chaque paiement. L'écran d'abonnement de l'app (SubscriptionScreen) lit
+     `drivers.subscription_status`, un TROISIÈME champ que personne n'écrivait
+     ici. Sa valeur par défaut est « inactive ».
+     Conséquence mesurée : le chauffeur payait, le compte s'ouvrait selon nos
+     deux champs, et l'app affichait quand même le mur. Pire, le bouton
+     « Débloquer mon accès » relit le MÊME champ : « inactive » est une chaîne
+     non vide, donc le repli sur `is_active` ne se déclenche jamais. Aucune
+     sortie, jamais.
+     « trialing » et « active » sont tous deux dans la liste d'accès de l'app. */
+  const statutAbonnement = finEssai && new Date(finEssai).getTime() > Date.now() ? 'trialing' : 'active'
+
   const { data: lignesDriver, error: erreurDriver } = await supabase
     .from('drivers')
     .update({
       status: 'active',
       subscription_active: true,
+      subscription_status: statutAbonnement,
       ...(finEssai ? { trial_ends_at: finEssai } : {}),
     })
     .eq('email', cleanEmail)
