@@ -552,8 +552,20 @@
    titre respire — il n'y a rien d'autre à regarder, donc rien d'autre à
    décider. Le vide n'est pas de la place perdue : c'est lui qui tient l'œil.
    `padding-bottom` garde sa réserve pour le bandeau de consentement. */
-.ecran1Attente { justify-content: center; }
-.ecran1Attente .titreHero { font-size: 52px; letter-spacing: -2.6px; margin-top: 0; }
+/* ⚠️ DEUX MARGES AUTOMATIQUES, ET PAS `justify-content: center`.
+   Avec un simple centrage, le bloc flottait au milieu et il restait 260 points
+   de noir sous lui — c'est ce que Chandler appelle « elle est vide ».
+   Ici, `margin-top: auto` sur le titre ET sur la ligne de prix partage l'espace
+   libre en deux parts égales : le titre descend du bord haut, le prix se colle
+   au bas. L'écran est tenu par ses deux extrémités au lieu de flotter.
+   ⚠️ Et une marge automatique n'agit que dans SON conteneur : c'est pour ça que
+   la ligne de prix est sortie du formulaire. Posée dedans, elle ne bougeait pas
+   d'un pixel — mesuré. */
+.ecran1Attente .titreHero { margin-top: auto; }
+/* ⚠️ PAS DE `margin-top` ICI. Cette règle vient APRÈS celle qui pose la marge
+   automatique : y remettre une valeur l'annulait, et le titre restait collé en
+   haut avec 316 points de vide au milieu de l'écran. Mesuré. */
+.ecran1Attente .titreHero { font-size: 52px; letter-spacing: -2.6px; }
 .ecran1Attente .sousHero { font-size: 17px; line-height: 23px; margin-top: 14px; max-width: 340px; }
 .ecran1Attente .champBloc { margin-top: 30px; }
 
@@ -565,4 +577,52 @@
 @media (max-width: 360px) {
   .titreHero { font-size: 37px; }
   .sousHero { font-size: 14.5px; line-height: 20px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOUS LA BARRE — ce qu'elle fait, et pourquoi on peut la croire
+   ═══════════════════════════════════════════════════════════════════════════
+   Deux lignes, deux métiers différents, deux poids différents.
+   `.explique` porte la promesse : elle est lisible, elle a du contraste, et le
+   mot qui compte est en clair. `.rassure` lève l'objection immédiate — « il va
+   me demander quoi ? » — donc elle est volontairement discrète : une objection
+   qu'on met en avant, on la réveille au lieu de l'éteindre. */
+.explique {
+  position: relative; z-index: 3; flex: none;
+  margin: 18px 0 0; max-width: 340px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 14.5px; line-height: 21px; color: rgba(248,250,252,.60);
+}
+.explique b { color: rgba(248,250,252,.92); font-weight: 700; }
+
+.rassure {
+  position: relative; z-index: 3; flex: none;
+  margin: 10px 0 0;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 12.5px; line-height: 17px; color: rgba(248,250,252,.38);
+}
+
+@media (max-width: 360px) {
+  .explique { font-size: 13.5px; line-height: 20px; }
+  .rassure { font-size: 11.5px; }
+}
+
+
+/* Le prix, collé au bas de l'écran d'accueil. Jamais un bouton : l'objectif
+   de cet écran reste unique. `margin-top: auto` le pousse au fond du bloc,
+   et la réserve du bandeau de consentement est déjà dans le rembourrage
+   de `.ecran1` — il ne peut donc pas passer dessous. */
+.prixHero {
+  position: relative; z-index: 3; flex: none;
+  margin: auto 0 0; padding-top: 26px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 12.5px; line-height: 18px; color: rgba(248,250,252,.34);
+}
+.prixHero b { color: rgba(248,250,252,.66); font-weight: 700; }
+.pointHero { padding: 0 7px; opacity: .45; }
+
+@media (max-width: 360px) {
+  .prixHero { font-size: 11.5px; }
+  .pointHero { padding: 0 5px; }
 }

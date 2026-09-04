@@ -42,6 +42,8 @@ import s from './mobile.module.css'
  * brancher le cerveau ».
  */
 
+/* Ces cinq noms ne sont plus des boutons : ils défilent dans l'invite du
+   champ. Un seul geste demandé, et l'exemple est sous les yeux. */
 const ZONES_SUGGEREES = ['Roissy CDG', 'Orly', 'La Défense', 'Bastille', 'Gare de Lyon']
 
 /* ⚠️ L'INVITE S'ÉCRIT TOUTE SEULE, ET CE N'EST PAS UN EFFET.
@@ -287,13 +289,64 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
             Tape le nom de ta zone, par exemple Roissy CDG ou Bastille.
           </span>
 
-          <div className={s.puces}>
-            {ZONES_SUGGEREES.map((z) => (
-              <button key={z} type="button" className={s.puce} onClick={() => valider(z)}>{z}</button>
-            ))}
-          </div>
+          {/* ══ CE QU'ELLE FAIT, SOUS LA BARRE ═══════════════════════════════
+              Chandler, 04/09 : « les bulles en bas doivent disparaître et
+              laisser place à une phrase qui explique simplement ». Les cinq
+              puces étaient cinq décisions de plus sous une barre qui n'en
+              demandait qu'une. À leur place, la seule chose qui manquait :
+              ce qu'Ajnaya fait pour lui.
+
+              ⚠️ SA FORMULATION EXACTE ÉTAIT INTERDITE PAR LE DÉPÔT.
+              Il proposait « analyse en temps réel où se trouve la demande ».
+              `scripts/verifier-canon.mjs` refuse « demande en temps réel » —
+              et sa raison est mesurée : `driver_ride_features` contient ZÉRO
+              ligne, aucune lecture continue ne tourne. La phrase aurait arrêté
+              la fabrication du site, et surtout elle aurait promis un service
+              qui n'existe pas encore.
+              CE QUI EST VRAI, ET QUE N'IMPORTE QUEL CHAUFFEUR PEUT VÉRIFIER CE
+              SOIR, c'est le RYTHME : la vague qui tombe vingt minutes après un
+              atterrissage, la gare qui se vide d'un coup, le quartier d'affaires
+              mort entre 10 h et 16 h. C'est exactement ce que le téléphone lui
+              répond deux secondes plus tard. La promesse et la démonstration
+              disent donc la même chose — c'est ça qui fait la confiance.
+              ⚠️ Tutoiement : la règle de voix chauffeur, tenue partout. */}
+          <p className={s.explique}>
+            Ajnaya connaît le <b>rythme de ta zone</b> : quand la demande tombe,
+            et quand elle repart. Tu attends moins, tu roules moins à vide.
+          </p>
+          <p className={s.rassure}>
+            Réponse immédiate. Rien à installer, rien à créer.
+          </p>
+
         </form>
       )}
+
+          {!validee && (
+      <>
+      {/* ══ LE PRIX, EN BAS, SANS QU'ON LE DEMANDE ═══════════════════════
+          Le jury du 03/09 l'a relevé cinq fois sur cinq : « le premier
+          écran ne dit ni ce que c'est, ni ce que ça rapporte, ni ce que ça
+          coûte ». Le montant vivait deux écrans plus bas, vu par moins d'un
+          visiteur sur deux.
+          Il est ici, et il n'est PAS un bouton : l'objectif de cet écran
+          reste unique — dire son lieu. Un prix annoncé avant qu'on le
+          demande ne coûte rien et lève l'objection la plus chère de toutes
+          (40 % des abandons viennent d'un montant découvert trop tard —
+          Baymard). Collé en bas par `margin-top: auto`, il remplit le vide
+          au lieu qu'on ait à inventer un décor.
+          ⚠️ « 3 jours pour voir » et pas « sans carte » : la carte EST
+          enregistrée à l'inscription, le garde-fou du dépôt refuse la
+          seconde formule, et il a raison. */}
+      <p className={s.prixHero}>
+        <b>0 €</b> aujourd&apos;hui
+        <span className={s.pointHero}>·</span>
+        <b>3 jours</b> pour voir
+        <span className={s.pointHero}>·</span>
+        coupé en <b>1 clic</b>
+      </p>
+      </>
+      )}
+
 
       {/* ══ LE TÉLÉPHONE N'ARRIVE QU'AVEC LE LIEU ════════════════════════════
           Décision de Chandler, tenue depuis le 03/09 et redite le 04/09 :
