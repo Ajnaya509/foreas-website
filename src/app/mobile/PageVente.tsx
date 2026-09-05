@@ -340,7 +340,7 @@ export default function PageVente() {
           deux formules, l'économie, le calendrier de prélèvement — reste en fin
           de page, pour celui qui lit tout. Ici on répond à une seule question :
           « ça coûte combien pour essayer ? » */}
-      <section className={s.court}>
+      <section className={s.court} id="essai">
         {/* ⚠️ CE TITRE NE RÉPÈTE PAS CELUI DU BLOC DE FIN. Les deux disaient
             « Trois jours. Zéro euro aujourd'hui. » à dix écrans d'écart : lu
             deux fois, ce n'est plus une montée, c'est une boucle, et le
@@ -350,8 +350,15 @@ export default function PageVente() {
         <h2>Essaie-le sur tes propres courses.</h2>
         <p>{ESSAI_JOURS} jours, 0 € aujourd’hui. Tu vois les verdicts sur tes vraies
            courses avant de payer quoi que ce soit.</p>
-        <p className={s.preuve}>Ensuite {ANNUEL} par an. Ta carte est enregistrée dès
-           l’inscription — on te le dit ici, pas au {ESSAI_JOURS}ᵉ jour.</p>
+        {/* ⚠️ ON ANNONCE LE MENSUEL, PAS L'ANNUEL (Chandler, 05/09).
+            Ce bloc arrive tôt : sa seule question est « ça coûte combien pour
+            essayer ? ». {MENSUEL} par mois est le plus petit engagement vrai
+            qu'on puisse citer. L'annuel est présélectionné à la caisse, donc la
+            phrase DIT qu'il choisit — sinon c'est le piège qu'on vient de
+            fermer : lire un prix ici et en voir un autre à l'écran suivant. */}
+        <p className={s.preuve}>Ensuite {MENSUEL} par mois. Tu choisis mois ou année à
+           l’inscription. Ta carte est enregistrée dès le départ — on te le dit ici,
+           pas au {ESSAI_JOURS}ᵉ jour.</p>
         <a className={`${s.cta} ${s.violet}`} href="/tarifs3">Commencer les {ESSAI_JOURS} jours</a>
         <div><a className={s.sortie} href="#vitrine">Ou continue à lire</a></div>
       </section>

@@ -92,8 +92,17 @@ export function ConsentBanner() {
           Les deux gestes écrivent une décision explicite : aucun n'est un
           silence, aucun n'est une fermeture interprétée. */}
       <div className="mx-auto flex max-w-4xl items-center gap-3">
+        {/* ⚠️ LA PHRASE EST DE CHANDLER (05/09). Elle remplace « On ne touche
+            pas à tes courses. »
+            J'ai ajouté « Détails » derrière : le commentaire d'en-tête affirmait
+            depuis le 03/09 que les destinataires « vivent derrière Détails »,
+            et ce lien n'existait pas. Un commentaire qui décrit une garantie
+            absente est un faux témoin — et sans lui, le bandeau ne dit nulle
+            part de quoi il parle, ce qui est le point que la loi regarde en
+            premier. */}
         <p className="min-w-0 flex-1 text-[13px] leading-[17px] text-text-primary">
-          On ne touche pas à tes courses.
+          Notre objectif : t’apporter de meilleurs résultats.{' '}
+          <a href="/confidentialite" className="underline underline-offset-2 text-text-secondary">Détails</a>
         </p>
 
         <button

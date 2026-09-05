@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Ecran1Zone from './Ecran1Zone'
 import PageVente from './PageVente'
 import BarreCollante from './BarreCollante'
+import NotificationsVente from './NotificationsVente'
 
 /**
  * L'ACCUEIL MOBILE — deux temps, et une ligne entre les deux.
@@ -57,6 +58,12 @@ export default function AccueilMobile() {
           première porte WhatsApp de la page est au cinquième écran, et plus
           d'un visiteur mobile sur deux ne fait jamais défiler. */}
       <BarreCollante />
+
+      {/* ══ 4 — LES NOTIFICATIONS ════════════════════════════════════════════
+          En haut à droite, une par section, une seule fois chacune. Elles
+          disent un fait VRAI sur le produit — pas une activité inventée : voir
+          l'en-tête du composant, le refus y est motivé. */}
+      <NotificationsVente />
     </>
   )
 }
