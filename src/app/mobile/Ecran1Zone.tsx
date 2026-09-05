@@ -179,6 +179,14 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
     champRef.current?.blur()
     setZone(propre)
     setValidee(propre)
+    /* La barre du bas vit dans un autre composant et n'a aucun moyen de savoir
+       ce qu'il vient de taper. Sans ça, son bouton dit « ce que ta zone donne »
+       et ouvre une conversation où Ajnaya redemande la zone : le chauffeur
+       répète ce qu'il vient d'écrire, et c'est là qu'on les perd.
+       `sessionStorage` porte le cas du retour depuis WhatsApp, l'événement
+       porte le cas normal — les deux sont nécessaires. */
+    try { window.sessionStorage.setItem('foreas_zone_hero', propre) } catch { /* mode privé */ }
+    window.dispatchEvent(new CustomEvent('foreas:zone', { detail: propre }))
     remonter()
   }
 
@@ -381,14 +389,13 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
               zone={validee}
               immersifPossible
               ajusteHauteur
-              /* ⚠️ SANS `formule`, LA CAISSE S'OUVRE SUR L'ANNUEL À 249,99 €.
-                 Le téléphone vient d'écrire 29,99 €/mois : le chauffeur appuie
-                 sur « Essayer 3 jours — 0 € aujourd'hui » et découvre un prix
-                 huit fois plus gros. Il se dit qu'on l'a piégé, et il a raison
-                 de le penser. Le correctif existait déjà 300 lignes plus bas,
-                 dans la page de vente — pas ici. Une valeur absente qui retombe
-                 sur un défaut contredisant l'écran, sans erreur ni journal. */
-              onEssaiClick={() => { window.location.href = '/tarifs3?formule=mensuel' }}
+              /* ⚠️ PAS DE `formule` ICI, ET C'EST VOULU (Chandler, 05/09).
+                 La caisse s'ouvre sur l'ANNUEL, comme partout ailleurs dans le
+                 métier. Ce n'est pas un piège tant qu'elle le dit elle-même, et
+                 elle le dit à trois endroits : « × 12 » sur la carte,
+                 « Ensuite 249,99 € par an » sous l'essai, et la ligne du bas sur
+                 le renouvellement. */
+              onEssaiClick={() => { window.location.href = '/tarifs3' }}
               /* ⚠️ LE LIEN EMPORTE LA ZONE ET SA QUESTION. Sans ça, Ajnaya
                  redemande tout sur WhatsApp et le chauffeur répète ce qu'il
                  vient d'écrire — c'est là qu'on les perd (brief du fil PIEUVRE,

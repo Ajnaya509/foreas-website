@@ -43,7 +43,13 @@ const ECONOMIE = formaterEuros(PRIX_MENSUEL_CENTIMES * 12 - PRIX_ANNUEL_CENTIMES
 
 export default function PageVente() {
   const racine = useRef<HTMLDivElement | null>(null)
-  const [mois, poserMois] = useState(true)
+  /* ⚠️ L'ANNÉE EST MISE EN AVANT, comme sur la caisse et comme partout dans le
+     métier (décision Chandler, 05/09). La bascule reste là et il choisit ce
+     qu'il veut — mais les deux pages doivent montrer la MÊME formule par
+     défaut. Deux défauts différents, c'est un chauffeur qui lit 29,99 € ici et
+     249,99 € à la caisse : il ne se dit pas qu'il a changé d'écran, il se dit
+     qu'on l'a piégé. */
+  const [mois, poserMois] = useState(false)
 
   /* ── LE CARROUSEL : une seule vidéo joue à la fois ─────────────────────── */
   useEffect(() => {
@@ -561,9 +567,11 @@ export default function PageVente() {
           </div>
         </div>
 
-        {/* ⚠️ LA FORMULE VOYAGE DANS L’ADRESSE. Sans elle, il lit 29,99 €, il appuie,
-            et la caisse s’ouvre sur l’annuel : la page de tarifs a son propre état par
-            défaut et n’a aucun moyen de deviner celui d’ici. Mesuré à l’écran. */}
+        {/* ⚠️ LA FORMULE VOYAGE DANS L’ADRESSE, ET C’EST LA SEULE PORTE DE LA PAGE
+            QUI LE FAIT — parce que c’est la seule où il a CHOISI. Partout ailleurs
+            on laisse la caisse sur son défaut, l’annuel. Ici il vient de basculer
+            au mois et de lire 29,99 € : ouvrir la caisse à 249,99 € derrière son
+            propre geste, c’est le piège que la bascule était censée éviter. */}
         <a className={`${s.cta} ${s.violet}`} href={`/tarifs3?formule=${mois ? 'mensuel' : 'annuel'}`}>Commencer les {ESSAI_JOURS} jours</a>
         <div><a className={s.sortie} href="/wa?s=avant_paiement&p=/&i=offre&o=avant_paiement">Une question d’abord</a></div>
         <p className={s.tampon}>Carte enregistrée dès l’inscription. Résiliation en un clic.</p>

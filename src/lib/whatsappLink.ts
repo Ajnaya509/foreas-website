@@ -216,10 +216,15 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
       return `Salut Ajnaya. J'ai lu la page. Avant de tester, une question.`
 
     case 'barre_mobile':
-      /* La barre suit le chauffeur pendant toute la lecture : il peut appuyer
-         au premier écran comme au dernier. On ne suppose donc RIEN de ce qu'il
-         a lu — c'est la seule porte de la page qui ne sait pas où il en est. */
-      return `Salut Ajnaya. Je lis la page FOREAS. J'ai une question.`
+      /* ⚠️ LE BOUTON DIT « CE QUE TA ZONE DONNE CE SOIR ». Le message doit donc
+         poser CETTE question, pas une autre : un bouton qui promet une chose et
+         ouvre une conversation sur une autre, c'est la première impression du
+         produit, et elle est ratée.
+         La zone vient du hero quand il en a tapé une. Sans elle, Ajnaya la
+         demanderait — et il répéterait ce qu'il vient d'écrire. */
+      return zone
+        ? `Salut Ajnaya. Je suis sur ${zone}. Ça donne quoi ce soir ?`
+        : `Salut Ajnaya. Ça donne quoi sur ma zone ce soir ?`
 
     case 'avant_paiement':
       /* ⚠️ C'EST LA PORTE DE SORTIE DE LA SECTION PRIX : elle s'adresse

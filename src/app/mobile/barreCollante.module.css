@@ -1,9 +1,12 @@
 /*
  * LA BARRE COLLANTE — accueil mobile.
  *
+ * ⚠️ UN SEUL BOUTON. Deux boutons côte à côte en bas d'écran, ce n'est pas deux
+ * fois plus de chances : c'est une hésitation, et le chauffeur n'en prend
+ * aucun. Le bouton change de rôle en descendant — découverte, puis essai.
+ *
  * Elle est posée par-dessus la page, jamais dans le flux : la page garde sa
- * hauteur, et une réserve en bas de `.vente` empêche la barre de couvrir la
- * dernière ligne du pied de page.
+ * hauteur, et une réserve en bas du pied de page tient la place.
  *
  * ⚠️ LE BANDEAU DE CONSENTEMENT PUBLIE SA HAUTEUR dans `--bandeau` (posé sur
  * `<html>` par Ecran1Zone). La barre s'assoit DESSUS, sinon le bandeau la
@@ -15,7 +18,7 @@
   left: 0; right: 0;
   bottom: calc(env(safe-area-inset-bottom) + var(--bandeau, 0px) + 10px);
   z-index: 40;
-  display: flex; gap: 10px;
+  display: flex;
   padding: 0 14px;
   /* Cachée, elle ne doit intercepter aucun doigt : le hero a ses propres
      commandes exactement à cet endroit. */
@@ -30,30 +33,35 @@
 }
 
 .wa, .essai {
-  display: flex; align-items: center; justify-content: center; gap: 7px;
-  flex: 1 1 0; min-width: 0;
-  /* 52 px : au-dessus des 44 px exigés, parce qu'on vise avec le pouce en
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  flex: 1 1 auto; min-width: 0;
+  /* 54 px : au-dessus des 44 px exigés, parce qu'on vise avec le pouce en
      marchant, pas avec l'index posé sur un bureau. */
-  min-height: 52px;
-  border-radius: 14px;
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 15px;
   font-family: var(--titre, 'Genos', system-ui, sans-serif);
-  font-size: 1.0625rem; font-weight: 800; letter-spacing: .2px;
-  text-decoration: none; white-space: nowrap;
+  font-size: 1.125rem; font-weight: 800; letter-spacing: .2px;
+  text-decoration: none; text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
 }
 
 /* Le vert WhatsApp existe déjà partout ailleurs sur le site (widget, modale
-   de sortie, vérification). Le chauffeur sait ce qu'il ouvre avant de lire. */
+   de sortie, vérification). Avec le logo à côté, le chauffeur sait ce qu'il
+   ouvre avant même d'avoir lu le libellé. */
 .wa { background: #25D366; color: #07110A; }
+.logo { width: 21px; height: 21px; flex: none; }
+
 .essai {
   background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 52%, #B494FF 100%);
   color: #fff;
 }
-.wa:active, .essai:active { transform: scale(.985); }
+.wa:active, .essai:active { transform: scale(.99); }
 .wa:focus-visible, .essai:focus-visible { outline: 2px solid #00D4FF; outline-offset: 3px; }
 
-/* Écrans étroits (320 px) : les deux libellés tiennent encore, à condition de
-   rendre la graisse un cran plus compacte plutôt que de couper un mot. */
+/* Écrans étroits (320 px) : « Ce que ta zone donne ce soir » tient encore à
+   condition de resserrer d'un cran plutôt que de couper un mot. */
 @media (max-width: 359px) {
-  .wa, .essai { font-size: 0.9375rem; gap: 5px; }
+  .wa, .essai { font-size: 1rem; gap: 7px; padding: 0 12px; }
+  .logo { width: 19px; height: 19px; }
 }
