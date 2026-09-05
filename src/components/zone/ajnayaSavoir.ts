@@ -2,6 +2,19 @@
  * LE SAVOIR D'AJNAYA EN MODE DÉMO — ÉCRIT À LA MAIN, ET ASSUMÉ COMME TEL.
  *
  * Source : FOREAS-SHARED/DEMO_MODALE_AJNAYA/demo-modale-ajnaya.html (fil Pieuvre).
+ *
+ * ⚠️ 05/09/2026 — LES CINQ `bascule` ONT ETE REECRITES, A LA DEMANDE DE CHANDLER.
+ * Elles creaient le desir et s'arretaient la : aucun geste designe, et les deux
+ * portes indifferenciees. Or c'est CE message qui fait apparaitre les boutons
+ * (`AjnayaPhoneDemo.tsx`, `sorties: true`). Desormais chacune nomme le role de
+ * chaque porte — WhatsApp = le calcul refait avec SES chiffres, l'essai = l'avoir
+ * en main des sa prochaine sortie — et dit la carte a voix haute, parce que c'est
+ * le seul vrai frein au moment du clic.
+ * ⚠️ TROIS PROMESSES ONT ETE SUPPRIMEES PAR LA RELECTURE ADVERSE, elles etaient
+ * FAUSSES : « je te dis quelle vague tu peux tenir » et « je te dis ou tu perds »
+ * (elle ne voit ni la demande ni son compte : elle REFAIT le calcul avec les
+ * heures et les euros qu'il tape lui-meme), et « regarde-le sur tes propres
+ * journees » (l'app ne lit pas ses courses). Ne pas les remettre.
  * Les textes sont repris MOT POUR MOT. Ne pas les reformuler sans Chandler :
  * une version précédente a été rejetée le 28/08 — « beaucoup de charabia, rien
  * à manger de concret ». Elle décrivait ce qu'un chauffeur de trois mois sait
@@ -46,35 +59,35 @@ export const SAVOIR: SavoirZone[] = [
       verdict:'Un retour à vide de l’aéroport, c’est 45 minutes payées zéro.',
       calcul:'Paris–CDG aller-retour à vide : environ 50 km, ~7&nbsp;€ de carburant, et une heure de ta journée. Deux fois dans la journée et tu as travaillé <b>1h30 pour rien</b>.',
       geste:'Avant d’accepter une course vers l’aéroport, regarde l’heure d’arrivée, pas l’heure qu’il est. La vague tombe <b>20 à 30 minutes après</b> l’atterrissage d’un long-courrier, le temps des bagages et de la douane. Arrive dedans, pas entre deux.',
-      bascule:'Reste à savoir quelle vague TOI tu peux attraper, avec tes horaires et ton secteur. Une moyenne de zone ne te le dira jamais. <b>Le seul chiffre qui vaut, c’est le tien.</b>' },
+      bascule:'Ça, c’est la mécanique du métier : <b>ton chiffre à toi, personne ne l’a.</b> Envoie-moi sur WhatsApp combien de retours à vide tu as faits cette semaine et ce que tu as encaissé, je refais ce calcul avec TES nombres. Et pour m’avoir en main dès ta prochaine sortie, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' },
 
     { cle:'affaires', etat:'modérée',
       mots:['défense','defense','levallois','issy les moulineaux','boulogne','courbevoie','nanterre','saint-ouen','bercy','part-dieu'],
       verdict:'Entre 10h et 16h, un quartier d’affaires te coûte de l’argent.',
       calcul:'Moteur au ralenti : environ 1,5&nbsp;L à l’heure, soit ~2,50&nbsp;€. Cinq heures de creux, ce sont <b>12&nbsp;€ brûlés à l’arrêt</b> — plus les cinq heures que tu n’as pas facturées.',
       geste:'Le creux, ne l’attends pas : déplace-toi <b>15 minutes avant</b> qu’il tombe. Un hôpital, une gare, un centre commercial vivent à l’heure exacte où les tours dorment. Tu changes de rythme, pas de métier.',
-      bascule:'À quelle heure TOI tu dois y être ? Ça dépend de ton véhicule, de tes horaires, de ce que tu acceptes. <b>Le seul chiffre qui vaut, c’est le tien.</b>' },
+      bascule:'Ce calcul vaut pour n’importe quel moteur qui tourne : <b>ta journée à toi n’existe qu’avec tes chiffres.</b> Dis-moi sur WhatsApp combien d’heures tu passes dans ce creux et ce que tu factures autour, je te chiffre ce qu’il te coûte vraiment. Et pour t’en servir dès demain midi, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' },
 
     { cle:'nuit', etat:'très demandée',
       mots:['bastille','oberkampf','pigalle','chatelet','châtelet','marais','republique','république','strasbourg','saint-germain','montmartre'],
       verdict:'La nuit, ce qui te coûte n’est pas la course. C’est le temps pour charger.',
       calcul:'Dix minutes pour te garer et récupérer le client, sur quatre courses dans la nuit, ça fait <b>40 minutes</b> — soit une course entière que tu n’as pas faite.',
       geste:'Ne te mets pas devant le lieu. Arrête-toi sur <b>la première rue où on peut s’arrêter deux secondes</b>, et envoie le point exact au client. Il marche 100 mètres, tu gagnes 8 minutes. Fais-le quatre fois : tu as gagné une course.',
-      bascule:'La moyenne du samedi soir mélange celui qui finit à 2h et celui qui finit à 5h. Elle ne te ressemble pas. <b>Le seul chiffre qui vaut, c’est le tien.</b>' },
+      bascule:'Une moyenne du samedi soir mélange celui qui finit à 2h et celui qui finit à 5h : <b>le seul chiffre qui vaut, c’est le tien.</b> Donne-moi sur WhatsApp tes heures de nuit et ce que tu as encaissé, je te calcule ce que ta nuit te paie de l’heure. Et pour m’avoir avec toi samedi soir, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' },
 
     { cle:'gare', etat:'demandée',
       mots:['gare','montparnasse','austerlitz','gare de lyon','gare du nord','gare de l est','saint-lazare','perrache','matabiau'],
       verdict:'Une gare se joue à la minute. Deux minutes de retard changent tout.',
       calcul:'Arriver deux minutes après la vague, c’est être douzième dans la file. À trois minutes par départ, tu attends <b>35 minutes</b> pour une course à 15&nbsp;€. Ton heure vaut plus que ça : tu viens de la vendre à moitié prix.',
       geste:'Cale-toi sur <b>l’heure d’arrivée du train</b>, jamais sur l’heure qu’il est. Sois en place quatre minutes avant. Et retiens le dernier départ de la soirée : après lui, la zone se vide d’un coup et tu attends pour rien.',
-      bascule:'Quelle vague TU peux attraper, avec ton emploi du temps ? Une moyenne hebdomadaire ne le sait pas. <b>Le seul chiffre qui vaut, c’est le tien.</b>' },
+      bascule:'Ça, c’est la mécanique de la file : <b>ce qu’elle te coûte à TOI dépend de tes horaires.</b> Envoie-moi sur WhatsApp tes heures d’attente et ce que tu encaisses dans ce créneau, je te chiffre ce que ces attentes te prennent. Et pour voir ce que ça change dès ce soir, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' },
 
     { cle:'peripherie', etat:'calme',
       mots:[],
       verdict:'En périphérie, attendre coûte plus cher que rouler.',
       calcul:'À l’arrêt moteur tournant : ~2,50&nbsp;€ de l’heure. Trois heures d’attente dans une journée, ce sont <b>7,50&nbsp;€ brûlés</b> plus trois heures non facturées. C’est la journée qui passe de correcte à mauvaise.',
       geste:'Donne-toi une règle chiffrée et tiens-la : <b>12 minutes sans course, tu bouges</b>. Vers le pôle dense le plus proche, même à dix minutes de route. Rouler vers la demande bat presque toujours attendre à côté.',
-      bascule:'Ici moins qu’ailleurs une moyenne veut dire quelque chose : tout se joue sur TON créneau et TON rayon. <b>Le seul chiffre qui vaut, c’est le tien.</b>' }
+      bascule:'Ici, une moyenne ne veut rien dire : <b>le seul chiffre qui vaut, c’est le tien.</b> Dis-moi sur WhatsApp tes heures d’attente et ton total de la journée, je te chiffre ce que cette attente te coûte. Et pour tenir la règle des 12 minutes avec moi dès ce soir, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' }
   ]
 
 /* ═══════════════════════════════════════════════════════════════════════════
