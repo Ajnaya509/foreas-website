@@ -72,7 +72,11 @@ export function ConsentBanner() {
     >
       {/* LE BANDEAU — décision de Chandler, 03/09.
           « OK » accepte. La croix refuse. Pas de bouton « Non », pas de noms
-          de destinataires dans la ligne : ils vivent derrière « Détails ».
+          de destinataires dans la ligne.
+          ⚠️ CE COMMENTAIRE DISAIT « ils vivent derrière Détails ». Ce lien
+          n'a jamais existé, puis a existé quelques heures le 05/09, puis a été
+          retiré sur demande. Un commentaire qui décrit une garantie absente est
+          un faux témoin : celui-là a menti pendant deux jours.
 
           ⚠️ LA CROIX EST À 5 % D'OPACITÉ. C'EST UNE DÉCISION DE CHANDLER,
           prise en connaissance de cause le 03/09 : « je suis dans les règles
@@ -94,15 +98,18 @@ export function ConsentBanner() {
       <div className="mx-auto flex max-w-4xl items-center gap-3">
         {/* ⚠️ LA PHRASE EST DE CHANDLER (05/09). Elle remplace « On ne touche
             pas à tes courses. »
-            J'ai ajouté « Détails » derrière : le commentaire d'en-tête affirmait
-            depuis le 03/09 que les destinataires « vivent derrière Détails »,
-            et ce lien n'existait pas. Un commentaire qui décrit une garantie
-            absente est un faux témoin — et sans lui, le bandeau ne dit nulle
-            part de quoi il parle, ce qui est le point que la loi regarde en
-            premier. */}
+
+            ⚠️ LE LIEN « DÉTAILS » A ÉTÉ RETIRÉ SUR SA DEMANDE, LE MÊME JOUR :
+            « le but qu'il clique OK ». Je l'avais posé et j'ai dit pourquoi ;
+            c'est son produit et sa juridiction, comme pour l'opacité de la
+            croix le 03/09. C'est une décision, pas un oubli — ne pas le
+            « rétablir » en croyant réparer quelque chose.
+
+            Ce qui reste vrai et qu'il faut savoir en le lisant : le bandeau ne
+            dit plus nulle part de quoi porte le choix, ni qui reçoit la mesure.
+            Le pied de page garde /confidentialite, atteignable autrement. */}
         <p className="min-w-0 flex-1 text-[13px] leading-[17px] text-text-primary">
-          Notre objectif : t’apporter de meilleurs résultats.{' '}
-          <a href="/confidentialite" className="underline underline-offset-2 text-text-secondary">Détails</a>
+          Notre objectif : t’apporter de meilleurs résultats.
         </p>
 
         <button
