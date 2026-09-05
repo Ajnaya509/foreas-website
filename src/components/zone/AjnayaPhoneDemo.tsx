@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import s from './ajnayaPhone.module.css'
 import { typePourZone, reconnaitreLieu, replique, type Repli } from './ajnayaSavoir'
+import { streamAjnayaChat } from '@/lib/ajnayaStream'
+import { getSessionId, getDevice } from '@/lib/ajnaya-analytics'
+import { getVisitorId } from '@/lib/zoneFingerprint'
 import { materialiser, mouvementReduit } from './ajnayaPoussiere'
 
 /**
@@ -95,6 +98,62 @@ function lireHorloge() {
  * Un bloc de texte qui se matérialise en poussière.
  * ⚠️ Il est rejouable au clic : c'est le détail qu'on veut MONTRER.
  */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE CERVEAU — la vraie Ajnaya, par le même chemin que la page d'accueil
+   ═══════════════════════════════════════════════════════════════════════════
+   Chandler, 05/09 : « fais B ». Le téléphone parle maintenant à la Pieuvre par
+   `/api/ajnaya/chat/stream` — EXACTEMENT la route, la session et le contexte
+   qu'emploie déjà le téléphone vivant de l'accueil (`LivePhone.tsx`). Aucun
+   deuxième chemin, aucun deuxième cerveau : la fiche `widget_site` du fil
+   Pieuvre répond ici comme là-bas (NORTH_STAR §4 : jamais de cerveau parallèle).
+
+   ⚠️ LE CERVEAU A SEPT SECONDES. Mesuré par le fil Pieuvre : ~6,3 s en médiane,
+   jusqu'à 11 s. Sur une page qui doit vendre en quinze secondes, un écran qui
+   attend est un écran mort. Passé le délai, le savoir local répond — vrai,
+   instantané, celui qui tournait seul jusqu'à aujourd'hui — et l'appel est
+   coupé. Même chose si la route est fermée (`pieuvre_disabled`, plafond 429,
+   réseau) : le chauffeur ne voit jamais une erreur, il voit une réponse.
+
+   ⚠️ LES DEUX PORTES SONT POSÉES PAR LE CODE (les puces sous la réponse), pas
+   par le texte. La fiche `widget_site` les écrit aussi en toutes lettres — on
+   les lui a demandées « au caractère près » le 05/09. Si elles arrivent dans
+   la prose, on retire ces lignes-là : deux fois la même porte, c'est un tic. */
+const DELAI_CERVEAU_MS = 7000
+
+function echapperHtml(x: string) {
+  return x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+function texteBrut(html: string) {
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim()
+}
+function sansPortesEnTexte(t: string) {
+  return t.split('\n')
+    .filter((l) => !/^\s*(?:[⚡💬👉➡️→\-•*]\s*)*(Essayer 3 jours|Poser ma question sur WhatsApp)/i.test(l))
+    .join('\n').trim()
+}
+/** La prose du cerveau, rendue comme le reste du fil : gras léger, retours à la ligne. */
+function proseVersHtml(t: string) {
+  return echapperHtml(t)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>')
+}
+/** Première phrase en tête (la ligne « verdict » du téléphone), le reste en corps. */
+function decouper(t: string): { tete: string; corps: string } {
+  const m = t.match(/^([\s\S]+?[.!?…])(\s+[\s\S]+)?$/)
+  if (!m || !m[2]?.trim() || m[1].length > 140) return { tete: t, corps: '' }
+  return { tete: m[1].trim(), corps: m[2].trim() }
+}
+/** Le moment réel à Paris — anti « vendredi soir » un lundi (même précédent que LivePhone). */
+function momentParis() {
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now)
+  const day = parts.find((p) => p.type === 'weekday')?.value ?? ''
+  const h = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10)
+  const bucket = h < 6 ? 'nuit' : h < 11 ? 'matin' : h < 15 ? 'midi' : h < 19 ? 'apres-midi' : h < 23 ? 'soir' : 'nuit'
+  return { day, time: `${String(h).padStart(2, '0')}:${parts.find((p) => p.type === 'minute')?.value ?? '00'}`, bucket, iso: now.toISOString() }
+}
+
 function BlocPoussiere({ html, index }: { html: string; index: number }) {
   const ref = useRef<HTMLDivElement | null>(null)
   const arret = useRef<(() => void) | null>(null)
@@ -130,6 +189,7 @@ export default function AjnayaPhoneDemo({
   onEssaiClick,
   onWhatsAppClick,
   immersifPossible = false,
+  cerveau = false,
   ajusteHauteur = false,
 }: {
   /** La zone tapée par le chauffeur. Un changement relance la conversation. */
@@ -152,6 +212,8 @@ export default function AjnayaPhoneDemo({
    * Seul `/mobile` l'active, où l'écriture est le but.
    */
   immersifPossible?: boolean
+  /** Brancher la vraie Ajnaya (route `/api/ajnaya/chat/stream`). Seul `/mobile` l'active. */
+  cerveau?: boolean
   /**
    * ⚠️ LE TÉLÉPHONE PREND TOUTE LA LARGEUR, ET C'EST SON ÉCRAN QU'ON RACCOURCIT.
    *
@@ -198,6 +260,14 @@ export default function AjnayaPhoneDemo({
   const [demande, setDemande] = useState('')
   const [horsZone, setHorsZone] = useState<Repli | null>(null)
   const [tour, setTour] = useState(0)
+  /* Le cerveau : l'identité résolue par le serveur (jamais fabriquée ici), le
+     badge visiteur (sous consentement, résolu par `getVisitorId`), le fil tel
+     qu'il est (lu par référence : l'effet de conversation ne doit pas dépendre
+     de `lignes`, sinon il se rejoue à chaque bulle), et l'appel en cours. */
+  const [identityId, setIdentityId] = useState<string | null>(null)
+  const [visitorId, setVisitorId] = useState<string | null>(null)
+  const lignesRef = useRef<Ligne[]>([])
+  const cerveauAbort = useRef<AbortController | null>(null)
   /* Il vit HORS de `minuteurs.current` : voir le commentaire dans `envoyer()`. */
   const sortieRef = useRef<number | null>(null)
   /* L'œil de l'app n'est animé que quand elle parle. */
@@ -602,68 +672,164 @@ export default function AjnayaPhoneDemo({
        bulle d'attente, ni indicateur de chargement, jamais. */
     setAttente(true)
 
-    /* ══ CE N'EST PAS UN LIEU : elle répond, la zone ne bouge pas ══════════ */
-    if (horsZone) {
-      const r = horsZone
+    /* ══ LE SAVOIR LOCAL — celui qui tournait seul jusqu'au 05/09 ═══════════
+       Il reste le filet : il répond quand le cerveau se tait, tarde, ou est
+       fermé. Rien n'est retiré de ce qu'il savait faire. */
+    const jouerLocal = () => {
+      /* ══ CE N'EST PAS UN LIEU : elle répond, la zone ne bouge pas ══════════ */
+      if (horsZone) {
+        const r = horsZone
+        plusTard(620, () => {
+          setAttente(false)
+          setParle(true)
+          setLignes((l) => [
+            ...l,
+            { id: `${tour}-hv`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${r.verdict}</b>` }] },
+          ])
+          plusTard(820, () => {
+            setLignes((l) => [
+              ...l,
+              {
+                id: `${tour}-hc`,
+                qui: 'elle',
+                etiq: 'Ajnaya',
+                blocs: [{ html: r.corps, tag: { texte: r.etiq, couleur: 'c' } }],
+                /* ⚠️ AUCUNE PORTE APRÈS UNE INCOMPRÉHENSION. Vendre juste après
+                   avoir échoué à comprendre, c'est le geste qui sent l'amateur. */
+                sorties: r.porte,
+              },
+            ])
+            plusTard(400, () => setParle(false))
+          })
+        })
+        return
+      }
+
       plusTard(620, () => {
         setAttente(false)
         setParle(true)
         setLignes((l) => [
           ...l,
-          { id: `${tour}-hv`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${r.verdict}</b>` }] },
+          { id: `${tour}-v`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${t.verdict}</b>` }] },
         ])
-        plusTard(820, () => {
+
+        plusTard(900, () => {
           setLignes((l) => [
             ...l,
             {
-              id: `${tour}-hc`,
+              id: `${tour}-cg`,
               qui: 'elle',
               etiq: 'Ajnaya',
-              blocs: [{ html: r.corps, tag: { texte: r.etiq, couleur: 'c' } }],
-              /* ⚠️ AUCUNE PORTE APRÈS UNE INCOMPRÉHENSION. Vendre juste après
-                 avoir échoué à comprendre, c'est le geste qui sent l'amateur. */
-              sorties: r.porte,
+              blocs: [
+                { html: t.calcul, tag: { texte: 'CE QUE ÇA TE COÛTE', couleur: 'c' } },
+                { html: t.geste, tag: { texte: 'À FAIRE DÈS CE SOIR', couleur: 'g' } },
+              ],
             },
           ])
-          plusTard(400, () => setParle(false))
+
+          plusTard(950, () => {
+            setLignes((l) => [
+              ...l,
+              { id: `${tour}-b`, qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: t.bascule }], sorties: true },
+            ])
+            plusTard(400, () => setParle(false))
+          })
         })
       })
-      return () => { minuteurs.current.forEach(clearTimeout); minuteurs.current = [] }
     }
 
-    plusTard(620, () => {
-      setAttente(false)
-      setParle(true)
-      setLignes((l) => [
-        ...l,
-        { id: `${tour}-v`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${t.verdict}</b>` }] },
-      ])
+    /* ══ LE CERVEAU — la vraie Ajnaya, sept secondes, sinon le local ═══════ */
+    if (cerveau) {
+      cerveauAbort.current?.abort()
+      const ac = new AbortController()
+      cerveauAbort.current = ac
+      let conclu = false
+      const conclure = () => { if (conclu) return false; conclu = true; clearTimeout(garde); return true }
+      const replierLocal = () => { if (!conclure()) return; ac.abort(); jouerLocal() }
+      const garde = setTimeout(replierLocal, DELAI_CERVEAU_MS)
+      minuteurs.current.push(garde)
 
-      plusTard(900, () => {
-        setLignes((l) => [
-          ...l,
-          {
-            id: `${tour}-cg`,
-            qui: 'elle',
-            etiq: 'Ajnaya',
-            blocs: [
-              { html: t.calcul, tag: { texte: 'CE QUE ÇA TE COÛTE', couleur: 'c' } },
-              { html: t.geste, tag: { texte: 'À FAIRE DÈS CE SOIR', couleur: 'g' } },
-            ],
-          },
-        ])
-
-        plusTard(950, () => {
+      const jouerCerveau = (texte: string) => {
+        const { tete: tete_, corps } = decouper(texte)
+        plusTard(120, () => {
+          setAttente(false)
+          setParle(true)
           setLignes((l) => [
             ...l,
-            { id: `${tour}-b`, qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: t.bascule }], sorties: true },
+            { id: `${tour}-cv`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${proseVersHtml(tete_)}</b>` }],
+              ...(corps ? {} : { sorties: true }) },
           ])
-          plusTard(400, () => setParle(false))
+          if (corps) {
+            plusTard(700, () => {
+              setLignes((l) => [
+                ...l,
+                { id: `${tour}-cc`, qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: proseVersHtml(corps) }], sorties: true },
+              ])
+              plusTard(400, () => setParle(false))
+            })
+          } else {
+            plusTard(400, () => setParle(false))
+          }
         })
-      })
-    })
+      }
+
+      /* L'historique tel que l'écran le montre — jamais une copie tenue à part,
+         elle finirait par diverger de ce qu'il a sous les yeux. */
+      const histo = lignesRef.current
+        .filter((l) => l.id !== 'attente')
+        .slice(-8)
+        .map((l) => ({ role: l.qui === 'toi' ? 'user' : 'ajnaya', text: texteBrut(l.blocs.map((b) => b.html).join(' ')) }))
+      const lieu = reconnaitreLieu(zoneCourante || '')
+
+      streamAjnayaChat({
+        message: demande || `Ça donne quoi ${nom} ?`,
+        sessionId: getSessionId(),
+        identityId,
+        visitor_id: visitorId,
+        pageSource: '/mobile',
+        scrollSection: 'hero_phone',
+        heatScore: 20,
+        messageCount: tour + 1,
+        conversationHistory: histo,
+        device: getDevice(),
+        liveContext: {
+          now: momentParis(),
+          ...(lieu ? { zone: { name: lieu, type: t.cle, etat: t.etat } } : {}),
+        },
+      }, {
+        onMeta: (m) => { if (m.identity_id) setIdentityId(m.identity_id) },
+        onDelta: () => { /* la route rend un seul bloc : on affiche à `done` */ },
+        onDone: (d) => {
+          if (!conclure()) return
+          const texte = sansPortesEnTexte((d.full_text || '').replace(/\[[\w\s]+\]\s*/g, ''))
+          if (texte) jouerCerveau(texte); else jouerLocal()
+        },
+        onError: (_m, streamed) => {
+          if (!conclure()) return
+          const texte = sansPortesEnTexte(streamed || '')
+          if (texte) jouerCerveau(texte); else jouerLocal()
+        },
+      }, ac.signal).catch(() => { if (conclure()) jouerLocal() })
+
+      return () => { ac.abort(); minuteurs.current.forEach(clearTimeout); minuteurs.current = [] }
+    }
+
+    jouerLocal()
+    return () => { minuteurs.current.forEach(clearTimeout); minuteurs.current = [] }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoneCourante, tour])
+
+  /* Le fil, lu par référence par l'effet du cerveau. */
+  useEffect(() => { lignesRef.current = lignes }, [lignes])
+
+  /* Le badge visiteur, uniquement si le cerveau est branché et sous consentement
+     (c'est `getVisitorId` qui vérifie). Jamais un second registre d'identité. */
+  useEffect(() => {
+    if (!cerveau) return
+    let vivant = true
+    getVisitorId().then((r) => { if (vivant && r?.visitorId) setVisitorId(r.visitorId) }).catch(() => { /* sans badge, on parle quand même */ })
+    return () => { vivant = false }
+  }, [cerveau])
 
   /* Le téléphone n'existe pas avant la question. Il ARRIVE — c'est le moment
      qui fait « ah ». UNE SEULE FOIS : le rejouer à chaque question deviendrait
