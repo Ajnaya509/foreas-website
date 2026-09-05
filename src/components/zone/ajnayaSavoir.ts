@@ -39,6 +39,8 @@
  * Puis seulement la bascule vers son propre chiffre.
  */
 
+import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
+
 export type SavoirZone = {
   cle: string
   /** Un des quatre mots de l'app, dans le même ordre de force. */
@@ -57,7 +59,11 @@ export const SAVOIR: SavoirZone[] = [
     { cle:'aeroport', etat:'demandée',
       mots:['roissy','cdg','orly','beauvais','aeroport','aéroport','le bourget'],
       verdict:'Un retour à vide de l’aéroport, c’est 45 minutes payées zéro.',
-      calcul:'Paris–CDG aller-retour à vide : environ 50 km, ~7&nbsp;€ de carburant, et une heure de ta journée. Deux fois dans la journée et tu as travaillé <b>1h30 pour rien</b>.',
+      /* ⚠️ « PARIS–CDG » ÉTAIT ÉCRIT EN DUR, et un chauffeur qui tapait ORLY
+         lisait un calcul sur Roissy. Mesuré à l'écran le 05/09. Le texte
+         parle maintenant de « l'aéroport » et donne une fourchette vraie pour
+         les deux : Orly ~15 km du centre, Roissy ~25 km. */
+      calcul:'Un aller-retour à vide entre le centre et l’aéroport : 30 à 50 km selon l’aéroport, 5 à 7&nbsp;€ de carburant, et jusqu’à une heure de ta journée. Deux fois dans la journée et tu as travaillé <b>1h30 pour rien</b>.',
       geste:'Avant d’accepter une course vers l’aéroport, regarde l’heure d’arrivée, pas l’heure qu’il est. La vague tombe <b>20 à 30 minutes après</b> l’atterrissage d’un long-courrier, le temps des bagages et de la douane. Arrive dedans, pas entre deux.',
       bascule:'Ça, c’est la mécanique du métier : <b>ton chiffre à toi, personne ne l’a.</b> Envoie-moi sur WhatsApp combien de retours à vide tu as faits cette semaine et ce que tu as encaissé, je refais ce calcul avec TES nombres. Et pour m’avoir en main dès ta prochaine sortie, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' },
 
@@ -263,7 +269,12 @@ export function replique(texte: string, zone: string): Repli {
   const a = (...k: string[]) => k.some((x) => contientMot(m, x))
   const z = zone || 'ta zone'
 
-  if (a('comment', 'savoir', 'sais', 'preuve', 'prouve', 'bluff', 'invente', 'serieux', 'vraiment')) {
+  /* « tu bluffes » ne matchait pas 'bluff' : on compare des mots entiers,
+     jamais des bouts de mot (26 % d'erreurs avant, voir plus haut). Les
+     formes conjuguées et les synonymes du doute sont donc listés tels quels. */
+  if (a('comment', 'savoir', 'sais', 'preuve', 'prouve', 'bluff', 'bluffes', 'bluffe', 'invente',
+        'inventes', 'serieux', 'sérieux', 'vraiment', 'mytho', 'mens', 'menteur', 'faux', 'crois',
+        'croire', 'confiance', 'fiable', 'source', 'sources')) {
     return {
       verdict: 'Là, tout de suite : je ne sais pas.',
       etiq: 'CE QUE JE SAIS',
@@ -272,10 +283,15 @@ export function replique(texte: string, zone: string): Repli {
     }
   }
   if (a('combien', 'prix', 'coute', 'cher', 'gratuit', 'tarif', 'abonnement', 'payer', 'euro', 'euros')) {
+    /* ⚠️ LE PRIX ÉTAIT RECOPIÉ ICI EN DUR (« 29,99 € par mois »). Un prix qui
+       vit à deux endroits finit par diverger : le site a déjà encaissé deux
+       prix différents le 14/08. Il vient de `offre.ts`, comme partout.
+       « Moins d'une course » a été retiré : une course à 10,89 € existe, la
+       phrase pouvait être fausse. « Moins d'un euro par jour » est vrai. */
     return {
-      verdict: '29,99 € par mois. Moins d’une course.',
+      verdict: `${formaterEuros(PRIX_MENSUEL_CENTIMES)} par mois, ou ${formaterEuros(PRIX_ANNUEL_CENTIMES)} par an.`,
       etiq: 'CE QUE ÇA TE COÛTE',
-      corps: 'Moins d’un euro par jour. Aujourd’hui tu paies <b>0 €</b> : trois jours pour voir. Tu coupes en un clic.',
+      corps: `Moins d’un euro par jour. Aujourd’hui tu paies <b>0 €</b> : ${ESSAI_JOURS} jours pour voir. Tu coupes en un clic.`,
       porte: true,
     }
   }
@@ -287,6 +303,62 @@ export function replique(texte: string, zone: string): Repli {
       porte: true,
     }
   }
+  /* ⚠️ CES QUATRE FAMILLES TOMBAIENT SUR « LÀ, JE DÉCROCHE ». Mesuré le 05/09 :
+     après le verdict sur Orly, le chauffeur tape « Et si je reste ce soir » —
+     la question la plus naturelle du monde — et Ajnaya répond qu'elle ne
+     comprend pas. Pour lui, c'est « l'IA ne sert à rien », et c'est terminé.
+     Chaque réponse ci-dessous reste dans le savoir DE SA ZONE : rien n'est
+     inventé, on ressort le geste ou le verdict qu'elle a déjà. */
+  const savoir = typePourZone(zone)
+
+  // « Et si je reste ? » / « je bouge ? » / « j'attends ? » → le geste de la zone
+  if (a('reste', 'rester', 'attends', 'attendre', 'attend', 'patiente', 'bouge', 'bouger',
+        'pars', 'partir', 'aller', 'vais', 'deplace', 'déplace')) {
+    return {
+      verdict: `Sur ${z}, la règle est simple.`,
+      etiq: 'À FAIRE MAINTENANT',
+      corps: savoir.geste,
+      porte: true,
+    }
+  }
+  // « ce soir ? » / « demain matin ? » / « quand ? » → honnête : pas d'heure, mais la mécanique
+  if (a('soir', 'nuit', 'matin', 'demain', 'quand', 'heure', 'heures', 'maintenant',
+        'midi', 'apres', 'après', 'weekend', 'week-end', 'samedi', 'dimanche')) {
+    return {
+      verdict: `Je n’ai pas d’heure à te donner sur ${z}. Pas encore.`,
+      etiq: 'CE QUI NE CHANGE PAS',
+      corps: `Ton heure, je ne l’ai pas vue rouler. Ce que je sais, c’est la mécanique du lieu : ${savoir.verdict.replace(/\.$/, '')}. Envoie-moi tes horaires sur WhatsApp, je te réponds sur les tiens.`,
+      porte: true,
+    }
+  }
+  // « merci » / « ok » / « top » → on ne relance pas, on tient la porte
+  if (a('merci', 'ok', 'okay', 'daccord', 'd’accord', 'top', 'parfait', 'super', 'nickel', 'bien', 'ca marche', 'compris')) {
+    return {
+      verdict: 'Bonne route.',
+      etiq: 'QUAND TU VEUX',
+      corps: `Tape un autre lieu et je recommence. Ou pose-moi la question sur WhatsApp, je réponds pareil — et je garde ${z} en tête.`,
+      porte: true,
+    }
+  }
+  // « salut » / « bonjour » → on ne fait pas la conversation, on demande le lieu
+  if (a('salut', 'bonjour', 'bonsoir', 'hello', 'yo', 'coucou', 'wesh')) {
+    return {
+      verdict: 'Salut.',
+      etiq: 'DIS-MOI OÙ TU ES',
+      corps: `Donne-moi un lieu — <b>Orly</b>, <b>Bastille</b>, <b>La Défense</b>, ou ta ville — et je te dis ce qu’il vaut. Là, je suis sur <b>${z}</b>.`,
+      porte: false,
+    }
+  }
+  // « c'est quoi ? » / « tu fais quoi ? » / « foreas » → ce que c'est, en une phrase vraie
+  if (a('quoi', 'foreas', 'app', 'appli', 'application', 'fais', 'sert', 'fonctionne', 'utilite')) {
+    return {
+      verdict: 'Course par course, je te dis si tu la prends ou si tu la laisses.',
+      etiq: 'CE QUE JE FAIS',
+      corps: `Ce qu’elle paie, le temps qu’elle prend, les kilomètres à 0,25&nbsp;€, ton seuil en euros par heure. Un mot : <b>à prendre</b> ou <b>à laisser</b>, et la raison. Sur ${z} comme ailleurs.`,
+      porte: true,
+    }
+  }
+
   return {
     verdict: 'Là, je décroche.',
     etiq: 'DIS-LE-MOI AUTREMENT',

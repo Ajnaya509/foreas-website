@@ -502,6 +502,15 @@
 [data-pose='oui'] .aj-head,
 [data-pose='oui'] .aj-dock { pointer-events: none; }
 
+/* ⚠️ SAUF LE MICRO — mesuré le 05/09. Avec la barre entière insensible, un
+   appui sur le micro traversait jusqu'à l'écran et OUVRAIT LE PLEIN ÉCRAN :
+   le chauffeur appuyait pour parler, et il se retrouvait devant un clavier.
+   Le micro n'a pas le défaut du champ (il ne prend pas le focus, il n'ouvre
+   pas de clavier) : il peut donc répondre au doigt dans le châssis. Il porte
+   son propre `stopPropagation`, l'écran derrière ne voit rien. Il dicte, la
+   phrase s'écrit dans le champ, la réponse arrive — sans changer de mode. */
+[data-pose='oui'] .aj-dock .aj-mic { pointer-events: auto; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    LA RÉPONSE ÉPINGLÉE — elle est sortie du fil, elle ne peut plus s'en aller
    ═══════════════════════════════════════════════════════════════════════════

@@ -802,12 +802,19 @@ export default function AjnayaPhoneDemo({
       entendu = texte.trim()
       setSaisie(entendu)
     }
-    /* ⚠️ `onerror` NE FERME PAS L'ÉCOUTE : `onend` part TOUJOURS derrière lui.
-       Traiter la fin aux deux endroits enverrait le message deux fois. */
-    r.onerror = () => { /* micro refusé, silence, réseau : `onend` s'en charge */ }
-    r.onend = () => {
+    /* ⚠️ LA VERSION PRÉCÉDENTE DISAIT : « onerror ne ferme pas l'écoute,
+       onend part TOUJOURS derrière lui ». C'ÉTAIT FAUX SUR IPHONE, ET MESURÉ
+       LE 05/09 : autorisation refusée → `onerror` (not-allowed) → et AUCUN
+       `onend`. L'onde bleue tournait dans le vide, le champ restait blanc, et
+       le micro avait l'air vivant alors qu'il était mort — pour toujours,
+       jusqu'au rechargement. Exactement le bug qu'on prétendait éviter.
+       Une seule fonction de fin, appelée des trois endroits (erreur, fin, et
+       une garde de temps), protégée par `fini` pour ne jamais envoyer deux
+       fois. */
+    const terminer = () => {
       if (fini) return
       fini = true
+      window.clearTimeout(garde)
       ecouteRef.current = null
       setEcoute(false)
       if (entendu) envoyer(entendu)
@@ -815,10 +822,22 @@ export default function AjnayaPhoneDemo({
          moins ce que le geste FAIT, plutôt que de laisser un écran mort. */
       else { setEcoute(true); dicterEnExemple() }
     }
+    r.onerror = terminer
+    r.onend = terminer
+    /* La garde : si RIEN n'a été entendu après 8 s, l'écoute est bloquée
+       (micro coupé par le système, moteur muet) et aucun événement ne viendra.
+       On ne coupe jamais quelqu'un qui est en train de parler : si un mot est
+       arrivé, la garde ne fait rien et c'est `onend` qui conclut. */
+    const garde = window.setTimeout(() => {
+      if (entendu) return
+      try { r.stop() } catch { /* déjà arrêtée */ }
+      terminer()
+    }, 8000)
 
     try {
       r.start()
     } catch {
+      window.clearTimeout(garde)
       ecouteRef.current = null
       dicterEnExemple()
     }
@@ -1223,6 +1242,15 @@ export default function AjnayaPhoneDemo({
                   className={`${s['aj-mic']} ${ecoute ? s.ecoute : ''}`}
                   type="button"
                   aria-label="Parler"
+                  /* ⚠️ MÊME PARADE QUE LE BOUTON D'ENVOI, ET MESURÉE LE 05/09 :
+                     un appui sur le micro depuis le châssis OUVRAIT LE PLEIN
+                     ÉCRAN au lieu d'écouter. Le geste d'ouverture est porté par
+                     l'écran entier ; le garde `closest('button')` ne suffit pas
+                     ici, exactement comme il n'avait pas suffi pour « Envoyer ».
+                     Et le passage en plein écran démonte le téléphone : le
+                     `click` arrivait sur un bouton qui n'existait plus. Le micro
+                     ne faisait donc RIEN — pire qu'un micro qui simule. */
+                  onPointerUp={(e) => e.stopPropagation()}
                   onClick={dicter}
                 >
                   {ecoute ? (
