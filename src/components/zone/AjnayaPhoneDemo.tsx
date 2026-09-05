@@ -1099,9 +1099,16 @@ export default function AjnayaPhoneDemo({
                   )}
                 </div>
               </div>
-              <button className={s['aj-aide']} type="button" aria-label="Aide">
+              {/* ⚠️ C'ÉTAIT UN <button aria-label="Aide"> QUI NE FAISAIT RIEN.
+                  Un lecteur d'écran l'annonçait comme une commande, un doigt
+                  l'essayait, il ne se passait rien : le seul geste raté d'une
+                  démonstration dont tout le reste répond. Il redevient ce qu'il
+                  est — le décor de l'en-tête de l'app, au même titre que
+                  l'heure et la batterie. La vraie aide de cette page est la
+                  barre du bas, et elle est toujours là. */}
+              <span className={s['aj-aide']} aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm.9 15.1h-1.8v-1.8h1.8v1.8zm1.86-6.96l-.81.83c-.65.66-1.05 1.2-1.05 2.53h-1.8v-.45c0-.98.4-1.87 1.05-2.52l1.12-1.14c.33-.32.53-.77.53-1.27a1.8 1.8 0 10-3.6 0H8.4a3.6 3.6 0 117.2 0c0 .72-.29 1.37-.76 1.84z" /></svg>
-              </button>
+              </span>
               {/* Elle ne « pense » que quand elle pense. Ce trait qui courait
                   en permanence volait la vedette à l'œil. */}
               {attente && <div className={s['aj-pense']}><i /></div>}

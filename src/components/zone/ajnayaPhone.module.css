@@ -142,7 +142,9 @@
 .aj-etat i{width:6px;height:6px;border-radius:3px;background:#10B981;flex:none;}
 /* pastille de verre à 10 %, le « rond violet » perçu est le GLYPHE.
    Inline dans la rangée, jamais en absolu (bug corrigé le 05/08). */
-.aj-aide{width:32px;height:32px;border-radius:16px;flex:none;border:none;cursor:pointer;
+/* `cursor:pointer` retiré avec le <button> : une main qui se lève sur un
+   élément inerte promet un clic qui n'arrivera pas. */
+.aj-aide{width:32px;height:32px;border-radius:16px;flex:none;border:none;
   background:rgba(140,82,255,.10);color:#8C52FF;
   display:flex;align-items:center;justify-content:center;padding:0;}
 .aj-aide svg{width:18px;height:18px;}

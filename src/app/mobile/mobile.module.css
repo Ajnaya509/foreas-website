@@ -120,8 +120,9 @@
   font-size: 19px; font-weight: 800;
   transition: transform 140ms ease, opacity 160ms ease;
 }
-.champBouton:disabled { opacity: .34; cursor: default; }
-.champBouton:not(:disabled):active { transform: scale(.96); }
+/* Plus de règle `:disabled` : le bouton reste actif en permanence, un appui
+   à vide met le curseur dans le champ. Un bouton gris se lit « cassé ». */
+.champBouton:active { transform: scale(.96); }
 
 /* ══ LE TÉLÉPHONE DANS L'ÉCRAN DE ZONE ════════════════════════════════════
    Il occupe la place, mais on voit qu'il appartient au site : il garde son
@@ -233,7 +234,7 @@
   position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
   height: 46px; padding: 0 18px; font-size: 18px;
 }
-.champRangee .champBouton:not(:disabled):active { transform: translateY(-50%) scale(.96); }
+.champRangee .champBouton:active { transform: translateY(-50%) scale(.96); }
 
 /* Le libellé existe pour les lecteurs d'écran, pas pour l'œil : l'invite qui
    s'écrit toute seule dit déjà ce qu'on attend, et une ligne de plus coûterait

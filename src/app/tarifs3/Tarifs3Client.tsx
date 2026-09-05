@@ -581,7 +581,18 @@ export default function Tarifs3Client() {
           </p>
         </header>
 
-        <h1 className={s.titre}>Gagner mieux, plus simplement.</h1>
+        {/* ⚠️ CE TITRE DISAIT « GAGNER MIEUX, PLUS SIMPLEMENT ». Il vouvoyait
+            la promesse et lâchait le tutoiement de la page qu'il vient de lire :
+            arrivé devant le champ carte, le chauffeur ne reconnaissait plus le
+            site. On reprend la phrase de la page de vente, mot pour mot.
+            Elle reste conditionnelle : sans essai, « zéro euro aujourd'hui »
+            serait faux, et un titre faux devant une carte bancaire est le pire
+            endroit du parcours pour se tromper. */}
+        <h1 className={s.titre}>
+          {debit?.essai
+            ? `${debit.joursEssai === 3 ? 'Trois' : debit.joursEssai} jours. Zéro euro aujourd’hui.`
+            : 'Gagner mieux, plus simplement.'}
+        </h1>
 
         {/* ⚠️ Pas d'`aria-live` ici. Une phrase qui change toutes les cinq
             secondes et qu'un lecteur d'écran annoncerait à chaque fois rendrait
@@ -994,6 +1005,22 @@ export default function Tarifs3Client() {
                   ? 'Un clic coupe le renouvellement depuis l’espace client. L’année en cours va jusqu’à son terme.'
                   : 'Annulation à tout moment depuis l’espace client.'}
               </p>
+              {/* ⚠️ LA CAISSE N'AVAIT AUCUNE PORTE. Un seul lien sur toute la
+                  page, « Aller au contenu ». Celui qui arrive avec une question
+                  devant le champ carte n'avait que deux gestes : payer, ou
+                  partir. Ce lien est le troisième.
+                  Origine `avant_paiement` : elle s'adresse précisément à celui
+                  qui n'est PAS prêt, et le message le dit. Elle est déclarée
+                  dans `whatsappLink.ts` ET `wa/route.ts` — jamais un seul des
+                  deux, c'est le bug du 29/08. */}
+              <a
+                className={s.piedWa}
+                href="/wa?s=avant_paiement&p=/tarifs3&i=question&o=caisse_sous_bouton"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Une question ? Écris à Ajnaya sur WhatsApp
+              </a>
             </div>
           </section>
         </div>

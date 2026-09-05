@@ -1233,6 +1233,24 @@
   color: #8a8a94;
   letter-spacing: -0.004em;
 }
+/* La porte WhatsApp de la caisse. Elle vit sur la carte CLAIRE, pas sur le
+   fond sombre du site : le vert doit tenir sur du blanc, d'où le vert foncé
+   plutôt que le #25D366 du bandeau. 44 px de haut — on la vise au pouce,
+   souvent d'une main, souvent en marchant. */
+.piedWa {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 2px;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #128c4a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  letter-spacing: -0.006em;
+}
+.piedWa:focus-visible { outline: 2px solid #128c4a; outline-offset: 2px; border-radius: 8px; }
 
 /* ── ÉCRANS COURTS ───────────────────────────────────────────────────────
    ⚠️ ON RÈGLE SUR LA HAUTEUR, PAS SUR LA LARGEUR.

@@ -259,8 +259,21 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
         </div>
       )}
 
+      {/* ⚠️ LE BOUTON « VOIR » N'EST PLUS DÉSACTIVÉ QUAND LE CHAMP EST VIDE.
+          Sur téléphone, un bouton gris se lit « cassé », pas « en attente » :
+          le chauffeur appuie, rien ne bouge, et il croit que la page ne marche
+          pas — sur le premier écran, avant d'avoir rien lu. Il reste actif :
+          appuyé à vide, il met le curseur dans le champ et fait monter le
+          clavier. Le geste ne rate jamais. */}
       {!validee && (
-        <form className={s.champBloc} onSubmit={(e) => { e.preventDefault(); valider(zone) }}>
+        <form
+          className={s.champBloc}
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!zone.trim()) { champRef.current?.focus(); return }
+            valider(zone)
+          }}
+        >
           {/* Le libellé reste pour les lecteurs d'écran : l'invite qui s'écrit
               toute seule ne se lit pas à voix haute, et un champ sans nom est
               un champ inutilisable au clavier. */}
@@ -287,7 +300,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
               enterKeyHint="go"
               aria-describedby="aide-zone"
             />
-            <button type="submit" className={s.champBouton} disabled={!zone.trim()}>Voir</button>
+            <button type="submit" className={s.champBouton}>Voir</button>
           </div>
           <span id="aide-zone" className={s.champLabelCache}>
             Tape le nom de ta zone, par exemple Roissy CDG ou Bastille.
