@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { choisirPorte, consignePorte } from '@/lib/porteAjnaya'
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, formaterEuros } from '@/lib/offre'
 import Anthropic from '@anthropic-ai/sdk'
 import { isSameOriginRequest, hasValidBearer, forbiddenOrigin } from '@/lib/api-guard'
@@ -558,9 +559,20 @@ export async function POST(request: NextRequest) {
     const prospect = prospectId ? await loadProspect(prospectId) : null
 
     // 3. Build system prompt
-    const systemPrompt = buildSystemPrompt(
+    let systemPrompt = buildSystemPrompt(
       systemBase, pageSource, scrollSection, prospect, heatScore, messageCount, conversationHistory
     )
+
+    // ── LA PORTE, DÉCIDÉE PAR LE CODE (05/09/2026, demande de Chandler) ──────
+    // On ne lit que ce que LE CHAUFFEUR a écrit : ses réponses à elle parlent
+    // d'essai à chaque bascule et la rendraient « chaude » toute seule (le test
+    // rouge de scripts/tests-porte-ajnaya.mjs le prouve). La phrase de fin de sa
+    // réponse doit coller à cette porte ; le site affiche UN bouton, pas deux.
+    const choixPorte = choisirPorte([
+      ...conversationHistory.filter((m) => m.role === 'user').map((m) => m.text),
+      userMessage,
+    ])
+    systemPrompt += `\n\n${consignePorte(choixPorte)}`
 
     // 4a. PIEUVRE BRAIN (feature flag) — routes through N8N Pieuvre Responder when enabled
     //     PIEUVRE_BRAIN_ENABLED=true → call Pieuvre, on null fallback to Haiku below
@@ -737,6 +749,10 @@ export async function POST(request: NextRequest) {
       prospectId: currentProspectId,
       shouldAskPhone,
       conversionEvent,
+      // La porte à afficher — UNE seule. `essai` s'il est chaud, `whatsapp` par
+      // défaut, `aucune` s'il refuse. Le motif est le mot qui a tranché.
+      porte: choixPorte.porte,
+      porteMotif: choixPorte.motif,
     })
   } catch (error) {
     console.error('[ajnaya/chat] Error:', (error as Error).message)
