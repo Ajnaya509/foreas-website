@@ -252,12 +252,49 @@
 .vente .sortie{display:inline-flex;align-items:center;min-height:44px;margin-top:6px;
   font-size:0.875rem;color:var(--encre-3);text-decoration:underline;
   text-underline-offset:3px}
-/* le lien du module court : jamais un bouton — ni fond, ni halo, ni ombre */
+/* le lien du module court : jamais un bouton — ni fond, ni halo, ni ombre.
+   Reste pour les liens de PREUVE (« ouvrir le document »), pas pour les portes. */
 .vente .lien{display:inline-flex;align-items:center;min-height:44px;margin-top:12px;
   font-size:0.9375rem;color:var(--encre-2);text-decoration:underline;
   text-underline-offset:3px}
+
+/* ── LA PORTE WHATSAPP DU MODULE COURT ─────────────────────────────────────
+   ⚠️ C'ÉTAIENT DES LIENS SOULIGNÉS DE 15 px, blancs à 72 %, larges de 91 à
+   224 px. Les portes les plus nombreuses de la page, et les moins visibles :
+   elles se lisaient comme des notes de bas de page. Pire, le mot « WhatsApp »
+   n'apparaissait qu'UNE fois sur toute la page — le chauffeur ne pouvait pas
+   savoir que « Demande-lui » ouvrait WhatsApp.
+   Elles deviennent des boutons secondaires : pleine largeur, fond sombre, bord
+   cyan, logo WhatsApp, 50 px. Secondaires et pas pleins : sur cette page le
+   bouton plein est réservé à l'essai, et deux boutons pleins qui se suivent ne
+   se départagent plus. */
+.vente .porteWa{display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;min-height:50px;margin-top:18px;padding:0 14px;
+  border:1px solid rgba(0,212,255,.42);border-radius:14px;
+  background:rgba(0,212,255,.05);color:var(--encre-1);
+  font-family:var(--titre);font-size:1.0625rem;font-weight:700;letter-spacing:.2px;
+  text-decoration:none;text-align:center}
+.vente .porteWa svg{width:20px;height:20px;flex:none;color:#25D366}
+.vente .porteWa:active{transform:scale(.99)}
+@media (max-width:359px){
+  .vente .porteWa{font-size:0.9375rem;gap:7px;padding:0 10px}
+  .vente .porteWa svg{width:18px;height:18px}
+}
 .vente a:focus-visible, .vente button:focus-visible, .vente summary:focus-visible{
   outline:2px solid var(--cyan);outline-offset:2px;border-radius:8px}
+
+/* ── LE SEUIL, DANS LA SECTION CALCUL ──────────────────────────────────────
+   Il vivait huit sections plus bas, alors que son chiffre est écrit dans la
+   carte juste au-dessus. Un filet à gauche et un retrait le posent comme une
+   note attachée au calcul, pas comme une dixième fonction de plus. */
+.vente .seuilBloc{margin-top:26px;padding-left:14px;
+  border-left:2px solid rgba(0,212,255,.34)}
+.vente .seuilBloc h3{margin:6px 0 0;font-family:var(--titre);font-size:1.375rem;
+  font-weight:800;line-height:1.14;letter-spacing:-.5px;color:var(--encre)}
+.vente .seuilBloc p{margin-top:10px}
+.vente .seuilBloc .preuve{margin-top:12px;padding-left:12px;
+  border-left:1px solid var(--filet);font-size:0.8438rem;line-height:1.43;
+  color:var(--encre-3)}
 
 /* ── LE MODULE COURT ─────────────────────────────────────────────────────── */
 .vente .court{padding:46px 20px;border-top:1px solid var(--filet)}

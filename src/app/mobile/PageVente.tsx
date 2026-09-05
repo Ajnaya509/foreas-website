@@ -36,6 +36,26 @@ import s from './pagevente.module.css'
  * ⚠️ AUCUN MONTANT N'EST ÉCRIT DANS CE FICHIER. Tout vient de `src/lib/offre.ts`.
  */
 
+/**
+ * LA PORTE WHATSAPP DU MODULE COURT.
+ *
+ * ⚠️ LE MOT « WHATSAPP » N'APPARAISSAIT QU'UNE FOIS SUR TOUTE LA PAGE, et
+ * c'était dans « groupe WhatsApp », à propos d'autre chose. Les onze portes
+ * disaient « Demande-lui » : rien ne permettait au chauffeur de savoir où il
+ * atterrissait. Le logo et le mot sont donc dans chaque porte.
+ */
+function PorteWhatsApp({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a className={s.porteWa} href={href} target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.42-.07-.12-.27-.2-.57-.35z" />
+        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.28-1.38a9.9 9.9 0 0 0 4.76 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.86 9.86 0 0 0 12.04 2zm0 18.13h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.05-.2-.31a8.2 8.2 0 0 1-1.26-4.36c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23z" />
+      </svg>
+      {children}
+    </a>
+  )
+}
+
 const MENSUEL = formaterEuros(PRIX_MENSUEL_CENTIMES)
 const ANNUEL = formaterEuros(PRIX_ANNUEL_CENTIMES)
 /** Douze mois au mois, moins l'année : la soustraction que le chauffeur peut refaire. */
@@ -214,6 +234,24 @@ export default function PageVente() {
         </div>
 
         <p className={s.porte}>On ne devine pas ta commission.<br />On compte ton temps et tes kilomètres.</p>
+
+        {/* ⚠️ « TON SEUIL » AVAIT SA PROPRE SECTION, HUIT SECTIONS PLUS BAS.
+            Or la ligne « Ton seuil · 24 €/h » est DANS la carte ci-dessus : le
+            chauffeur lisait le chiffre ici et l'explication ailleurs, sans que
+            rien ne relie les deux. Le seuil n'est pas une fonction de plus,
+            c'est l'entrée du calcul — il se lit à côté du calcul (correctif G
+            de l'audit du 05/09). */}
+        <div className={s.seuilBloc}>
+          <p className={s.sur}>Ton seuil</p>
+          <h3>Tu tapes ton chiffre. C’est lui qui décide, plus le leur.</h3>
+          <p>Deux minutes, assis dans la voiture, moteur coupé. C’est la ligne
+             « Ton seuil » de la carte au-dessus.</p>
+          <p className={s.preuve}>Ton seuil en euros par heure entre directement dans le
+             calcul du verdict. Change-le, les verdicts changent avec.</p>
+          <PorteWhatsApp href="/wa?s=mobile_fonction&f=reglage&o=court_seuil">
+            Règle ton seuil sur WhatsApp
+          </PorteWhatsApp>
+        </div>
       </section>
 
       <section className={`${s.scene} ${s.halo} ${s["halo-g"]}`}>
@@ -289,6 +327,32 @@ export default function PageVente() {
         </div>
 
         <a className={s.cta} href="/wa?s=pain&a=11&p=/&i=verdict&o=fin_module_verdict">Demande-lui pour ta course</a>
+        <div><a className={s.sortie} href="#vitrine">Ou continue à lire</a></div>
+      </section>
+
+      {/* ═════════════ L'ESSAI, UNE PREMIÈRE FOIS ═════════════
+          ⚠️ LE BOUTON D'ESSAI ÉTAIT À 14 124 px — le 17ᵉ écran. Entre deux
+          courses, le chauffeur n'y arrive pas (correctif G de l'audit du 05/09).
+          Il est proposé ici une première fois, au seul endroit de la page où il
+          a déjà un argument complet derrière lui : il vient de voir le calcul,
+          la preuve et une journée entière.
+          Ce bloc est COURT exprès. Le bloc de prix complet — la bascule, les
+          deux formules, l'économie, le calendrier de prélèvement — reste en fin
+          de page, pour celui qui lit tout. Ici on répond à une seule question :
+          « ça coûte combien pour essayer ? » */}
+      <section className={s.court}>
+        {/* ⚠️ CE TITRE NE RÉPÈTE PAS CELUI DU BLOC DE FIN. Les deux disaient
+            « Trois jours. Zéro euro aujourd'hui. » à dix écrans d'écart : lu
+            deux fois, ce n'est plus une montée, c'est une boucle, et le
+            chauffeur croit être remonté. Celui-ci parle de SES courses — la
+            seule chose que le module qu'il vient de lire lui a montrée. */}
+        <p className={s.sur}>L’essai</p>
+        <h2>Essaie-le sur tes propres courses.</h2>
+        <p>{ESSAI_JOURS} jours, 0 € aujourd’hui. Tu vois les verdicts sur tes vraies
+           courses avant de payer quoi que ce soit.</p>
+        <p className={s.preuve}>Ensuite {ANNUEL} par an. Ta carte est enregistrée dès
+           l’inscription — on te le dit ici, pas au {ESSAI_JOURS}ᵉ jour.</p>
+        <a className={`${s.cta} ${s.violet}`} href="/tarifs3">Commencer les {ESSAI_JOURS} jours</a>
         <div><a className={s.sortie} href="#vitrine">Ou continue à lire</a></div>
       </section>
 
@@ -428,15 +492,21 @@ export default function PageVente() {
         <div><a className={s.sortie} href="#court">Ou continue à lire</a></div>
       </section>
 
-      {/* ═════════════ LE MODULE COURT — neuf sections ═════════════ */}
-      <div id="court"></div>
-
-      <section className={s.court}>
+      {/* ═════════════ LE MODULE COURT — six sections ═════════════
+          ⚠️ L'ANCRE ÉTAIT UN <div id="court"> VIDE, DE HAUTEUR ZÉRO.
+          La barre du bas s'en sert pour savoir quand proposer l'essai, et un
+          élément sans surface se mesure mal : entré par `/mobile#calcul`, le
+          bouton d'essai s'affichait alors qu'il restait la moitié de la page à
+          lire. L'ancre est maintenant la section elle-même — un bloc qui a une
+          vraie hauteur et une vraie place. Les liens `#court` marchent pareil. */}
+      <section className={s.court} id="court">
         <p className={s.sur}>La barre</p>
         <h2>La journée s’arrête quand la barre est pleine, pas quand t’es cassé.</h2>
         <p>Tu poses ton chiffre le matin. Elle monte course après course.</p>
         <p className={s.preuve}>Elle bouge avec tes vraies courses, jamais avec une saisie à la main.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=objectif&o=court_barre">Demande-lui ton objectif</a>
+        <PorteWhatsApp href="/wa?s=mobile_fonction&f=objectif&o=court_barre">
+          Demande ton objectif sur WhatsApp
+        </PorteWhatsApp>
       </section>
 
       <section className={s.court}>
@@ -446,7 +516,9 @@ export default function PageVente() {
         <p className={s.preuve}>Chaque course d’un chauffeur nourrit la carte de tous les
            autres. Dès le premier qui roule, ça s’alimente.</p>
         <p className={s.tampon}>Estimation. Aucune course promise.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=zones&o=court_vague">Demande-lui ta zone</a>
+        <PorteWhatsApp href="/wa?s=mobile_fonction&f=zones&o=court_vague">
+          Demande ta zone sur WhatsApp
+        </PorteWhatsApp>
       </section>
 
       <section className={s.court}>
@@ -455,7 +527,9 @@ export default function PageVente() {
         <p>Un contrôle, un accident, un bouchon. Avec le lieu et la distance.</p>
         <p className={s.preuve}>Tu passes tout près, ou droit devant sur ta route : on te
            demande si ça tient encore.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=fil&o=court_fil">Demande-lui le fil</a>
+        {/* Pas de porte ici, volontairement. Onze portes sur une page, ce n'est
+            pas onze occasions : c'est un mur de demandes, et il finit par ne
+            plus rien demander du tout. Six suffisent (audit du 05/09). */}
       </section>
 
       <section className={s.court}>
@@ -464,7 +538,9 @@ export default function PageVente() {
         <p>Tu lui écris comme à un collègue. Elle répond.</p>
         <p className={s.preuve}>Elle connaît l’app par cœur — 24 fiches produit, en service
            depuis le 3 septembre 2026. Ta ville, c’est toi qui la connais.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=ajnaya&o=court_ajnaya">Écris-lui maintenant</a>
+        <PorteWhatsApp href="/wa?s=mobile_fonction&f=ajnaya&o=court_ajnaya">
+          Écris-lui sur WhatsApp
+        </PorteWhatsApp>
       </section>
 
       <section className={s.court}>
@@ -473,35 +549,17 @@ export default function PageVente() {
         <p>Uber, Bolt, Heetch changent leurs règles de tarif. Tu es prévenu.</p>
         <p className={s.preuve}>Trois plateformes, nommées. On ne promet aucun délai : on te
            le dit quand on le sait.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=regles&o=court_guetteur">Demande-lui ce qui a changé</a>
+        <PorteWhatsApp href="/wa?s=mobile_fonction&f=regles&o=court_guetteur">
+          Demande ce qui a changé sur WhatsApp
+        </PorteWhatsApp>
       </section>
 
-      <section className={s.court}>
-        <p className={s.sur}>Ton seuil</p>
-        <h2>Tu tapes ton chiffre. C’est lui qui décide, plus le leur.</h2>
-        <p>Deux minutes, assis dans la voiture, moteur coupé.</p>
-        <p className={s.preuve}>Ton seuil en euros par heure entre directement dans le calcul
-           du verdict. Change-le, les verdicts changent avec.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=reglage&o=court_seuil">Demande-lui comment le régler</a>
-      </section>
-
-      <section className={s.court}>
-        <p className={s.sur}>Y aller</p>
-        <h2>Tu ne tapes plus l’adresse. Tu appuies, Waze démarre.</h2>
-        <p>Portière claquée, un tap, tu roules.</p>
-        <p className={s.preuve}>Waze, Google Maps ou Plans — ceux que tu as déjà.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=navigation&o=court_yaller">Demande-lui</a>
-      </section>
-
-      <section className={s.court}>
-        <p className={s.sur}>Ta série</p>
-        <h2>Onze jours d’affilée. Aucun rappel à l’ordre.</h2>
-        <p>Le compte des jours où tu as tenu ton objectif.</p>
-        <p className={s.preuve}>Gardé sur ton téléphone, nulle part ailleurs. Si tu coupes,
-           personne ne t’écrit.</p>
-        <p className={s.tampon}>Onze est un exemple.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=serie&o=court_serie">Demande-lui</a>
-      </section>
+      {/* ⚠️ « Y ALLER » ET « TA SÉRIE » ONT ÉTÉ RETIRÉES LE 05/09.
+          Ouvrir Waze d'un doigt et compter ses jours d'affilée sont deux vraies
+          fonctions de l'app — elles ne vendent rien. Sur une page déjà trop
+          longue (le bouton d'essai était au 17ᵉ écran), ce sont les deux
+          premières à couper. Elles restent dans l'app, et Ajnaya sait en
+          parler. */}
 
       <section className={s.court}>
         <p className={s.sur}>Le collègue</p>
@@ -510,7 +568,9 @@ export default function PageVente() {
         <p className={s.preuve}>Ton filleul direct uniquement — rien sur les filleuls de tes
            filleuls. Six fois 5 €, ça fait 30 €. L’abonnement en coûte {MENSUEL}.</p>
         <p className={s.tampon}>Tant qu’ils paient.</p>
-        <a className={s.lien} href="/wa?s=mobile_fonction&f=parrainage&o=court_collegue">Demande-lui ton lien</a>
+        <PorteWhatsApp href="/wa?s=mobile_fonction&f=parrainage&o=court_collegue">
+          Demande ton lien sur WhatsApp
+        </PorteWhatsApp>
       </section>
 
       {/* ═════════════ LA FIN ═════════════ */}

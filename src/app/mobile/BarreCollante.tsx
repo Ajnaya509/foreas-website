@@ -95,19 +95,30 @@ export default function BarreCollante() {
   }, [])
 
   /* ── LA BASCULE : découverte → essai ─────────────────────────────────────
-     Même parade que ci-dessus. Si le repère est déjà passé au moment où on
-     s'attache, aucune notification n'arrive et le chauffeur qui revient au bas
-     de la page se verrait reproposer la découverte alors qu'il a tout lu. */
+     ⚠️ CE BLOC A DÉJÀ ÉTÉ FAUX UNE FOIS, ET LA FAUTE EST INSTRUCTIVE.
+     Il lisait la position du repère UNE SEULE FOIS, au montage. Entré par
+     `/mobile#calcul`, le bouton d'essai apparaissait alors qu'il restait la
+     moitié de la page à lire : la mesure était prise avant que la mise en page
+     soit stable, et comme la décision est définitive, elle ne se corrigeait
+     jamais. Une décision qu'on ne reprend pas ne doit pas se fonder sur une
+     mesure qu'on ne refait pas.
+
+     On mesure donc en continu — à chaque défilement, et une fois quand la page
+     a fini de charger. Le `load` couvre le cas sans défilement du tout : retour
+     depuis WhatsApp, position restaurée par Safari, entrée par une ancre. */
   useEffect(() => {
-    const repere = document.getElementById(REPERE_CONVAINCU)
-    if (!repere) return
-    if (repere.getBoundingClientRect().top < window.innerHeight) { setConvaincu(true); return }
-    const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setConvaincu(true); io.disconnect() } },
-      { rootMargin: '0px 0px -10% 0px' },
-    )
-    io.observe(repere)
-    return () => io.disconnect()
+    const evaluer = () => {
+      const repere = document.getElementById(REPERE_CONVAINCU)
+      if (!repere) return
+      if (repere.getBoundingClientRect().top < window.innerHeight * 0.9) setConvaincu(true)
+    }
+    window.addEventListener('scroll', evaluer, { passive: true })
+    if (document.readyState === 'complete') evaluer()
+    else window.addEventListener('load', evaluer)
+    return () => {
+      window.removeEventListener('scroll', evaluer)
+      window.removeEventListener('load', evaluer)
+    }
   }, [])
 
   /* ── SA ZONE, S'IL EN A DONNÉ UNE ────────────────────────────────────────
