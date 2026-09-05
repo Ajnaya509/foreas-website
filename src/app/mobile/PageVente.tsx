@@ -590,7 +590,7 @@ export default function PageVente() {
         <p className={s.sur}>FOREAS</p>
         <h2>Ta prochaine course.<br />Ton choix.</h2>
         <p>Vois « à prendre » ou « à laisser », lis la raison, puis décide.</p>
-        <a className={s.cta} href="/wa?s=final&p=/&i=cloture&o=final">Parle à Ajnaya</a>
+        <a className={s.cta} href="/wa?s=apres_lecture&p=/&i=cloture&o=final">Parle à Ajnaya</a>
         <div><a className={s.sortie} href={`/tarifs3?formule=${mois ? 'mensuel' : 'annuel'}`}>Ou commence les {ESSAI_JOURS} jours</a></div>
       </section>
 

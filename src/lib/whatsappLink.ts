@@ -23,6 +23,8 @@ export type WhatsAppSection =
   | 'panier_abandonne' // Mail J+1 · il a saisi son e-mail sans payer
   | 'mobile_fonction' // Accueil mobile · un lien par fonctionnalité (voir `fonction`)
   | 'avant_paiement' // Accueil mobile · la porte de sortie DE la section prix
+  | 'apres_lecture' // Accueil mobile · le bouton de FIN de page, après tout lire
+  | 'barre_mobile' // Accueil mobile · la barre collante, présente tout du long
 
 /**
  * Les onze fonctions que la page d'accueil mobile peut désigner.
@@ -108,9 +110,13 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
       const sienne = (question ?? '').trim()
       if (zone && sienne) return `Salut Ajnaya. Je suis sur ${zone}. ${sienne}`
       if (sienne) return `Salut Ajnaya. ${sienne}`
+      /* ⚠️ CE REPLI PROMETTAIT UN « TARIF HORAIRE EXACT ». Deux fautes en une :
+         le chauffeur n'a jamais posé cette question, et personne ne peut tenir
+         cette promesse — aucun tarif n'est mesuré. Quand sa phrase manque, on
+         pose une question ouverte, pas un engagement. */
       return zone
-        ? `Salut Ajnaya, je suis sur la zone ${zone}. Tu peux me donner le tarif horaire exact ${slot ?? 'pour ce soir'} ?`
-        : `Salut Ajnaya, je veux le tarif horaire exact sur ma zone.`
+        ? `Salut Ajnaya. Je suis sur ${zone}. Ça donne quoi ${slot ?? 'ce soir'} ?`
+        : `Salut Ajnaya. Ça donne quoi sur ma zone ce soir ?`
     }
 
     case 'pain':
@@ -199,6 +205,21 @@ function buildWAMessageBase(opts: BuildWAOptions): string {
              de faire dire au chauffeur une intention qu'il n'a pas eue. */
           return `Salut Ajnaya. J'ai une question sur une fonction de FOREAS.`
       }
+
+    case 'apres_lecture':
+      /* ⚠️ CE BOUTON DIT « PARLE À AJNAYA », ET IL FAISAIT ÉCRIRE « JE DÉMARRE
+         AVEC FOREAS. 0€. JE TESTE. » Celui qui voulait poser une question
+         annonçait qu'il s'engageait. C'est le piège corrigé le 29/08 pour
+         « Une question d'abord », resté sur le bouton final.
+         « J'ai lu la page » n'est pas décoratif : ça dit à Ajnaya qu'il connaît
+         déjà le prix et l'essai — donc qu'elle n'a pas à les répéter. */
+      return `Salut Ajnaya. J'ai lu la page. Avant de tester, une question.`
+
+    case 'barre_mobile':
+      /* La barre suit le chauffeur pendant toute la lecture : il peut appuyer
+         au premier écran comme au dernier. On ne suppose donc RIEN de ce qu'il
+         a lu — c'est la seule porte de la page qui ne sait pas où il en est. */
+      return `Salut Ajnaya. Je lis la page FOREAS. J'ai une question.`
 
     case 'avant_paiement':
       /* ⚠️ C'EST LA PORTE DE SORTIE DE LA SECTION PRIX : elle s'adresse

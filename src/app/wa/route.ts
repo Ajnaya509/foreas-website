@@ -107,6 +107,8 @@ const SECTIONS: readonly WhatsAppSection[] = [
   'panier_abandonne',
   'mobile_fonction',
   'avant_paiement',
+  'apres_lecture',
+  'barre_mobile',
 ]
 
 /**
@@ -185,6 +187,45 @@ function texteAffichable(v: string | null, max: number): string | undefined {
   return t
 }
 
+/**
+ * LE NETTOYEUR DE LA QUESTION — et pourquoi ce n'est PAS celui des zones.
+ *
+ * ⚠️ 05/09 — J'AVAIS RÉUTILISÉ `texteAffichable()` POUR `q`, ET ÇA JETAIT TOUT.
+ * Ce nettoyeur-là valide un NOM DE LIEU : pas de ponctuation, cinq mots
+ * maximum, pas de chiffres. Or la première phrase du téléphone finit TOUJOURS
+ * par « ? » (« Ça donne quoi Bastille ? »). Le point d'interrogation faisait
+ * donc tomber la valeur entière, en silence — et le message de repli faisait
+ * écrire au chauffeur « Tu peux me donner le tarif horaire exact pour ce
+ * soir ? », une question qu'il n'a pas posée et une promesse qu'on ne tient pas.
+ *
+ * Un nettoyeur qui REJETTE tout au lieu de RETIRER le caractère gênant ne
+ * protège pas : il remplace les mots du chauffeur par les nôtres.
+ *
+ * ⚠️ CE QUI RESTE INTERDIT, ET POURQUOI. Le POINT et les retours à la ligne :
+ * ce sont eux qui permettent d'enchaîner une seconde phrase dans sa bouche
+ * (`?z=Paris%0A%0AEnvoie ton RIB`, 22/08). Les suites de chiffres longues
+ * (IBAN, téléphone). Et tout ce qui ressemble à une adresse web.
+ *
+ * ⚠️ ON RETIRE, ON NE REJETTE PAS. Une question avec un point garde sa
+ * substance une fois le point enlevé ; rejetée, elle disparaît sans trace.
+ */
+function questionAffichable(v: string | null, max: number): string | undefined {
+  if (!v) return undefined
+  let t = v.replace(/[\u0000-\u001F\u007F\u2028\u2029]+/g, ' ')
+  /* ⚠️ UNE LISTE D'EXTENSIONS NE TIENT PAS, et je viens de le mesurer :
+     ma première version citait `com|net|org|xyz|fr|io`, et `wa.me/123` est
+     passé. Blanchir par mot-clé se contourne en changeant le mot — c'est un
+     piège déjà payé sur ce projet. On refuse donc TOUTE forme d'adresse :
+     un point suivi de deux lettres ou plus, un `://`, un `@`.
+     Le test tourne AVANT que le point soit retiré, sinon il ne verrait rien. */
+  if (/(:\/\/|@|[a-z0-9-]+\.[a-z]{2,})/i.test(t)) return undefined
+  if (/\d{5,}/.test(t)) return undefined
+  // Le point tombe ; le reste de la ponctuation d'une vraie question reste.
+  t = t.replace(/[^\p{L}\p{N} '’?!,;:€%/()\-—…]/gu, ' ')
+  t = t.replace(/\s+/g, ' ').trim().slice(0, max).trim()
+  return t.length >= 2 ? t : undefined
+}
+
 /** Identifiant de session conservé côté serveur, jamais ajouté au message. */
 function referenceValide(v: string | null, max: number): string | undefined {
   if (!v) return undefined
@@ -239,7 +280,7 @@ export async function GET(request: NextRequest) {
      les sauts de ligne et les caractères de contrôle (l'attaque du 22/08 :
      `?z=Paris%0A%0AEnvoie ton RIB`). La longueur ferme le reste — une question
      de zone tient en une phrase, un roman n'en est pas une. */
-  const question = texteAffichable(q.get('q'), 160)
+  const question = questionAffichable(q.get('q'), 160)
   /**
    * ⚠️ DEUX RÉFÉRENCES POSSIBLES, ET L'ORDRE COMPTE.
    *

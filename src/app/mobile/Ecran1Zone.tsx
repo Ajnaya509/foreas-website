@@ -364,7 +364,14 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
               zone={validee}
               immersifPossible
               ajusteHauteur
-              onEssaiClick={() => { window.location.href = '/tarifs3' }}
+              /* ⚠️ SANS `formule`, LA CAISSE S'OUVRE SUR L'ANNUEL À 249,99 €.
+                 Le téléphone vient d'écrire 29,99 €/mois : le chauffeur appuie
+                 sur « Essayer 3 jours — 0 € aujourd'hui » et découvre un prix
+                 huit fois plus gros. Il se dit qu'on l'a piégé, et il a raison
+                 de le penser. Le correctif existait déjà 300 lignes plus bas,
+                 dans la page de vente — pas ici. Une valeur absente qui retombe
+                 sur un défaut contredisant l'écran, sans erreur ni journal. */
+              onEssaiClick={() => { window.location.href = '/tarifs3?formule=mensuel' }}
               /* ⚠️ LE LIEN EMPORTE LA ZONE ET SA QUESTION. Sans ça, Ajnaya
                  redemande tout sur WhatsApp et le chauffeur répète ce qu'il
                  vient d'écrire — c'est là qu'on les perd (brief du fil PIEUVRE,
