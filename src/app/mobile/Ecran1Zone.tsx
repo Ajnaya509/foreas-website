@@ -186,6 +186,10 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
   return (
     <section
       ref={sectionRef}
+      /* Repère de la barre collante : elle ne s'affiche que quand CE bloc a
+         quitté l'écran. Le champ de saisie vit dedans, et la barre viendrait
+         se poser exactement dessus. */
+      id="hero-mobile"
       /* ⚠️ UN SEUL OBJECTIF PAR ÉCRAN, ET ÇA SE VOIT DANS LA MISE EN PAGE.
          Tant qu'il n'a pas donné son lieu, il n'y a qu'une chose à faire sur
          cette page : la dire. Le bloc est donc calé au MILIEU de l'écran, pas

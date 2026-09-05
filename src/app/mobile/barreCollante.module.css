@@ -1,0 +1,59 @@
+/*
+ * LA BARRE COLLANTE — accueil mobile.
+ *
+ * Elle est posée par-dessus la page, jamais dans le flux : la page garde sa
+ * hauteur, et une réserve en bas de `.vente` empêche la barre de couvrir la
+ * dernière ligne du pied de page.
+ *
+ * ⚠️ LE BANDEAU DE CONSENTEMENT PUBLIE SA HAUTEUR dans `--bandeau` (posé sur
+ * `<html>` par Ecran1Zone). La barre s'assoit DESSUS, sinon le bandeau la
+ * recouvre au premier chargement — c'est-à-dire exactement à la seule visite
+ * où le chauffeur ne connaît pas encore la page.
+ */
+.barre {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + var(--bandeau, 0px) + 10px);
+  z-index: 40;
+  display: flex; gap: 10px;
+  padding: 0 14px;
+  /* Cachée, elle ne doit intercepter aucun doigt : le hero a ses propres
+     commandes exactement à cet endroit. */
+  opacity: 0; transform: translateY(14px); pointer-events: none;
+  transition: opacity .28s ease, transform .28s ease;
+}
+.dedans { opacity: 1; transform: none; pointer-events: auto; }
+
+/* Coupé net en mouvement réduit : la barre apparaît, elle ne glisse pas. */
+@media (prefers-reduced-motion: reduce) {
+  .barre { transition: none; transform: none; }
+}
+
+.wa, .essai {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  flex: 1 1 0; min-width: 0;
+  /* 52 px : au-dessus des 44 px exigés, parce qu'on vise avec le pouce en
+     marchant, pas avec l'index posé sur un bureau. */
+  min-height: 52px;
+  border-radius: 14px;
+  font-family: var(--titre, 'Genos', system-ui, sans-serif);
+  font-size: 1.0625rem; font-weight: 800; letter-spacing: .2px;
+  text-decoration: none; white-space: nowrap;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+}
+
+/* Le vert WhatsApp existe déjà partout ailleurs sur le site (widget, modale
+   de sortie, vérification). Le chauffeur sait ce qu'il ouvre avant de lire. */
+.wa { background: #25D366; color: #07110A; }
+.essai {
+  background: linear-gradient(135deg, #00D4FF 0%, #8C52FF 52%, #B494FF 100%);
+  color: #fff;
+}
+.wa:active, .essai:active { transform: scale(.985); }
+.wa:focus-visible, .essai:focus-visible { outline: 2px solid #00D4FF; outline-offset: 3px; }
+
+/* Écrans étroits (320 px) : les deux libellés tiennent encore, à condition de
+   rendre la graisse un cran plus compacte plutôt que de couper un mot. */
+@media (max-width: 359px) {
+  .wa, .essai { font-size: 0.9375rem; gap: 5px; }
+}

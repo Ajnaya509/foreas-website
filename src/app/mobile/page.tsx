@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Ecran1Zone from './Ecran1Zone'
 import PageVente from './PageVente'
+import BarreCollante from './BarreCollante'
 
 /**
  * L'ACCUEIL MOBILE — deux temps, et une ligne entre les deux.
@@ -50,6 +51,12 @@ export default function AccueilMobile() {
 
       {/* ══ 2 — LA VENTE ═════════════════════════════════════════════════════ */}
       <PageVente />
+
+      {/* ══ 3 — LA BARRE ═════════════════════════════════════════════════════
+          Deux portes sous le pouce dès que le hero est passé. Sans elle, la
+          première porte WhatsApp de la page est au cinquième écran, et plus
+          d'un visiteur mobile sur deux ne fait jamais défiler. */}
+      <BarreCollante />
     </>
   )
 }
