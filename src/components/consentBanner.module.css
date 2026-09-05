@@ -1,0 +1,86 @@
+/*
+ * L'ANNEAU DU « OK » — un trait court, lumineux, violet · cyan · violet, qui
+ * tourne autour du bouton, s'arrête, puis repart dans l'autre sens.
+ *
+ * ⚠️ LE BOUTON N'EST PAS REMPLI (Chandler, 05/09) : c'est le trait qui attire
+ * l'œil, pas un aplat. Un aplat se lit « bouton » ; un trait qui tourne se lit
+ * « vivant », et c'est ce qu'il a demandé.
+ *
+ * COMMENT C'EST FAIT, ET POURQUOI COMME ÇA
+ * · `.anneau` est une couronne de 2 px découpée au masque (padding-box ôté de
+ *   border-box). Rien d'autre n'est visible qu'elle.
+ * · `.arc` est un grand carré centré, peint d'un dégradé conique dont seul un
+ *   quart d'arc est coloré. C'est LUI qui tourne — pas le dégradé. Tourner
+ *   l'élément marche partout ; animer l'angle d'un dégradé exigeait
+ *   `@property`, plus fragile. Vu à travers la couronne, l'effet est le même :
+ *   un trait court qui fait le tour de la pilule.
+ * · `.halo` est le même arc, flouté, derrière : c'est lui qui « brille ».
+ * · Le mouvement est en `transform` seulement : rien à repeindre, rien qui
+ *   saccade sur un téléphone d'entrée de gamme.
+ */
+.ok {
+  position: relative;
+  isolation: isolate;
+  min-height: 52px;
+  padding: 0 34px;
+  border-radius: 9999px;
+  background: rgba(10, 12, 20, .55);
+  color: #F8FAFC;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+.ok:active { transform: scale(.98); }
+.ok:disabled { opacity: .45; }
+.ok:focus-visible { outline: 2px solid #00D4FF; outline-offset: 4px; }
+
+.anneau, .halo {
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  padding: 2px;
+  overflow: hidden;
+  pointer-events: none;
+  /* la couronne : tout le bord, rien du centre */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  z-index: -1;
+}
+/* Le halo est une couronne plus large et floutée : la lumière déborde du trait. */
+.halo { inset: -6px; padding: 6px; filter: blur(5px); opacity: .85; }
+
+.arc {
+  position: absolute;
+  /* un carré plus grand que la diagonale du bouton, centré : en tournant, il
+     couvre toujours toute la couronne */
+  top: 50%; left: 50%;
+  width: 360px; height: 360px;
+  margin: -180px 0 0 -180px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 250deg,
+    #8C52FF 262deg,
+    #00D4FF 300deg,
+    #8C52FF 338deg,
+    transparent 350deg 360deg
+  );
+  animation: tourne 5.6s infinite;
+  will-change: transform;
+}
+
+/* Tourne, s'arrête, repart dans l'autre sens, s'arrête. */
+@keyframes tourne {
+  0%   { transform: rotate(0deg);   animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+  40%  { transform: rotate(360deg); animation-timing-function: linear; }
+  50%  { transform: rotate(360deg); animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+  90%  { transform: rotate(0deg);   animation-timing-function: linear; }
+  100% { transform: rotate(0deg); }
+}
+
+/* En mouvement réduit, le trait reste : il ne tourne plus. */
+@media (prefers-reduced-motion: reduce) {
+  .arc { animation: none; transform: rotate(300deg); }
+}
