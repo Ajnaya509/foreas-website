@@ -82,6 +82,27 @@ export const SAVOIR: SavoirZone[] = [
       geste:'Cale-toi sur <b>l’heure d’arrivée du train</b>, jamais sur l’heure qu’il est. Sois en place quatre minutes avant. Et retiens le dernier départ de la soirée : après lui, la zone se vide d’un coup et tu attends pour rien.',
       bascule:'Ça, c’est la mécanique de la file : <b>ce qu’elle te coûte à TOI dépend de tes horaires.</b> Envoie-moi sur WhatsApp tes heures d’attente et ce que tu encaisses dans ce créneau, je te chiffre ce que ces attentes te prennent. Et pour voir ce que ça change dès ce soir, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' },
 
+    /* ⚠️ CE TYPE N'EXISTAIT PAS, ET SON ABSENCE COÛTAIT LES VILLES.
+       Le savoir connaît 27 lieux : 24 à Paris, 2 à Lyon, 1 à Toulouse. Tout le
+       reste tombait sur le repli « périphérie · calme ». Un chauffeur
+       marseillais tapait « Marseille » et lisait « Marseille · calme », puis
+       « en périphérie, attendre coûte plus cher que rouler ». Marseille n'est
+       pas une périphérie : on venait de lui dire qu'on ne connaissait pas son
+       métier, en gros, sur le premier écran.
+       ⚠️ Il est placé AVANT le repli : le repli attrape ce qui n'a rien
+       matché, il doit rester le dernier de la liste.
+       ⚠️ Ces textes sont la proposition de l'audit du 05/09. Ils sont vrais et
+       vérifiables, mais c'est de la voix produit : Chandler les réécrit s'il
+       veut. */
+    { cle:'grande_ville', etat:'demandée',
+      mots:['marseille','lyon','nice','bordeaux','lille','toulouse','nantes',
+            'strasbourg','montpellier','rennes','saint-charles','saint charles',
+            'aeroport nice','vieux port'],
+      verdict:'En grande ville, le vide se joue entre deux pôles.',
+      calcul:'Le centre le soir, la gare et l’aéroport le matin. Entre les deux, tu attends moteur tournant : ~2,50&nbsp;€ de l’heure. Trois heures dans le mauvais pôle, ce sont <b>7,50&nbsp;€ brûlés</b> et trois heures non facturées.',
+      geste:'La même règle chiffrée que partout : <b>12 minutes sans course, tu bouges</b> vers le pôle le plus proche. Le soir tu vises le centre, le matin la gare ou l’aéroport. Tu changes de rythme, pas de métier.',
+      bascule:'Ta ville a son propre rythme, et <b>le seul chiffre qui vaut est le tien.</b> Dis-moi sur WhatsApp tes heures creuses et ce que tu encaisses autour, je te chiffre ce que ce vide te coûte. Et pour l’avoir en main dès demain, prends les 3&nbsp;jours : carte demandée à l’inscription, rien n’est prélevé si tu arrêtes avant le 4e jour.' },
+
     { cle:'peripherie', etat:'calme',
       mots:[],
       verdict:'En périphérie, attendre coûte plus cher que rouler.',
@@ -175,6 +196,21 @@ export const LIEUX: { nom: string; cles: string[] }[] = [
   { nom: 'Montparnasse', cles: ['montparnasse'] },
   { nom: 'Saint-Lazare', cles: ['saint lazare'] },
   { nom: 'Austerlitz', cles: ['austerlitz'] },
+  /* ⚠️ LES GRANDES VILLES. Sans elles, `reconnaitreLieu` rendait null et
+     l'en-tête du téléphone affichait le texte brut du chauffeur avec l'état du
+     repli : « Marseille · calme ». Le nom affiché est le nom de la ville, pas
+     celui d'une gare : c'est ce qu'il a tapé, et Ajnaya ne prétend pas savoir
+     dans quel quartier il est. */
+  { nom: 'Marseille', cles: ['marseille', 'vieux port'] },
+  { nom: 'Lyon', cles: ['lyon'] },
+  { nom: 'Nice', cles: ['nice'] },
+  { nom: 'Bordeaux', cles: ['bordeaux'] },
+  { nom: 'Lille', cles: ['lille'] },
+  { nom: 'Toulouse', cles: ['toulouse'] },
+  { nom: 'Nantes', cles: ['nantes'] },
+  { nom: 'Strasbourg', cles: ['strasbourg'] },
+  { nom: 'Montpellier', cles: ['montpellier'] },
+  { nom: 'Rennes', cles: ['rennes'] },
   { nom: 'Part-Dieu', cles: ['part dieu'] },
   { nom: 'Perrache', cles: ['perrache'] },
   { nom: 'Matabiau', cles: ['matabiau'] },

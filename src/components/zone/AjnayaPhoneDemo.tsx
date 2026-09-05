@@ -208,6 +208,13 @@ export default function AjnayaPhoneDemo({
 
   const nomLieu = (zoneCourante || '').trim() || 'ta zone'
   const savoir = typePourZone(zoneCourante || '')
+  /* ⚠️ UN ÉTAT NE S'AFFICHE QUE SUR UN LIEU RECONNU.
+     `typePourZone` retombe toujours sur un type — le repli, dont l'état est
+     « calme ». L'en-tête affichait donc « Marseille · calme », alors que rien
+     dans le savoir ne parle de Marseille : un état inventé, écrit en gros, sur
+     le premier écran. Un chauffeur marseillais ferme la page.
+     Le lieu reconnu est la seule chose qui autorise à écrire un état. */
+  const lieuReconnu = reconnaitreLieu(zoneCourante || '')
 
   /* ══ L'ÉCHELLE ════════════════════════════════════════════════════════════
      L'écran est dessiné à 393 px puis RÉDUIT. Aucune valeur du code n'est
@@ -1088,9 +1095,9 @@ export default function AjnayaPhoneDemo({
                       sur son repli, « calme » — l'en-tête affichait donc
                       « ta zone · calme », c'est-à-dire un état inventé sur un
                       lieu qui n'existe pas. On dit « En ligne », qui est vrai. */}
-                  {(zoneCourante || '').trim() ? (
+                  {(zoneCourante || '').trim() && lieuReconnu ? (
                     <>
-                      <b>{nomLieu}</b>
+                      <b>{lieuReconnu}</b>
                       <span className={s.pt}>·</span>
                       <span>{savoir.etat}</span>
                     </>

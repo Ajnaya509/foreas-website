@@ -278,7 +278,9 @@ export default function PageVente() {
           <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 46,20 € — à laisser"><video src="/demo/verdict/09-4620-laisser.mp4" poster="/demo/verdict/09-4620-laisser.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
         </div>
         <p className={s["aide-rail"]}>Fais glisser · touche pour lancer</p>
-        <p className={s.tampon}>Démonstration. Chaque image porte son calcul et son seuil.</p>
+        {/* Le mot « DÉMONSTRATION » est déjà écrit DANS chacune des dix images.
+            Le répéter en dessous ne protège personne de plus. */}
+        <p className={s.tampon}>Chaque image porte son calcul et son seuil.</p>
       </section>
 
       <section className={s.scene}>
@@ -315,7 +317,13 @@ export default function PageVente() {
         <h2>Douze courses.<br />Trois refusées.</h2>
 
         <div className={s["carte-sombre"]} style={{ marginTop: '22px' }}>
-          <div className={s.meta}><span>Exemple de journée</span><span>Démonstration</span></div>
+          {/* ⚠️ UN SEUL TAMPON PAR CARTE. Celle-ci en portait DEUX en haut
+              (« Exemple » + « Démonstration ») et un troisième en bas. Quinze
+              tampons sur la page, aucun prénom de chauffeur : le chauffeur ne
+              lit pas « ils sont honnêtes », il lit « personne ne s'en sert
+              encore ». On garde celui qui APPREND quelque chose, on retire
+              celui qui ne fait que se répéter. */}
+          <div className={s.meta}><span>Une journée</span><span>Exemple</span></div>
           <p style={{ marginTop: '16px', fontSize: '1.375rem', letterSpacing: '6px', lineHeight: '1.2', display: 'flex', flexWrap: 'wrap' }} aria-label="Neuf courses prises, trois laissées">
             <span style={{ color: '#10B981' }}>●●●</span><span style={{ color: '#FF4D4D' }}>○</span><span style={{ color: '#10B981' }}>●●●●</span><span style={{ color: '#FF4D4D' }}>○</span><span style={{ color: '#10B981' }}>●●</span><span style={{ color: '#FF4D4D' }}>○</span>
           </p>
@@ -323,7 +331,7 @@ export default function PageVente() {
             <div className={s.l} style={{ opacity: '1', transform: 'none' }}><span>Temps rendu</span><b>1 h 10</b></div>
             <div className={s.l} style={{ opacity: '1', transform: 'none' }}><span>Kilomètres non offerts</span><b>34</b></div>
           </div>
-          <p className={s.tampon}>Exemple construit. Ce ne sont pas les chiffres d’un chauffeur.</p>
+          <p className={s.tampon}>Ce ne sont pas les chiffres d’un chauffeur.</p>
         </div>
 
         <a className={s.cta} href="/wa?s=pain&a=11&p=/&i=verdict&o=fin_module_verdict">Demande-lui pour ta course</a>
@@ -395,7 +403,21 @@ export default function PageVente() {
         <p style={{ fontFamily: 'var(--titre)', fontSize: '1.5rem', fontWeight: '700', color: 'var(--cyan)', letterSpacing: '-.3px', marginTop: '20px', wordBreak: 'break-all' }}>
            foreas.xyz/c/chauffeur-wi20</p>
         <a className={s.lien} href="https://foreas.xyz/c/chauffeur-wi20" target="_blank" rel="noopener">Ouvrir la page dans un autre onglet</a>
-        <p className={s.tampon}>Page en ligne. Adresse vérifiée le 4 septembre 2026.</p>
+        {/* ⚠️ CETTE ADRESSE OUVRE UN GABARIT, PAS UN VRAI CHAUFFEUR.
+            Elle s'appelle « Chauffeur », affiche « -- Courses », promet
+            « −15 % sur votre 1ʳᵉ course » et « paiement sécurisé » — deux
+            promesses que CETTE page vient de nuancer trois écrans plus haut
+            (« aucun montant n'est avancé »). Le chauffeur ouvre l'onglet et lit
+            l'inverse de ce qu'on lui dit.
+            Le contenu de cette page ne vient PAS de ce dépôt : elle est servie
+            par un autre service (en-tête `x-powered-by: Express`), hors du
+            périmètre du fil site. Ce qui est de mon ressort, c'est ce qu'on
+            promet AVANT de l'ouvrir — et on le dit ici plutôt que de le lui
+            laisser découvrir. Le jour où le gabarit est rempli, cette ligne
+            saute. */}
+        <p className={s.tampon}>Page en ligne, adresse vérifiée le 4 septembre 2026.
+           C’est un gabarit de démonstration : le nom et les chiffres sont vides,
+           la tienne portera les tiens.</p>
       </section>
 
       <section className={s.scene}>
@@ -412,13 +434,13 @@ export default function PageVente() {
         <p className={s.sur}>Un cas simple</p>
         <h2>Un client.<br />Une fois par semaine.</h2>
         <div className={s["carte-sombre"]} style={{ marginTop: '22px' }}>
-          <div className={s.meta}><span>Exemple</span><span>Démonstration</span></div>
+          <div className={s.meta}><span>Un client qui revient</span><span>Exemple</span></div>
           <div className={s.faits} style={{ marginTop: '12px' }}>
             <div className={s.f}><span className={s.n}>01</span><div><p>Il te reprend le lundi.</p></div></div>
             <div className={s.f}><span className={s.n}>02</span><div><p>Quatre courses par mois.</p></div></div>
             <div className={s.f}><span className={s.n}>03</span><div><p>Aucune ne passe par une plateforme.</p></div></div>
           </div>
-          <p className={s.tampon}>Exemple. Aucun montant n’est avancé.</p>
+          <p className={s.tampon}>Aucun montant n’est avancé.</p>
         </div>
 
         <a className={s.cta} href="/wa?s=mobile_fonction&f=site&p=/&i=clientele&o=fin_module_vitrine">Demande-lui ta page</a>
@@ -467,14 +489,14 @@ export default function PageVente() {
         <p className={s.sur}>L’URSSAF</p>
         <h2>Vois ce que tu devras.<br />Avant.</h2>
         <div className={s["carte-sombre"]} style={{ marginTop: '22px' }}>
-          <div className={s.meta}><span>Simulation</span><span>Démonstration</span></div>
+          <div className={s.meta}><span>Ce mois-ci</span><span>Simulation</span></div>
           <div className={s.calcul} style={{ marginTop: '14px' }}>
             <div className={s.l} style={{ opacity: '1', transform: 'none' }}><span>Encaissé ce mois-ci</span><b>3 845 €</b></div>
             <div className={`${s.l} ${s.t}`} style={{ opacity: '1', transform: 'none' }}><span>Tu devras environ</span><b>823 €</b></div>
           </div>
           <div className={s.franc} style={{ marginTop: '16px' }}>C’est une simulation. FOREAS n’écrit
             rien à ta place, et <b style={{ color: 'inherit' }}>ton argent ne bouge pas de ton compte</b>.</div>
-          <p className={s.tampon}>Simulation. Taux publics.</p>
+          <p className={s.tampon}>Calculée avec les taux publics en vigueur.</p>
         </div>
       </section>
 
@@ -520,8 +542,12 @@ export default function PageVente() {
         <p className={s.sur}>La vague</p>
         <h2>Personne ne dessine cette carte. C’est vous qui la roulez.</h2>
         <p>Quatre niveaux de demande. Un doigt sur la zone, Waze démarre.</p>
+        {/* Accordée mot pour mot avec la question « Vous voyez mes courses ? ».
+            Deux phrases sur la même page qui se contredisent, c'est le lecteur
+            méfiant qui tranche — et il tranche contre nous. */}
         <p className={s.preuve}>Chaque course d’un chauffeur nourrit la carte de tous les
-           autres. Dès le premier qui roule, ça s’alimente.</p>
+           autres : l’endroit et l’heure, jamais le montant. Dès le premier qui
+           roule, ça s’alimente.</p>
         <p className={s.tampon}>Estimation. Aucune course promise.</p>
         <PorteWhatsApp href="/wa?s=mobile_fonction&f=zones&o=court_vague">
           Demande ta zone sur WhatsApp
@@ -651,9 +677,43 @@ export default function PageVente() {
           <details><summary>Ça marche sur iPhone ?</summary>
             <p>Oui, mais pas tout seul. Tu tapes deux fois au dos du téléphone devant
                la proposition. Apple ne laisse pas le choix.</p></details>
+          {/* ⚠️ CETTE RÉPONSE CONTREDISAIT « LA VAGUE » (audit du 05/09).
+              Ici : « tes chiffres restent chez toi ». Huit sections plus haut :
+              « chaque course d'un chauffeur nourrit la carte de tous les
+              autres ». Un chauffeur méfiant voit les deux, et c'est LUI qui
+              tranche — contre nous. Les deux phrases disent maintenant la même
+              chose : ce qui circule, c'est l'endroit et l'heure ; ce qui reste,
+              c'est le montant.
+              ⚠️ À FAIRE CONFIRMER PAR LE FIL APP avant la mise en avant : cette
+              page décrit ce qui DOIT partir, elle ne l'a pas mesuré dans le
+              code de l'app. L'audit le dit : ne jamais promettre « anonyme »
+              sans l'avoir vérifié. */}
           <details><summary>Vous voyez mes courses ?</summary>
-            <p>FOREAS lit ce que tu lui montres, sur ton téléphone. Tes chiffres
-               restent chez toi.</p></details>
+            <p>Le verdict se calcule sur ton téléphone. Ce qui remonte pour la
+               carte des zones, c’est <b>où</b> et <b>quand</b> il y a eu de la
+               demande. Pas ce que tu as encaissé.</p></details>
+
+          <details><summary>Uber peut me bloquer ?</summary>
+            <p>FOREAS ne touche à rien dans leur application. Il lit ce qui est
+               déjà affiché sur ton écran et pose un verdict par-dessus. Il
+               n’accepte et ne refuse aucune course : c’est toi qui appuies.
+               On ne parlera pas à la place d’Uber — personne ici ne peut
+               t’engager sur ce qu’ils décideront.</p></details>
+
+          <details><summary>Ça marche à Lyon, à Marseille ?</summary>
+            <p>Le verdict, oui, partout : il calcule sur ce que la course affiche
+               à l’écran, pas sur une base de ta ville. La carte des zones, elle,
+               se remplit avec les chauffeurs qui roulent — dans ta ville, elle
+               démarre vide.</p></details>
+
+          <details><summary>Bolt et Heetch aussi ?</summary>
+            <p>Oui. Uber, Bolt et Heetch. Ce sont les trois, et on ne t’en
+               annoncera pas une quatrième avant qu’elle marche.</p></details>
+
+          <details><summary>Ça vide la batterie ?</summary>
+            <p>Je ne te donnerai pas de chiffre tant qu’on ne l’a pas mesuré sur
+               plusieurs téléphones. Un chiffre inventé se voit au premier soir.
+               Tes trois jours servent aussi à ça.</p></details>
           <details><summary>Je coupe comment ?</summary>
             <p>En un clic, depuis l’app, avant la fin des trois jours. Tu n’es pas
                débité.</p></details>

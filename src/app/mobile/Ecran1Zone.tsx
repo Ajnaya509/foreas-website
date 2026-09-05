@@ -44,7 +44,11 @@ import s from './mobile.module.css'
 
 /* Ces cinq noms ne sont plus des boutons : ils défilent dans l'invite du
    champ. Un seul geste demandé, et l'exemple est sous les yeux. */
-const ZONES_SUGGEREES = ['Roissy CDG', 'Orly', 'La Défense', 'Bastille', 'Gare de Lyon']
+/* ⚠️ CINQ NOMS PARISIENS, ET RIEN D'AUTRE : c'était la première chose qu'un
+   chauffeur de Marseille ou de Lille voyait défiler. Une invite dit aussi à qui
+   la page s'adresse. Trois villes entrent dans la liste. */
+const ZONES_SUGGEREES = ['Roissy CDG', 'Marseille Saint-Charles', 'La Défense',
+                         'Lyon Part-Dieu', 'Bastille', 'Nice Aéroport', 'Gare de Lyon']
 
 /* ⚠️ L'INVITE S'ÉCRIT TOUTE SEULE, ET CE N'EST PAS UN EFFET.
    Un champ vide ne dit pas ce qu'on attend dedans. Un champ où un nom de lieu
