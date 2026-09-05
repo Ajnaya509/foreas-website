@@ -7,7 +7,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 import { CheckoutElementsProvider } from '@stripe/react-stripe-js/checkout'
 import FormulairePaiement from './FormulairePaiement'
-import { formaterEuros } from '@/lib/offre'
+import { formaterEuros, resoudreFormule } from '@/lib/offre'
 import {
   TUNNEL_SITE_IMMEDIAT,
   ECONOMIE_ANNUELLE_PCT,
@@ -149,6 +149,29 @@ export default function Tarifs3Client() {
   const phrases = useMemo(() => phrasesAffichables(), [])
 
   const [formule, setFormule] = useState<Formule>(FORMULE_PAR_DEFAUT)
+
+  /* ══ `?formule=` — IL ÉTAIT ÉCRIT DANS LE LIEN, ET PERSONNE NE LE LISAIT ══
+     Signalé par le fil PIEUVRE le 05/09 : « /tarifs3?formule=annuel doit ouvrir
+     sur l'annuel, c'est mon lien par défaut désormais ».
+
+     ⚠️ ET ÇA MARCHAIT « PAR ACCIDENT », CE QUI EST LE PIRE CAS. La formule par
+     défaut de cette page est `annuel` : un lien `?formule=annuel` tombait donc
+     juste sans que rien ne soit lu, et `?formule=mensuel` tombait FAUX — le
+     chauffeur lisait 29,99 € sur la page de vente, appuyait, et arrivait sur
+     249,99 €. J'avais moi-même écrit que le choix « arrive jusqu'à la caisse »
+     après l'avoir vu coché à l'écran : je regardais le défaut, pas la lecture.
+
+     ⚠️ ON LIT DANS UN EFFET, PAS AVEC `useSearchParams`. Ce crochet force la
+     page entière à basculer en rendu client, et sans une frontière `Suspense`
+     au-dessus le premier écran part vide — le défaut déjà payé sur ce dépôt
+     (« page Next de 28 000 octets sans aucun texte »). Ici le rendu serveur ne
+     bouge pas : la page s'affiche, puis la formule se corrige si le lien le
+     demande. `resoudreFormule` accepte aussi les anciennes clés de campagne. */
+  useEffect(() => {
+    const brut = new URLSearchParams(window.location.search).get('formule')
+    const voulue = resoudreFormule(brut)
+    if (voulue) setFormule(voulue)
+  }, [])
 
   /* ── Le code parrain ──────────────────────────────────────────────────────
      `codeSaisi` est ce qu'il tape. `codeApplique` est ce que la caisse connaît.
@@ -961,7 +984,16 @@ export default function Tarifs3Client() {
                 <Lock className="h-4 w-4 flex-none" style={{ color: '#15803D' }} aria-hidden />
                 Paiement traité par Stripe.
               </p>
-              <p className={s.piedB}>Annulation à tout moment depuis l’espace client.</p>
+              {/* ⚠️ « ANNULABLE À TOUT MOMENT » EST FAUX À L'ANNÉE, et le fil
+                  PIEUVRE le répète en WhatsApp : un clic coupe le
+                  RENOUVELLEMENT, il n'arrête pas un paiement déjà passé. Écrite
+                  sans cette nuance, la page contredisait la conversation — et
+                  c'est le chauffeur qui découvrait l'écart, après avoir payé. */}
+              <p className={s.piedB}>
+                {formule === 'annuel'
+                  ? 'Un clic coupe le renouvellement depuis l’espace client. L’année en cours va jusqu’à son terme.'
+                  : 'Annulation à tout moment depuis l’espace client.'}
+              </p>
             </div>
           </section>
         </div>
