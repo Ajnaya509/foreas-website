@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import Ecran1Zone from './Ecran1Zone'
 import PageVente from './PageVente'
 import BarreCollante from './BarreCollante'
-import NotificationsVente from './NotificationsVente'
 
 /**
  * L'ACCUEIL MOBILE — deux temps, et une ligne entre les deux.
@@ -54,16 +53,18 @@ export default function AccueilMobile() {
       <PageVente />
 
       {/* ══ 3 — LA BARRE ═════════════════════════════════════════════════════
-          Deux portes sous le pouce dès que le hero est passé. Sans elle, la
-          première porte WhatsApp de la page est au cinquième écran, et plus
-          d'un visiteur mobile sur deux ne fait jamais défiler. */}
+          UNE porte sous le pouce dès que le hero est passé, et elle change en
+          descendant : sa zone sur WhatsApp d'abord, l'essai après les trois
+          arguments. Sans elle, la première porte WhatsApp de la page est au
+          cinquième écran, et plus d'un visiteur mobile sur deux ne fait jamais
+          défiler. */}
       <BarreCollante />
 
-      {/* ══ 4 — LES NOTIFICATIONS ════════════════════════════════════════════
-          En haut à droite, une par section, une seule fois chacune. Elles
-          disent un fait VRAI sur le produit — pas une activité inventée : voir
-          l'en-tête du composant, le refus y est motivé. */}
-      <NotificationsVente />
+      {/* Les notifications de section ont été retirées le 05/09, sur demande :
+          « on en discutera plus tard ». Le composant et sa feuille de style
+          sont supprimés, pas commentés — un composant qu'on ne rend plus mais
+          qu'on garde « au cas où » devient un faux témoin. Il est dans
+          l'historique git, récupérable d'une commande. */}
     </>
   )
 }

@@ -112,11 +112,21 @@ export function ConsentBanner() {
           Notre objectif : t’apporter de meilleurs résultats.
         </p>
 
+        {/* ⚠️ LE « OK » A ÉTÉ GROSSI ET ÉCLAIRÉ LE 05/09, À LA DEMANDE DE
+            CHANDLER — et c'est la BONNE façon de faire monter les acceptations.
+            Rendre l'acceptation attirante est permis ; rendre le refus
+            impossible ne l'est pas, et détruirait la valeur des preuves de
+            consentement qu'on collecte. C'est pour ça qu'on a grossi celui-ci
+            plutôt que retirer la croix.
+            Il passe de 44 à 52 px, du verre discret au dégradé de la marque,
+            et de 14 à 16 px de texte. La croix garde ses 44 px : l'écart de
+            SÉDUCTION est permis, l'écart d'ACCESSIBILITÉ ne l'est pas. */}
         <button
           type="button"
           disabled={busy === 'accept'}
           onClick={accept}
-          className="min-h-11 flex-shrink-0 rounded-full border border-glass-border-high bg-glass-low px-6 text-sm font-semibold text-text-primary disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+          className="min-h-[52px] flex-shrink-0 rounded-full px-8 text-base font-extrabold text-white shadow-[0_6px_22px_rgba(140,82,255,0.42)] transition active:scale-[0.98] disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+          style={{ background: 'linear-gradient(135deg,#00D4FF 0%,#8C52FF 52%,#B494FF 100%)' }}
         >
           OK
         </button>
