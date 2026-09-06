@@ -63,13 +63,14 @@ const ECONOMIE = formaterEuros(PRIX_MENSUEL_CENTIMES * 12 - PRIX_ANNUEL_CENTIMES
 
 export default function PageVente() {
   const racine = useRef<HTMLDivElement | null>(null)
-  /* ⚠️ L'ANNÉE EST MISE EN AVANT, comme sur la caisse et comme partout dans le
-     métier (décision Chandler, 05/09). La bascule reste là et il choisit ce
-     qu'il veut — mais les deux pages doivent montrer la MÊME formule par
-     défaut. Deux défauts différents, c'est un chauffeur qui lit 29,99 € ici et
-     249,99 € à la caisse : il ne se dit pas qu'il a changé d'écran, il se dit
-     qu'on l'a piégé. */
-  const [mois, poserMois] = useState(false)
+  /* ⚠️ LE MOIS EST COCHÉ D'AVANCE — décision Chandler, 06/09. Elle REMPLACE
+     celle du 05/09 (« l'année en avant, comme partout dans le métier ») : ne
+     pas la « corriger » en croyant réparer un oubli.
+     Ce qui ne change pas, et qui est la vraie règle : les deux pages montrent
+     la MÊME formule par défaut. Deux défauts différents, c'est un chauffeur qui
+     lit 29,99 € ici et 249,99 € à la caisse — il ne se dit pas qu'il a changé
+     d'écran, il se dit qu'on l'a piégé. Si l'une bouge, l'autre bouge. */
+  const [mois, poserMois] = useState(true)
 
   /* ── LE CARROUSEL : une seule vidéo joue à la fois ─────────────────────── */
   useEffect(() => {

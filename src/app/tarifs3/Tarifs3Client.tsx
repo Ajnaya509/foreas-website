@@ -117,8 +117,22 @@ const stripePret: Promise<boolean> = stripePromise.then(
 const REPLI_PANNEAU_STRIPE = false
 
 const FORMULES: readonly Formule[] = ['mensuel', 'annuel']
-/** L'annuel est retenu par défaut — exigence explicite du brief. */
-const FORMULE_PAR_DEFAUT: Formule = 'annuel'
+/**
+ * ⚠️ LE MENSUEL EST COCHÉ D'AVANCE — décision Chandler, 06/09.
+ * Elle remplace l'exigence précédente (« l'annuel par défaut ») : ne pas la
+ * remettre en croyant réparer un oubli.
+ *
+ * ⚠️ ET C'EST CE DÉFAUT QUI A MASQUÉ UN BUG LE 05/09. Tant que la page ouvrait
+ * sur l'annuel, `?formule=annuel` semblait marcher — alors que le paramètre
+ * n'était pas lu du tout. Le défaut ayant changé de camp, c'est maintenant
+ * `?formule=mensuel` qui « marcherait » sans être lu. La lecture du paramètre
+ * (plus bas) est donc la seule chose qui prouve quoi que ce soit : elle est
+ * mesurée à chaque changement, jamais supposée.
+ *
+ * ⚠️ La page de vente (`PageVente.tsx`) doit montrer la MÊME formule par
+ * défaut. Si l'une bouge, l'autre bouge.
+ */
+const FORMULE_PAR_DEFAUT: Formule = 'mensuel'
 
 /** Durée d'affichage d'une phrase, puis durée de son effacement. */
 const PHRASE_TENUE_MS = 5200
