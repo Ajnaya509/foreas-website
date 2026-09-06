@@ -359,12 +359,24 @@
    Il isole LA seule chose à faire. Trop court, la barre se noie dans le titre ;
    trop long, elle descend hors de vue et l'écran paraît vide.
    Mesuré : 105 points avant, 58 après — la barre remonte d'autant. */
-.ecran1Attente .champBloc { margin-top: clamp(17px, 5vh, 42px); }
+/* ⚠️ LA BARRE EST CENTRÉE DANS LA SECTION, PAS POSÉE SOUS LE TITRE.
+   Chandler, 06/09 : « centre bien au milieu DE LA SECTION la barre de
+   recherche ». Avant, elle héritait d'un écart fixe sous le sous-titre et
+   descendait donc avec lui : sur un grand écran elle flottait haut, avec tout
+   le vide en dessous.
+   Maintenant les deux blocs qui l'entourent poussent à parts égales
+   (`flex: 1` de chaque côté) : le titre reste calé en haut, la ligne de prix
+   en bas, et la barre tombe au centre de ce qui reste — quelle que soit la
+   hauteur de l'écran. Le `min-height` garde l'écart minimum du 04/09 : trop
+   près du titre, elle s'y noie. */
+.ecran1Attente .respire { flex: 1 1 0; min-height: clamp(17px, 5vh, 42px); }
+.ecran1Attente .champBloc { margin-top: 0; }
 .ecran1Attente .explique {
   margin-top: clamp(15px, 4.4vh, 37px);
   font-size: 16px; line-height: 24px; max-width: 350px;
 }
-.ecran1Attente .rassure { margin-top: clamp(10px, 2.4vh, 20px); font-size: 13px; }
+/* `.rassure` n'est plus rendue sur cet écran (retirée le 06/09). La règle part
+   avec elle : une règle qui ne s'applique à rien est un faux témoin. */
 
 /* Le champ grandit avec le reste : à 58 px de titre, une barre de 56 paraît
    rabougrie. 62 points de haut, et on ne descend jamais sous 17 px de texte —
@@ -441,7 +453,7 @@
   position: relative; z-index: 3; flex: none;
   /* Plus de `margin-top: auto` : c'est lui qui poussait le prix au fond et
      ouvrait le trou. Un écart écrit, du même ordre que les autres. */
-  margin: clamp(22px, 5vh, 42px) 0 0; padding-top: 0;
+  margin: 0; padding-top: 0;
   font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 12.5px; line-height: 18px; color: rgba(248,250,252,.34);
 }

@@ -247,8 +247,11 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
           <h1 id="titre-zone" className={s.titreHero}>
             Gagne plus.<br />Roule moins.
           </h1>
+          {/* « pas » en gras : c'est LE mot qui retourne la phrase. Sans lui,
+              « ne paie plus » se lit comme une constatation triste ; avec, on
+              entend la négation, et la suite devient la réponse. */}
           <p className={s.sousHero}>
-            Rouler plus ne paie plus. <b>Être au bon endroit, oui.</b>
+            Rouler plus ne paie <b>pas</b> plus. <b>Être au bon endroit, oui.</b>
           </p>
         </>
       ) : (
@@ -277,6 +280,12 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
           pas — sur le premier écran, avant d'avoir rien lu. Il reste actif :
           appuyé à vide, il met le curseur dans le champ et fait monter le
           clavier. Le geste ne rate jamais. */}
+      {/* ⚠️ DEUX RESSORTS, UN DE CHAQUE CÔTÉ DE LA BARRE — c'est eux qui la
+          posent au MILIEU de la section (Chandler, 06/09). Le titre reste en
+          haut, la ligne de prix en bas, et tout le vide restant se partage à
+          parts égales au-dessus et en dessous du champ. Un simple écart fixe
+          ne pouvait pas faire ça : il suit le titre, pas le centre. */}
+      {!validee && <div className={s.respire} aria-hidden />}
       {!validee && (
         <form
           className={s.champBloc}
@@ -343,7 +352,12 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
             Ajnaya connaît le <b>rythme de ta zone</b>. Moins d&apos;attente,
             moins de vide.
           </p>
-          <p className={s.rassure}>Réponse immédiate. Ni compte, ni installation.</p>
+          {/* ⚠️ « RÉPONSE IMMÉDIATE. NI COMPTE, NI INSTALLATION. » A ÉTÉ RETIRÉE
+              LE 06/09 — Chandler : « histoire que ça fasse moins chargé ».
+              C'était une troisième ligne de texte sous une barre qui n'attend
+              qu'un geste, et elle rassurait sur une objection qu'il n'a pas
+              encore. Les trois faits restent écrits plus bas : « 0 € aujourd'hui
+              · 3 jours pour voir · coupé en 1 clic ». */}
 
         </form>
       )}
@@ -364,6 +378,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
           ⚠️ « 3 jours pour voir » et pas « sans carte » : la carte EST
           enregistrée à l'inscription, le garde-fou du dépôt refuse la
           seconde formule, et il a raison. */}
+      {!validee && <div className={s.respire} aria-hidden />}
       <p className={s.prixHero}>
         <b>0 €</b> aujourd&apos;hui
         <span className={s.pointHero}>·</span>
