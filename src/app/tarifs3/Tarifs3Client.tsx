@@ -118,22 +118,14 @@ const REPLI_PANNEAU_STRIPE = false
 
 const FORMULES: readonly Formule[] = ['mensuel', 'annuel']
 /**
- * ⚠️ LA CAISSE RESTE SUR L'ANNUEL. Chandler, 06/09 : « le formulaire de
- * paiement, il faut le laisser sur annuel par défaut ».
+ * La caisse ouvre sur l'ANNUEL. Décision de Chandler, tenue depuis le 05/09 et
+ * reconfirmée le 06/09. La page de vente, elle, ouvre sur le mensuel : c'est
+ * voulu, et le visiteur bascule d'un doigt.
  *
- * ⚠️ ET LA PAGE DE VENTE, ELLE, OUVRE SUR LE MENSUEL — c'est voulu, les deux
- * demandes sont du même jour. J'avais écrit ici que « les deux pages doivent
- * montrer la même formule » : ce raisonnement était le mien, il est levé.
- * Pourquoi l'écart ne piège personne : le bouton de la page de vente emporte
- * la formule choisie (`?formule=mensuel`). Celui qui lit 29,99 € et clique
- * arrive donc sur le mensuel. L'annuel par défaut ne s'applique qu'à celui qui
- * arrive à la caisse SANS avoir choisi — un lien direct, une pub, un message
- * d'Ajnaya.
- *
- * ⚠️ CE DÉFAUT A DÉJÀ MASQUÉ UN BUG, le 05/09 : `?formule=annuel` semblait
- * marcher alors que le paramètre n'était pas lu du tout. Il l'est maintenant,
- * et ça se prouve en ouvrant `?formule=mensuel` — la seule mesure qui vaille,
- * puisqu'elle va CONTRE le défaut.
+ * ⚠️ CE QUI RESTE TECHNIQUE, ET QUI COMPTE : `?formule=` est LU (plus bas).
+ * Ça se prouve en ouvrant `?formule=mensuel` — la seule mesure qui vaille,
+ * puisqu'elle va contre le défaut. Le 05/09, `?formule=annuel` semblait
+ * marcher alors que rien n'était lu : le défaut le masquait.
  */
 const FORMULE_PAR_DEFAUT: Formule = 'annuel'
 

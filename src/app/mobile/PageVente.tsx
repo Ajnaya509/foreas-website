@@ -66,12 +66,11 @@ export default function PageVente() {
   /* ⚠️ LE MOIS EST COCHÉ D'AVANCE — décision Chandler, 06/09. Elle REMPLACE
      celle du 05/09 (« l'année en avant, comme partout dans le métier ») : ne
      pas la « corriger » en croyant réparer un oubli.
-     ⚠️ ET LA CAISSE, ELLE, RESTE SUR L'ANNUEL — même jour, même personne, ce
-     n'est pas une contradiction. Ce qui empêche le piège, c'est que le bouton
-     ci-dessous EMPORTE la formule choisie (`?formule=mensuel`) : celui qui lit
-     29,99 € ici et clique arrive bien sur le mensuel. L'annuel de la caisse ne
-     s'applique qu'à celui qui y arrive SANS avoir choisi. Si ce lien perdait
-     son paramètre, le piège reviendrait — c'est la ligne à surveiller. */
+     La caisse, elle, ouvre sur l'annuel : c'est voulu, et le visiteur bascule
+     d'un doigt.
+     ⚠️ CE QUI RESTE TECHNIQUE : le bouton ci-dessous emporte la formule
+     choisie (`?formule=mensuel`). C'est cette ligne qui fait que le choix fait
+     ici est celui qui arrive à la caisse. */
   const [mois, poserMois] = useState(true)
 
   /* ── LE CARROUSEL : une seule vidéo joue à la fois ─────────────────────── */
