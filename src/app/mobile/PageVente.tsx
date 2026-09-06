@@ -66,11 +66,8 @@ export default function PageVente() {
   /* ⚠️ LE MOIS EST COCHÉ D'AVANCE — décision Chandler, 06/09. Elle REMPLACE
      celle du 05/09 (« l'année en avant, comme partout dans le métier ») : ne
      pas la « corriger » en croyant réparer un oubli.
-     La caisse, elle, ouvre sur l'annuel : c'est voulu, et le visiteur bascule
-     d'un doigt.
-     ⚠️ CE QUI RESTE TECHNIQUE : le bouton ci-dessous emporte la formule
-     choisie (`?formule=mensuel`). C'est cette ligne qui fait que le choix fait
-     ici est celui qui arrive à la caisse. */
+     La caisse, elle, ouvre sur l'annuel — quoi que cette bascule affiche, et
+     c'est voulu. Les liens vers la caisse ne portent donc AUCUNE formule. */
   const [mois, poserMois] = useState(true)
 
   /* ── LE CARROUSEL : une seule vidéo joue à la fois ─────────────────────── */
@@ -369,6 +366,10 @@ export default function PageVente() {
         <p className={s.preuve}>Ensuite {MENSUEL} par mois. Tu choisis mois ou année à
            l’inscription. Ta carte est enregistrée dès le départ — on te le dit ici,
            pas au {ESSAI_JOURS}ᵉ jour.</p>
+        {/* ⚠️ CE LIEN NE PORTE PLUS `?formule=` — Chandler, 06/09.
+            La caisse ouvre sur l'annuel par défaut, quoi que la bascule
+            ci-dessus affiche. Le visiteur change à la caisse s'il veut le mois.
+            Ne pas « réparer » en remettant le paramètre. */}
         <a className={`${s.cta} ${s.violet}`} href="/tarifs3">Commencer les {ESSAI_JOURS} jours</a>
         <div><a className={s.sortie} href="#vitrine">Ou continue à lire</a></div>
       </section>
@@ -662,12 +663,7 @@ export default function PageVente() {
           </div>
         </div>
 
-        {/* ⚠️ LA FORMULE VOYAGE DANS L’ADRESSE, ET C’EST LA SEULE PORTE DE LA PAGE
-            QUI LE FAIT — parce que c’est la seule où il a CHOISI. Partout ailleurs
-            on laisse la caisse sur son défaut, l’annuel. Ici il vient de basculer
-            au mois et de lire 29,99 € : ouvrir la caisse à 249,99 € derrière son
-            propre geste, c’est le piège que la bascule était censée éviter. */}
-        <a className={`${s.cta} ${s.violet}`} href={`/tarifs3?formule=${mois ? 'mensuel' : 'annuel'}`}>Commencer les {ESSAI_JOURS} jours</a>
+        <a className={`${s.cta} ${s.violet}`} href="/tarifs3">Commencer les {ESSAI_JOURS} jours</a>
         <div><a className={s.sortie} href="/wa?s=avant_paiement&p=/&i=offre&o=avant_paiement">Une question d’abord</a></div>
         <p className={s.tampon}>Carte enregistrée dès l’inscription. Résiliation en un clic.</p>
       </section>
@@ -733,7 +729,7 @@ export default function PageVente() {
         <h2>Ta prochaine course.<br />Ton choix.</h2>
         <p>Vois « à prendre » ou « à laisser », lis la raison, puis décide.</p>
         <a className={s.cta} href="/wa?s=apres_lecture&p=/&i=cloture&o=final">Parle à Ajnaya</a>
-        <div><a className={s.sortie} href={`/tarifs3?formule=${mois ? 'mensuel' : 'annuel'}`}>Ou commence les {ESSAI_JOURS} jours</a></div>
+        <div><a className={s.sortie} href="/tarifs3">Ou commence les {ESSAI_JOURS} jours</a></div>
       </section>
 
       <footer>
