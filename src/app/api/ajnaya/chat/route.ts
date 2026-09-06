@@ -66,7 +66,12 @@ async function getSupabase() {
  * `widget_site`, c'est au fil Pieuvre de le désactiver — le site ne touche pas
  * à `pieuvre_scripts`, il le lit.
  */
-const PREFERENCE_SCRIPT_WIDGET = ['Ajnaya Site Closer V2', 'Ajnaya Site Closer V1']
+/* ⚠️ V3 EN TÊTE depuis le 06/09 (fil Pieuvre) : la V2 a été remplacée sur la
+   même ligne, et `home_modal_v1_3turn` est désactivée.
+   ⚠️ ET CETTE LISTE NE SERT QUE LE REPLI LOCAL. Depuis le 05/09 le téléphone
+   de /mobile parle au cerveau : c'est la fiche du fil Pieuvre qui répond, pas
+   celle qu'on lit ici. */
+const PREFERENCE_SCRIPT_WIDGET = ['Ajnaya Site Closer V3', 'Ajnaya Site Closer V2', 'Ajnaya Site Closer V1']
 
 async function loadClosingScript(): Promise<string | null> {
   try {
