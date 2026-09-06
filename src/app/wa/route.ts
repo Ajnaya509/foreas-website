@@ -226,6 +226,30 @@ function questionAffichable(v: string | null, max: number): string | undefined {
   return t.length >= 2 ? t : undefined
 }
 
+/**
+ * LE CODE COURT DU BILLET DE PASSAGE — la seule chose qui parte dans le message.
+ *
+ * ⚠️ LE SITE AVAIT RETIRÉ TOUTE RÉFÉRENCE VISIBLE LE 31/08, et la raison est
+ * juste en dessous : « le chauffeur pourrait l'effacer ou le recopier ». Elle
+ * visait `sid` et le badge appareil — deux identifiants PERMANENTS, qui
+ * désignent une personne pour toujours et n'expirent jamais. Recopier
+ * celui-là, c'était se faire passer pour quelqu'un.
+ *
+ * Le code court n'est pas de cette nature : il désigne UN passage, pas une
+ * personne. Il vit 48 heures, se consomme une fois, naît `UNBOUND` (donc
+ * n'ouvre aucune mémoire privée) et ne porte que les phrases que le chauffeur
+ * vient d'écrire sur le téléphone. Le recopier ne donne rien qu'on ne puisse
+ * obtenir en tapant soi-même une zone.
+ *
+ * Six signes exactement, dans l'alphabet du billet (sans 0/O/1/I/L). Une
+ * valeur d'une autre forme n'entre pas dans le message.
+ */
+function codeCourtValide(v: string | null): string | undefined {
+  if (!v) return undefined
+  const t = v.trim().toUpperCase()
+  return /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/.test(t) ? t : undefined
+}
+
 /** Identifiant de session conservé côté serveur, jamais ajouté au message. */
 function referenceValide(v: string | null, max: number): string | undefined {
   if (!v) return undefined
@@ -297,7 +321,9 @@ export async function GET(request: NextRequest) {
   // Le badge appareil ne quitte pas le serveur. C'est tout l'intérêt de ce fichier.
   const badge = request.cookies.get('foreas_vid')?.value ?? null
 
-  const message = buildWAMessage({
+  const codeCourt = codeCourtValide(q.get('ref'))
+
+  const messageSeul = buildWAMessage({
     section,
     zone,
     slot: creneau,
@@ -305,6 +331,11 @@ export async function GET(request: NextRequest) {
     fonction,
     question,
   })
+  /* La référence se colle À LA FIN, entre parenthèses, exactement sous la forme
+     que le pont sait lire : `… (réf 29JK6E)`. Il la retire du texte avant de
+     donner le message au cerveau — le chauffeur ne la voit donc jamais dans la
+     conversation, seulement dans son brouillon. */
+  const message = codeCourt ? `${messageSeul} (réf ${codeCourt})` : messageSeul
   const destination = `https://wa.me/${NUMERO}?text=${encodeURIComponent(message)}`
 
   // ⚠️ La réponse est construite AVANT toute tentative d'écriture. Rien de ce qui
@@ -394,7 +425,11 @@ export async function GET(request: NextRequest) {
           montant: amount ?? null,
           // Les deux bouts de la jointure, côte à côte, toujours.
           session_conversation: sessionConversation ?? null,
-          reference_envoyee: 'aucune_visible',
+          /* Ce qui est VRAIMENT parti dans le message. Cette valeur a dit
+             `aucune_visible` du 31/08 au 06/09 : c'était vrai, et l'audit du
+             02/09 s'en est servi pour prouver que la Pieuvre ne recevait plus
+             rien. Elle doit donc rester exacte. */
+          reference_envoyee: codeCourt ? 'code_court' : 'aucune_visible',
         },
         event_id: null,
       }

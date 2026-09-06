@@ -413,13 +413,17 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
                  composant. Les deux sont encodés : le serveur les renettoie de
                  toute façon, mais un « & » dans un nom de rue casserait le lien
                  avant même d'y arriver. */
-              onWhatsAppClick={(question?: string) => {
+              onWhatsAppClick={(question?: string, codeCourt?: string) => {
                 const p = new URLSearchParams()
                 if (validee) p.set('z', validee)
                 const q = (question ?? '').trim()
                 if (q) p.set('q', q.slice(0, 160))
                 p.set('p', '/mobile')
                 p.set('o', 'telephone_hero')
+                /* Le code du billet : `/wa` le colle en fin de message sous la
+                   forme `(réf 29JK6E)`, le pont WhatsApp le lit, Ajnaya reprend
+                   la conversation. Absent, rien ne change. */
+                if (codeCourt) p.set('ref', codeCourt)
                 window.location.href = `${lienWhatsApp}${lienWhatsApp.includes('?') ? '&' : '?'}${p.toString()}`
               }}
             />

@@ -203,7 +203,7 @@ export default function AjnayaPhoneDemo({
    * La page décide ce qu'elle en fait — le téléphone se contente de dire ce
    * qui a été demandé chez lui.
    */
-  onWhatsAppClick?: (question?: string) => void
+  onWhatsAppClick?: (question?: string, codeCourt?: string) => void
   /**
    * ⚠️ OPT-IN, ET C'EST VOLONTAIRE.
    * Sur `/ou-ca-paie` le téléphone est une DÉMONSTRATION qui se joue toute
@@ -608,6 +608,60 @@ export default function AjnayaPhoneDemo({
    * Les blocs sont du HTML (les accents et les « & » y sont échappés) : on rend
    * le texte, pas le balisage.
    */
+  /**
+   * LE FIL, EN CLAIR — pour le billet de passage vers WhatsApp.
+   *
+   * On le relit dans ce qui est AFFICHÉ, comme `derniereQuestion` : une copie
+   * tenue à part finirait par diverger de ce qu'il a sous les yeux, et Ajnaya
+   * reprendrait sur WhatsApp une conversation qu'il ne reconnaîtrait pas.
+   */
+  const filEnClair = useCallback((): Array<{ role: 'user' | 'ajnaya'; text: string }> => {
+    return lignes
+      .filter((l) => l.id !== 'attente')
+      .slice(-8)
+      .map((l) => ({
+        role: l.qui === 'toi' ? ('user' as const) : ('ajnaya' as const),
+        text: texteBrut(l.blocs.map((b) => b.html).join(' ')),
+      }))
+      .filter((m) => m.text.length > 0)
+  }, [lignes])
+
+  /**
+   * LE BILLET — demandé au serveur AVANT d'ouvrir WhatsApp.
+   *
+   * Sans lui, le chauffeur arrive sur WhatsApp et doit tout redire : sa zone,
+   * sa question, ce qu'Ajnaya venait de lui répondre. Avec lui, elle reprend.
+   *
+   * ⚠️ IL NE BLOQUE JAMAIS LE DÉPART. Deux secondes au maximum, et s'il n'est
+   * pas là — pas d'identité, base muette, réseau lent — on ouvre WhatsApp sans
+   * code, exactement comme aujourd'hui. Une porte de vente n'attend pas une
+   * mesure : c'est le chemin principal, il ne dépend d'aucun service.
+   */
+  const demanderBillet = useCallback(async (question?: string): Promise<string | undefined> => {
+    try {
+      const coupe = new AbortController()
+      const t = setTimeout(() => coupe.abort(), 2000)
+      const r = await fetch('/api/site/passage-whatsapp', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          last_messages: filEnClair(),
+          question_chauffeur: question ?? '',
+          visitor_id: visitorId,
+          identity_id: identityId,
+        }),
+        signal: coupe.signal,
+      })
+      clearTimeout(t)
+      if (!r.ok) return undefined
+      const d = await r.json()
+      return d?.ok && typeof d.short_code === 'string' ? d.short_code : undefined
+    } catch {
+      return undefined
+    }
+  }, [filEnClair, visitorId, identityId])
+
   const derniereQuestion = useCallback((): string | undefined => {
     for (let i = lignes.length - 1; i >= 0; i--) {
       const l = lignes[i]
@@ -1369,7 +1423,13 @@ export default function AjnayaPhoneDemo({
                       </button>
                       <button className={`${s['aj-chip']} ${s.wa}`} type="button"
                               onPointerUp={(e) => e.stopPropagation()}
-                              onClick={() => onWhatsAppClick?.(derniereQuestion())}>
+                              onClick={() => {
+                                const q = derniereQuestion()
+                                if (!cerveau) { onWhatsAppClick?.(q); return }
+                                /* Le billet n'existe que si la vraie Ajnaya a
+                                   parlé : sinon il n'y a rien à reprendre. */
+                                void demanderBillet(q).then((code) => onWhatsAppClick?.(q, code))
+                              }}>
                         <span className={s.ico}>
                           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
                         </span>

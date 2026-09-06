@@ -5,6 +5,7 @@ import { resolveSiteIdentity } from '@/lib/identityGate'
 import { readAcquisitionFromRequest, persistAcquisition } from '@/lib/acquisitionServer'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { empreinteDemandeur, sousPlafondAjnayaPartage } from '@/lib/plafondAjnaya'
+import { empreintesDuVisiteur } from '@/lib/empreintesVisiteur'
 import { repondreEnSecours, tracerLeSecours } from '@/lib/repliAjnaya'
 
 export const runtime = 'nodejs'
@@ -142,12 +143,32 @@ export async function POST(request: NextRequest) {
     if (sb) await persistAcquisition(sb, identityId, 'widget_stream', acquisition)
   }
 
+  /* ⚠️ LES EMPREINTES — demandées par le fil Pieuvre le 06/09, et elles ne
+     servent qu'à UNE chose : reconnaître quelqu'un qui revient SANS son badge.
+     Navigation privée, badge effacé, autre navigateur : sans elles, il repart
+     de zéro et doit tout redire.
+
+     Trois règles tenues ici, et pas ailleurs :
+     · elles sont calculées SUR LE SERVEUR — l'IP et le navigateur ne sont
+       lisibles que d'ici, et une empreinte fabriquée par le navigateur ne
+       vaudrait rien ;
+     · elles partent HACHÉES, jamais en clair. Une IP est une donnée
+       personnelle ; son empreinte salée ne se remonte pas ;
+     · sans sel, on n'envoie RIEN. Un hachage sans sel est un hachage qu'on
+       devine, et il collerait les mêmes personnes partout. Une valeur qu'on
+       ne peut pas produire honnêtement reste absente. */
+  const empreintes = empreintesDuVisiteur(request, {
+    visitorId,
+    deviceCookieId: request.cookies.get('foreas_vid')?.value ?? null,
+  })
+
   const context = {
     page_source: pageSource,
     scroll_section: scrollSection,
     heat_score: heatScore,
     history_last_10: history,
     ...(visitorId ? { visitor_id: visitorId } : {}),
+    ...(empreintes ? { empreintes } : {}),
     ...(liveContext ? { live_context: liveContext } : {}),
   } as Parameters<typeof callPieuvreBrain>[0]['context']
 

@@ -4,6 +4,10 @@ import { URL_SITE, canonique } from '@/lib/site'
 import { PRIX_MENSUEL_CENTIMES, ESSAI_JOURS } from '@/lib/offre'
 import MesureVue from '@/components/mesure/MesureVue'
 import ExperienceClient from './experience/ExperienceClient'
+import { estTelephone } from '@/lib/appareil'
+import Ecran1Zone from './mobile/Ecran1Zone'
+import PageVente from './mobile/PageVente'
+import BarreCollante from './mobile/BarreCollante'
 
 /**
  * FOREAS — L'ACCUEIL.
@@ -35,8 +39,45 @@ import ExperienceClient from './experience/ExperienceClient'
  * appel réseau : elle ne fait que biaiser l'ordre des zones proposées. Repli
  * immédiat et honnête si l'en-tête manque — jamais d'écran d'attente, jamais de
  * service tiers pour deviner.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 06/09/2026 — L'ACCUEIL SERT DEUX PAGES, SELON L'APPAREIL.
+ *
+ * Décision Chandler : « il faut mettre le site www.foreas.xyz/mobile en version
+ * mobile sur la page principale ». Un visiteur qui arrive avec un TÉLÉPHONE
+ * reçoit donc ici la page qui vivait sur `/mobile` — hero de zone, page de
+ * vente, barre sous le pouce. Sur ordinateur, rien ne change : le parcours
+ * « téléphone vivant » reste l'accueil.
+ *
+ * ⚠️ CE N'EST PAS UNE MISE EN PAGE, CE SONT DEUX PAGES. Composants différents,
+ * texte différent. Une bascule en CSS enverrait les deux et en cacherait une —
+ * le visiteur paierait le poids des deux. Le choix se fait donc sur l'en-tête
+ * `user-agent`, AVANT le premier octet : voir `src/lib/appareil.ts` et ses
+ * seize agents de test dans `scripts/tests-accueil-telephone.mjs`.
+ *
+ * ⚠️ CE QUI RENDAIT LE PIÈGE DES DEUX CHATS POSSIBLE EST DÉJÀ FERMÉ.
+ * `PorteWidgetAjnaya` masque la bulle flottante sur `/` ET sur `/mobile` : la
+ * page mobile arrive ici avec ses cinq boutons vers Ajnaya sans qu'une bulle
+ * vienne se poser par-dessus. Rien à changer de ce côté — mais si quelqu'un
+ * retire `/` de cette liste un jour, deux portes apparaîtront sur la même page.
+ *
+ * ⚠️ `/mobile` RESTE `noindex`, ET C'EST LA BONNE DÉCISION. La page y est
+ * désormais servie à la même adresse canonique que l'accueil : l'indexer aux
+ * deux endroits créerait un doublon qui se ferait concurrence. L'adresse qui
+ * compte est `/`, pour les deux appareils.
  * ─────────────────────────────────────────────────────────────────────────────
  */
+
+/**
+ * ⚠️ NE PAS RENDRE CETTE PAGE STATIQUE.
+ *
+ * Le choix de l'appareil se lit dans l'en-tête de CHAQUE requête. Une page
+ * mise en cache servirait la version du premier visiteur à tous les suivants —
+ * la page mobile aux ordinateurs, ou l'inverse. La lecture de `headers()`
+ * suffit déjà à rendre la page dynamique ; cette ligne le dit à voix haute,
+ * pour que personne ne la « optimise » un jour sans voir ce qu'elle casse.
+ */
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'FOREAS — Discute avec Ajnaya. Gagne plus, roule moins.',
   description:
@@ -126,6 +167,9 @@ export default async function AccueilPage() {
   // Fail-open : sans en-tête (dev local, hôte non-Vercel), ordre national par défaut.
   const h = await headers()
   const geoCity = h.get('x-vercel-ip-city') || null
+  // Fail-open, comme la ville : sans agent lisible, on sert l'accueil
+  // ordinateur — c'est la version qui s'adapte déjà à un écran étroit.
+  const surTelephone = estTelephone(h.get('user-agent'))
 
 
   /**
@@ -164,9 +208,37 @@ export default async function AccueilPage() {
       {/* ⚠️ La vue est comptée sous « / », pas sous l'ancienne adresse. Les
           événements `experience_*` gardent leurs noms — la continuité historique
           vaut plus qu'un renommage cosmétique — mais ils portent la route
-          canonique dans leurs propriétés. */}
-      <MesureVue page="/" intention="ajnaya" audience="chauffeur" />
-      <ExperienceClient geoCity={geoCity} />
+          canonique dans leurs propriétés.
+
+          La `variante` distingue les deux pages servies à la MÊME adresse.
+          Sans elle, les deux parcours se mélangeraient dans un seul chiffre et
+          on ne saurait jamais lequel convertit. */}
+      {surTelephone ? (
+        <>
+          <MesureVue
+            page="/"
+            intention="ajnaya"
+            audience="chauffeur"
+            variante="mobile"
+          />
+          {/* Les trois pièces de l'ancienne `/mobile`, dans l'ordre : il tape sa
+              zone et la réponse s'affiche, puis la vente, puis UNE porte sous le
+              pouce dès que le hero est passé. */}
+          <Ecran1Zone lienWhatsApp="/wa?s=hero_zone" />
+          <PageVente />
+          <BarreCollante />
+        </>
+      ) : (
+        <>
+          <MesureVue
+            page="/"
+            intention="ajnaya"
+            audience="chauffeur"
+            variante="ordinateur"
+          />
+          <ExperienceClient geoCity={geoCity} />
+        </>
+      )}
     </>
   )
 }
