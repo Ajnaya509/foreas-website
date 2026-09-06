@@ -118,21 +118,24 @@ const REPLI_PANNEAU_STRIPE = false
 
 const FORMULES: readonly Formule[] = ['mensuel', 'annuel']
 /**
- * ⚠️ LE MENSUEL EST COCHÉ D'AVANCE — décision Chandler, 06/09.
- * Elle remplace l'exigence précédente (« l'annuel par défaut ») : ne pas la
- * remettre en croyant réparer un oubli.
+ * ⚠️ LA CAISSE RESTE SUR L'ANNUEL. Chandler, 06/09 : « le formulaire de
+ * paiement, il faut le laisser sur annuel par défaut ».
  *
- * ⚠️ ET C'EST CE DÉFAUT QUI A MASQUÉ UN BUG LE 05/09. Tant que la page ouvrait
- * sur l'annuel, `?formule=annuel` semblait marcher — alors que le paramètre
- * n'était pas lu du tout. Le défaut ayant changé de camp, c'est maintenant
- * `?formule=mensuel` qui « marcherait » sans être lu. La lecture du paramètre
- * (plus bas) est donc la seule chose qui prouve quoi que ce soit : elle est
- * mesurée à chaque changement, jamais supposée.
+ * ⚠️ ET LA PAGE DE VENTE, ELLE, OUVRE SUR LE MENSUEL — c'est voulu, les deux
+ * demandes sont du même jour. J'avais écrit ici que « les deux pages doivent
+ * montrer la même formule » : ce raisonnement était le mien, il est levé.
+ * Pourquoi l'écart ne piège personne : le bouton de la page de vente emporte
+ * la formule choisie (`?formule=mensuel`). Celui qui lit 29,99 € et clique
+ * arrive donc sur le mensuel. L'annuel par défaut ne s'applique qu'à celui qui
+ * arrive à la caisse SANS avoir choisi — un lien direct, une pub, un message
+ * d'Ajnaya.
  *
- * ⚠️ La page de vente (`PageVente.tsx`) doit montrer la MÊME formule par
- * défaut. Si l'une bouge, l'autre bouge.
+ * ⚠️ CE DÉFAUT A DÉJÀ MASQUÉ UN BUG, le 05/09 : `?formule=annuel` semblait
+ * marcher alors que le paramètre n'était pas lu du tout. Il l'est maintenant,
+ * et ça se prouve en ouvrant `?formule=mensuel` — la seule mesure qui vaille,
+ * puisqu'elle va CONTRE le défaut.
  */
-const FORMULE_PAR_DEFAUT: Formule = 'mensuel'
+const FORMULE_PAR_DEFAUT: Formule = 'annuel'
 
 /** Durée d'affichage d'une phrase, puis durée de son effacement. */
 const PHRASE_TENUE_MS = 5200

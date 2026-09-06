@@ -66,10 +66,12 @@ export default function PageVente() {
   /* ⚠️ LE MOIS EST COCHÉ D'AVANCE — décision Chandler, 06/09. Elle REMPLACE
      celle du 05/09 (« l'année en avant, comme partout dans le métier ») : ne
      pas la « corriger » en croyant réparer un oubli.
-     Ce qui ne change pas, et qui est la vraie règle : les deux pages montrent
-     la MÊME formule par défaut. Deux défauts différents, c'est un chauffeur qui
-     lit 29,99 € ici et 249,99 € à la caisse — il ne se dit pas qu'il a changé
-     d'écran, il se dit qu'on l'a piégé. Si l'une bouge, l'autre bouge. */
+     ⚠️ ET LA CAISSE, ELLE, RESTE SUR L'ANNUEL — même jour, même personne, ce
+     n'est pas une contradiction. Ce qui empêche le piège, c'est que le bouton
+     ci-dessous EMPORTE la formule choisie (`?formule=mensuel`) : celui qui lit
+     29,99 € ici et clique arrive bien sur le mensuel. L'annuel de la caisse ne
+     s'applique qu'à celui qui y arrive SANS avoir choisi. Si ce lien perdait
+     son paramètre, le piège reviendrait — c'est la ligne à surveiller. */
   const [mois, poserMois] = useState(true)
 
   /* ── LE CARROUSEL : une seule vidéo joue à la fois ─────────────────────── */
