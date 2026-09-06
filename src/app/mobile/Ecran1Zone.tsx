@@ -391,6 +391,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
           <div className={s.telBloc}>
             <AjnayaPhoneDemo
               zone={validee}
+              questionInitiale={validee}
               immersifPossible
               ajusteHauteur
               /* ⚠️ LA VRAIE AJNAYA RÉPOND ICI (Chandler, 05/09 : « fais B »).

@@ -334,9 +334,15 @@ export function replique(texte: string, zone: string): Repli {
   // « merci » / « ok » / « top » → on ne relance pas, on tient la porte
   if (a('merci', 'ok', 'okay', 'daccord', 'd’accord', 'top', 'parfait', 'super', 'nickel', 'bien', 'ca marche', 'compris')) {
     return {
+      /* ⚠️ CE TEXTE DISAIT « TAPE UN AUTRE LIEU ET JE RECOMMENCE ».
+         Chandler, 06/09 : la règle est intransigeante — on pousse vers
+         WhatsApp, et l'essai seulement pour les plus chauds. « On recommence »
+         invite à rester sur une démonstration qui ne vend rien et qui ne
+         laisse aucun moyen de le recontacter. Le filet local suit la même
+         règle que le cerveau : il ne propose plus de rejouer. */
       verdict: 'Bonne route.',
-      etiq: 'QUAND TU VEUX',
-      corps: `Tape un autre lieu et je recommence. Ou pose-moi la question sur WhatsApp, je réponds pareil — et je garde ${z} en tête.`,
+      etiq: 'LA SUITE',
+      corps: `Le vrai calcul, c'est sur TES chiffres. Passe sur WhatsApp avec tes heures et ton net d'hier : je te sors ton taux réel à l'heure, et je garde ${z} en tête.`,
       porte: true,
     }
   }

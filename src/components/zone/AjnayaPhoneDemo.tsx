@@ -208,6 +208,7 @@ export default function AjnayaPhoneDemo({
   onWhatsAppClick,
   immersifPossible = false,
   cerveau = false,
+  questionInitiale,
   ajusteHauteur = false,
 }: {
   /** La zone tapée par le chauffeur. Un changement relance la conversation. */
@@ -230,6 +231,13 @@ export default function AjnayaPhoneDemo({
    * Seul `/mobile` l'active, où l'écriture est le but.
    */
   immersifPossible?: boolean
+  /**
+   * ⚠️ CE QU'IL A TAPÉ DANS LE HERO, MOT POUR MOT.
+   * Sans elle, le fil affichait « Ça donne quoi Prix ? » à quelqu'un qui avait
+   * écrit « prix » : une question qu'il n'a pas posée, signée de son nom, et
+   * un français cassé dès qu'il tape autre chose qu'un lieu.
+   */
+  questionInitiale?: string
   /**
    * Brancher la vraie Ajnaya (route `/api/ajnaya/chat/stream`).
    * Posé par `Ecran1Zone`, donc actif partout où ce hero est rendu : `/mobile`
@@ -756,7 +764,14 @@ export default function AjnayaPhoneDemo({
     /* SA phrase, telle qu'il l'a tapée. Plus jamais réécrite à sa place :
        « Ça donne quoi comment tu peux savoir ? ? » — deux points
        d'interrogation, français cassé, signé de son nom. */
-    const saQuestion = demande ? echapper(demande) : `Ça donne quoi ${nom} ?`
+    /* ⚠️ SA PHRASE, DANS CET ORDRE : ce qu'il vient de taper dans le téléphone,
+       sinon ce qu'il a tapé dans le hero, et seulement en dernier recours une
+       question fabriquée. Chandler, 06/09 : « je veux que ce soit ce que le
+       chauffeur a demandé qui apparaisse ».
+       Le repli « Ça donne quoi X ? » ne sert plus qu'au cas où la zone arrive
+       sans qu'il ait rien écrit — un lien externe qui porte `?zone=`. */
+    const sienne = (demande || questionInitiale || '').trim()
+    const saQuestion = sienne ? echapper(sienne) : `Ça donne quoi ${nom} ?`
     /* ⚠️ ON AJOUTE, ON NE REMPLACE PLUS — Chandler, 05/09 : « la conversation
        doit se suivre tant qu'il n'y a pas de rechargement de la page ».
        `setLignes([…])` écrasait tout le fil à chaque question : le chauffeur
@@ -883,7 +898,7 @@ export default function AjnayaPhoneDemo({
       const lieu = reconnaitreLieu(zoneCourante || '')
 
       streamAjnayaChat({
-        message: demande || `Ça donne quoi ${nom} ?`,
+        message: sienne || `Ça donne quoi ${nom} ?`,
         sessionId: getSessionId(),
         identityId,
         visitor_id: visitorId,
