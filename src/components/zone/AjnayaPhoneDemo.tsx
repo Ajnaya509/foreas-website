@@ -118,7 +118,24 @@ function lireHorloge() {
    par le texte. La fiche `widget_site` les écrit aussi en toutes lettres — on
    les lui a demandées « au caractère près » le 05/09. Si elles arrivent dans
    la prose, on retire ces lignes-là : deux fois la même porte, c'est un tic. */
-const DELAI_CERVEAU_MS = 7000
+/**
+ * ⚠️ CE CHIFFRE A ÉTÉ MESURÉ DEUX FOIS, ET IL A CHANGÉ.
+ *
+ * 05/09, cerveau en Opus : 11,0 s. À 7 s, le chauffeur ne voyait JAMAIS la
+ * vraie Ajnaya — le savoir local répondait à chaque fois.
+ * 06/09, cerveau passé en Sonnet 5 par le fil Pieuvre : 4,6 s · 4,6 s · 7,0 s
+ * sur trois questions réelles en production. Une sur trois tombait donc encore
+ * du mauvais côté, à quelques millisecondes près.
+ *
+ * 12 s laisse la marge de la mesure la plus lente PLUS le réseau d'un
+ * téléphone en 4G. Ce n'est pas un écran mort pendant ce temps : le
+ * chuchotement « Ajnaya rassemble ce qu'elle sait… » est affiché, comme dans
+ * une vraie conversation. Et au-delà, le savoir local répond quand même.
+ *
+ * ⚠️ SI ON LE REDESCEND UN JOUR, IL FAUT REMESURER — pas se souvenir. Le
+ * modèle du fil Pieuvre peut changer sans que ce fichier le sache.
+ */
+const DELAI_CERVEAU_MS = 12000
 
 function echapperHtml(x: string) {
   return x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
