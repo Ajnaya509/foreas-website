@@ -120,8 +120,17 @@ export async function POST(request: NextRequest) {
     // 23505 = l'unicité a parlé : on retire un autre code. Toute autre erreur
     // est définitive, on n'insiste pas.
     if (error.code !== '23505') {
-      console.warn('[passage-whatsapp] insertion refusée :', error.message)
-      break
+      console.warn('[passage-whatsapp] insertion refusée :', error.code, error.message)
+      /* ⚠️ LE CODE D'ERREUR SORT D'ICI, ET C'EST VOULU. Un refus muet de la
+         base est indiscernable d'une absence de clic : c'est exactement la
+         famille de pannes que ce projet paie le plus cher. Le code Postgres
+         (`23514` contrainte, `42703` colonne absente…) ne dit rien de
+         personnel et permet de réparer sans deviner. Le message, lui, ne sort
+         pas : il peut citer une valeur. */
+      return NextResponse.json(
+        { ok: false, raison: 'refus_base', code: error.code ?? 'inconnu' },
+        { status: 200 },
+      )
     }
   }
 
