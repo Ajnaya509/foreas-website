@@ -47,6 +47,27 @@ export const dynamic = 'force-dynamic'
  * un passage : le téléphone retombe alors sur son lien simple, comme avant.
  */
 
+/**
+ * ⚠️ LES VALEURS ACCEPTÉES PAR LA BASE NE SONT PAS CELLES DU DÉPÔT.
+ *
+ * Premier essai en production : `23514` — une contrainte a refusé. Le dépôt ne
+ * dit pas laquelle : ce projet a déjà mesuré 12 contraintes déclarées pour 18
+ * vivantes. Et la base appartient au fil Pieuvre : je n'y touche pas.
+ *
+ * On essaie donc les couples du plus VRAI au plus SÛR, et on s'arrête au
+ * premier accepté. `widget` et `jeton_app` sont les seules valeurs dont on
+ * sache qu'elles passent — `/api/app/issue-handoff` les écrit depuis des mois.
+ *
+ * Le couple retenu est journalisé : le jour où le fil Pieuvre nous donne la
+ * liste, on fige la bonne paire et cette boucle disparaît.
+ */
+const COUPLES: Array<{ source_canal: string; claim_method: string }> = [
+  { source_canal: 'site_mobile', claim_method: 'code_court_site' },
+  { source_canal: 'widget', claim_method: 'code_court_site' },
+  { source_canal: 'widget', claim_method: 'code_court' },
+  { source_canal: 'widget', claim_method: 'jeton_app' },
+]
+
 /** Sans 0/O/1/I/L : ces cinq-là se confondent quand on relit un code à l'œil. */
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 const HEURES_DE_VIE = 48
@@ -98,11 +119,13 @@ export async function POST(request: NextRequest) {
   /* L'index d'unicité porte sur les billets VIVANTS (fil Pieuvre, 23/08) : une
      collision est donc possible et attendue. Trois essais, puis on renonce —
      le téléphone garde son lien simple, personne ne voit d'erreur. */
-  for (let essai = 0; essai < 3; essai++) {
+  let dernierCode: string | undefined
+  for (const couple of COUPLES) {
+   for (let essai = 0; essai < 3; essai++) {
     const short_code = codeCourt()
     const { error } = await sb.from('handoff_tokens').insert({
       identity_id: identityId,
-      source_canal: 'site_mobile',
+      source_canal: couple.source_canal,
       target_canal: 'whatsapp',
       state: {
         last_messages: derniers,
@@ -113,12 +136,22 @@ export async function POST(request: NextRequest) {
       short_code,
       // Né dans un navigateur : il n'ouvre aucune mémoire privée. Jamais.
       lien_etat: 'UNBOUND',
-      claim_method: 'code_court_site',
+      claim_method: couple.claim_method,
       expires_at: new Date(Date.now() + HEURES_DE_VIE * 3600_000).toISOString(),
     })
-    if (!error) return NextResponse.json({ ok: true, short_code }, { headers: { 'Cache-Control': 'no-store' } })
+    if (!error) {
+      console.info('[passage-whatsapp] couple accepté :', couple.source_canal, couple.claim_method)
+      return NextResponse.json(
+        { ok: true, short_code, couple: `${couple.source_canal}/${couple.claim_method}` },
+        { headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
+    dernierCode = error.code ?? 'inconnu'
     // 23505 = l'unicité a parlé : on retire un autre code. Toute autre erreur
     // est définitive, on n'insiste pas.
+    // 23505 = collision de code : on retire. 23514 = valeur refusée : ce couple
+    // est mort, on passe au suivant. Toute autre erreur est définitive.
+    if (error.code === '23514') break
     if (error.code !== '23505') {
       console.warn('[passage-whatsapp] insertion refusée :', error.code, error.message)
       /* ⚠️ LE CODE D'ERREUR SORT D'ICI, ET C'EST VOULU. Un refus muet de la
@@ -132,7 +165,11 @@ export async function POST(request: NextRequest) {
         { status: 200 },
       )
     }
+   }
   }
 
-  return NextResponse.json({ ok: false, raison: 'billet_indisponible' }, { status: 200 })
+  return NextResponse.json(
+    { ok: false, raison: 'billet_indisponible', code: dernierCode ?? 'inconnu' },
+    { status: 200 },
+  )
 }
