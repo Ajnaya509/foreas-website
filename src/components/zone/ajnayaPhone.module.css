@@ -523,3 +523,14 @@
   background:#0D1122;
   box-shadow:none;
   border-color:rgba(255,255,255,.10);}
+
+
+/* ── LA PORTE ÉPINGLÉE ─────────────────────────────────────────────────────
+   ⚠️ ELLE VIVAIT DANS LE FIL, ET ELLE TOMBAIT SOUS LE CADRE. Mesuré le 06/09 :
+   la réponse du cerveau fait quatre paragraphes, le fil s'ancre sur la question
+   en haut, et le bouton n'était plus visible. Ajnaya écrivait « le bouton essai
+   est juste là » ; il n'était nulle part.
+   Sortie du fil, elle se pose entre la conversation et le champ de saisie.
+   `flex: none` — elle ne se laisse pas comprimer par un fil qui grandit. */
+.aj-porte{position:relative;z-index:2;flex:none;padding:0 6px 4px;}
+.aj-porte:empty{display:none;padding:0;}

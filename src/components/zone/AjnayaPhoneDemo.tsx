@@ -701,6 +701,9 @@ export default function AjnayaPhoneDemo({
    * ⚠️ ON NE LUI DONNE QUE SES MESSAGES À LUI. Ajnaya parle d'essai à chaque
    * bascule : lui passer ses réponses la ferait se déclencher elle-même.
    */
+  /** Une réponse a-t-elle ouvert une porte ? (dernière ligne qui la porte) */
+  const porteVisible = useMemo(() => lignes.some((l) => l.sorties), [lignes])
+
   const porte = useMemo(() => {
     const siens = lignes.filter((l) => l.qui === 'toi').map((l) => texteBrut(l.blocs.map((b) => b.html).join(' ')))
     return choisirPorte(siens).porte
@@ -1461,40 +1464,6 @@ export default function AjnayaPhoneDemo({
 
                   {/* ── LES DEUX PORTES — après le savoir, jamais avant.
                          La dette est créée : on a donné un calcul et un geste. ── */}
-                  {/* ⚠️ UNE SEULE PORTE, ET C'EST `porte` QUI TRANCHE (voir plus
-                      haut). Elles s'affichaient toutes les deux : deux boutons
-                      côte à côte, ce n'est pas deux chances, c'est une
-                      hésitation. WhatsApp par défaut ; l'essai seulement s'il
-                      est chaud ; rien du tout s'il vient de refuser — vendre à
-                      quelqu'un qui dit non est le geste qui fait fermer la
-                      page. */}
-                  {l.sorties && porte === 'essai' && (
-                      <button className={`${s['aj-chip']} ${s.essai}`} type="button"
-                              onPointerUp={(e) => e.stopPropagation()} onClick={onEssaiClick}>
-                        <span className={s.ico}>
-                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" /></svg>
-                        </span>
-                        <span className={s.lib}>Essayer 3 jours — 0 € aujourd&apos;hui</span>
-                        <span className={s.chev}>›</span>
-                      </button>
-                  )}
-                  {l.sorties && porte === 'whatsapp' && (
-                      <button className={`${s['aj-chip']} ${s.wa}`} type="button"
-                              onPointerUp={(e) => e.stopPropagation()}
-                              onClick={() => {
-                                const q = derniereQuestion()
-                                if (!cerveau) { onWhatsAppClick?.(q); return }
-                                /* Le billet n'existe que si la vraie Ajnaya a
-                                   parlé : sinon il n'y a rien à reprendre. */
-                                void demanderBillet(q).then((code) => onWhatsAppClick?.(q, code))
-                              }}>
-                        <span className={s.ico}>
-                          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
-                        </span>
-                        <span className={s.lib}>Poser ma question sur WhatsApp</span>
-                        <span className={s.chev}>›</span>
-                      </button>
-                  )}
                 </div>
               ))}
 
@@ -1513,6 +1482,43 @@ export default function AjnayaPhoneDemo({
                   hauteur, et le récit n'a plus deux fins. */}
               </>
               )}
+            </div>
+
+            {/* ⚠️ LA PORTE EST ÉPINGLÉE, ELLE NE VIT PLUS DANS LE FIL.
+                Mesuré à l'écran le 06/09 : la réponse du cerveau fait quatre
+                paragraphes, le fil s'ancre sur la question en haut, et le
+                bouton tombait SOUS le cadre. Ajnaya écrivait « le bouton essai
+                est juste là » — et il n'était nulle part. Une phrase qui
+                désigne un bouton invisible est pire que pas de bouton.
+                Épinglé au-dessus du champ, il est là quoi qu'il lise. */}
+            <div className={s['aj-porte']}>
+                      {porteVisible && porte === 'essai' && (
+                          <button className={`${s['aj-chip']} ${s.essai}`} type="button"
+                                  onPointerUp={(e) => e.stopPropagation()} onClick={onEssaiClick}>
+                            <span className={s.ico}>
+                              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" /></svg>
+                            </span>
+                            <span className={s.lib}>Essayer 3 jours — 0 € aujourd&apos;hui</span>
+                            <span className={s.chev}>›</span>
+                          </button>
+                      )}
+                      {porteVisible && porte === 'whatsapp' && (
+                          <button className={`${s['aj-chip']} ${s.wa}`} type="button"
+                                  onPointerUp={(e) => e.stopPropagation()}
+                                  onClick={() => {
+                                    const q = derniereQuestion()
+                                    if (!cerveau) { onWhatsAppClick?.(q); return }
+                                    /* Le billet n'existe que si la vraie Ajnaya a
+                                       parlé : sinon il n'y a rien à reprendre. */
+                                    void demanderBillet(q).then((code) => onWhatsAppClick?.(q, code))
+                                  }}>
+                            <span className={s.ico}>
+                              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.7-.1 1.2z" /></svg>
+                            </span>
+                            <span className={s.lib}>Poser ma question sur WhatsApp</span>
+                            <span className={s.chev}>›</span>
+                          </button>
+                      )}
             </div>
 
             <footer className={s['aj-dock']}>
