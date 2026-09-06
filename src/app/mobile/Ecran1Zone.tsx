@@ -396,7 +396,10 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
               /* ⚠️ LA VRAIE AJNAYA RÉPOND ICI (Chandler, 05/09 : « fais B »).
                  Même route, même session et même fiche `widget_site` que le
                  téléphone vivant de l'accueil. Sept secondes, sinon le savoir
-                 local — voir l'en-tête du cerveau dans AjnayaPhoneDemo. */
+                 local — voir l'en-tête du cerveau dans AjnayaPhoneDemo.
+                 ⚠️ CE HERO EST RENDU À DEUX ADRESSES depuis le 06/09 : `/mobile`
+                 et `/` sur téléphone. Le cerveau est donc branché aux deux, et
+                 c'est voulu — `/` est la page qui reçoit les pubs. */
               cerveau
               /* ⚠️ PAS DE `formule` ICI, ET C'EST VOULU (Chandler, 05/09).
                  La caisse s'ouvre sur l'ANNUEL, comme partout ailleurs dans le

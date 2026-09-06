@@ -31,7 +31,13 @@ import BarreCollante from './BarreCollante'
  * Elle ne traverse pas l'écran : une barre pleine largeur se lit comme un
  * bord de page, une barre courte se lit comme une respiration.
  *
- * ⚠️ INTROUVABLE SUR GOOGLE tant que Chandler n'a pas dit qu'elle remplace `/`.
+ * ⚠️ INTROUVABLE SUR GOOGLE, ET C'EST MAINTENANT DÉFINITIF.
+ * Le 06/09, Chandler a décidé que cette page devient l'accueil sur téléphone :
+ * `/` sert désormais EXACTEMENT ces trois blocs à tout téléphone (bascule sur
+ * l'en-tête `user-agent`, dans `src/app/page.tsx`). Le même contenu vit donc à
+ * deux adresses. `/` est l'adresse canonique et la seule indexée ; laisser
+ * celle-ci indexable créerait un doublon qui se ferait concurrence sur les
+ * mêmes mots. Le `noindex` reste, pour cette raison-ci.
  */
 export const metadata: Metadata = {
   title: 'FOREAS Driver — aperçu mobile',

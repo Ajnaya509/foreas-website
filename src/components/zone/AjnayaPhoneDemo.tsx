@@ -212,7 +212,12 @@ export default function AjnayaPhoneDemo({
    * Seul `/mobile` l'active, où l'écriture est le but.
    */
   immersifPossible?: boolean
-  /** Brancher la vraie Ajnaya (route `/api/ajnaya/chat/stream`). Seul `/mobile` l'active. */
+  /**
+   * Brancher la vraie Ajnaya (route `/api/ajnaya/chat/stream`).
+   * Posé par `Ecran1Zone`, donc actif partout où ce hero est rendu : `/mobile`
+   * ET `/` sur téléphone depuis le 06/09. Les autres téléphones du site
+   * (`/ou-ca-paie`, `/apercu-ajnaya`) restent sur le savoir local.
+   */
   cerveau?: boolean
   /**
    * ⚠️ LE TÉLÉPHONE PREND TOUTE LA LARGEUR, ET C'EST SON ÉCRAN QU'ON RACCOURCIT.
@@ -840,7 +845,13 @@ export default function AjnayaPhoneDemo({
         sessionId: getSessionId(),
         identityId,
         visitor_id: visitorId,
-        pageSource: '/mobile',
+        /* ⚠️ LA PAGE RÉELLE, PAS UNE CONSTANTE. C'était `'/mobile'` écrit en
+           dur — vrai le 05/09, faux le 06/09 : depuis, la même page est servie
+           sous `/` à tout téléphone, et c'est `/` qui reçoit les pubs. Le fil
+           Pieuvre route et compte sur cette valeur ; lui envoyer `/mobile`
+           pendant que le chauffeur est sur `/`, c'est fausser ses chiffres sur
+           la page qui compte le plus. */
+        pageSource: typeof window !== 'undefined' ? window.location.pathname : '/',
         scrollSection: 'hero_phone',
         heatScore: 20,
         messageCount: tour + 1,
