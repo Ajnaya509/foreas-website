@@ -6,7 +6,7 @@
  * `/cap` accueille quelqu'un arrivé par un lien de parrainage : c'est un
  * CHAUFFEUR, pas un client passager ni un partenaire B2B. Or elle comptait 21
  * occurrences de « vous / votre / vos » contre 6 de tutoiement, alors que `/`,
- * `/tarifs2` et les pages SEO tutoient toutes.
+ * `/tarifs3` et les pages SEO tutoient toutes.
  *
  * La règle FOREAS est stable et documentée : **Ajnaya vouvoie les clients,
  * tutoie les chauffeurs.** Un chauffeur qui arrive par le lien d'un collègue et
@@ -86,7 +86,7 @@ interface CapClientProps {
 // Elite 34,97 €. Aucune n'est encaissable. MESURE 14/08/2026 : `src/app/api/checkout/route.ts`
 // ne connaît que PRIX_MENSUEL_CENTIMES (2999) et PRIX_ANNUEL_CENTIMES (24999) ; le mapping
 // PRICE_IDS des anciennes formules a été retiré le 22/07 (commentaire lignes 6-14 du même
-// fichier). Et /tarifs2 — où mène le bouton de cette carte — répond en production « Un seul,
+// fichier). Et /tarifs3 — où mène le bouton de cette carte — répond en production « Un seul,
 // et tout est dedans ». Deux pages en ligne se contredisaient : trois formules ici, une seule
 // là-bas, à un autre prix et à une autre périodicité.
 // RÈGLE : plus aucun montant en dur ici. Tout vient de src/lib/offre.ts.
@@ -266,7 +266,7 @@ function PricingCard({
 
       {/* CTA */}
       <Link
-        href={`/tarifs2${referralCode ? `?ref=${referralCode}` : ''}`}
+        href={`/tarifs3${referralCode ? `?ref=${referralCode}` : ''}`}
         className={`block text-center py-3 px-5 rounded-xl font-body font-semibold text-sm transition-all duration-200 ${
           plan.miseEnAvant
             ? 'bg-gradient-to-r from-violet-600 to-rose-600 text-white hover:from-violet-500 hover:to-rose-500 shadow-lg shadow-violet-900/20'
@@ -438,7 +438,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
             className="flex flex-col sm:flex-row gap-3 justify-center items-center"
           >
             <Link
-              href={`/tarifs2${referralCode ? `?ref=${referralCode}` : ''}`}
+              href={`/tarifs3${referralCode ? `?ref=${referralCode}` : ''}`}
               className="group relative inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-body font-semibold text-sm text-white overflow-hidden transition-all duration-200"
               style={{
                 background: 'linear-gradient(135deg, #8C52FF 0%, #FF6699 100%)',
@@ -537,7 +537,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
               className="font-title text-3xl md:text-4xl font-bold text-white mb-3"
             >
               {/* « Choisissez votre plan » n'a plus d'objet : il n'y a qu'un abonnement,
-                  au mois ou à l'année (src/lib/offre.ts). C'est aussi ce que répond /tarifs2. */}
+                  au mois ou à l'année (src/lib/offre.ts). C'est aussi ce que répond /tarifs3. */}
               {discount
                 ? `Ton offre exclusive — -${discountPct}% pendant ${discountMonths} mois`
                 : 'Un seul abonnement, tout est dedans'}
@@ -617,7 +617,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                   confondus : il n'existe aucun avant/après à comparer.
                 · « Soufiane M. — +412€/mois » : 0 ligne dans `drivers`, 0 dans
                   `pieuvre_closer_testimonials`. Le même nom portait des attributs différents
-                  sur /tarifs2 — deux versions du même homme en production.
+                  sur /tarifs3 — deux versions du même homme en production.
                 · « Théodore R. — -28% de km à vide » : 0 ligne en base, et la métrique est
                   structurellement impossible : `rides` ne porte ni distance à vide, ni trace
                   GPS entre deux courses. Le CLAUDE.md du dépôt lui attribue en plus un autre
@@ -694,7 +694,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 : `${ESSAI_JOURS} jours d’essai. Carte demandée, 0 € prélevé. Tu annules en un clic avant la fin, tu n’es pas débité.`}
             </p>
             <Link
-              href={`/tarifs2${referralCode ? `?ref=${referralCode}` : ''}`}
+              href={`/tarifs3${referralCode ? `?ref=${referralCode}` : ''}`}
               className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-body font-semibold text-sm text-white transition-all duration-200"
               style={{
                 background: 'linear-gradient(135deg, #8C52FF 0%, #FF6699 100%)',

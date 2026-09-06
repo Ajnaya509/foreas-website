@@ -27,7 +27,7 @@ import Link from 'next/link'
  *     Essayer gratuit 3 jours →
  *   </InkGradientButton>
  *
- *   <InkGradientButton as="link" href="/tarifs2" size="md">
+ *   <InkGradientButton as="link" href="/tarifs3" size="md">
  *     Voir les tarifs
  *   </InkGradientButton>
  */

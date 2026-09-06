@@ -276,7 +276,7 @@ export default function RevenueSimulator() {
 
             {/* CTA */}
             <a
-              href="/tarifs2"
+              href="/tarifs3"
               className="block w-full py-4 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold text-center hover:opacity-90 transition-opacity"
             >
               Tester FOREAS {ESSAI_JOURS} jours, 0€ →

@@ -159,7 +159,7 @@ export const PARRAINAGE = {
    *
    * Il déclarait trois paliers de volume — 25 / 35 / 50 € — assortis d'une
    * remise au filleul de 10 / 15 / 18 %. Rendu tel quel dans la FAQ de
-   * `/tarifs2`, sur `/cap` et dans `ZoneCapPartnerCTA`.
+   * `/tarifs3`, sur `/cap` et dans `ZoneCapPartnerCTA`.
    *
    * La source technique dit autre chose. `gelParrainage.ts` du backend :
    *

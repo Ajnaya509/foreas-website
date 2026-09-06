@@ -3,7 +3,7 @@
  *
  * POURQUOI CE FICHIER EXISTE (constat du 14/08/2026)
  * Le site encaissait DEUX PRIX DIFFÉRENTS pour le même produit :
- *   · /tarifs2 → /api/checkout ........... 29,99 €/mois  (offre réelle)
+ *   · /tarifs3 → /api/checkout ........... 29,99 €/mois  (offre réelle)
  *   · /checkout → /api/subscription/create  97 €/mois     (ancienne grille)
  * Le 22/07, le mapping `PRICE_IDS` (Pro 97 € / Elite 247 €) avait été retiré de
  * `/api/checkout` précisément parce qu'il « aurait facturé 97 € au lieu de 29,99 € ».

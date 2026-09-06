@@ -17,7 +17,7 @@
  *
  * Source de vérité tier : pricing.ts SSOT supprimé (Site2026v83), mapping inline ici.
  *
- * Design : DESIGN_SYSTEM_MASTER §13 variant pulse (Ajnaya réfléchit) cohérent /tarifs2 :
+ * Design : DESIGN_SYSTEM_MASTER §13 variant pulse (Ajnaya réfléchit) cohérent /tarifs3 :
  *  fond noir Apple #000, halo violet+cyan animate-halo-pulse, micro-grain anti-banding,
  *  texte ivoire #F8FAFC, brièveté radicale (≤ 5 mots/phrase), Genos display pour H1.
  */
@@ -136,7 +136,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
      cartes refusées). Stripe ne collecte plus le nom de facturation.
      Notre formulaire demande maintenant le prénom et l'écrit dans les
      métadonnées de la session — c'est donc la PREMIÈRE source à lire.
-     Les deux suivantes restent pour les sessions de /tarifs2, qui portent
+     Les deux suivantes restent pour les sessions de /tarifs3, qui portent
      encore un nom de facturation. Et « chauffeur » reste le dernier recours :
      mieux vaut un mot générique qu'un « Bienvenue, ». */
   const metaSession = (session.metadata as Record<string, string> | null) || {}
@@ -314,7 +314,7 @@ function NoSessionState() {
           Cette page confirme une souscription Stripe. Lien direct invalide.
         </p>
         <a
-          href="/tarifs2"
+          href="/tarifs3"
           className="inline-flex px-5 py-3 rounded-2xl font-bold text-[14px]"
           style={{
             background: 'linear-gradient(135deg, #8C52FF 0%, #6C3CE0 100%)',

@@ -40,7 +40,7 @@ export const dynamic = 'force-dynamic'
  * POURQUOI LA FERMER NE CASSE RIEN
  *
  * Son unique appelant était `src/app/checkout/CheckoutClient.tsx`, et `/checkout`
- * répond 308 vers `/tarifs2` depuis le 20/08 : cette page n'est plus rendue.
+ * répond 308 vers `/tarifs3` depuis le 20/08 : cette page n'est plus rendue.
  * Aucun autre appelant dans les six dépôts.
  *
  * Le tunnel vivant est `/api/checkout`, qui passe par une session Stripe et
@@ -61,7 +61,7 @@ export const dynamic = 'force-dynamic'
  */
 function fermee() {
   return NextResponse.json(
-    { error: 'gone', message: 'Cette voie de paiement est fermée. Utilise /tarifs2.' },
+    { error: 'gone', message: 'Cette voie de paiement est fermée. Utilise /tarifs3.' },
     { status: 410, headers: { 'Cache-Control': 'no-store' } },
   )
 }

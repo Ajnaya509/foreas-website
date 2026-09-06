@@ -54,7 +54,7 @@ export default function ZoneFinalCTAWithPS() {
       intention: 'general',
       audience: 'chauffeur',
       promesse: 'Essayer ' + ESSAI_JOURS + ' jours',
-      detail: { emplacement: 'cta-final', destination: '/tarifs2' },
+      detail: { emplacement: 'cta-final', destination: '/tarifs3' },
     })
   }
 

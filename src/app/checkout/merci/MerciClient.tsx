@@ -4,7 +4,7 @@
  * MerciClient — retour après paiement (/checkout → return_url).
  * Téléchargement INTELLIGENT : détecte l'OS et envoie au bon store via /go
  * (iOS → App Store, Android → Play Store, desktop → /go/desktop QR).
- * Langage visuel aligné checkout/tarifs2 : obsidian + halo + glass + InkGradientButton + Genos.
+ * Langage visuel aligné checkout/tarifs3 : obsidian + halo + glass + InkGradientButton + Genos.
  */
 
 import { useEffect, useState } from 'react'
@@ -48,7 +48,7 @@ export default function MerciClient() {
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-foreas-obsidian text-[#F8FAFC]">
-      {/* halo + micro-grain (comme checkout/tarifs2) */}
+      {/* halo + micro-grain (comme checkout/tarifs3) */}
       <div aria-hidden className="fixed inset-0 pointer-events-none overflow-hidden">
         <div
           className="absolute inset-0 animate-halo-pulse"

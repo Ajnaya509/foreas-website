@@ -24,7 +24,7 @@ import { sujetValide } from '@/lib/sujets'
  * nulle part. Peu importe la qualité du texte au-dessus.
  *
  * ────────────────────────────────────────────────────────────────────────────
- * POURQUOI /tarifs2 ET PAS LES STORES
+ * POURQUOI /tarifs3 ET PAS LES STORES
  *
  * 1. MODÈLE ÉCONOMIQUE — FOREAS se vend sur le web (Stripe, essai 3 jours), pas
  *    sur les stores. Envoyer un visiteur télécharger l'app le fait arriver sans
@@ -33,7 +33,7 @@ import { sujetValide } from '@/lib/sujets'
  *
  * 2. DOCTRINE COPY (foreas-copy-atomic §3.14) — un visiteur qui arrive de Google
  *    est à 3-4/10 sur l'échelle du « oui », pas à 9. Un CTA trop direct à ce
- *    stade fait fuir. /tarifs2 est l'étape intermédiaire juste : il y voit le
+ *    stade fait fuir. /tarifs3 est l'étape intermédiaire juste : il y voit le
  *    prix, la mécanique de l'essai et les témoignages avant de sortir sa carte.
  *
  * 3. L'app iOS n'a de toute façon pas d'identifiant App Store utilisable ici —
@@ -57,7 +57,7 @@ export async function GET(
 ) {
   const { topic } = await params
   const incoming = new URL(request.url)
-  const target = new URL('/tarifs2', incoming.origin)
+  const target = new URL('/tarifs3', incoming.origin)
 
   // Report des UTM d'origine (campagnes payantes) — priorité à ce qui existe déjà.
   incoming.searchParams.forEach((v, k) => {
@@ -66,7 +66,7 @@ export async function GET(
 
   // ── UN SUJET INCONNU EST UNE ERREUR, ET LE DIT ──────────────────────────
   //
-  // AVANT, cette route redirigeait N'IMPORTE QUEL mot vers /tarifs2, avec ce
+  // AVANT, cette route redirigeait N'IMPORTE QUEL mot vers /tarifs3, avec ce
   // raisonnement écrit : « perdre l'attribution vaut mieux qu'un 404 ».
   //
   // Le raisonnement se retourne. Vérifié en production le 21/08/2026 :

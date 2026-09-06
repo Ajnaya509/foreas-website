@@ -16,7 +16,7 @@ const VALID_TOPICS = SUJETS as readonly string[]
 // ─── Routes existantes à NE PAS écraser ───────────────────────────────────────
 // Next.js résout les routes statiques en priorité sur les dynamiques.
 // Ces routes n'apparaissent donc jamais ici :
-// /, /chauffeurs, /partenaires, /tarifs, /tarifs2, /technologie, /a-propos,
+// /, /chauffeurs, /partenaires, /tarifs, /tarifs3, /technologie, /a-propos,
 // /contact, /cgu, /confidentialite, /mentions-legales, /dashboard, /login, /509
 
 async function getContent(topic: string): Promise<LandingContent | null> {

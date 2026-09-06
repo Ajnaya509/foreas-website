@@ -370,7 +370,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
           aurait toujours eu son code par SMS.
           Ce champ aurait EN PLUS gelé la liste des moyens de paiement : tout
           moyen activé plus tard dans Stripe n'apparaîtrait jamais, en silence.
-          Et la route de session est PARTAGÉE avec /tarifs2, qui reçoit le
+          Et la route de session est PARTAGÉE avec /tarifs3, qui reçoit le
           trafic publicitaire. Rien ne bouge côté serveur.
 
           ⚠️ APPLE PAY ET GOOGLE PAY NE PEUVENT PAS ÊTRE TOUCHÉS ICI, par

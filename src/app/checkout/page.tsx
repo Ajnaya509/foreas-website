@@ -1,9 +1,9 @@
 /**
  * ⚠️ PAGE INATTEIGNABLE DEPUIS LE 20/08/2026 — ET C'EST VOULU.
  *
- * `next.config.ts` redirige /checkout vers /tarifs2 en 308. La redirection agit
+ * `next.config.ts` redirige /checkout vers /tarifs3 en 308. La redirection agit
  * AVANT le routage : ce composant n'est jamais rendu en production. Vérifié :
- * /checkout → 308 → /tarifs2, et /checkout/merci répond toujours 200 (c'est une
+ * /checkout → 308 → /tarifs3, et /checkout/merci répond toujours 200 (c'est une
  * route distincte, la redirection ne l'attrape pas).
  *
  * POURQUOI IL RESTE. Il lit `FORMULES` depuis `src/lib/offre.ts`, la source
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   title: 'FOREAS — Démarrer maintenant',
   // ⚠️ 21/08/2026 — la garantie n'est plus annoncée. Le droit existe au contrat
   // (/cgu), son mécanisme n'est pas prouvé. Voir GARANTIE_30J. Cette page répond
-  // 308 vers /tarifs2 depuis le 20/08, mais sa description partait quand même
+  // 308 vers /tarifs3 depuis le 20/08, mais sa description partait quand même
   // dans les aperçus de partage.
   description: garantieAffichable()
     ? 'Paiement sécurisé. Garantie 30 jours satisfait ou remboursé.'

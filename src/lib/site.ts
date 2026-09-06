@@ -7,7 +7,7 @@
  * Les balises canoniques du site se contredisaient, mesuré en production :
  *   /            → https://www.foreas.xyz          (avec www)
  *   /ou-ca-paie  → https://foreas.xyz/ou-ca-paie   (sans www)
- *   /tarifs2     → aucune
+ *   /tarifs3     → aucune
  *
  * Or l'apex redirige vers www (307 vérifié). Une canonique qui désigne une URL
  * qui redirige s'annule elle-même : elle dit à Google « la version de référence
@@ -40,7 +40,7 @@ export function canonique(chemin: string): string {
  * partage de l'accueil — `og:url = https://www.foreas.xyz` — à côté d'une
  * canonique pourtant correcte. Et le même titre que l'accueil.
  *
- * Concrètement : quelqu'un partage `/tarifs2` dans une conversation, l'aperçu
+ * Concrètement : quelqu'un partage `/tarifs3` dans une conversation, l'aperçu
  * affiche l'accueil, et le lien de l'aperçu mène à l'accueil. La page de prix
  * ne peut donc pas être partagée. Idem pour les huit autres.
  *
@@ -67,7 +67,7 @@ const PARTAGE_COMMUN = {
 /**
  * Le bloc de partage d'une page, complet.
  *
- * @param chemin       le chemin de la page, par exemple '/tarifs2'
+ * @param chemin       le chemin de la page, par exemple '/tarifs3'
  * @param titre        le titre propre à la page
  * @param description  la description propre à la page
  */

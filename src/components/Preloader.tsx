@@ -38,7 +38,7 @@ import { usePathname } from 'next/navigation'
  *    Rive ne déclarait aucun événement de fin, seule une minuterie levait le
  *    rideau, en silence ».
  *
- * 3. LES PAGES QUI ENCAISSENT SONT EXCLUES. `/tarifs2` reçoit le trafic
+ * 3. LES PAGES QUI ENCAISSENT SONT EXCLUES. `/tarifs3` reçoit le trafic
  *    publicitaire et `/tarifs3` est la page de lancement : une seconde de
  *    rideau devant un formulaire de paiement se paie en euros.
  *
@@ -61,7 +61,7 @@ import { usePathname } from 'next/navigation'
 /** Les pages où le rideau ne se joue jamais. Chacune pour une raison écrite. */
 const PAGES_SANS_RIDEAU = [
   '/dashboard', // espace connecté : ce n'est plus une arrivée sur la marque
-  '/tarifs2', // reçoit le trafic publicitaire — une seconde de plus coûte de l'argent
+  '/tarifs3', // reçoit le trafic publicitaire — une seconde de plus coûte de l'argent
   '/tarifs3', // page de paiement du lancement : aucun décor devant un formulaire
 ]
 

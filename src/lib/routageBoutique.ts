@@ -27,7 +27,7 @@
  * paramètre devenait une partie du nom de paquet), et sur ordinateur une
  * redirection vers la page d'où l'on venait — une boucle.
  *
- * Elle a ensuite été rabattue vers /tarifs2 pour tout le monde, avec une raison
+ * Elle a ensuite été rabattue vers /tarifs3 pour tout le monde, avec une raison
  * valable à l'époque : « l'app iOS n'a pas d'identifiant App Store utilisable,
  * on ne devine pas un identifiant ». Cette raison est TOMBÉE : la fiche iOS est
  * publiée et répond (vérifié le 20/08). D'où ce fichier.
@@ -105,7 +105,7 @@ export function destinationBoutique(
   // Ordinateur, ou agent inconnu. On ne fait pas semblant : on emmène vers
   // l'offre, avec l'attribution conservée. C'est la suite honnête d'un clic
   // « installer » sur une machine qui ne peut rien installer.
-  const repli = new URL('/tarifs2', origine)
+  const repli = new URL('/tarifs3', origine)
   for (const p of PARAMETRES_CONSERVES) {
     const v = entree.searchParams.get(p)
     if (v) repli.searchParams.set(p, v.slice(0, 120))

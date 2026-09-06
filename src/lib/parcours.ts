@@ -62,7 +62,7 @@ export const PARCOURS: readonly Parcours[] = [
     promesse: 'Vois ce qu’il te reste, avec TES chiffres — pas une moyenne.',
     preuve:
       'Le calculateur de l’accueil, depuis le 21/08 : le chauffeur saisit sa course et SA commission, et la formule est écrite sous le résultat. Aucun taux inventé.',
-    action: '/tarifs2',
+    action: '/tarifs3',
     routeBoutique: '/go/rentabilite',
     etat: 'bloque',
     bloque: [
@@ -87,7 +87,7 @@ export const PARCOURS: readonly Parcours[] = [
     promesse: 'Tape ta zone, vois ce qui s’y est vraiment payé à cette heure-ci.',
     preuve:
       'Le champ de recherche de l’accueil répond avant tout engagement. L’ouverture de la fenêtre Ajnaya est comptée depuis le 21/08 — avant, elle n’était comptée nulle part.',
-    action: '/tarifs2',
+    action: '/tarifs3',
     routeBoutique: '/go/zones',
     etat: 'test',
     bloque: [],
@@ -100,7 +100,7 @@ export const PARCOURS: readonly Parcours[] = [
     promesse: 'Ta clientèle à toi, réservée en direct, sans commission de plateforme.',
     preuve:
       'Aucune preuve mesurée pour l’instant. Le formulaire de contact fonctionne depuis le 21/08 — avant, il n’envoyait rien, et tout le B2B du site tombait là.',
-    action: '/tarifs2',
+    action: '/tarifs3',
     routeBoutique: '/go/clientele',
     etat: 'brouillon',
     bloque: [
@@ -118,7 +118,7 @@ export const PARCOURS: readonly Parcours[] = [
     promesse: 'Une conversation, pas un tableau de bord de plus.',
     preuve:
       '36 conversations enregistrées dans widget_conversations. C’est le seul endroit du site où quelqu’un a réellement interagi.',
-    action: '/tarifs2',
+    action: '/tarifs3',
     routeBoutique: '/go/ajnaya',
     etat: 'test',
     bloque: [],
@@ -131,7 +131,7 @@ export const PARCOURS: readonly Parcours[] = [
     promesse: 'Aucune promesse tant que les accords manquent.',
     preuve:
       'AUCUNE. Six chauffeurs ont été filmés à visage découvert ; les six accords sont « en attente », sans preuve enregistrée. Toutes les preuves sociales du site sont masquées depuis le 21/08.',
-    action: '/tarifs2',
+    action: '/tarifs3',
     routeBoutique: '/go/communaute',
     etat: 'bloque',
     bloque: [

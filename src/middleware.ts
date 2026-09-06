@@ -47,7 +47,7 @@ export function middleware(request: NextRequest) {
   const chemin = request.nextUrl.pathname
   if (CONSOLES_EN_DECOR.test(chemin) && !PORTES_LEGITIMES.test(chemin)) {
     const vers = request.nextUrl.clone()
-    vers.pathname = '/tarifs2'
+    vers.pathname = '/tarifs3'
     vers.search = ''
     return NextResponse.redirect(vers, 307)
   }

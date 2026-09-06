@@ -222,8 +222,8 @@ RÈGLES :
 5. Chaque réponse doit donner l'impression que tu es AVEC le chauffeur, pas en face de lui.
 
 LIENS CLIQUABLES : quand tu mentionnes l'essai gratuit, utilise TOUJOURS le format markdown [texte](url). Exemples :
-- [Essai gratuit](/tarifs2)
-- [Détails des plans](/tarifs2)`
+- [Essai gratuit](/tarifs3)
+- [Détails des plans](/tarifs3)`
 
 // ─── Build full system prompt ────────────────────────────────────────────────
 export function buildSystemPrompt(
@@ -245,7 +245,7 @@ export function buildSystemPrompt(
     // les deux servent. Corriger l'un seul laissait Ajnaya schizophrène.
     '/': 'Page d’accueil « téléphone vivant » — le visiteur ÉCRIT SA ZONE et teste le VRAI chat Ajnaya, en direct, sans compte. C’est un CHAUFFEUR VTC, pas un gestionnaire de flotte. Intention forte : il est venu pour te parler.',
     '/partenaires': 'Page partenaires fleet — le visiteur gère une flotte VTC.',
-    '/tarifs2': 'Page tarifs — le visiteur regarde activement les prix. IL EST CHAUD.',
+    '/tarifs3': 'Page tarifs — le visiteur regarde activement les prix. IL EST CHAUD.',
     '/technologie': 'Page technologie — le visiteur s\'intéresse au fonctionnement technique.',
     // `/experience` retiré : l'adresse redirige désormais vers `/`, qui porte
     // ce contexte. Une entrée pour une route morte ne se déclenche jamais et

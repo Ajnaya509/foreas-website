@@ -16,7 +16,7 @@ import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS } from './offr
  * ⚠️ CES DEUX PHRASES SE CONTREDISENT SUR LE SITE D'AUJOURD'HUI.
  *
  * Mesuré dans le dépôt : le tunnel du site part avec `IMMEDIATE_PAYMENT = false`
- * (src/app/tarifs2/page.tsx). Donc `POST /api/checkout` pose un `trial_end` de
+ * (src/app/tarifs3/page.tsx). Donc `POST /api/checkout` pose un `trial_end` de
  * trois jours, et le chauffeur est débité de **0 € aujourd'hui**, puis du montant
  * plein trois jours plus tard.
  *
@@ -75,7 +75,7 @@ export const PRIX_MENSUEL_AFFICHE_CENTIMES = PRIX_MENSUEL_CENTIMES
  * Le tunnel que le site emprunte réellement.
  *
  * ⚠️ Cette valeur est en miroir de `IMMEDIATE_PAYMENT` dans
- * `src/app/tarifs2/page.tsx`, et c'est elle qui part dans le corps du POST vers
+ * `src/app/tarifs3/page.tsx`, et c'est elle qui part dans le corps du POST vers
  * `/api/checkout` sous le nom `immediate`.
  *
  * `false` = essai de trois jours, 0 € aujourd'hui.

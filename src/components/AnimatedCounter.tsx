@@ -16,7 +16,7 @@ export default function AnimatedCounter({ value, suffix = '', prefix = '', durat
   /**
    * ⚠️ 21/08/2026 — CE COMPTEUR DÉMARRAIT À ZÉRO, ET LE SERVEUR ÉCRIVAIT ZÉRO.
    *
-   * Mesuré dans le HTML servi de /tarifs2 :
+   * Mesuré dans le HTML servi de /tarifs3 :
    *     <span>0</span> plateformes
    *     <span>0</span> chauffeurs filmés
    *     <span>0j</span> d'essai — 0 € débité

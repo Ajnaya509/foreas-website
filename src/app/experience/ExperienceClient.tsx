@@ -330,7 +330,7 @@ export default function ExperienceClient({ geoCity }: ExperienceClientProps) {
         hyphens: 'none',
       }}
     >
-      {/* halo + micro-grain — mêmes tokens que checkout/tarifs2 */}
+      {/* halo + micro-grain — mêmes tokens que checkout/tarifs3 */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
         <div
           className="absolute inset-0 animate-halo-pulse"

@@ -66,7 +66,7 @@ function getStripe() {
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const origin = new URL(request.url).origin
-  const fallback = () => NextResponse.redirect(new URL('/tarifs2', origin), 307)
+  const fallback = () => NextResponse.redirect(new URL('/tarifs3', origin), 307)
 
   const { url: supaUrl, key: supaKey } = getSupabaseServiceClient()
   if (!supaKey) return fallback()

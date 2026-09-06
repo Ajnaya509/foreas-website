@@ -29,7 +29,7 @@ import ForeasLogo from '@/components/experience/ForeasLogo'
 const navigation = [
   { name: 'Chauffeurs', href: '/chauffeurs' },
   { name: 'Partenaires', href: '/partenaires' },
-  { name: 'Tarifs', href: '/tarifs2' },
+  { name: 'Tarifs', href: '/tarifs3' },
 ]
 
 /*
@@ -152,7 +152,7 @@ export default function Header() {
               mises en page qui n'ont rien demandé.
             */}
             {!dansLeTunnel && (
-              <InkGradientButton as="link" href="/tarifs2" size="md">
+              <InkGradientButton as="link" href="/tarifs3" size="md">
                 Essai gratuit
               </InkGradientButton>
             )}
@@ -219,7 +219,7 @@ export default function Header() {
                   >
                     <InkGradientButton
                       as="link"
-                      href="/tarifs2"
+                      href="/tarifs3"
                       size="md"
                       fullWidth
                       onClick={() => setMobileMenuOpen(false)}

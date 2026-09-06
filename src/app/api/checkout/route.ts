@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
     if (!formule) {
       console.warn(`[checkout] formule refusée : ${String(plan).slice(0, 40)}`)
       return NextResponse.json(
-        { error: 'Cette formule n’est plus proposée. Choisis une offre sur /tarifs2.' },
+        { error: 'Cette formule n’est plus proposée. Choisis une offre sur /tarifs3.' },
         { status: 400 },
       )
     }
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       line_items: [lineItem],
       /* ⚠️ 29/08 — CETTE LIGNE EMPÊCHAIT TOUT PAIEMENT SUR /tarifs3.
          `required` oblige Stripe à obtenir une adresse de facturation complète
-         avant d'accepter la confirmation. En mode embarqué (/tarifs2) c'est
+         avant d'accepter la confirmation. En mode embarqué (/tarifs3) c'est
          Stripe qui dessine ce formulaire, donc il l'obtient. En `ui_mode:
          'custom'` (/tarifs3) c'est NOUS qui dessinons : il n'y a ni champ
          adresse, ni `updateBillingAddress`. Stripe refusait donc la
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
 
          `auto` laisse Stripe ne réclamer que ce dont le moyen de paiement a
          vraiment besoin — pour une carte, le code postal, affiché dans le champ
-         de carte lui-même. /tarifs2 garde `required` : son formulaire est
+         de carte lui-même. /tarifs3 garde `required` : son formulaire est
          dessiné par Stripe, il sait le remplir. */
       billing_address_collection: isElements ? 'auto' : 'required',
       locale: 'fr',
@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
           flow: immediate ? 'immediate' : 'trial',
           ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
           /* ⚠️ 29/08/2026 — CETTE LIGNE ANNONÇAIT UNE REMISE QUI N'EXISTAIT PAS.
-             Le 21/08, le coupon a cessé d'être appliqué à l'annuel : `/tarifs2`
+             Le 21/08, le coupon a cessé d'être appliqué à l'annuel : `/tarifs3`
              écrit « L'annuel est au tarif fixe », et le coupon `forever` coûtait
              45 € par abonné et par an. Correction juste — mais À MOITIÉ FAITE :
              cette métadonnée, elle, continuait de partir sur l'annuel.
@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
         ? { ui_mode: 'custom' as const, return_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` }
         : isEmbedded
           ? { ui_mode: 'embedded' as const, return_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}` }
-          : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs2?canceled=true` }),
+          : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs3?canceled=true` }),
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -352,7 +352,7 @@ export async function POST(request: NextRequest) {
     // produit, le montant, la périodicité — puis n'était PLUS jamais consulté.
     // Le coupon partait donc sur les deux formules.
     //
-    // Or `/tarifs2` écrit, en toutes lettres : « L'annuel est au tarif fixe. »
+    // Or `/tarifs3` écrit, en toutes lettres : « L'annuel est au tarif fixe. »
     //
     // Ce que ça coûtait : 249,99 € − 18 % = 204,99 €. Quarante-cinq euros par
     // abonné et par an — et le coupon est `duration: 'forever'`, donc à CHAQUE

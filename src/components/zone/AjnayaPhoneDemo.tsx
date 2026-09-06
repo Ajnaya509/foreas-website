@@ -1,9 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import s from './ajnayaPhone.module.css'
 import { typePourZone, reconnaitreLieu, replique, type Repli } from './ajnayaSavoir'
+import { choisirPorte } from '@/lib/porteAjnaya'
 import { streamAjnayaChat } from '@/lib/ajnayaStream'
 import { getSessionId, getDevice } from '@/lib/ajnaya-analytics'
 import { getVisitorId } from '@/lib/zoneFingerprint'
@@ -683,6 +684,27 @@ export default function AjnayaPhoneDemo({
       return undefined
     }
   }, [filEnClair, visitorId, identityId])
+
+  /**
+   * UNE SEULE PORTE À LA FOIS — et c'est la même règle que le cerveau.
+   *
+   * ⚠️ LES DEUX BOUTONS S'AFFICHAIENT ENSEMBLE APRÈS CHAQUE RÉPONSE. Chandler,
+   * 06/09 : « elle était censée pousser vers WhatsApp et proposer l'essai
+   * seulement s'il est chaud ». Deux portes côte à côte, ce n'est pas deux
+   * chances : c'est une hésitation — la même leçon que la barre du bas.
+   *
+   * `choisirPorte` est le module que le fil Pieuvre a recopié dans son cerveau
+   * (`porteSite.ts`, mêmes listes REFUS/CHAUD, même fenêtre de trois messages).
+   * Les deux décident donc pareil : sa phrase de fin désigne le bouton qui est
+   * réellement là.
+   *
+   * ⚠️ ON NE LUI DONNE QUE SES MESSAGES À LUI. Ajnaya parle d'essai à chaque
+   * bascule : lui passer ses réponses la ferait se déclencher elle-même.
+   */
+  const porte = useMemo(() => {
+    const siens = lignes.filter((l) => l.qui === 'toi').map((l) => texteBrut(l.blocs.map((b) => b.html).join(' ')))
+    return choisirPorte(siens).porte
+  }, [lignes])
 
   const derniereQuestion = useCallback((): string | undefined => {
     for (let i = lignes.length - 1; i >= 0; i--) {
@@ -1439,8 +1461,14 @@ export default function AjnayaPhoneDemo({
 
                   {/* ── LES DEUX PORTES — après le savoir, jamais avant.
                          La dette est créée : on a donné un calcul et un geste. ── */}
-                  {l.sorties && (
-                    <>
+                  {/* ⚠️ UNE SEULE PORTE, ET C'EST `porte` QUI TRANCHE (voir plus
+                      haut). Elles s'affichaient toutes les deux : deux boutons
+                      côte à côte, ce n'est pas deux chances, c'est une
+                      hésitation. WhatsApp par défaut ; l'essai seulement s'il
+                      est chaud ; rien du tout s'il vient de refuser — vendre à
+                      quelqu'un qui dit non est le geste qui fait fermer la
+                      page. */}
+                  {l.sorties && porte === 'essai' && (
                       <button className={`${s['aj-chip']} ${s.essai}`} type="button"
                               onPointerUp={(e) => e.stopPropagation()} onClick={onEssaiClick}>
                         <span className={s.ico}>
@@ -1449,6 +1477,8 @@ export default function AjnayaPhoneDemo({
                         <span className={s.lib}>Essayer 3 jours — 0 € aujourd&apos;hui</span>
                         <span className={s.chev}>›</span>
                       </button>
+                  )}
+                  {l.sorties && porte === 'whatsapp' && (
                       <button className={`${s['aj-chip']} ${s.wa}`} type="button"
                               onPointerUp={(e) => e.stopPropagation()}
                               onClick={() => {
@@ -1464,7 +1494,6 @@ export default function AjnayaPhoneDemo({
                         <span className={s.lib}>Poser ma question sur WhatsApp</span>
                         <span className={s.chev}>›</span>
                       </button>
-                    </>
                   )}
                 </div>
               ))}

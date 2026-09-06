@@ -450,7 +450,7 @@ export async function POST(request: Request) {
        *
        * `custom_fields` est rempli par L'INTERFACE DE STRIPE — donc uniquement
        * quand la session est en `ui_mode: 'embedded'` ou `'hosted'`. C'est le cas
-       * de /tarifs2, de /reactivation et des liens WhatsApp.
+       * de /tarifs3, de /reactivation et des liens WhatsApp.
        *
        * `/tarifs3` crée des sessions en `ui_mode: 'custom'` : Stripe n'affiche
        * plus aucun champ, donc `custom_fields` reste VIDE POUR TOUJOURS. C'est
@@ -478,7 +478,7 @@ export async function POST(request: Request) {
          NOM de facturation, donc `customer_details.name` est vide, donc la page
          de succès affichait « Bienvenue, chauffeur ».
          Notre formulaire demande maintenant le prénom et l'écrit ici. On garde
-         le nom de Stripe en second : les sessions de /tarifs2 le portent encore. */
+         le nom de Stripe en second : les sessions de /tarifs3 le portent encore. */
       const prenomChauffeur = meta.foreas_prenom || session.customer_details?.name || ''
 
       /* ═══════════════════════════════════════════════════════════════════

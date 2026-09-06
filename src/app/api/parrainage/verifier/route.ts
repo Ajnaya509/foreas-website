@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
  * ─────────────────────────────────────────────────────────────────────────────
  * ⚠️ ELLE DIT LA VÉRITÉ SUR L'ANNUEL, ET C'EST LE POINT LE PLUS IMPORTANT
  *
- * Le coupon n'est PAS appliqué à la formule annuelle : `/tarifs2` écrit
+ * Le coupon n'est PAS appliqué à la formule annuelle : `/tarifs3` écrit
  * « L'annuel est au tarif fixe », et le coupon Stripe est `forever` — il
  * coûtait 45 € par abonné et par an. Le 29/08, on a découvert que la métadonnée
  * annonçait quand même la remise : la base disait 224,99 € pendant que Stripe

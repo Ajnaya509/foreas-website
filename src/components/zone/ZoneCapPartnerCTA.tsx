@@ -58,7 +58,7 @@ export default function ZoneCapPartnerCTA() {
                     chiffrée en base et encadrée par les CGU.
                   · « à vie » n'est adossé à aucune clause : les CGU ne prévoient aucune durée.
                   Trois barèmes incompatibles cohabitaient en production (ici 10/4/2, /cap
-                  10 €/filleul, /tarifs2 25/8/2). Les montants viennent maintenant de
+                  10 €/filleul, /tarifs3 25/8/2). Les montants viennent maintenant de
                   src/lib/verite-commerciale.ts, seule source autorisée. */}
               <h2
                 className="t-h1 text-[#F8FAFC] mb-2 leading-tight"

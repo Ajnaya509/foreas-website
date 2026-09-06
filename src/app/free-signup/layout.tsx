@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
  *
  * `/free-signup` propose « Activer mon Free », « aucune CB demandée ». Or
  * `src/lib/offre.ts` ne vend que deux formules : 29,99 €/mois et 249,99 €/an.
- * Le commentaire de `src/app/tarifs2/page.tsx` le dit noir sur blanc :
+ * Le commentaire de `src/app/tarifs3/page.tsx` le dit noir sur blanc :
  * « Une seule offre → plus de branche Free ».
  *
  * La page répondait 200, se déclarait `index, follow`, n'était bloquée par aucun

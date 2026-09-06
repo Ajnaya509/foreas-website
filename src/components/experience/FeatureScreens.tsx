@@ -278,7 +278,7 @@ function ComptaScreen() {
           %set_aside% | %tirelire% → 0 colonne dans les 295 tables du projet. Aucun portefeuille,
           aucun cantonnement, aucun mouvement d'argent n'existe.
           Un seul mot change, l'impact reste, et la promesse redevient celle d'un copilote de
-          gestion — exactement le libellé validé le 14/08 sur /tarifs2 : « C'est ton argent, il
+          gestion — exactement le libellé validé le 14/08 sur /tarifs3 : « C'est ton argent, il
           reste sur ton compte — on calcule, on n'y touche pas. »
           (L'étiquette voisine « provision calculée » était, elle, déjà conforme.) */}
       <AjnayaLine text="Octobre est déjà calculé." />

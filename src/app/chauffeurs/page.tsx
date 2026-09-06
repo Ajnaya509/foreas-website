@@ -88,7 +88,7 @@ function StickyMobileCTA() {
                 <p className="text-white text-xs font-semibold">Essai gratuit · 0€ débité</p>
                 <p className="text-white/40 text-[10px]">Résiliable en 1 clic</p>
               </div>
-              <a href="/tarifs2" className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+              <a href="/tarifs3" className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan text-white text-sm font-semibold hover:opacity-90 transition-opacity">
                 Commencer →
               </a>
             </div>
@@ -793,10 +793,10 @@ export default function ChauffeursPage() {
               </PriceRingSVG>
             </div>
 
-            {/* CTA → Stripe Checkout via /tarifs2 */}
+            {/* CTA → Stripe Checkout via /tarifs3 */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <a
-                href="/tarifs2"
+                href="/tarifs3"
                 className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
@@ -807,7 +807,7 @@ export default function ChauffeursPage() {
               </a>
 
               <a
-                href="/tarifs2"
+                href="/tarifs3"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl transition-all duration-300"
               >
                 Voir les tarifs
@@ -912,7 +912,7 @@ function MobileHero() {
           className="flex flex-col sm:flex-row gap-3 sm:gap-4"
         >
           <a
-            href="/tarifs2"
+            href="/tarifs3"
             className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-sm font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />
@@ -1031,7 +1031,7 @@ function DesktopParallaxHero({ reducedMotion }: { reducedMotion: boolean }) {
               className="flex flex-col sm:flex-row gap-3 sm:gap-4"
             >
               <a
-                href="/tarifs2"
+                href="/tarifs3"
                 className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-300 group-hover:from-accent-purple group-hover:to-accent-purple/80" />

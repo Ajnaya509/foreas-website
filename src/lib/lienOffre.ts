@@ -17,7 +17,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * CE QUE CE FICHIER GARANTIT
  *
- *  · une seule adresse d'offre : `/tarifs2` ;
+ *  · une seule adresse d'offre : `/tarifs3` ;
  *  · l'attribution survit au clic — sinon on saura qu'un abonnement existe, mais
  *    jamais quelle page l'a produit ;
  *  · l'intention voyage avec le visiteur, pour qu'`Ajnaya` et la mesure sachent
@@ -59,7 +59,7 @@ export function lienOffre(intention?: Intention, recherche?: string): string {
   if (!params.has('utm_medium')) params.set('utm_medium', 'cta')
 
   const q = params.toString()
-  return q ? `/tarifs2?${q}` : '/tarifs2'
+  return q ? `/tarifs3?${q}` : '/tarifs3'
 }
 
 /**

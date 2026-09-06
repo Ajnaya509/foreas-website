@@ -45,7 +45,7 @@ export interface LandingContent {
     cta_final_micro?: string
     // Destination du CTA — optionnelle, repli sur `/go/${topic_slug}` (essai chauffeur).
     // /flotte s'adresse à des gérants, pas à des chauffeurs indépendants : les envoyer
-    // vers `/tarifs2` (abonnement solo, carte bancaire) n'a pas de sens. On les envoie
+    // vers `/tarifs3` (abonnement solo, carte bancaire) n'a pas de sens. On les envoie
     // vers `/contact`, la vraie page de prise de contact B2B du site.
     cta_target?: string
   }
@@ -151,7 +151,7 @@ function useLandingTracking(topicSlug: string) {
   return { trackCTAClick, trackFAQClick }
 }
 
-// ─── FAQ accordéon — même motif que /tarifs2 (cohérence design system) ───────
+// ─── FAQ accordéon — même motif que /tarifs3 (cohérence design system) ───────
 // onOpen : appelé uniquement quand la question passe de fermée à ouverte (pas à
 // la fermeture) — sert le tracking sans jamais compter un double-clic comme 2 vues.
 function FaqItem({ q, a, onOpen }: { q: string; a: string; onOpen?: () => void }) {

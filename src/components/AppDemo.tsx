@@ -91,7 +91,7 @@ export default function AppDemo() {
             {/* CTA */}
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="/tarifs2"
+                href="/tarifs3"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-accent-purple to-accent-cyan rounded-xl text-white font-semibold hover:opacity-90 transition-opacity"
               >
                 Essayer gratuitement

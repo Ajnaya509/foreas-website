@@ -40,7 +40,7 @@ export const dynamic = 'force-dynamic'
  * POURQUOI LA FERMER NE CASSE RIEN
  *
  * Son seul appelant était src/app/checkout/CheckoutClient.tsx:100. Or /checkout
- * répond 308 vers /tarifs2 depuis le 20/08/2026 (next.config.ts) : cette page
+ * répond 308 vers /tarifs3 depuis le 20/08/2026 (next.config.ts) : cette page
  * n'est plus rendue, donc plus personne n'appelait cette route légitimement.
  * Vérifié le 21/08 : POST en production répondait 200 — elle était bien vivante
  * et joignable par requête directe, sans passer par aucune page.

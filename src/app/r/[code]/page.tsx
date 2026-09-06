@@ -84,7 +84,7 @@ export default async function ReferralLanding({
             Télécharger l&apos;app FOREAS
           </Link>
           <Link
-            href="/tarifs2"
+            href="/tarifs3"
             className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium transition-colors hover:bg-black/[0.04]"
             style={{ color: '#1d1d1f', border: '1px solid rgba(0,0,0,0.10)' }}
           >

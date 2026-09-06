@@ -15,7 +15,7 @@ const WELCOME_MESSAGES: Record<string, string> = {
   '/': "Bonjour ! Je suis Ajnaya, l'intelligence FOREAS. Vous gérez un hôtel, une conciergerie, ou des locations ? Je peux vous montrer comment FOREAS transforme le transport de vos clients.",
   '/chauffeurs': 'Salut ! Je suis Ajnaya. Tu veux savoir comment gagner plus en roulant moins ? Demande-moi.',
   '/partenaires': 'Bonjour ! Vous gérez une flotte VTC ? Je peux vous montrer comment FOREAS optimise chaque chauffeur.',
-  '/tarifs2': "Tu hésites ? Normal. Demande-moi n'importe quoi sur l'essai, les fonctionnalités, le prix.",
+  '/tarifs3': "Tu hésites ? Normal. Demande-moi n'importe quoi sur l'essai, les fonctionnalités, le prix.",
 }
 // 14/08/2026 — disait « l'IA FOREAS ». Le mot « IA » est banni : Ajnaya a un nom.
 const DEFAULT_WELCOME = "Salut, moi c'est Ajnaya. T'es sur quelle zone en ce moment ?"
@@ -27,7 +27,7 @@ const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
   // c'est 9,97 €/semaine ÷ 7 : L'ANCIEN TARIF HEBDOMADAIRE, survivant dans la
   // bouche d'Ajnaya elle-même, sur LA question qui décide (« combien ça coûte »).
   // 29,99 €/mois donne 1,00 €/jour. Le montant vient maintenant de offre.ts.
-  { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: `L'abonnement est à ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois — moins d'1 € par jour. ${ESSAI_JOURS} jours d'essai, 0 € débité, carte demandée. Tous les détails sur /tarifs2.` },
+  { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: `L'abonnement est à ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois — moins d'1 € par jour. ${ESSAI_JOURS} jours d'essai, 0 € débité, carte demandée. Tous les détails sur /tarifs3.` },
   { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit pendant 3 jours. 0 € prélevé. Annulation en 1 clic." },
   { pattern: /comment ça marche|fonctionnement|comment|fonctionne/i, key: 'how', reply: 'Je regarde ce que paient vraiment les courses de ta zone, à cette heure-ci, pour te dire où te positionner 15 min avant la demande.' },
   { pattern: /uber|bolt|heetch/i, key: 'platforms', reply: 'Compatible avec toutes les apps VTC. Je ne les remplace pas — je te dis où être pour avoir les meilleures courses.' },
@@ -62,8 +62,8 @@ function renderMessageWithLinks(text: string) {
           href={match[2]}
           className="text-accent-cyan underline hover:text-white transition-colors"
           onClick={(e) => {
-            // Track conversion if link is /tarifs2
-            if (match[2].includes('/tarifs2')) {
+            // Track conversion if link is /tarifs3
+            if (match[2].includes('/tarifs3')) {
               trackConversion()
             }
             // Navigate in same tab
@@ -77,15 +77,15 @@ function renderMessageWithLinks(text: string) {
         </a>
       )
     }
-    // Also detect bare /tarifs2 or /contact links
-    return part.split(/(\/tarifs2|\/contact)/).map((seg, j) => {
-      if (seg === '/tarifs2' || seg === '/contact') {
+    // Also detect bare /tarifs3 or /contact links
+    return part.split(/(\/tarifs3|\/contact)/).map((seg, j) => {
+      if (seg === '/tarifs3' || seg === '/contact') {
         return (
           <a
             key={`${i}-${j}`}
             href={seg}
             className="text-accent-cyan underline hover:text-white transition-colors"
-            onClick={() => { if (seg === '/tarifs2') trackConversion() }}
+            onClick={() => { if (seg === '/tarifs3') trackConversion() }}
           >
             {seg}
           </a>
@@ -190,7 +190,7 @@ export default function AjnayaWidget() {
   const recognitionRef = useRef<any>(null)
   const lastObjectionRef = useRef<string | null>(null)
 
-  const isTuPage = pathname === '/chauffeurs' || pathname === '/tarifs2'
+  const isTuPage = pathname === '/chauffeurs' || pathname === '/tarifs3'
   const placeholder = isTuPage ? 'Écris un message...' : 'Écrivez un message...'
   const sessionId = getSessionId()
 
@@ -345,7 +345,7 @@ export default function AjnayaWidget() {
       const link = target.closest('a')
       if (link) {
         const href = link.getAttribute('href') || ''
-        if (href.includes('/tarifs2') || href.includes('/contact')) {
+        if (href.includes('/tarifs3') || href.includes('/contact')) {
           sendAnalytics(href)
           document.removeEventListener('click', handler)
         }
@@ -465,7 +465,7 @@ export default function AjnayaWidget() {
       setPhonePromptPending(false)
       const replyTs = new Date().toISOString()
       const phoneReplyText = verificationPrepared
-        ? "Parfait. Clique dessous, entre le code reçu par SMS, puis je reprends avec toi sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs2)"
+        ? "Parfait. Clique dessous, entre le code reçu par SMS, puis je reprends avec toi sur WhatsApp. En attendant, tu peux [commencer ton essai gratuit →](/tarifs3)"
         : "Je n'ai pas pu sécuriser la reprise. Tu peux quand même me parler sur WhatsApp, mais je repartirai sans ta conversation privée."
       const phoneReply = { role: 'ajnaya' as const, text: phoneReplyText, timestamp: replyTs }
       setMessages(prev => [...prev, phoneReply])

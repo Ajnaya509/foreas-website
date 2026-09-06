@@ -17,11 +17,11 @@ import { mesurer } from '@/lib/mesure'
  * Refonte +100/100 :
  * - Logo "/" en violet pur #6C3CE0 (un seul ton — plus de gradient candy)
  * - Liens Pro / Connexion en noir Apple #1d1d1f
- * - Action principale = « Essayer » vers /tarifs2, la page où l'on paie.
+ * - Action principale = « Essayer » vers /tarifs3, la page où l'on paie.
  *
  *   ⚠️ 21/08/2026 — AVANT, CE BOUTON MENAIT À WHATSAPP. Il s'appelait
  *   « Souscrire » et ouvrait une conversation. Mesuré sur le HTML servi de
- *   l'accueil : zéro lien vers /tarifs2, six liens WhatsApp. Depuis la porte
+ *   l'accueil : zéro lien vers /tarifs3, six liens WhatsApp. Depuis la porte
  *   d'entrée du site, la page de paiement était inatteignable autrement qu'en
  *   tapant l'adresse à la main.
  *
@@ -66,7 +66,7 @@ export default function HomeHeaderCream() {
       intention: 'general',
       audience: 'chauffeur',
       promesse: 'Essayer ' + ESSAI_JOURS + ' jours',
-      detail: { emplacement, destination: '/tarifs2' },
+      detail: { emplacement, destination: '/tarifs3' },
     })
   }
 

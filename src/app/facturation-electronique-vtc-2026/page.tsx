@@ -2,7 +2,7 @@
  * Landing SEO — foreas.xyz/facturation-electronique-vtc-2026
  *
  * Target query primaire : "facturation électronique VTC 2026"
- * Intent : informationnel → transactionnel (CTA → /tarifs2)
+ * Intent : informationnel → transactionnel (CTA → /tarifs3)
  *
  * Palette : Dark Sovereign site (#050508 / #00D4FF / #8C52FF / #10B981)
  * Guardrail légal : FOREAS = copilote compta, PAS expert-comptable
@@ -204,7 +204,7 @@ export default function FacturationElectroniqueVTC2026() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/tarifs2?utm_source=seo&utm_campaign=einvoice2026"
+                href="/tarifs3?utm_source=seo&utm_campaign=einvoice2026"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00D4FF] hover:bg-cyan-300 transition px-6 py-4 text-base font-bold text-[#050508] shadow-[0_0_30px_rgba(0,212,255,0.3)]"
               >
                 Je prépare ma conformité avec FOREAS →
@@ -469,7 +469,7 @@ export default function FacturationElectroniqueVTC2026() {
               Prends ton compte maintenant : tu commences à voir ce que tu dois à l&apos;URSSAF dès ta prochaine course, et le jour où la Plateforme Agréée est branchée, tu n&apos;as rien à faire — on te prévient dans l&apos;app.
             </p>
             <Link
-              href="/tarifs2?utm_source=seo&utm_campaign=einvoice2026&utm_content=cta_final"
+              href="/tarifs3?utm_source=seo&utm_campaign=einvoice2026&utm_content=cta_final"
               className="inline-flex items-center gap-3 rounded-2xl bg-[#00D4FF] hover:bg-cyan-300 transition px-8 py-5 text-lg font-bold text-[#050508] shadow-[0_0_50px_rgba(0,212,255,0.4)]"
             >
               Je prépare ma conformité →
