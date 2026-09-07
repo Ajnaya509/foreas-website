@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import s from './ajnayaPhone.module.css'
 import { typePourZone, reconnaitreLieu, replique, type Repli } from './ajnayaSavoir'
-import { choisirPorte } from '@/lib/porteAjnaya'
+import { choisirPorte, type Porte } from '@/lib/porteAjnaya'
+import { choisirPorteAffichee } from '@/lib/porteAffichee'
 import { streamAjnayaChat } from '@/lib/ajnayaStream'
 import { getSessionId, getDevice } from '@/lib/ajnaya-analytics'
 import { getVisitorId } from '@/lib/zoneFingerprint'
@@ -63,7 +64,7 @@ import { materialiser, mouvementReduit } from './ajnayaPoussiere'
  */
 
 type Bloc = { html: string; tag?: { texte: string; couleur: 'c' | 'g' } }
-type Ligne = { id: string; qui: 'toi' | 'elle'; etiq: string; blocs: Bloc[]; sorties?: boolean }
+type Ligne = { id: string; qui: 'toi' | 'elle'; etiq: string; blocs: Bloc[]; sorties?: boolean; porteCerveau?: Porte | null }
 
 const LARGEUR_APP = 393 // la largeur réelle de l'app — voir le brief §4
 /* Plancher de sécurité : en dessous, l'écran n'affiche plus rien d'utile et
@@ -697,24 +698,16 @@ export default function AjnayaPhoneDemo({
    * UNE SEULE PORTE À LA FOIS — et c'est la même règle que le cerveau.
    *
    * ⚠️ LES DEUX BOUTONS S'AFFICHAIENT ENSEMBLE APRÈS CHAQUE RÉPONSE. Chandler,
-   * 06/09 : « elle était censée pousser vers WhatsApp et proposer l'essai
-   * seulement s'il est chaud ». Deux portes côte à côte, ce n'est pas deux
-   * chances : c'est une hésitation — la même leçon que la barre du bas.
-   *
-   * `choisirPorte` est le module que le fil Pieuvre a recopié dans son cerveau
-   * (`porteSite.ts`, mêmes listes REFUS/CHAUD, même fenêtre de trois messages).
-   * Les deux décident donc pareil : sa phrase de fin désigne le bouton qui est
-   * réellement là.
-   *
-   * ⚠️ ON NE LUI DONNE QUE SES MESSAGES À LUI. Ajnaya parle d'essai à chaque
-   * bascule : lui passer ses réponses la ferait se déclencher elle-même.
+   * 07/09 : WhatsApp reste disponible ; le cerveau ajoute l'essai s'il est prêt.
+   * Le verdict du cerveau fait autorité. L'ancienne règle reste le secours local.
    */
   /** Une réponse a-t-elle ouvert une porte ? (dernière ligne qui la porte) */
   const porteVisible = useMemo(() => lignes.some((l) => l.sorties), [lignes])
 
   const porte = useMemo(() => {
     const siens = lignes.filter((l) => l.qui === 'toi').map((l) => texteBrut(l.blocs.map((b) => b.html).join(' ')))
-    return choisirPorte(siens).porte
+    const derniereReponse = [...lignes].reverse().find(l => l.qui === 'elle' && l.sorties)
+    return choisirPorteAffichee(derniereReponse?.porteCerveau, choisirPorte(siens).porte)
   }, [lignes])
 
   const derniereQuestion = useCallback((): string | undefined => {
@@ -865,7 +858,7 @@ export default function AjnayaPhoneDemo({
       const garde = setTimeout(replierLocal, DELAI_CERVEAU_MS)
       minuteurs.current.push(garde)
 
-      const jouerCerveau = (texte: string) => {
+      const jouerCerveau = (texte: string, porteCerveau?: Porte | null) => {
         const { tete: tete_, corps } = decouper(texte)
         plusTard(120, () => {
           setAttente(false)
@@ -873,13 +866,13 @@ export default function AjnayaPhoneDemo({
           setLignes((l) => [
             ...l,
             { id: `${tour}-cv`, qui: 'elle', etiq: `Ajnaya · ${hh}`, blocs: [{ html: `<b>${proseVersHtml(tete_)}</b>` }],
-              ...(corps ? {} : { sorties: true }) },
+              ...(corps ? {} : { sorties: true, porteCerveau }) },
           ])
           if (corps) {
             plusTard(700, () => {
               setLignes((l) => [
                 ...l,
-                { id: `${tour}-cc`, qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: proseVersHtml(corps) }], sorties: true },
+                { id: `${tour}-cc`, qui: 'elle', etiq: 'Ajnaya', blocs: [{ html: proseVersHtml(corps) }], sorties: true, porteCerveau },
               ])
               plusTard(400, () => setParle(false))
             })
@@ -924,7 +917,7 @@ export default function AjnayaPhoneDemo({
         onDone: (d) => {
           if (!conclure()) return
           const texte = sansPortesEnTexte((d.full_text || '').replace(/\[[\w\s]+\]\s*/g, ''))
-          if (texte) jouerCerveau(texte); else jouerLocal()
+          if (texte) jouerCerveau(texte, d.scoreVentePorte); else jouerLocal()
         },
         onError: (_m, streamed) => {
           if (!conclure()) return
@@ -1507,7 +1500,7 @@ export default function AjnayaPhoneDemo({
                 désigne un bouton invisible est pire que pas de bouton.
                 Épinglé au-dessus du champ, il est là quoi qu'il lise. */}
             <div className={s['aj-porte']}>
-                      {porteVisible && porte === 'essai' && (
+                      {porteVisible && !attente && porte === 'essai' && (
                           <button className={`${s['aj-chip']} ${s.essai}`} type="button"
                                   onPointerUp={(e) => e.stopPropagation()} onClick={onEssaiClick}>
                             <span className={s.ico}>
@@ -1517,7 +1510,7 @@ export default function AjnayaPhoneDemo({
                             <span className={s.chev}>›</span>
                           </button>
                       )}
-                      {porteVisible && porte === 'whatsapp' && (
+                      {porteVisible && !attente && porte !== 'aucune' && (
                           <button className={`${s['aj-chip']} ${s.wa}`} type="button"
                                   onPointerUp={(e) => e.stopPropagation()}
                                   onClick={() => {

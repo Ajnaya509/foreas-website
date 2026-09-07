@@ -644,6 +644,7 @@ export async function POST(request: NextRequest) {
             identityId: pieuvreResult.identity_id,
             shouldAskPhone: shouldAskPhoneP,
             conversionEvent: false,
+            porte: pieuvreResult.scoreVentePorte ?? choixPorte.porte,
             suggest_handoff: pieuvreResult.suggest_handoff ?? null,
           })
         }

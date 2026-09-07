@@ -13,6 +13,7 @@
 
 export interface StreamDone {
   full_text: string
+  scoreVentePorte?: 'essai' | 'whatsapp' | 'aucune' | null
   pieuvre_reply?: { text: string; tts_text?: string; llm_model?: string; audio_url?: string | null }
   expects_voice_response?: boolean
   intent_detected?: string | null

@@ -41,6 +41,9 @@ export interface PieuvrePayload {
 
 export interface PieuvreResponse {
   ok: boolean
+  scoreVente?: number | null
+  scoreVenteSignaux?: string[]
+  scoreVentePorte?: 'essai' | 'whatsapp' | 'aucune' | null
   reply: {
     text: string
     tts_text?: string | null      // Koraly TTS clean (Pieuvre v1.1) — no emoji, numbers in words

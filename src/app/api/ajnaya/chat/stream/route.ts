@@ -241,6 +241,7 @@ export async function POST(request: NextRequest) {
   }
   responseBody += sse('done', {
     full_text: fullText,
+    scoreVentePorte: result?.scoreVentePorte ?? null,
     pieuvre_reply: result?.reply ?? { text: fullText, llm_model: modeleUtilise },
     intent_detected: result?.intent_detected ?? null,
     next_actions: result?.next_actions ?? [],
