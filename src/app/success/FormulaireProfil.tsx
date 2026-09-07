@@ -68,134 +68,25 @@ export default function FormulaireProfil({ sessionId }: { sessionId: string }) {
     }
   }, [prenom, telephone, sessionId])
 
-  if (etat === 'fait') {
-    return (
-      <div
-        className="rounded-2xl px-5 py-4 mb-6 text-[14px]"
-        style={{
-          background: 'rgba(16, 185, 129, 0.10)',
-          border: '1px solid rgba(16, 185, 129, 0.28)',
-          color: 'rgba(248, 250, 252, 0.88)',
-        }}
-      >
-        C&apos;est noté, {prenom.trim()}. Ajnaya sait comment t&apos;appeler et comment te
-        joindre.
-      </div>
-    )
-  }
+  if (etat === 'fait') return <div className="compte-bloc compte-profil" role="status">
+    <h2 className="compte-sous-titre font-title t-h1">C’est enregistré, {prenom.trim()}.</h2>
+    <p className="compte-aide t-bodylg">Ton prénom et ton numéro sont enregistrés.</p>
+  </div>
 
-  return (
-    <div
-      className="rounded-2xl px-5 py-5 mb-6"
-      style={{
-        background: 'rgba(255, 255, 255, 0.04)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-      }}
-    >
-      <p className="text-[15px] font-bold mb-1" style={{ color: '#F8FAFC' }}>
-        Deux détails, et Ajnaya te connaît
-      </p>
-      {/* Elle dit ce que ça lui apporte, pas ce que ça nous apporte. Un
-          formulaire d'après-paiement qui ne justifie rien ressemble à une
-          collecte de plus. */}
-      {/* ⚠️ 29/08 — DEUX PROMESSES FAUSSES ONT ÉTÉ RETIRÉES DE CET ÉCRAN.
-          1. « ton numéro pour qu'elle te prévienne sur WhatsApp quand ça bouge » :
-             Chandler l'a démentie le jour même (« elle n'envoie pas d'alerte »).
-             La phrase avait été tuée dans les mails et laissée vivante ici — à
-             l'endroit le plus coûteux, trente secondes après la carte.
-          2. « un mail arrivera pour le refaire » : ce mail n'existe pas. La
-             relance des payants a été supprimée le même jour. Le chauffeur était
-             rassuré, arrêtait de réessayer, et personne ne le rappelait jamais. */}
-      <p className="text-[13px] mb-4" style={{ color: 'rgba(248, 250, 252, 0.55)' }}>
-        Ton prénom pour qu&apos;Ajnaya t&apos;appelle par ton nom, ton numéro pour
-        qu&apos;on puisse te joindre si quelque chose bloque sur ton compte.
-      </p>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label htmlFor={idPrenom} className="block">
-          <span className="block text-[12.5px] mb-1.5" style={{ color: 'rgba(248,250,252,0.62)' }}>
-            Prénom
-          </span>
-          <input
-            id={idPrenom}
-            type="text"
-            autoComplete="given-name"
-            autoCapitalize="words"
-            value={prenom}
-            onChange={(e) => setPrenom(e.target.value)}
-            placeholder="Karim"
-            aria-invalid={!!fautes.prenom}
-            className="w-full rounded-xl px-3.5 text-[15px] outline-none"
-            style={{
-              minHeight: 46,
-              background: 'rgba(255,255,255,0.06)',
-              border: `1px solid ${fautes.prenom ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
-              color: '#F8FAFC',
-            }}
-          />
-          {fautes.prenom && (
-            <span className="block mt-1.5 text-[12.5px]" style={{ color: '#EF4444' }} role="alert">
-              {fautes.prenom}
-            </span>
-          )}
-        </label>
-
-        <label htmlFor={idTel} className="block">
-          <span className="block text-[12.5px] mb-1.5" style={{ color: 'rgba(248,250,252,0.62)' }}>
-            Téléphone
-          </span>
-          <input
-            id={idTel}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={telephone}
-            onChange={(e) => setTelephone(e.target.value)}
-            placeholder="06 12 34 56 78"
-            aria-invalid={!!fautes.tel}
-            className="w-full rounded-xl px-3.5 text-[15px] outline-none"
-            style={{
-              minHeight: 46,
-              background: 'rgba(255,255,255,0.06)',
-              border: `1px solid ${fautes.tel ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
-              color: '#F8FAFC',
-            }}
-          />
-          {fautes.tel && (
-            <span className="block mt-1.5 text-[12.5px]" style={{ color: '#EF4444' }} role="alert">
-              {fautes.tel}
-            </span>
-          )}
-        </label>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => void envoyer()}
-        disabled={etat === 'envoi'}
-        className="mt-4 w-full rounded-xl px-4 py-3 text-[15px] font-bold transition-transform active:scale-[0.99] disabled:opacity-50"
-        style={{
-          background: 'rgba(255,255,255,0.10)',
-          border: '1px solid rgba(255,255,255,0.16)',
-          color: '#F8FAFC',
-        }}
-      >
-        {etat === 'envoi' ? 'Enregistrement…' : 'Enregistrer'}
-      </button>
-
-      <p className="mt-2.5 text-[12.5px]" role="status" aria-live="polite">
-        {etat === 'attente' && (
-          <span style={{ color: 'rgba(248,250,252,0.62)' }}>
-            Ton abonnement finit de s&apos;enregistrer. Réessaie dans quelques secondes.
-          </span>
-        )}
-        {etat === 'erreur' && (
-          <span style={{ color: '#EF4444' }}>
-            Enregistrement impossible pour l&apos;instant. Réessaie dans un moment, ou
-            écris à contact@foreas.xyz.
-          </span>
-        )}
-      </p>
-    </div>
-  )
+  return <form className="compte-bloc compte-profil compte-formulaire" onSubmit={e => { e.preventDefault(); if (etat !== 'envoi') void envoyer() }} aria-busy={etat === 'envoi'}>
+    <h2 className="compte-sous-titre font-title t-h1">Ajnaya apprend à te connaître</h2>
+    <p className="compte-aide t-bodylg">Ton prénom pour qu’Ajnaya sache comment t’appeler. Ton numéro pour te joindre si ton compte bloque.</p>
+    <label className="t-label" htmlFor={idPrenom}>Prénom
+      <input id={idPrenom} type="text" autoComplete="given-name" autoCapitalize="words" value={prenom} onChange={e => setPrenom(e.target.value)} placeholder="Prénom" aria-invalid={!!fautes.prenom} aria-describedby={fautes.prenom ? `${idPrenom}-erreur` : undefined} disabled={etat === 'envoi'} />
+      {fautes.prenom && <span id={`${idPrenom}-erreur`} className="compte-aide t-bodylg" role="alert">{fautes.prenom}</span>}
+    </label>
+    <label className="t-label" htmlFor={idTel}>Téléphone
+      <input id={idTel} type="tel" inputMode="tel" autoComplete="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="06 12 34 56 78" aria-invalid={!!fautes.tel} aria-describedby={fautes.tel ? `${idTel}-erreur` : undefined} disabled={etat === 'envoi'} />
+      {fautes.tel && <span id={`${idTel}-erreur`} className="compte-aide t-bodylg" role="alert">{fautes.tel}</span>}
+    </label>
+    <button type="submit" disabled={etat === 'envoi'} className="compte-bouton compte-secondaire">{etat === 'envoi' ? 'Enregistrement en cours…' : 'Enregistrer mes coordonnées'}</button>
+    {(etat === 'attente' || etat === 'erreur') && <p className="compte-erreur t-bodylg" role="status">
+      {etat === 'attente' ? 'Ton compte se prépare. Réessaie dans quelques instants.' : 'Tes coordonnées n’ont pas été enregistrées. Réessaie.'}
+    </p>}
+  </form>
 }

@@ -970,3 +970,114 @@ h1, h2, h3, h4, h5, h6 {
     animation: none;
   }
 }
+
+/* Pages de compte — DESIGN_SYSTEM_MASTER §0, §3, §8.2, §11, §21 et §27.
+   Recette web du fond violet et du verre AppleNoir ; grille Container/Grid.
+   Les classes t-* existantes portent l’échelle du Site (§0.10).
+   Aucun style de la skill de rédaction n’est appliqué ici. */
+:root {
+  /* Valeurs déjà ratifiées au MASTER §4 / §6, absentes des variables web. */
+  --noir-apple: #000000;
+  --ink-on-accent: #05070F;
+  --glass-on-noir: rgba(255, 255, 255, 0.045);
+  --glass-on-noir-border: rgba(255, 255, 255, 0.09);
+  --glass-on-noir-border-top: rgba(255, 255, 255, 0.14);
+  --radius-card: 18px;
+  --radius-modal: 24px;
+  --modal-on-noir: rgba(17, 21, 40, 0.97);
+  --scrim-moyen: rgba(0, 0, 0, 0.6);
+  --ease-press: cubic-bezier(0.23, 1, 0.32, 1);
+}
+.espace-compte { position: relative; isolation: isolate; min-height: 100svh; overflow-x: clip; background: var(--noir-apple); color: var(--text-hero); font-family: var(--font-inter), sans-serif; font-weight: 500; }
+.espace-compte :where(p, h1, h2) { margin: 0; }
+/* §8.2 : géométrie web exacte, halos RADIAUX, décor non interactif. */
+.compte-halos, .compte-grain { position: absolute; inset: 0; overflow: clip; pointer-events: none; z-index: -1; }
+.compte-halos::before, .compte-halos::after { content: ''; position: absolute; border-radius: 50%; }
+.compte-halos::before { top: -40vh; left: -30vw; width: 140vw; height: 140vw; background: radial-gradient(circle, rgba(140, 82, 255, 0.22), transparent 70%); }
+.compte-halos::after { top: -20vh; right: -40vw; width: 110vw; height: 110vw; background: radial-gradient(circle, rgba(0, 212, 255, 0.14), transparent 65%); }
+.compte-grain { background-color: rgba(255, 255, 255, 0.012); }
+/* §8.6 / §17.15 : ambiance immobile ; le mouvement répond aux commandes. */
+.compte-entete { padding-top: env(safe-area-inset-top); }
+.compte-navigation { @apply flex flex-wrap items-center justify-between gap-xxl py-xxl; }
+.compte-marque { @apply inline-flex items-center min-h-12 py-md; max-width: 100%; color: var(--text-hero); }
+.compte-marque svg { width: 8rem; max-width: 100%; height: auto; }
+.compte-retour { @apply inline-flex items-center gap-sm min-h-12; color: var(--text-secondary); text-decoration: none; }
+.compte-contenu { @apply w-full py-xxxl lg:py-huge xl:py-massive; }
+.compte-grille { @apply items-start; }
+/* Les 12 colonnes restent la grille commune. Sans séparation visible sur
+   téléphone, leurs 11 gouttières ne doivent pas imposer une largeur minimale. */
+.espace-compte .compte-grille, .espace-compte .compte-bienvenue, .espace-compte .compte-bienvenue-etapes { column-gap: 0; }
+@media (min-width: 1024px) { .espace-compte .compte-grille, .espace-compte .compte-bienvenue, .espace-compte .compte-bienvenue-etapes { column-gap: 48px; } }
+.compte-intro { @apply col-span-12 lg:col-span-5 xl:col-span-4 grid gap-lg; min-width: 0; overflow-wrap: anywhere; }
+.compte-zone { @apply col-span-12 lg:col-span-7 xl:col-start-6; min-width: 0; }
+.compte-repere { color: var(--accent-cyan); }
+.compte-titre, .compte-sous-titre { text-wrap: balance; }
+.compte-titre span { color: var(--text-hero); }
+.compte-description, .compte-aide, .compte-note { color: var(--text-secondary); }
+.compte-description, .compte-aide, .compte-note, .compte-bloc { overflow-wrap: anywhere; }
+/* §11.1 : carte canon 18 / 16 ; liseré haut 0.14, verre 0.045. */
+.compte-carte { @apply grid gap-lg; grid-template-columns: minmax(0, 1fr); min-width: 0; padding: 16px; border-radius: var(--radius-card); background: var(--glass-on-noir); border: 1px solid var(--glass-on-noir-border); border-top-color: var(--glass-on-noir-border-top); backdrop-filter: blur(8px) saturate(1.5); -webkit-backdrop-filter: blur(8px) saturate(1.5); box-shadow: 0 8px 26px rgba(0, 0, 0, 0.40); overflow-wrap: anywhere; }
+.compte-bloc { @apply grid gap-lg; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.compte-identifiant { @apply flex items-center gap-md; }
+.compte-identifiant svg { width: 24px; height: 24px; }
+.compte-etat { color: var(--accent-cyan); }
+.compte-etat-attention { color: var(--accent-gold); }
+.compte-date { @apply grid gap-sm pt-lg; border-top: 1px solid var(--glass-on-noir-border); font-variant-numeric: tabular-nums; }
+.compte-date .compte-aide { @apply flex items-center gap-sm; }
+.compte-date-valeur { color: var(--text-hero); }
+.compte-formulaire { @apply grid gap-xl; grid-template-columns: minmax(0, 1fr); }
+.compte-formulaire label { @apply grid gap-sm; }
+/* §11.8 : verre de champ posé directement sur le fond, sans carte par-dessus. */
+.compte-formulaire input { @apply block w-full min-w-0 min-h-12 rounded-md p-md; border: 1px solid var(--glass-on-noir-border); background: var(--glass-on-noir); color: var(--text-hero); font-family: var(--font-inter), sans-serif; font-size: 1rem; line-height: 1.5; font-weight: 500; }
+.compte-formulaire input::placeholder { color: var(--text-secondary); opacity: 1; }
+.compte-formulaire input:focus-visible { border-color: var(--accent-cyan); }
+.compte-formulaire input[aria-invalid=true] { border-color: var(--accent-gold); }
+/* §11.2 B : cyan + encre, également le traitement de confirmation du site mobile.
+   §0.4 : Genos pour nommer une commande ; Inter reste sur les champs et aides. */
+.compte-bouton { @apply flex w-full min-h-12 items-center justify-center gap-md rounded-lg px-xl; padding-block: 14px; min-width: 0; overflow-wrap: anywhere; border: 1px solid transparent; font-family: var(--font-genos), sans-serif; font-weight: 600; font-size: 1.125rem; line-height: 1.5; text-align: center; text-decoration: none; transition: transform var(--duration-instant) var(--ease-press), background-color var(--duration-instant) var(--ease-standard), border-color var(--duration-instant) var(--ease-standard); }
+.compte-bouton span { min-width: 0; overflow-wrap: anywhere; }
+.compte-primaire { color: var(--ink-on-accent); background: var(--accent-cyan); }
+.compte-primaire:hover { background: var(--accent-cyan-ice); }
+.compte-bouton:active:not(:disabled) { transform: scale(.97); }
+.compte-secondaire { background: var(--glass-on-noir); color: var(--text-hero); border-color: var(--glass-on-noir-border); }
+.compte-secondaire:hover { border-color: var(--glass-on-noir-border-top); }
+.espace-compte :disabled { opacity: .5; cursor: not-allowed; }
+.compte-actions { @apply grid gap-md mt-xxl; grid-template-columns: minmax(0, 1fr); }
+.compte-securite { @apply mt-lg; }
+.compte-liens { @apply flex flex-wrap justify-between gap-x-lg gap-y-sm mt-lg pt-sm; border-top: 1px solid var(--glass-on-noir-border); }
+.compte-liens :where(a, button), .compte-pied a { @apply inline-flex items-center gap-sm min-h-12 py-md; max-width: 100%; min-width: 0; color: var(--text-secondary); text-decoration: none; }
+.compte-liens span, .compte-pied a span { min-width: 0; overflow-wrap: anywhere; }
+.compte-liens :where(a, button):hover, .compte-pied a:hover, .compte-retour:hover { color: var(--text-hero); text-decoration: underline; text-underline-offset: .25em; }
+.compte-pied { @apply py-xxl; position: relative; padding-bottom: max(24px, env(safe-area-inset-bottom)); border-top: 1px solid var(--glass-on-noir-border); }
+.compte-pied-liens { @apply flex flex-wrap items-center justify-between gap-x-xxl gap-y-sm; }
+.compte-erreur { @apply p-lg mt-lg rounded-md; border: 1px solid var(--accent-gold); color: var(--text-hero); }
+.espace-compte :focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+.compte-attente { @apply grid content-start gap-lg; min-height: 21rem; }
+.compte-bienvenue > *, .compte-bienvenue-etapes > * { min-width: 0; }
+.compte-bienvenue-intro { @apply col-span-12 lg:col-span-10 lg:col-start-2 xl:col-span-8 xl:col-start-3 grid gap-lg text-center; overflow-wrap: anywhere; }
+.compte-accroche { color: var(--text-hero); }
+.compte-bienvenue-etapes { @apply col-span-12; }
+.compte-codes, .compte-profil { @apply col-span-12 lg:col-span-6; }
+.compte-codes { align-self: start; }
+.compte-montant { color: var(--text-hero); }
+.compte-montant span { color: var(--text-secondary); }
+.compte-telecharger { grid-template-columns: minmax(0, 1fr); @apply col-span-12 lg:col-span-8 lg:col-start-3 xl:col-span-6 xl:col-start-4 grid gap-lg text-center; }
+.compte-telecharger .compte-liens { @apply justify-center m-0; border-top: 0; }
+#gerer-abonnement { scroll-margin-block: 3rem; }
+.compte-apercu { @apply px-xxl py-md; background: var(--foreas-obsidian); color: var(--text-secondary); font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: .75rem; line-height: 1.5; text-align: center; }
+/* §26 : une seule famille, crans et trait officiels ; aucune icône décorative. */
+.espace-compte svg.lucide { width: 18px; height: 18px; flex: none; stroke-width: 2; }
+.compte-identifiant svg.lucide { width: 24px; height: 24px; }
+/* §29 : le verre reste lisible si le navigateur ne sait pas le flouter. */
+@supports not (backdrop-filter: blur(8px)) { .compte-carte { backdrop-filter: none; } }
+@media (prefers-reduced-motion: reduce) { .espace-compte *, .espace-compte *::before, .espace-compte *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } .espace-compte .compte-bouton:active { transform: none; } }
+
+/* MASTER §11.7 : élévation haute densité et voile moyen ; aucun nouveau langage. */
+.compte-confirmation { width: min(560px, calc(100% - 32px)); max-height: calc(100svh - 32px); margin: auto; padding: 24px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--glass-on-noir-border-top); border-radius: var(--radius-modal); background: var(--modal-on-noir); color: var(--text-hero); }
+.compte-confirmation[open] { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.compte-confirmation::backdrop { background: var(--scrim-moyen); }
+.compte-confirmation-entete { display: flex; align-items: flex-start; gap: 16px; }
+.compte-confirmation-entete h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.compte-fermer { display: flex; flex: none; width: 48px; min-height: 48px; align-items: center; justify-content: center; border-radius: 12px; color: var(--text-secondary); }
+.compte-fermer:hover { color: var(--text-hero); background: var(--glass-on-noir); }
+.compte-confirmation .compte-actions { margin-top: 8px; }

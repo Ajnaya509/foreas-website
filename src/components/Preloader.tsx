@@ -60,6 +60,9 @@ import { usePathname } from 'next/navigation'
 
 /** Les pages où le rideau ne se joue jamais. Chacune pour une raison écrite. */
 const PAGES_SANS_RIDEAU = [
+  '/abonnement', // le compte doit rester accessible sans décor ni bulle concurrente
+  '/apercu-abonnement',
+  '/apercu-succes',
   '/dashboard', // espace connecté : ce n'est plus une arrivée sur la marque
   '/tarifs3', // reçoit le trafic publicitaire — une seconde de plus coûte de l'argent
   '/tarifs3', // page de paiement du lancement : aucun décor devant un formulaire

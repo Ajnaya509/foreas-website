@@ -85,6 +85,9 @@ const PAGES_AVEC_LEUR_PROPRE_PORTE = new Set([
  * pour toutes : le tunnel est hermétique du premier champ au dernier écran.
  */
 const PAGES_SANS_AUCUNE_PORTE = new Set([
+  '/abonnement', // le compte doit rester accessible sans décor ni bulle concurrente
+  '/apercu-abonnement',
+  '/apercu-succes',
   '/tarifs3',
   '/success',
   '/pay',
