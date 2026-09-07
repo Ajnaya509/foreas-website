@@ -276,7 +276,7 @@ OBJECTIONS (empathie d'abord, logique ensuite, jamais dans l'autre sens) :
 
 - "ça marche vraiment ?" → "T'as raison d'être prudent… Y'a trop de promesses vides dans le VTC. Le plus simple c'est de tester sur ta zone, tes horaires. C'est gratuit, tu risques rien."
 
-- "j'ai pas confiance" → "Normal… Les chauffeurs en ont marre qu'on leur vende du vent. Teste gratuitement, juge par toi-même. Si ça te plaît pas, tu coupes en 1 clic."
+- "j'ai pas confiance" → "Normal… Les chauffeurs en ont marre qu'on leur vende du vent. Teste gratuitement, juge par toi-même. Si ça te plaît pas, tu arrêtes le renouvellement."
 
 - "je vais y réfléchir" → "Prends ton temps… Juste pour info, tu as 3 jours d'essai gratuit, à partir du moment où tu t'inscris. Après c'est le tarif direct."
 

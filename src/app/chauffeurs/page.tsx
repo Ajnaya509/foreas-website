@@ -86,7 +86,7 @@ function StickyMobileCTA() {
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <p className="text-white text-xs font-semibold">Essai gratuit · 0€ débité</p>
-                <p className="text-white/40 text-[10px]">Résiliable en 1 clic</p>
+                <p className="text-white/40 text-[10px]">Renouvellement désactivable</p>
               </div>
               <a href="/tarifs3" className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan text-white text-sm font-semibold hover:opacity-90 transition-opacity">
                 Commencer →
@@ -765,7 +765,7 @@ export default function ChauffeursPage() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green" />
               </span>
               <span className="text-sm font-medium text-accent-green">
-                {ESSAI_JOURS} jours d&apos;essai · 0 € débité — tu annules en 1 clic
+                {ESSAI_JOURS} jours d&apos;essai · 0 € débité — tu arrêtes le renouvellement
               </span>
             </motion.div>
 
@@ -817,7 +817,7 @@ export default function ChauffeursPage() {
             {/* Trust badges */}
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-white/40 text-sm">
               <span>0€ débité aujourd&apos;hui</span>
-              <span>Annulation en 1 clic</span>
+              <span>Renouvellement désactivable</span>
               <span>Compatible toutes apps VTC</span>
             </div>
           </motion.div>
@@ -938,7 +938,7 @@ function MobileHero() {
         >
           <span>0€ débité</span>
           <span className="w-px h-3 bg-white/10" />
-          <span>Annulation en 1 clic</span>
+          <span>Renouvellement désactivable</span>
           <span className="w-px h-3 bg-white/10" />
           <span>Compatible Uber, Bolt, Heetch</span>
         </motion.div>
@@ -1057,7 +1057,7 @@ function DesktopParallaxHero({ reducedMotion }: { reducedMotion: boolean }) {
             >
               <span>0€ débité</span>
               <span className="w-px h-3 bg-white/10" />
-              <span>Annulation en 1 clic</span>
+              <span>Renouvellement désactivable</span>
               <span className="w-px h-3 bg-white/10" />
               <span>Compatible Uber, Bolt, Heetch</span>
             </motion.div>

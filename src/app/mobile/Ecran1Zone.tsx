@@ -384,7 +384,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
         <span className={s.pointHero}>·</span>
         <b>3 jours</b> pour voir
         <span className={s.pointHero}>·</span>
-        coupé en <b>1 clic</b>
+        renouvellement <b>désactivable</b>
       </p>
       </>
       )}

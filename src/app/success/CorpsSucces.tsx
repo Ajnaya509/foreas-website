@@ -277,7 +277,7 @@ export default function CorpsSucces({
         À rebrancher le jour où le programme partenaire accepte ces comptes. */}
     {customerId && (
       <a
-        href={`/api/customer-portal?customer_id=${customerId}`}
+        href="/abonnement"
         className="underline underline-offset-4 transition-colors hover:text-white"
         style={{ color: 'rgba(248, 250, 252, 0.52)' }}
       >
@@ -290,7 +290,7 @@ export default function CorpsSucces({
     className="text-center text-[10.5px] tabular-nums"
     style={{ color: 'rgba(248, 250, 252, 0.30)', letterSpacing: '0.04em' }}
   >
-    Paiement traité par Stripe · Annulable en un clic · Sans engagement
+    Paiement traité par Stripe · Renouvellement désactivable dans ton abonnement
   </p>
     </>
   )

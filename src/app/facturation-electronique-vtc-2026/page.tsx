@@ -478,7 +478,7 @@ export default function FacturationElectroniqueVTC2026() {
                 et la carte EST demandée (payment_method_collection:'always' dans
                 api/checkout). « Résiliable à tout moment » devient l'action exacte. */}
             <p className="mt-4 text-sm text-white/50">
-              {ESSAI_JOURS} jours d&apos;essai · carte demandée, 0 € prélevé · tu annules en un clic avant la fin
+              {ESSAI_JOURS} jours d&apos;essai · carte demandée, 0 € prélevé · tu arrêtes le renouvellement avant la fin
             </p>
           </div>
         </section>

@@ -4,6 +4,9 @@ import Stripe from 'stripe'
 import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
 import { construireSignaux, verifierCumulEssai, enregistrerEssai } from '@/lib/essaisAccordes'
 import { annulerEnvoiProgramme } from '@/lib/email'
+import { synchroniserAbonnement } from '@/lib/synchroniserAbonnement'
+import { lierAbonnement } from '@/lib/lierAbonnement'
+import { clientServeur } from '@/lib/supabaseServeur'
 import { provisionDriverAccount, activerAccesChauffeur } from '@/lib/provisionDriverAccount'
 // ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
 // Cette route retombait sur la clé publique quand la clé serveur manquait.
@@ -419,6 +422,10 @@ export async function POST(request: Request) {
     // ── ON RÉSERVE L'ÉVÉNEMENT AVANT DE TRAVAILLER ─────────────────────────
     // Si un autre exemplaire de cette fonction l'a déjà, on répond 200 : c'est
     // une relivraison, elle a été traitée, Stripe n'a pas à réessayer.
+    // Une signature valide de test ne doit jamais modifier les comptes réels.
+    const modeReel = /^(?:sk|rk)_live_/.test((process.env.STRIPE_SECRET_KEY ?? '').trim())
+    if (event.livemode !== modeReel) return NextResponse.json({ received: true, ignored: 'mode_stripe_different' })
+
     const reserve = await reserverEvenement(event.id, event.type, proprietaire)
     if (reserve === 'impossible') {
       // On n'a pas pu écrire en base. Répondre 200 ici jetterait le paiement en
@@ -774,9 +781,11 @@ export async function POST(request: Request) {
            avait un compte gratuit et qui paie aujourd'hui doit être ouvert lui
            aussi — c'est même le cas le plus fréquent après quelques mois.
            Ne le faire que pour les comptes neufs recréerait le mur pour eux. */
-        if (provision.status === 'created' || provision.status === 'already_exists') {
+        if ((provision.status === 'created' || provision.status === 'already_exists') && provision.userId) {
           const acces = await activerAccesChauffeur({
             email: session.customer_details.email,
+            userId: provision.userId,
+            compteCree: provision.status === 'created',
             finEssai: trialEnd,
           })
           if (!acces.ouvert) {
@@ -830,6 +839,19 @@ export async function POST(request: Request) {
         // ⚠️ ON N'ÉCHOUE PAS LE WEBHOOK POUR AUTANT. Un incident chez
         // l'expéditeur de courrier ne doit pas devenir une perte de paiement :
         // on alerte, et le paiement reste enregistré.
+        // Associer la facturation APRÈS l'envoi des identifiants : si la base
+        // refuse, Stripe peut rejouer sans faire perdre le premier mot de passe.
+        if ((provision.status === 'created' || provision.status === 'already_exists') && provision.userId) {
+          if (typeof session.customer !== 'string' || typeof session.subscription !== 'string' || !subscription) {
+            throw new Error('abonnement_stripe_non_resolu')
+          }
+          await lierAbonnement(clientServeur(), {
+            userId: provision.userId, customerId: session.customer, subscriptionId: session.subscription,
+            status: subscription.status, periodEnd: finDePeriode(subscription),
+            pricePerMonth: subscription.items.data[0]?.price.recurring?.interval === 'year' ? amountEur / 12 : amountEur,
+          })
+        }
+
         if (!mailParti && provision.status === 'created') {
           // La trace en base D'ABORD : elle ne dépend de personne.
           noteIncident = `MAIL IDENTIFIANTS NON PARTI — compte créé pour ${session.customer_details.email}, mot de passe perdu, à régénérer à la main`
@@ -910,6 +932,7 @@ export async function POST(request: Request) {
     // ─── customer.subscription.updated ─────────────────────────────
     if (event.type === 'customer.subscription.updated') {
       const sub = event.data.object as Stripe.Subscription
+      await synchroniserAbonnement(clientServeur(), stripe, sub.id)
       await updateSubscriberStatus(sub.id, sub.status)
       console.log('[webhook] Subscription updated:', sub.id, '→', sub.status)
     }
@@ -917,6 +940,7 @@ export async function POST(request: Request) {
     // ─── customer.subscription.deleted ─────────────────────────────
     if (event.type === 'customer.subscription.deleted') {
       const sub = event.data.object as Stripe.Subscription
+      await synchroniserAbonnement(clientServeur(), stripe, sub.id)
       await updateSubscriberStatus(sub.id, 'canceled')
       console.log('[webhook] Subscription deleted:', sub.id)
     }

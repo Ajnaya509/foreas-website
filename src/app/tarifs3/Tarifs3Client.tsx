@@ -816,7 +816,7 @@ export default function Tarifs3Client() {
                       <p className={s.franc}>
                         {/*
                           ⚠️ RACCOURCI POUR GAGNER UNE LIGNE, PAS POUR FAIRE JOLI.
-                          « Annulation en un clic avant la fin, sans prélèvement »
+                          « Renouvellement désactivable avant la fin, sans prélèvement »
                           passait à deux lignes à 390 px, donc trois avec la
                           première phrase — et le bouton d'action tombait sous la
                           ligne de flottaison. Le sens est intact : rien n'est pris
@@ -824,7 +824,7 @@ export default function Tarifs3Client() {
                         */}
                         Aucun paiement avant le {dateFrancaise(debit.premierDebitISO)}.
                         <br />
-                        Annulable en un clic, sans rien payer.
+                        Renouvellement désactivable, sans rien payer.
                       </p>
                       {/* L'unique mention du montant d'après. Petite, grise,
                           factuelle : c'est une obligation d'information, pas un
@@ -986,7 +986,7 @@ export default function Tarifs3Client() {
                              parlent de ce qu'on lui prend, sur l'écran précis où il
                              donne sa carte. Elles disent la même chose, à l'endroit. */
                           '0 € aujourd’hui',
-                          'Annulable en un clic',
+                          'Renouvellement désactivable',
                           `Premier paiement le ${dateFrancaise(debit.premierDebitISO ?? '')}`,
                         ]
                       : [

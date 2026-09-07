@@ -28,7 +28,7 @@ const RESPONSES: Array<{ pattern: RegExp; key: string; reply: string }> = [
   // bouche d'Ajnaya elle-même, sur LA question qui décide (« combien ça coûte »).
   // 29,99 €/mois donne 1,00 €/jour. Le montant vient maintenant de offre.ts.
   { pattern: /prix|tarif|co[uû]t|combien|cher/i, key: 'pricing', reply: `L'abonnement est à ${formaterEuros(PRIX_MENSUEL_CENTIMES)}/mois — moins d'1 € par jour. ${ESSAI_JOURS} jours d'essai, 0 € débité, carte demandée. Tous les détails sur /tarifs3.` },
-  { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit pendant 3 jours. 0 € prélevé. Annulation en 1 clic." },
+  { pattern: /essai|gratuit|tester|test/i, key: 'trial', reply: "L'essai est gratuit pendant 3 jours. 0 € prélevé. Renouvellement désactivable." },
   { pattern: /comment ça marche|fonctionnement|comment|fonctionne/i, key: 'how', reply: 'Je regarde ce que paient vraiment les courses de ta zone, à cette heure-ci, pour te dire où te positionner 15 min avant la demande.' },
   { pattern: /uber|bolt|heetch/i, key: 'platforms', reply: 'Compatible avec toutes les apps VTC. Je ne les remplace pas — je te dis où être pour avoir les meilleures courses.' },
   { pattern: /partenaire|flotte|entreprise|h[oô]tel|airbnb/i, key: 'b2b', reply: 'Pour les partenaires, on propose un accompagnement sur mesure avec dashboard dédié. Le mieux : prenez contact via /contact.' },

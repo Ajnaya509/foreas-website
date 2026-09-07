@@ -277,7 +277,7 @@ export default function ReactivationClient() {
           <div className="mt-4 flex items-center justify-center gap-4 text-[11px]" style={{ color: C.muted }}>
             <span className="inline-flex items-center gap-1"><Lock size={12} /> Paiement sécurisé Stripe</span>
             <span>·</span>
-            <span>Annulation en 1 clic</span>
+            <span>Renouvellement désactivable</span>
           </div>
         </section>
 

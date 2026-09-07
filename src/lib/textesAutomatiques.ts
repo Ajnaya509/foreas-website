@@ -93,7 +93,7 @@ export const PANIER_TEXTES: Record<1 | 2 | 3, TexteMail> = {
       "Ajnaya, elle, regarde la demande en direct et te dit où elle monte. " +
       "C'est tout ce qu'elle fait, et c'est déjà beaucoup. " +
       'Trois jours offerts pour voir ce que ça donne sur tes journées à toi. ' +
-      "0 € aujourd'hui, et un clic pour arrêter quand tu veux. " +
+      "0 € aujourd'hui, et renouvellement désactivable depuis ton abonnement. " +
       "Si quelque chose a bloqué tout à l'heure, réponds à ce mail — je lis.",
     bouton: 'Lancer mes 3 jours',
     destination: 'paiement',
@@ -146,7 +146,7 @@ export const PANIER_TEXTES: Record<1 | 2 | 3, TexteMail> = {
       "Ça ne se voit pas dans la journée. Ça se paie en fin de mois, sans que personne ne te dise pourquoi. " +
       "Un chauffeur qui sait où la demande monte ne roule pas plus longtemps. Il roule mieux placé. " +
       "C'est toute la différence, et elle reste invisible tant qu'on ne l'a pas mesurée sur ses propres journées. " +
-      "Trois jours pour la mesurer sur les tiennes. 0 € aujourd'hui, un clic pour arrêter. " +
+      "Trois jours pour la mesurer sur les tiennes. 0 € aujourd'hui, renouvellement désactivable. " +
       "C'est le dernier message que tu reçois de nous. Ensuite on te laisse.",
     bouton: 'Arrêter de deviner',
     destination: 'paiement',

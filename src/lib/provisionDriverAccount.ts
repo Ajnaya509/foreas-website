@@ -27,6 +27,7 @@
  */
 
 import { randomBytes } from 'crypto'
+import { clientServeurOuNull } from './supabaseServeur'
 
 export type ProvisionResult =
   | { status: 'created'; userId: string; password: string }
@@ -49,14 +50,7 @@ function generateReadablePassword(): string {
 }
 
 async function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  // service_role OBLIGATOIRE : la clé anon n'a pas le droit `auth.admin`. Pas de repli
-  // silencieux sur anon ici (contrairement à upsertSubscriber) — un repli produirait un
-  // « compte créé » faux, donc un chauffeur bloqué sans qu'on le sache.
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) return null
-  const { createClient } = await import('@supabase/supabase-js')
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+  return clientServeurOuNull()
 }
 
 export async function provisionDriverAccount({
@@ -99,9 +93,19 @@ export async function provisionDriverAccount({
     // Supabase renvoie 422 `email_exists` si le compte est déjà là (rejeu Stripe, ou chauffeur
     // qui avait déjà un compte gratuit). Ce n'est pas une erreur : on ne réécrit rien.
     const msg = String(error.message || '')
-    if (error.status === 422 || /already|exists|registered/i.test(msg)) {
+    if (error.code === 'email_exists' || /already.*(?:exists|registered)/i.test(msg)) {
       console.log('[provision] compte déjà existant, aucun mot de passe régénéré pour', cleanEmail)
-      return { status: 'already_exists', userId: null }
+      // Résoudre le vrai compte Auth, sans faire confiance à l'e-mail d'un profil éditable.
+      for (let page = 1; page <= 10; page++) {
+        const liste = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+        if (liste.error) return { status: 'failed', reason: 'recherche_compte_indisponible' }
+        const compte = liste.data.users.find(u => u.email?.trim().toLowerCase() === cleanEmail)
+        if (compte) return compte.email_confirmed_at
+          ? { status: 'already_exists', userId: compte.id }
+          : { status: 'failed', reason: 'adresse_compte_non_confirmee' }
+        if (liste.data.users.length < 1000) break
+      }
+      return { status: 'failed', reason: 'compte_existant_non_resolu' }
     }
     console.error('[provision] échec création compte pour', cleanEmail, '—', msg)
     return { status: 'failed', reason: msg }
@@ -145,9 +149,13 @@ export async function provisionDriverAccount({
  */
 export async function activerAccesChauffeur({
   email,
+  userId,
+  compteCree = false,
   finEssai,
 }: {
   email: string
+  userId: string
+  compteCree?: boolean
   /** Fin de l'essai, telle que Stripe la donne. `null` = déjà payant. */
   finEssai?: string | null
 }): Promise<{ ouvert: boolean; detail: string }> {
@@ -161,6 +169,14 @@ export async function activerAccesChauffeur({
         "Le chauffeur a payé et l'app lui redemandera de payer.",
     )
     return { ouvert: false, detail: 'cle_service_absente' }
+  }
+
+  // Le déclencheur crée drivers.id = le NOUVEAU compte. Ce rapprochement
+  // est réservé à cette création prouvée ; aucun dossier historique n'est réparé.
+  if (compteCree) {
+    const lien = await supabase.from('drivers').update({ auth_user_id: userId, email: cleanEmail })
+      .eq('id', userId).is('auth_user_id', null).select('id')
+    if (lien.error) return { ouvert: false, detail: 'liaison_nouveau_compte_refusee' }
   }
 
   /* ⚠️ LA LIGNE `drivers` PEUT NE PAS ENCORE EXISTER.
@@ -188,7 +204,7 @@ export async function activerAccesChauffeur({
       subscription_status: statutAbonnement,
       ...(finEssai ? { trial_ends_at: finEssai } : {}),
     })
-    .eq('email', cleanEmail)
+    .eq('auth_user_id', userId)
     .select('id')
 
   if (erreurDriver) {
@@ -206,15 +222,13 @@ export async function activerAccesChauffeur({
     return { ouvert: false, detail: 'aucune_ligne_drivers' }
   }
 
-  const idChauffeur = lignesDriver[0].id
 
   /* Le palier décide de ce que l'app affiche (une carte grisée en `free`).
      L'échec ici n'annule pas l'ouverture : `drivers` est déjà ouvert, et c'est
      lui qui commande l'entrée. On le dit, on continue. */
   const { data: lignesProfil, error: erreurProfil } = await supabase
     .from('user_profiles')
-    .update({ tier: 'pro' })
-    .eq('user_id', idChauffeur)
+    .upsert({ user_id: userId, tier: 'pro' }, { onConflict: 'user_id' })
     .select('user_id')
 
   if (erreurProfil) {

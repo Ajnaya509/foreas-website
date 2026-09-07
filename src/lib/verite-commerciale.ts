@@ -315,7 +315,7 @@ export const ESSAI = {
  */
 export const ESSAI_PHRASES = {
   titre: `${ESSAI.jours} jours d’essai · 0 € débité`,
-  franc: `Carte demandée, 0 € prélevé pendant ${ESSAI.jours} jours. Tu annules en un clic avant la fin, tu n’es pas débité.`,
+  franc: `Carte demandée, 0 € prélevé pendant ${ESSAI.jours} jours. Tu arrêtes le renouvellement avant la fin, tu n’es pas débité.`,
 } as const
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -513,7 +513,7 @@ export default function LandingPageTemplate({ content }: { content: LandingConte
           </Link>
 
           <p className="text-xs text-gray-600 mt-4">
-            {c.cta_final_micro || "Annulation en 1 clic · Pas d'engagement · 0€ débité pendant l'essai"}
+            {c.cta_final_micro || "Renouvellement désactivable · Pas d'engagement · 0€ débité pendant l'essai"}
           </p>
         </FadeIn>
       </section>

@@ -11,7 +11,7 @@ import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
  * - SectionHeader (eyebrow + title gradient + sub) — pattern signature
  * - Touch targets 56pt sur boutons download (Norman + iOS HIG)
  * - Vrais liens stores (App Store + Google Play)
- * - Trust line : "Résiliable en 1 clic · Tes données restent les tiennes"
+ * - Trust line : "Renouvellement désactivable · Tes données restent les tiennes"
  * - bg-foreas-obsidian (canonique) — plus de #050508 hardcodé
  */
 export default function CTA() {
@@ -109,7 +109,7 @@ export default function CTA() {
 
           {/* Trust line */}
           <p className="text-text-tertiary text-label">
-            Résiliable en 1 clic <span className="mx-sm text-text-muted" aria-hidden="true">·</span> Tes données restent les tiennes
+            Renouvellement désactivable <span className="mx-sm text-text-muted" aria-hidden="true">·</span> Tes données restent les tiennes
           </p>
         </motion.div>
       </div>

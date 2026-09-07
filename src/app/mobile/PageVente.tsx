@@ -665,7 +665,7 @@ export default function PageVente() {
 
         <a className={`${s.cta} ${s.violet}`} href="/tarifs3">Commencer les {ESSAI_JOURS} jours</a>
         <div><a className={s.sortie} href="/wa?s=avant_paiement&p=/&i=offre&o=avant_paiement">Une question d’abord</a></div>
-        <p className={s.tampon}>Carte enregistrée dès l’inscription. Résiliation en un clic.</p>
+        <p className={s.tampon}>Carte enregistrée dès l’inscription. Renouvellement désactivable.</p>
       </section>
 
       <section className={s.scene}>
@@ -713,7 +713,7 @@ export default function PageVente() {
                plusieurs téléphones. Un chiffre inventé se voit au premier soir.
                Tes trois jours servent aussi à ça.</p></details>
           <details><summary>Je coupe comment ?</summary>
-            <p>En un clic, depuis l’app, avant la fin des trois jours. Tu n’es pas
+            <p>Depuis la gestion de ton abonnement, avant la fin des trois jours. Tu n’es pas
                débité.</p></details>
           <details><summary>Il faut parler à Ajnaya ?</summary>
             <p>Non. Tu peux lire le verdict et sa raison sans jamais lui écrire.</p></details>

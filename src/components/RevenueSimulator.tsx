@@ -269,7 +269,7 @@ export default function RevenueSimulator() {
               <div>
                 <p className="text-green-400 font-medium">{ESSAI_JOURS} jours d’essai · 0 € débité</p>
                 <p className="text-white/50 text-sm">
-                  Carte demandée à l’inscription. Tu annules en un clic avant la fin, tu n’es pas débité.
+                  Carte demandée à l’inscription. Tu arrêtes le renouvellement avant la fin, tu n’es pas débité.
                 </p>
               </div>
             </div>

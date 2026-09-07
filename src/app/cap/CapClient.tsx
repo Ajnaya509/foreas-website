@@ -168,7 +168,7 @@ const BENEFITS = [
   {
     icon: Star,
     label: `${ESSAI_JOURS} jours d’essai`,
-    sub: 'Carte demandée, 0 € prélevé. Tu annules en un clic.',
+    sub: 'Carte demandée, 0 € prélevé. Tu arrêtes le renouvellement.',
   },
 ]
 
@@ -452,7 +452,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 Et on annonce la carte : /api/checkout est en `payment_method_collection:
                 'always'` — la carte EST enregistrée, l'abonnement Stripe EST créé. */}
             <p className="font-body text-xs text-white/35">
-              Carte demandée · 0 € prélevé pendant {ESSAI_JOURS} jours · Annulation en 1 clic
+              Carte demandée · 0 € prélevé pendant {ESSAI_JOURS} jours · Renouvellement désactivable
             </p>
           </motion.div>
 
@@ -581,7 +581,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
                 au cas où la remise existe réellement (coupon Stripe `foreas_ref_{pct}`). */}
             {discountPct > 0
               ? 'Réduction appliquée automatiquement via ton code partenaire. Annulation sans frais à tout moment.'
-              : 'Annulation sans frais à tout moment, en un clic.'}
+              : 'Renouvellement désactivable depuis ton abonnement.'}
           </motion.p>
         </div>
       </section>
@@ -691,7 +691,7 @@ export default function CapClient({ referralCode, partnerData }: CapClientProps)
             <p className="font-body text-sm text-white/50 mb-7">
               {discount
                 ? `Profite de ton -${discountPct}% pendant ${discountMonths} mois via ${partnerName}.`
-                : `${ESSAI_JOURS} jours d’essai. Carte demandée, 0 € prélevé. Tu annules en un clic avant la fin, tu n’es pas débité.`}
+                : `${ESSAI_JOURS} jours d’essai. Carte demandée, 0 € prélevé. Tu arrêtes le renouvellement avant la fin, tu n’es pas débité.`}
             </p>
             <Link
               href={`/tarifs3${referralCode ? `?ref=${referralCode}` : ''}`}
