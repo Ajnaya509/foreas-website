@@ -2,7 +2,7 @@
 
 import type { FormEventHandler } from 'react'
 import ConfirmationArret from './ConfirmationArret'
-import { ArrowUpRight, CalendarDays, CreditCard, LogOut, RefreshCw } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, ChevronDown, CreditCard, LogOut, RefreshCw } from 'lucide-react'
 import CadreCompte from '@/components/compte/CadreCompte'
 import { Grid } from '@/components/ui/Container'
 
@@ -24,25 +24,26 @@ export default function VueAbonnement(p: Props) {
   const termine = abo && ['canceled', 'incomplete_expired'].includes(abo.statut)
   const problemePaiement = abo && ['past_due', 'unpaid', 'incomplete', 'paused'].includes(abo.statut)
   const etat = arrete ? 'Renouvellement arrêté' : essai ? 'Ton essai est en cours' : termine ? 'Ton abonnement est terminé' : problemePaiement ? 'Ton paiement est à vérifier' : abo?.statut === 'active' ? 'Ton abonnement est actif' : 'Ton abonnement'
-  return <CadreCompte>
+  return <CadreCompte abonnement>
     <Grid gap="xl" className="compte-grille">
       <section className="compte-intro">
         <p className="compte-repere t-eyebrow">Ton espace FOREAS</p>
         <h1 className="compte-titre font-title t-display-xl">Mon abonnement</h1>
-        <p className="compte-description t-bodylg">Ta prochaine date de paiement.<br />Tes choix, au même endroit.</p>
+        <p className="compte-description t-bodylg">{p.connecte ? <>Ta prochaine date de paiement.<br />Tes choix, au même endroit.</> : <>Connecte-toi avec les identifiants de ton app FOREAS.</>}</p>
       </section>
       <section className="compte-zone" aria-label="Gestion de ton abonnement" aria-busy={p.occupe || p.initialisation}>
         {p.initialisation ? <div className="compte-attente" role="status">
           <p className="compte-aide t-bodylg">Recherche de ton abonnement…</p>
         </div> : !p.connecte ? <div className="compte-bloc">
-          <h2 className="compte-sous-titre font-title t-h1">Retrouve ton abonnement</h2>
-          <p className="compte-aide t-bodylg">Utilise ton adresse e-mail et ton mot de passe de l’app FOREAS.</p>
-          <form onSubmit={p.onConnexion} className="compte-formulaire">
-            <label htmlFor="compte-email" className="t-label">Adresse e-mail<input id="compte-email" type="email" autoComplete="username" required value={p.email} onChange={e => p.onEmail(e.target.value)} disabled={p.occupe} /></label>
-            <label htmlFor="compte-password" className="t-label">Mot de passe<input id="compte-password" type="password" autoComplete="current-password" required value={p.password} onChange={e => p.onPassword(e.target.value)} disabled={p.occupe} /></label>
-            <button disabled={p.occupe} className="compte-bouton compte-primaire"><span>{p.occupe ? 'Connexion en cours…' : 'Retrouver mon abonnement'}</span><ArrowUpRight aria-hidden="true" /></button>
+          <form onSubmit={p.onConnexion} className="compte-formulaire" aria-label="Connexion à ton compte FOREAS">
+            <label htmlFor="compte-email" className="t-body-bold">Adresse e-mail<input id="compte-email" type="email" autoComplete="username" required value={p.email} onChange={e => p.onEmail(e.target.value)} disabled={p.occupe} /></label>
+            <label htmlFor="compte-password" className="t-body-bold">Mot de passe<input id="compte-password" type="password" autoComplete="current-password" required value={p.password} onChange={e => p.onPassword(e.target.value)} disabled={p.occupe} /></label>
+            <button disabled={p.occupe} className="compte-bouton compte-primaire"><span>{p.occupe ? 'Connexion en cours…' : 'Me connecter'}</span><ArrowUpRight aria-hidden="true" /></button>
           </form>
-          <p className="compte-note t-bodylg">Mot de passe oublié ? Ouvre l’app et choisis « Mot de passe oublié » sur l’écran de connexion.</p>
+          <details className="compte-aide-connexion">
+            <summary className="t-body-bold"><span>Mot de passe oublié ?</span><ChevronDown aria-hidden="true" /></summary>
+            <p className="compte-note t-bodylg">Ouvre l’app FOREAS et choisis « Mot de passe oublié » sur l’écran de connexion.</p>
+          </details>
         </div> : <>
           {p.lu && (abo ? <>
             <div className="compte-carte" aria-live="polite">

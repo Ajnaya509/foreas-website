@@ -15,7 +15,7 @@ export default function ConfirmationArret({ essai, echeance, occupe, onArreter }
     <button disabled={occupe} className="compte-bouton compte-secondaire" onClick={() => dialogue.current?.showModal()}>Arrêter le renouvellement</button>
     <dialog ref={dialogue} className="compte-confirmation" aria-labelledby={titre} aria-describedby={description}>
       <div className="compte-confirmation-entete">
-        <h2 id={titre} tabIndex={-1} autoFocus className="compte-sous-titre font-title t-h2">Avant d’arrêter le renouvellement</h2>
+        <h2 id={titre} tabIndex={-1} autoFocus className="compte-sous-titre font-title t-h1">Avant d’arrêter le renouvellement</h2>
         <button type="button" className="compte-fermer" aria-label="Fermer la confirmation" onClick={fermer}><X aria-hidden="true" /></button>
       </div>
       <div id={description} className="compte-bloc">

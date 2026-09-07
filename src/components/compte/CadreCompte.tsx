@@ -6,8 +6,8 @@ import ForeasLogo from '@/components/experience/ForeasLogo'
 /** MASTER §3 / §8.2 : violet administratif, recette web AppleNoir.
  * §27 : Container est la grille du site ; aucune largeur concurrente.
  * §12 : logo officiel, sans effet. §26 : Lucide uniquement sur le web. */
-export default function CadreCompte({ children }: { children: ReactNode }) {
-  return <div className="espace-compte">
+export default function CadreCompte({ children, abonnement = false }: { children: ReactNode; abonnement?: boolean }) {
+  return <div className={`espace-compte${abonnement ? ' compte-abonnement' : ''}`}>
     <div className="compte-halos" aria-hidden="true" />
     <div className="compte-grain" aria-hidden="true" />
     <header className="compte-entete">

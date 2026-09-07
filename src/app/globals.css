@@ -1081,3 +1081,47 @@ h1, h2, h3, h4, h5, h6 {
 .compte-fermer { display: flex; flex: none; width: 48px; min-height: 48px; align-items: center; justify-content: center; border-radius: 12px; color: var(--text-secondary); }
 .compte-fermer:hover { color: var(--text-hero); background: var(--glass-on-noir); }
 .compte-confirmation .compte-actions { margin-top: 8px; }
+
+/* Gouttières du Container conservées quand seul le texte est agrandi. */
+.compte-abonnement :is(.compte-navigation, .compte-contenu, .compte-pied-liens) { padding-inline: 24px; }
+@media (min-width: 640px) {
+  .compte-abonnement :is(.compte-navigation, .compte-contenu, .compte-pied-liens) { padding-inline: 32px; }
+}
+@media (min-width: 1024px) {
+  .compte-abonnement :is(.compte-navigation, .compte-contenu, .compte-pied-liens) { padding-inline: 40px; }
+}
+
+/* Abonnement — MASTER §21 / §27 : une composition par espace disponible.
+ * La grille ratifiée borne le formulaire, sans nouvelle largeur maximale.
+ * Le bandeau publie sa hauteur réelle, y compris quand le texte est agrandi. */
+.compte-abonnement { display: flex; flex-direction: column; padding-bottom: var(--hauteur-bandeau-consentement, 0px); }
+.compte-abonnement .compte-navigation { @apply gap-lg py-md; }
+.compte-abonnement .compte-contenu { @apply py-xxl lg:py-massive; flex: 1; }
+.compte-abonnement .compte-grille { row-gap: 24px; }
+.compte-abonnement .compte-intro { @apply gap-md; }
+.compte-abonnement .compte-intro, .compte-abonnement .compte-zone { @apply sm:col-span-10 sm:col-start-2 md:col-span-8 md:col-start-3; }
+.compte-abonnement .compte-zone { overflow-wrap: anywhere; }
+.compte-abonnement .compte-formulaire { @apply gap-lg; }
+.compte-abonnement .compte-pied { @apply py-md; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+.compte-abonnement :where(a, button, input, summary) { scroll-margin-block: 24px calc(24px + var(--hauteur-bandeau-consentement, 0px)); }
+.compte-aide-connexion summary { display: flex; align-items: center; gap: 12px; min-height: 48px; padding-block: 12px; color: var(--text-secondary); cursor: pointer; list-style: none; }
+.compte-aide-connexion summary::-webkit-details-marker { display: none; }
+.compte-aide-connexion summary svg { margin-left: auto; }
+.compte-aide-connexion[open] summary svg { transform: rotate(180deg); }
+.compte-aide-connexion[open] { padding-bottom: 12px; }
+.compte-aide-connexion summary:hover { color: var(--text-hero); }
+@media (min-width: 1024px) {
+  .compte-abonnement .compte-contenu { display: grid; align-items: center; }
+  .compte-abonnement .compte-intro { @apply col-span-5 col-start-1; }
+  .compte-abonnement .compte-zone { @apply col-span-6 col-start-7; }
+  .compte-abonnement .compte-navigation, .compte-abonnement .compte-pied { @apply py-xxl; }
+}
+@media (min-width: 1280px) {
+  .compte-abonnement .compte-intro { @apply col-span-4 col-start-2; }
+  .compte-abonnement .compte-zone { @apply col-span-5 col-start-7; }
+}
+/* Sur téléphone, la confirmation devient un panneau ancré en bas.
+ * Sa hauteur reste libre, son contenu défile sur les écrans courts. */
+@media (max-width: 639px) {
+  .compte-confirmation { width: 100%; max-width: none; max-height: calc(100svh - 16px); max-height: calc(100dvh - 16px); margin: auto 0 0; padding: 24px; padding-bottom: max(24px, env(safe-area-inset-bottom)); border-bottom: 0; border-radius: var(--radius-modal) var(--radius-modal) 0 0; }
+}
