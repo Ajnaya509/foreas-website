@@ -48,6 +48,8 @@ import s from './tarifs3.module.css'
  */
 
 interface Props {
+  emailCompte: string
+  onReessayer: () => void
   /** Ce que le bouton doit dire — dépend de ce que le serveur accorde. */
   libelleBouton: string
   /** Les trois garanties affichées sous le bouton. */
@@ -56,9 +58,9 @@ interface Props {
 
 /** Le message que Stripe rend n'est pas toujours présentable. On garde le nôtre. */
 const ECHEC_GENERIQUE =
-  'Le paiement n’a pas abouti. L’argent est resté sur le compte. Vérifier la carte, puis réessayer.'
+  'Le paiement n’est pas confirmé. Vérifie son état avant de réessayer.'
 
-export default function FormulairePaiement({ libelleBouton, garanties }: Props) {
+export default function FormulairePaiement({ libelleBouton, garanties, emailCompte, onReessayer }: Props) {
   const checkout = useCheckout()
 
   /* ⚠️ 28/08 — CE CHAMP MANQUAIT, ET SON ABSENCE TUAIT LE TUNNEL ENTIER.
@@ -78,7 +80,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
 
      Un chauffeur payé, sans compte, sans que personne ne le sache. Exactement
      la panne que le commentaire du webhook dit avoir déjà été payée une fois. */
-  const [courriel, setCourriel] = useState('')
+  const courriel = emailCompte
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const [erreurChamp, setErreurChamp] = useState<{ courriel?: string }>({})
@@ -187,9 +189,12 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
 
   if (checkout.type === 'error') {
     return (
-      <p className={s.erreur} role="alert">
-        Le paiement n’a pas pu être préparé. {checkout.error.message}
-      </p>
+      <div>
+        <p className={s.erreur} role="alert">
+          Le paiement n’a pas pu être préparé. {checkout.error.message}
+        </p>
+        <button type="button" className={s.lien} onClick={onReessayer}>Actualiser mon paiement</button>
+      </div>
     )
   }
 
@@ -298,7 +303,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
             autoCapitalize="off"
             spellCheck={false}
             value={courriel}
-            onChange={(e) => setCourriel(e.target.value)}
+            readOnly
             /* ⚠️ 29/08 — LE PANIER SE CAPTURE ICI, PAS AU CLIC SUR « PAYER ».
                Première version : la capture vivait dans le gestionnaire de
                paiement, juste après `updateEmail`. Elle n'attrapait donc QUE les
@@ -338,7 +343,7 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
             </span>
           ) : (
             <span id={`${idCourriel}-aide`} className={s.champAide}>
-              Les codes de connexion arrivent à cette adresse.
+              Utilise le mot de passe que tu as choisi pour ce compte.
             </span>
           )}
         </label>
@@ -466,9 +471,10 @@ export default function FormulairePaiement({ libelleBouton, garanties }: Props) 
       </button>
 
       {erreur && (
-        <p id={idErreur} className={s.erreur} role="alert">
-          {erreur}
-        </p>
+        <div>
+          <p id={idErreur} className={s.erreur} role="alert">{erreur}</p>
+          <button type="button" className={s.lien} onClick={onReessayer} disabled={enCours}>Actualiser mon paiement</button>
+        </div>
       )}
 
       <p className={s.rassure}>

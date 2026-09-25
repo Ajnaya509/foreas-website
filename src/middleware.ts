@@ -63,19 +63,21 @@ export function middleware(request: NextRequest) {
     })
   }
 
-  // /r/<code> → mémorise le code parrain (attribution + remise checkout).
-  const refMatch = request.nextUrl.pathname.match(/^\/r\/([^/]+)/)
+  // The cookie remembers a proposed code. Only the server can validate attribution.
+  const refMatch = request.nextUrl.pathname.match(/^\/r\/([^/]+)$/)
+  let rawRef: string | null = request.nextUrl.searchParams.get('ref')
   if (refMatch) {
-    const code = decodeURIComponent(refMatch[1]).trim().toUpperCase().slice(0, 32)
-    if (code) {
-      res.cookies.set(REF_COOKIE, code, {
-        httpOnly: false, // lisible client (afficher la remise) + lu serveur au checkout
-        secure: true,
-        sameSite: 'lax',
-        maxAge: THIRTY_DAYS_SEC,
-        path: '/',
-      })
-    }
+    try { rawRef = decodeURIComponent(refMatch[1]) } catch { rawRef = null }
+  }
+  const code = rawRef?.trim().toUpperCase()
+  if (code && /^[A-Z0-9-]{6,32}$/.test(code)) {
+    res.cookies.set(REF_COOKIE, code, {
+      httpOnly: false,
+      secure: request.nextUrl.protocol === 'https:',
+      sameSite: 'lax',
+      maxAge: THIRTY_DAYS_SEC,
+      path: '/',
+    })
   }
 
   return res

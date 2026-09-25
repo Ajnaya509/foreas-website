@@ -1,81 +1,36 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import {
-  TUNNEL_SITE_IMMEDIAT,
-  calculerDebitDuJour,
-  type Formule,
-} from '@/lib/politiquePaiement'
+import { NextResponse, type NextRequest } from 'next/server'
+import Stripe from 'stripe'
+import { calculerDebitDuJour } from '@/lib/politiquePaiement'
+import { resoudreFormule } from '@/lib/offre'
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
+import { CheckoutOwnerError, verifiedCheckoutAccount } from '@/lib/checkoutOwner'
+import { checkoutEligibility } from '@/lib/checkoutEligibility'
+import { paymentLinkOffer, checkLegacyPaymentLink } from '@/lib/paymentLinkOffer'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+const headers = { 'Cache-Control': 'no-store' }
 
-/**
- * FOREAS — « QU'EST-CE QUI SERA PRÉLEVÉ AUJOURD'HUI ? »
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * POURQUOI CETTE ROUTE EXISTE
- *
- * Le brief de la page de paiement interdit une chose précise :
- *
- *     « ne jamais déduire l'essai dans le navigateur »
- *
- * Une page qui écrit « 0 € aujourd'hui » parce qu'un booléen posé dans son propre
- * code dit `false` ne confirme rien : elle se croit elle-même. Il faut que la
- * réponse vienne d'ailleurs que de la page qui l'affiche.
- *
- * Cette route est cet ailleurs. Elle répond, avec les constantes exactes que
- * `POST /api/checkout` utilise pour construire son `price_data` et son
- * `trial_end` : montant du jour, montant ensuite, date du premier vrai débit.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * CE QU'ELLE NE FAIT PAS — ET C'EST VOLONTAIRE
- *
- * · Elle ne crée AUCUNE session Stripe, donc aucune transaction, même en test.
- * · Elle n'appelle pas Stripe du tout. Pas de clé lue, pas de clé exposée.
- *   Le dépôt a déjà publié un préfixe de clé secrète par un `GET /api/checkout`
- *   trop bavard (14/08). Cette route ne touche à aucun secret : elle ne peut pas
- *   en fuiter un.
- * · Elle ne modifie aucune règle de prix, d'essai ou d'abonnement. Elle les LIT.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * ⚠️ POURQUOI `no-store` N'EST PAS UNE PRÉCAUTION DÉCORATIVE
- *
- * La réponse contient `premierDebitISO` — une date calculée à partir de
- * maintenant. Mise en cache ne serait-ce qu'une heure, elle annoncerait au
- * chauffeur suivant une date de prélèvement fausse. Un montant peut se
- * mettre en cache ; une échéance, non.
- */
-
-/** Liste fermée. Une chaîne inconnue est refusée, jamais devinée. */
-const FORMULES: readonly Formule[] = ['mensuel', 'annuel']
-
-function estFormule(v: string | null): v is Formule {
-  return v !== null && (FORMULES as readonly string[]).includes(v)
-}
-
+/** The personal trial decision follows confirmed Auth and current subscription
+ * evidence. This GET never creates or expires a payment session. */
 export async function GET(request: NextRequest) {
-  const demandee = request.nextUrl.searchParams.get('formule')
-
-  if (!estFormule(demandee)) {
-    return NextResponse.json(
-      { error: 'formule_inconnue', formulesAcceptees: FORMULES },
-      { status: 400, headers: { 'Cache-Control': 'no-store' } },
-    )
+  try {
+    const query = request.nextUrl.searchParams
+    if (query.getAll('formule').length !== 1 || query.getAll('payment_link').length > 1) throw new CheckoutOwnerError(400, 'Le lien contient plusieurs offres. Demande un nouveau lien à FOREAS.')
+    const formule = resoudreFormule(query.get('formule'))
+    if (!formule) throw new CheckoutOwnerError(400, 'Cette formule n’est plus proposée.')
+    const db = clientServeurOuNull()
+    if (!db || !process.env.STRIPE_SECRET_KEY) throw new CheckoutOwnerError(503, 'La vérification de ton compte est indisponible.')
+    const beneficiary = await verifiedCheckoutAccount(db, request.headers.get('authorization'))
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY.replace(/\s/g, ''), { apiVersion: '2025-02-24.acacia' as Stripe.StripeConfig['apiVersion'], timeout: 8000, maxNetworkRetries: 1 })
+    const eligibility = await checkoutEligibility(db, stripe, beneficiary.userId)
+    if (eligibility.active) return NextResponse.json({ accountId: beneficiary.userId, alreadySubscribed: true, confirmeParLeServeur: true }, { headers })
+    if (query.has('payment_link')) {
+      const offer = await paymentLinkOffer(db, query.get('payment_link'))
+      await checkLegacyPaymentLink(db, stripe, offer, beneficiary.userId)
+    }
+    return NextResponse.json({ ...calculerDebitDuJour(formule, eligibility.immediate, Date.now()), accountId: beneficiary.userId, alreadySubscribed: false, confirmeParLeServeur: true }, { headers })
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof CheckoutOwnerError ? error.message : 'Ton abonnement ne peut pas être vérifié. Réessaie dans un instant.' }, { status: error instanceof CheckoutOwnerError ? error.status : 503, headers })
   }
-
-  const debit = calculerDebitDuJour(demandee, TUNNEL_SITE_IMMEDIAT, Date.now())
-
-  return NextResponse.json(
-    {
-      ...debit,
-      /**
-       * Ce drapeau est lu par la page avant d'écrire quoi que ce soit sur
-       * l'essai. Sans lui, la page ne pourrait pas distinguer « le serveur a
-       * répondu qu'il n'y a pas d'essai » de « le serveur n'a pas répondu ».
-       * Ces deux situations n'ont pas le même affichage.
-       */
-      confirmeParLeServeur: true,
-    },
-    { headers: { 'Cache-Control': 'no-store' } },
-  )
 }

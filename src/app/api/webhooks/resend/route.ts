@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       sujet: `⚠️ Mail NON REMIS (${type.replace('email.', '')}) : ${adresse}`,
       reason:
         `mail NON REMIS (${type})${sujet ? ` — « ${sujet.slice(0, 80)} »` : ''}. ` +
-        `Si c'est le mail de bienvenue, le chauffeur a payé et n'a PAS ses identifiants. ` +
+        `Si c'est le mail de bienvenue, le chauffeur a terminé un checkout (essai ou abonnement : vérifier le montant réellement encaissé dans Stripe) et n'a PAS ses identifiants. ` +
         `Le renvoyer à la main, ou le joindre autrement.`,
     })
   }

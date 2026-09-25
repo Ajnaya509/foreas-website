@@ -1,274 +1,171 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
-import {
-  Building2, User, Mail, Phone, FileText, MessageSquare,
-  CheckCircle2, ArrowRight, ShieldCheck,
-} from 'lucide-react'
+import { useRef, useState, type FormEvent } from 'react'
+import Link from 'next/link'
+import { ArrowRight, CheckCircle2 } from 'lucide-react'
 import { authUrls } from '@/lib/auth-urls'
+import { EMPTY_APPLICATION, PARTNER_CATEGORIES, validatePartnerApplication, type PartnerApplication } from '@/lib/partnerApplication'
+import './partenaire.css'
 
-interface FormData {
-  company_name: string
-  contact_name: string
-  email: string
-  phone: string
-  siret: string
-  message: string
-  website: string // honeypot (caché) — rempli = bot
-}
-
-const EMPTY: FormData = {
-  company_name: '', contact_name: '', email: '', phone: '', siret: '', message: '', website: '',
-}
-
-function validate(d: FormData): Partial<Record<keyof FormData, string>> {
-  const e: Partial<Record<keyof FormData, string>> = {}
-  if (!d.company_name || d.company_name.trim().length < 2) e.company_name = 'Nom de société requis'
-  if (!d.contact_name || d.contact_name.trim().length < 2) e.contact_name = 'Ton nom requis'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) e.email = 'Email valide requis'
-  if (d.siret && d.siret.replace(/\s/g, '').length !== 14) e.siret = 'SIRET = 14 chiffres'
-  return e
-}
-
-const STEPS = [
-  { n: 1, t: 'Tu candidates', d: 'Ce formulaire, 1 minute. Aucun engagement.' },
-  { n: 2, t: 'On valide', d: 'On étudie ta demande sous 24-48 h.' },
-  { n: 3, t: 'Tu actives', d: 'Si c’est bon, tu reçois un email pour choisir ton mot de passe.' },
-]
-
+type Receipt = { reference: string; emailStatus: string }
 export default function PartnerSignupForm() {
-  const [data, setData] = useState<FormData>(EMPTY)
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
+  const [data, setData] = useState<PartnerApplication>({ ...EMPTY_APPLICATION })
+  const [errors, setErrors] = useState<Partial<Record<keyof PartnerApplication | 'form', string>>>({})
   const [loading, setLoading] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
-
-  const set = (k: keyof FormData, v: string) => {
-    setData((p) => ({ ...p, [k]: v }))
-    if (errors[k]) setErrors((p) => ({ ...p, [k]: undefined }))
+  const [receipt, setReceipt] = useState<Receipt | null>(null)
+  const [submitError, setSubmitError] = useState('')
+  const requestKey = useRef<string | null>(null)
+  const submittedBody = useRef<string | null>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
+  const form = useRef<HTMLFormElement>(null)
+  const set = (key: keyof PartnerApplication, value: string) => {
+    setData(previous => ({ ...previous, [key]: value }))
+    setErrors(previous => ({ ...previous, [key]: undefined }))
   }
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitError(null)
-    const v = validate(data)
-    if (Object.keys(v).length) { setErrors(v); return }
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    if (loading) return
+    const checked = validatePartnerApplication(data)
+    setErrors(checked.errors)
+    setSubmitError('')
+    if (Object.keys(checked.errors).length) {
+      const first = Object.keys(checked.errors)[0]
+      form.current?.querySelector<HTMLElement>('[name="' + first + '"]')?.focus()
+      return
+    }
+    const body = JSON.stringify(checked.data)
+    // Keep the same key and exact submitted body after an uncertain response.
+    if (submittedBody.current && submittedBody.current !== body) {
+      setSubmitError('Une demande précédente reste à confirmer. Rétablis ses informations et réessaie, ou contacte FOREAS avant d’en envoyer une autre.')
+      return
+    }
+    requestKey.current ||= crypto.randomUUID()
+    submittedBody.current = body
     setLoading(true)
     try {
-      const res = await fetch('/api/partner/apply', {
+      const response = await fetch('/api/partner/apply', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          company_name: data.company_name.trim(),
-          contact_name: data.contact_name.trim(),
-          email: data.email.trim().toLowerCase(),
-          phone: data.phone.trim() || undefined,
-          siret: data.siret.replace(/\s/g, '') || undefined,
-          message: data.message.trim() || undefined,
-          website: data.website, // honeypot
-        }),
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey.current },
+        body,
       })
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}))
-        throw new Error(j?.error || `Erreur ${res.status}`)
+      const result = await response.json().catch(() => null)
+      if (!response.ok) {
+        if ([400, 413, 415, 429].includes(response.status)) submittedBody.current = null
+        if (result?.error?.fields) setErrors(result.error.fields)
+        throw new Error(result?.error?.message || 'La réception reste à vérifier. Réessaie avec ce formulaire.')
       }
-      setDone(true)
-    } catch (err) {
-      setSubmitError((err as Error).message || 'Une erreur est survenue. Réessaie dans un instant.')
-    } finally {
-      setLoading(false)
-    }
+      if (result?.contract_version !== 'partner.v1' || result?.data?.application?.status !== 'received' || typeof result.data.application.reference !== 'string') throw new Error('La réception reste à vérifier. Réessaie avec ce formulaire.')
+      setReceipt({ reference: result.data.application.reference, emailStatus: result.data.confirmation_email })
+      requestAnimationFrame(() => heading.current?.focus())
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Connexion interrompue. Réessaie avec ce formulaire.')
+    } finally { setLoading(false) }
   }
-
-  const inputCls = (err?: string) =>
-    `w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.05] border font-body text-sm text-white placeholder-white/25 outline-none focus:border-violet-500/50 focus:bg-white/[0.07] transition-all ${
-      err ? 'border-rose-500/60' : 'border-white/[0.08]'
-    }`
-
-  return (
-    <main className="min-h-screen bg-black text-white overflow-x-hidden">
-      <Header />
-
-      <div className="relative pt-28 pb-20 md:pt-36 md:pb-24 px-6 lg:px-8 overflow-hidden">
-        {/* Halos warm — charte variant warm */}
-        <div
-          className="absolute inset-0 pointer-events-none animate-halo-pulse"
-          aria-hidden
-          style={{
-            background:
-              'radial-gradient(ellipse 60% 50% at 20% 25%, rgba(140,82,255,0.20) 0%, transparent 70%),' +
-              'radial-gradient(ellipse 50% 40% at 85% 65%, rgba(255,102,153,0.12) 0%, transparent 70%)',
-          }}
-        />
-
-        <div className="relative max-w-2xl mx-auto">
-          {/* Espace Directeur (déjà partenaire) */}
-          <div className="flex justify-end mb-4">
-            <a href={authUrls.loginPartner} className="text-xs font-medium text-white/35 hover:text-violet-400 transition-colors">
-              Espace Directeur →
-            </a>
-          </div>
-
-          {/* Hero */}
-          <div className="text-center mb-12">
-            <p className="font-body text-xs font-semibold uppercase tracking-[0.22em] text-violet-400 mb-3">
-              Partenaire FOREAS
-            </p>
-            <h1 className="font-title text-4xl md:text-5xl font-bold leading-[1.08] tracking-tight mb-4">
-              <span className="text-white">Deviens partenaire.</span>
-              <br />
-              <span style={{ background: 'linear-gradient(135deg, #8C52FF 0%, #FF6699 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Toujours plus loin.
-              </span>
-            </h1>
-            <p className="font-body text-base text-white/55 max-w-lg mx-auto">
-              Auto-école, flotte, fédération, créateur, agent : tu amènes des chauffeurs sur FOREAS,
-              tu touches une commission mensuelle récurrente tant qu&apos;ils restent actifs.
-            </p>
-          </div>
-
-          <AnimatePresence mode="wait">
-            {done ? (
-              <motion.div
-                key="done"
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="p-8 rounded-2xl border border-white/[0.07] bg-white/[0.03] text-center"
-              >
-                <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #8C52FF, #FF6699)', boxShadow: '0 8px 32px rgba(140,82,255,0.4)' }}>
-                  <CheckCircle2 className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="font-title text-3xl font-bold text-white mb-3">Demande envoyée.</h2>
-                <p className="font-body text-sm text-white/55 max-w-md mx-auto mb-6">
-                  On revient vers toi sous <strong className="text-white">24 à 48 h</strong>. Rien à faire
-                  de ton côté pour l&apos;instant — on t&apos;envoie un email dès que c&apos;est validé.
-                </p>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/30 bg-amber-500/[0.06] font-body text-sm text-amber-400">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  En attente de validation
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                {/* Comment ça marche */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {STEPS.map((s) => (
-                    <div key={s.n} className="p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
-                      <div className="w-7 h-7 rounded-lg mb-2.5 flex items-center justify-center font-body text-xs font-bold text-white"
-                        style={{ background: 'linear-gradient(135deg, rgba(140,82,255,0.25), rgba(255,102,153,0.18))' }}>
-                        {s.n}
-                      </div>
-                      <p className="font-body text-sm font-semibold text-white/90 mb-0.5">{s.t}</p>
-                      <p className="font-body text-[11px] text-white/40 leading-relaxed">{s.d}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Formulaire */}
-                <form onSubmit={onSubmit} className="p-6 md:p-8 rounded-2xl border border-white/[0.07] bg-white/[0.03] space-y-5">
-                  <h2 className="font-title text-xl font-semibold text-white">Ta candidature</h2>
-
-                  {/* Honeypot — caché aux humains, piège à bots */}
-                  <input
-                    type="text" name="website" tabIndex={-1} autoComplete="off"
-                    value={data.website} onChange={(e) => set('website', e.target.value)}
-                    aria-hidden="true"
-                    style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
-                  />
-
-                  {/* Société */}
-                  <Field label="Société ou structure *" icon={Building2} error={errors.company_name}>
-                    <input type="text" value={data.company_name} maxLength={120}
-                      onChange={(e) => set('company_name', e.target.value)}
-                      placeholder="Ex : Auto-école Dupont" className={inputCls(errors.company_name)} />
-                  </Field>
-
-                  {/* Contact */}
-                  <Field label="Ton nom *" icon={User} error={errors.contact_name}>
-                    <input type="text" value={data.contact_name} maxLength={120}
-                      onChange={(e) => set('contact_name', e.target.value)}
-                      placeholder="Prénom Nom" className={inputCls(errors.contact_name)} />
-                  </Field>
-
-                  {/* Email */}
-                  <Field label="Email *" icon={Mail} error={errors.email}>
-                    <input type="email" value={data.email}
-                      onChange={(e) => set('email', e.target.value)}
-                      placeholder="ton@email.com" className={inputCls(errors.email)} />
-                  </Field>
-
-                  {/* Téléphone */}
-                  <Field label="Téléphone (optionnel)" icon={Phone} error={errors.phone}>
-                    <input type="tel" value={data.phone} maxLength={30}
-                      onChange={(e) => set('phone', e.target.value)}
-                      placeholder="+33 6 12 34 56 78" className={inputCls(errors.phone)} />
-                  </Field>
-
-                  {/* SIRET */}
-                  <Field label="SIRET (optionnel)" icon={FileText} error={errors.siret}>
-                    <input type="text" value={data.siret} maxLength={14}
-                      onChange={(e) => set('siret', e.target.value.replace(/\D/g, '').slice(0, 14))}
-                      placeholder="14 chiffres" className={inputCls(errors.siret)} />
-                  </Field>
-
-                  {/* Message */}
-                  <Field label="Message (optionnel)" icon={MessageSquare} error={errors.message} textarea>
-                    <textarea value={data.message} maxLength={2000} rows={3}
-                      onChange={(e) => set('message', e.target.value)}
-                      placeholder="Dis-nous en deux mots qui tu es et combien de chauffeurs tu peux amener."
-                      className={`${inputCls(errors.message)} resize-none`} />
-                  </Field>
-
-                  {submitError && (
-                    <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/[0.06] font-body text-sm text-rose-400">
-                      {submitError}
-                    </div>
-                  )}
-
-                  <button type="submit" disabled={loading}
-                    className="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-xl font-body font-semibold text-sm text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ background: loading ? 'rgba(140,82,255,0.5)' : 'linear-gradient(135deg, #8C52FF 0%, #FF6699 100%)', boxShadow: loading ? 'none' : '0 4px 24px rgba(140,82,255,0.35)' }}>
-                    {loading ? (
-                      <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Envoi…</>
-                    ) : (
-                      <>Envoyer ma candidature<ArrowRight className="w-4 h-4" /></>
-                    )}
-                  </button>
-
-                  <p className="flex items-center justify-center gap-1.5 font-body text-xs text-white/30 text-center">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    Aucun compte créé sans ta validation. Données utilisées pour le partenariat uniquement.
-                  </p>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      <Footer />
-    </main>
-  )
-}
-
-function Field({
-  label, icon: Icon, error, textarea, children,
-}: {
-  label: string; icon: React.ElementType; error?: string; textarea?: boolean; children: React.ReactNode
-}) {
-  return (
-    <div>
-      <label className="block font-body text-xs font-medium text-white/60 mb-1.5">{label}</label>
-      <div className="relative">
-        <Icon className={`absolute left-3.5 w-4 h-4 text-white/25 pointer-events-none ${textarea ? 'top-3.5' : 'top-1/2 -translate-y-1/2'}`} />
-        {children}
-      </div>
-      {error && <p className="font-body text-xs text-rose-400 mt-1">{error}</p>}
+  const input = (key: keyof PartnerApplication, label: string, options: { type?: string; required?: boolean; maxLength?: number; autoComplete?: string; placeholder?: string } = {}) => (
+    <div className="partner-field">
+      <label htmlFor={'partner-' + key}>{label}{options.required ? ' *' : ' · facultatif'}</label>
+      <input id={'partner-' + key} name={key} type={options.type || 'text'} value={data[key]}
+        onChange={e => set(key, e.target.value)} required={options.required}
+        maxLength={options.maxLength || 120} autoComplete={options.autoComplete}
+        placeholder={options.placeholder} aria-invalid={!!errors[key]}
+        aria-describedby={errors[key] ? key + '-error' : undefined} />
+      {errors[key] && <p className="partner-error" id={key + '-error'}>{errors[key]}</p>}
     </div>
+  )
+  return (
+    <main className="partner-page">
+      <header className="partner-header">
+        <Link className="partner-brand" href="/" aria-label="FOREAS, accueil">FOREAS<span>DRIVER</span></Link>
+        <a className="partner-link" href={authUrls.loginPartner}>Mon espace partenaire<ArrowRight size={16} aria-hidden /></a>
+      </header>
+      <div className="partner-content">
+        <section className="partner-intro" aria-labelledby="partner-title">
+          <p className="partner-eyebrow">Programme partenaire</p>
+          <h1 id="partner-title">Ton réseau.<br /><span>De nouvelles possibilités.</span></h1>
+          <p>Tu accompagnes des chauffeurs VTC ? Propose-leur FOREAS Driver et reçois une commission sur les abonnements que tu apportes.</p>
+          <div className="partner-reward" aria-label="Commissions du partenaire">
+            <div><strong>10 €</strong><span>par mensualité admissible payée, après deux mois consécutifs payés</span></div>
+            <div><strong>50 €</strong><span>au premier paiement annuel admissible</span></div>
+          </div>
+          <p className="partner-note">Ces montants sont tes commissions pour les nouveaux partenaires, sous réserve des conditions publiées et acceptées. Les deux premières mensualités admissibles ouvrent alors 20 € de droits après le paiement du deuxième mois. Le renouvellement annuel ne donne pas de nouvelle commission. Un abonnement remboursé ou contesté peut être exclu.</p>
+          <ol className="partner-steps">
+            <li><span>1</span><div><strong>Présente ton activité</strong><p>Quelques informations pour adapter le partenariat.</p></div></li>
+            <li><span>2</span><div><strong>On étudie ta candidature</strong><p>Le programme et ses conditions te sont proposés selon ton activité.</p></div></li>
+            <li><span>3</span><div><strong>Partage depuis ton espace</strong><p>Après validation : ton lien, tes supports et le suivi de tes commissions.</p></div></li>
+          </ol>
+          <p className="partner-note">Une flotte peut recommander l’app ou demander à équiper ses chauffeurs. Cette demande ne donne aucun accès aux comptes personnels des chauffeurs.</p>
+          <details className="partner-application-help">
+            <summary>Préparer et suivre ma candidature</summary>
+            <p className="partner-note">Ton activité, ta structure ou ton nom professionnel, ton nom et ton email suffisent pour commencer. Le site professionnel, la zone, le projet, le téléphone, le SIRET et le message restent facultatifs. Aucun fichier bancaire ou document de chauffeur n’est demandé ici.</p>
+            <p className="partner-note">Après l’envoi, garde la référence affichée. Une demande reçue attend encore la décision de FOREAS. Un email confié au service d’envoi ne prouve pas son arrivée dans ta boîte. Aucun délai d’admission n’est garanti à ce stade.</p>
+            <p className="partner-note">Si la réception reste incertaine, réessaie avec le même formulaire et les mêmes informations. Si tu les as modifiées ou si le problème persiste, contacte FOREAS avant d’envoyer une nouvelle demande.</p>
+            <p className="partner-note">Après admission, retrouve le compte lié à ton dossier, lis les conditions publiées dans Aide et accepte-les si elles te conviennent. Partage seulement le lien personnel affiché comme disponible. Les informations de versement se complètent ensuite dans le parcours sécurisé.</p>
+            <a className="partner-link" href="mailto:contact@foreas.xyz?subject=Candidature%20partenaire">Demander de l’aide avec ma référence</a>
+          </details>
+        </section>
+        <section className="partner-card" aria-labelledby="application-title">
+          {receipt ? (
+            <div className="partner-receipt">
+              <CheckCircle2 size={36} aria-hidden />
+              <p className="partner-eyebrow">Candidature enregistrée</p>
+              <h2 ref={heading} tabIndex={-1} id="application-title">Ta demande est reçue.</h2>
+              <p>Elle attend l’étude de FOREAS. L’enregistrement ne vaut pas encore admission au programme.</p>
+              <dl><dt>Ta référence</dt><dd>{receipt.reference}</dd></dl>
+              <p>{receipt.emailStatus === 'accepted'
+                ? 'Un email de confirmation a été confié à notre service d’envoi. Garde aussi cette référence.'
+                : 'Garde cette référence. L’envoi de l’email de confirmation n’est pas confirmé.'}</p>
+              <a className="partner-button partner-button-secondary" href={'mailto:contact@foreas.xyz?subject=' + encodeURIComponent('Candidature partenaire ' + receipt.reference)}>Contacter FOREAS</a>
+              <Link className="partner-link" href="/">Revenir à FOREAS</Link>
+            </div>
+          ) : (
+            <form ref={form} onSubmit={submit} noValidate aria-busy={loading}>
+              <h2 id="application-title">Parlons de ton activité.</h2>
+              <p className="partner-form-intro">Les champs avec * suffisent pour commencer.</p>
+              <div className="partner-honeypot" aria-hidden="true">
+                <label htmlFor="partner-website">Website</label>
+                <input id="partner-website" name="website" tabIndex={-1} autoComplete="off" value={data.website} onChange={e => set('website', e.target.value)} />
+              </div>
+              <fieldset disabled={loading}>
+                <div className="partner-field">
+                  <label htmlFor="partner-category">Ton activité *</label>
+                  <select id="partner-category" name="category" required value={data.category} onChange={e => set('category', e.target.value)} aria-invalid={!!errors.category} aria-describedby={errors.category ? 'category-error' : undefined}>
+                    <option value="">Choisis une activité</option>
+                    {PARTNER_CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                  {errors.category && <p id="category-error" className="partner-error">{errors.category}</p>}
+                </div>
+                {input('company_name', 'Structure ou nom professionnel', { required: true, autoComplete: 'organization' })}
+                {input('contact_name', 'Ton nom', { required: true, autoComplete: 'name' })}
+                {input('email', 'Ton email', { required: true, type: 'email', autoComplete: 'email', maxLength: 160 })}
+                <details>
+                  <summary>Préciser mon projet · facultatif</summary>
+                  {input('professional_url', 'Site ou page professionnelle', { type: 'url', maxLength: 500, placeholder: 'https://…' })}
+                  {input('territory', 'Ville ou zone d’activité')}
+                  <div className="partner-field">
+                    <label htmlFor="partner-collaboration">Ton projet</label>
+                    <select id="partner-collaboration" name="collaboration_mode" value={data.collaboration_mode} onChange={e => set('collaboration_mode', e.target.value)}>
+                      <option value="recommendation">Recommander FOREAS Driver</option>
+                      <option value="team_equipment">Équiper mes chauffeurs</option>
+                      <option value="both">Les deux</option>
+                    </select>
+                  </div>
+                  {input('phone', 'Téléphone', { type: 'tel', maxLength: 30, autoComplete: 'tel' })}
+                  {input('siret', 'SIRET', { maxLength: 30 })}
+                  <div className="partner-field">
+                    <label htmlFor="partner-message">Un mot sur ton projet · facultatif</label>
+                    <textarea id="partner-message" name="message" rows={4} maxLength={2000} value={data.message} onChange={e => set('message', e.target.value)} />
+                    {errors.message && <p className="partner-error">{errors.message}</p>}
+                  </div>
+                </details>
+                {(submitError || errors.form) && <p className="partner-error partner-alert" role="alert">{submitError || errors.form}</p>}
+                <button className="partner-button" type="submit" disabled={loading}>{loading ? 'Enregistrement…' : 'Envoyer ma candidature'}<ArrowRight size={18} aria-hidden /></button>
+              </fieldset>
+              <p className="partner-note">EPHIALTES utilise ces informations pour examiner ta candidature et te répondre. <Link href="/devenir-partenaire/donnees">Utilisation de tes données et tes droits</Link>.</p>
+            </form>
+          )}
+        </section>
+      </div>
+      <footer className="partner-footer"><span>FOREAS, toujours plus loin.</span><a href="mailto:contact@foreas.xyz">Une question ? Contacte-nous</a></footer>
+    </main>
   )
 }

@@ -103,69 +103,50 @@ test('arrêt enregistré : aucun prochain renouvellement annoncé, formats Acaci
   assert.equal(basil.prochain_prelevement, new Date(1800000000000).toISOString())
 })
 
-test('inscription : lien stable, rejeu accepté, conflit de propriétaire refusé', async () => {
-  let rows = []; let writes = 0
-  const supabase = { from: table => {
-    assert.equal(table, 'subscriptions'); let mutation
-    const q = { select: () => q, eq: () => q, insert: v => { mutation = v; return q }, update: v => { mutation = v; return q },
-      then: resolve => { if (mutation) { rows = [{ id: 'row', ...mutation }]; writes++ } resolve({ data: rows, error: null }) } }
-    return q
-  } }
+test('liaison : la réponse protégée doit confirmer la transaction', async () => {
+  const calls = []
   const lien = { userId: 'auth-A', customerId: 'cus_A', subscriptionId: 'sub_A', status: 'trialing', periodEnd: '2026-09-10', pricePerMonth: 29.99 }
-  await lierAbonnement(supabase, lien); await lierAbonnement(supabase, lien)
-  assert.equal(rows.length, 1); assert.equal(rows[0].user_id, 'auth-A'); assert.equal(writes, 2)
-  await assert.rejects(lierAbonnement(supabase, { ...lien, userId: 'auth-B' }), /conflit/)
-  assert.equal(writes, 2)
-})
-
-test('nouveau compte : le dossier est relié, puis activé avec son identité Auth', async () => {
-  const calls = []
-  const admin = { auth: { admin: { createUser: async () => ({ data: { user: { id: 'auth-new' } }, error: null }) } },
-    from(table) { const q = { upsert: value => { calls.push([table, 'upsert', value]); return q }, update: value => { calls.push([table, 'update', value]); return q }, eq: (k,v) => { calls.push([table,k,v]); return q },
-      is: (k,v) => { calls.push([table,k,v]); return q }, select: async () => ({ data: [{ id: 'auth-new' }], error: null }) }; return q }
+  await lierAbonnement({ rpc: async (name, args) => { calls.push({ name, args }); return { data: { status: 'linked', subscription_row_id: 'row' } } } }, lien)
+  assert.equal(calls[0].name, 'partner_billing_link'); assert.equal(calls[0].args.p_auth_user_id, 'auth-A')
+  for (const reply of [{ error: { message: 'BILLING_IDENTITY_CONFLICT' } }, { data: {} }, { data: { status: 'linked' } }]) {
+    await assert.rejects(lierAbonnement({ rpc: async () => reply }, lien), /ecriture_lien_abonnement/)
   }
-  const { provisionDriverAccount, activerAccesChauffeur } = charger('../src/lib/provisionDriverAccount.ts', { './supabaseServeur': { clientServeurOuNull: () => admin } })
-  const compte = await provisionDriverAccount({ email: 'new@example.test' }); assert.equal(compte.status, 'created')
-  const r = await activerAccesChauffeur({ email: 'new@example.test', userId: compte.userId, compteCree: true, finEssai: '2099-01-01T00:00:00Z' })
-  assert.equal(r.ouvert, true)
-  assert.ok(calls.some(c => c[0] === 'drivers' && c[1] === 'update' && c[2].auth_user_id === 'auth-new'))
-  assert.ok(calls.some(c => c[0] === 'drivers' && c[1] === 'auth_user_id' && c[2] === 'auth-new'))
 })
 
-test('compte historique sans lien : aucune réparation supposée et aucun accès annoncé', async () => {
-  const calls = []
-  const admin = { from(table) { const q = { update: value => { calls.push(value); return q }, eq: () => q, select: async () => ({ data: [], error: null }) }; return q } }
-  const { activerAccesChauffeur } = charger('../src/lib/provisionDriverAccount.ts', { './supabaseServeur': { clientServeurOuNull: () => admin } })
-  const r = await activerAccesChauffeur({ email: 'old@example.test', userId: 'auth-old', compteCree: false })
-  assert.equal(r.ouvert, false); assert.ok(calls.every(c => c.auth_user_id === undefined))
+test('anciens chemins fermés : ni compte depuis un email ni accès hors transaction', async () => {
+  const { provisionDriverAccount, activerAccesChauffeur } = charger('../src/lib/provisionDriverAccount.ts')
+  assert.equal((await provisionDriverAccount({ email: 'new@example.test' })).status, 'failed')
+  assert.equal((await activerAccesChauffeur({ userId: 'auth-new', compteCree: true })).ouvert, false)
 })
 
-test('compte existant : identité confirmée côté Auth, pas celle du profil', async () => {
-  const admin = { auth: { admin: {
-    createUser: async () => ({ data: { user: null }, error: { code: 'email_exists', message: 'exists' } }),
-    listUsers: async () => ({ data: { users: [{ id: 'auth-existing', email: 'exist@example.test', email_confirmed_at: '2026-01-01' }] }, error: null }),
-  } } }
-  const { provisionDriverAccount } = charger('../src/lib/provisionDriverAccount.ts', { './supabaseServeur': { clientServeurOuNull: () => admin } })
-  assert.deepEqual(await provisionDriverAccount({ email: 'exist@example.test' }), { status: 'already_exists', userId: 'auth-existing' })
+const { synchroniserAbonnement } = charger('../src/lib/synchroniserAbonnement.ts', {
+  './checkoutOwner': charger('../src/lib/checkoutOwner.ts'),
 })
-
-const { synchroniserAbonnement } = charger('../src/lib/synchroniserAbonnement.ts')
-for (const [name, subs, attendu] of [
-  ['arrêt prévu : accès maintenu jusqu’à la fin', [{ ...subscription, cancel_at_period_end: true }], true],
-  ['arrêt terminé : accès et palier fermés', [{ ...subscription, status: 'canceled' }], false],
-  ['ancien arrêt reçu en retard : nouvel abonnement préservé', [{ ...subscription, status: 'canceled' }, { ...subscription, id: 'sub_new', status: 'active' }], true],
+for (const [name, subs] of [
+  ['arrêt prévu : transmettre la fin réelle', [{ ...subscription, cancel_at_period_end: true }]],
+  ['arrêt terminé : transmettre l’annulation', [{ ...subscription, status: 'canceled' }]],
+  ['ancien arrêt : inclure aussi le nouvel abonnement', [{ ...subscription, status: 'canceled' }, { ...subscription, id: 'sub_new', status: 'active' }]],
 ]) {
   test(name, async () => {
-    const changes = []
-    const admin = { from(table) {
-      let write
-      const q = { select: () => q, update: v => { write = v; return q }, upsert: v => { write = v; return q }, eq: (k,v) => { if (table === 'drivers') assert.deepEqual([k,v], ['auth_user_id','auth-A']); return q },
-        then: resolve => { if (write) changes.push({ table, write }); resolve({ error: null, data: write ? [{ id:'row' }] : [{ user_id:'auth-A', stripe_customer_id:'cus_A' }] }) } }
-      return q
-    } }
-    await synchroniserAbonnement(admin, { subscriptions: { list: async p => { assert.equal(p.customer,'cus_A'); return { data: subs, has_more: false } } } }, 'sub_A')
-    assert.equal(changes.find(c => c.table === 'drivers').write.subscription_active, attendu)
-    assert.equal(changes.find(c => c.table === 'user_profiles').write.user_id, 'auth-A')
-    assert.equal(changes.find(c => c.table === 'user_profiles').write.tier, attendu ? 'pro' : 'free')
+    const calls = [], observation = '92929292-0000-4000-8000-000000000001'
+    const admin = {
+      from(table) {
+        assert.equal(table, 'subscriptions')
+        let fields
+        const q = { select: v => { fields = v; return q }, eq: () => q,
+          then: resolve => resolve({ error: null, data: fields === 'user_id' ? [{ user_id: 'auth-A' }] : subs.map(sub => ({ stripe_customer_id: 'cus_A', stripe_subscription_id: sub.id })) }) }
+        return q
+      },
+      rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'partner_billing_observation_begin' ? observation : { status: 'synced' }, error: null } },
+    }
+    await synchroniserAbonnement(admin, { subscriptions: { list: async p => {
+      assert.equal(calls[0].name, 'partner_billing_observation_begin'); assert.equal(p.customer, 'cus_A')
+      return { data: subs.map(sub => ({ ...sub, customer: 'cus_A' })), has_more: false }
+    } } }, 'sub_A')
+    const write = calls.find(c => c.name === 'partner_billing_sync_owner').args
+    assert.equal(write.p_auth_user_id, 'auth-A'); assert.equal(write.p_observation_id, observation)
+    assert.deepEqual(write.p_states.map(s => [s.id, s.status]), subs.map(s => [s.id, s.status]))
+    assert.equal(write.p_states[0].period_end, new Date(subscription.current_period_end * 1000).toISOString())
+    assert.deepEqual(write.p_expected_links, subs.map(sub => ({ id: sub.id, customer: 'cus_A' })))
   })
 }

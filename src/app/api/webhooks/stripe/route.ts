@@ -1,13 +1,14 @@
 import { NextResponse, after } from 'next/server'
 import { monterUneMarche } from '@/lib/escalier'
 import Stripe from 'stripe'
-import { sendWelcomeEmail, sendProvisionFailureAlert } from '@/lib/email'
+import { sendProvisionFailureAlert } from '@/lib/email'
+import { sendCheckoutWelcome } from '@/lib/partnerCheckoutWelcome'
 import { construireSignaux, verifierCumulEssai, enregistrerEssai } from '@/lib/essaisAccordes'
 import { annulerEnvoiProgramme } from '@/lib/email'
 import { synchroniserAbonnement } from '@/lib/synchroniserAbonnement'
-import { lierAbonnement } from '@/lib/lierAbonnement'
+import { activateOwnedCheckout, beginBillingObservation } from '@/lib/checkoutOwner'
+import { bindPartnerCheckout } from '@/lib/partnerCheckoutAttribution'
 import { clientServeur } from '@/lib/supabaseServeur'
-import { provisionDriverAccount, activerAccesChauffeur } from '@/lib/provisionDriverAccount'
 // ── 20/08/2026 — PLUS DE REPLI SILENCIEUX VERS LA CLÉ PUBLIQUE ──────────────
 // Cette route retombait sur la clé publique quand la clé serveur manquait.
 // Le jour d'une rotation de clé, ce `||` ne produit AUCUNE erreur : la route se
@@ -17,6 +18,8 @@ import { provisionDriverAccount, activerAccesChauffeur } from '@/lib/provisionDr
 // que de dégrader.
 import { cleServeurOuVide, clientServeurOuNull } from '@/lib/supabaseServeur'
 import { repere } from '@/lib/journal'
+import { recordPartnerPaidInvoice, recordPartnerInvoiceIssue } from '@/lib/partnerBillingEvents'
+import { bindEnrollmentCheckout, blockEnrollmentInvoiceIssue, hasEnrollmentReference, recordEnrollmentPaidInvoice } from '@/lib/partnerEnrollmentAttribution'
 
 /**
  * ⚠️ 21/08/2026 — LE TEMPS D'EXÉCUTION N'ÉTAIT DÉCLARÉ NULLE PART.
@@ -80,100 +83,8 @@ const PLAN_MAP: Record<string, { name: string; cycle: string }> = {
 }
 
 async function upsertSubscriber(data: Record<string, unknown>) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = cleServeurOuVide()
-  if (!supabaseUrl || !supabaseKey) {
-    console.log('[webhook] Supabase non configuré — subscriber non sauvegardé:', repere(data.email))
-    return
-  }
-  try {
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    // ⚠️ 21/08/2026 — CE JOURNAL DISAIT « SAUVEGARDÉ » À CHAQUE ÉCHEC.
-    //
-    // L'écriture échouait en 42P10 : `ON CONFLICT (stripe_subscription_id)`
-    // sans index unique sur cette colonne. Reproduit sans rien écrire :
-    //   EXPLAIN INSERT INTO subscribers (…) ON CONFLICT (stripe_subscription_id) …
-    //   → « there is no unique or exclusion constraint matching … »
-    //
-    // Et le `catch` ne s'exécutait JAMAIS : supabase-js ne rejette pas sur une
-    // erreur PostgREST, il RÉSOUT avec { data: null, error }. Personne ne
-    // déstructurait `error`, donc la ligne suivante s'exécutait et journalisait
-    // un succès. Le bloc `catch` était du code mort.
-    //
-    // C'est le pire mode de panne : pas d'exception, pas d'alerte, un journal
-    // qui affirme le contraire de ce qui s'est passé. Ajouter un `throw` dans
-    // le catch n'aurait rien changé — il ne tourne pas.
-    //
-    // L'index unique manquant est posé par la migration
-    // subscribers_index_unique_sur_stripe_subscription_id.
-    // ─────────────────────────────────────────────────────────────────────────
-    // ⚠️ 21/08/2026, TROISIÈME PASSE — LA CAUSE, PAS LE SYMPTÔME.
-    //
-    // Le commentaire vingt lignes plus bas DÉCRIT ce défaut depuis la deuxième
-    // passe : « la table porte aussi un index unique sur `stripe_customer_id`,
-    // que `onConflict: 'stripe_subscription_id'` ne couvre pas ».
-    //
-    // Cette passe-là avait corrigé le SYMPTÔME — lever au lieu de se taire, pour
-    // que Stripe rejoue. Mais le rejeu échoue à l'identique, indéfiniment : la
-    // contrainte violée est toujours là. Un correctif qui fait crier une panne
-    // sans la réparer transforme une perte silencieuse en boucle bruyante.
-    //
-    // Vérifié en base le 21/08 à 21h20 UTC — `pg_indexes` sur `subscribers` :
-    //   · subscribers_stripe_customer_id_key      UNIQUE (stripe_customer_id)
-    //   · subscribers_stripe_subscription_id_key  UNIQUE (stripe_subscription_id)
-    //
-    // Le cas réel n'a rien d'exotique : un chauffeur au mensuel qui passe à
-    // l'annuel. Nouvel abonnement, MÊME client. L'écriture ne trouve pas de
-    // conflit sur l'abonnement, tente d'insérer, heurte l'unicité du client, et
-    // rend 23505. Chauffeur débité, aucune ligne, aucun accès. C'est le passage
-    // le plus rentable du site qui casse.
-    //
-    // On désigne donc le CLIENT comme clé de rapprochement : un client a une
-    // ligne, et son abonnement courant y est mis à jour. L'unicité sur
-    // l'abonnement reste en place et continue de bloquer les vrais doublons.
-    //
-    // ⚠️ SI L'IDENTIFIANT CLIENT MANQUE, on retombe sur l'ancienne clé. Un
-    // `onConflict` sur une colonne nulle ne rapproche rien et insérerait en
-    // double : mieux vaut l'ancien comportement, connu, que ce silence-là.
-    // ─────────────────────────────────────────────────────────────────────────
-    const cleDeRapprochement = data.stripe_customer_id
-      ? 'stripe_customer_id'
-      : 'stripe_subscription_id'
-
-    const { error } = await supabase
-      .from('subscribers')
-      .upsert(data, { onConflict: cleDeRapprochement })
-    if (error) {
-      // ⚠️ 21/08/2026, SECONDE PASSE — ICI, LE `return` PERDAIT LE PAIEMENT.
-      //
-      // Le matin, j'ai corrigé le journal qui mentait : il annonçait
-      // « sauvegardé » à chaque échec. Mais j'ai laissé un `return`. La
-      // fonction ne rend rien, l'appelant ne peut pas savoir, et le webhook
-      // répondait 200 — donc Stripe ne rejouait JAMAIS.
-      //
-      // C'est la même panne que celle du matin, déplacée d'un cran : au lieu
-      // de mentir dans le journal, elle se taisait dans la valeur de retour.
-      //
-      // DÉCLENCHEUR RÉEL, pas hypothétique : la table porte aussi un index
-      // unique sur `stripe_customer_id`, que `onConflict:
-      // 'stripe_subscription_id'` ne couvre pas. Un second abonnement du même
-      // client rend 23505 → chauffeur débité, aucune ligne, aucune alerte.
-      //
-      // On LÈVE. Le rattrapage libère la réservation et rend 500 : Stripe
-      // rejoue, et quelqu'un finit par voir l'erreur.
-      //
-      // Pas d'adresse e-mail dans le journal : l'identifiant Stripe suffit.
-      console.error(`[webhook] ÉCHEC écriture subscriber (${data.stripe_subscription_id ?? 'sans id'}) : ${error.code} ${error.message}`)
-      throw new Error(`subscriber non écrit : ${error.code}`)
-    }
-    console.log('[webhook] subscriber enregistré :', data.stripe_subscription_id ?? 'sans id')
-  } catch (e) {
-      // ⚠️ On RELANCE. Un `catch` qui absorbe ici annulerait le `throw`
-      // ci-dessus : l'appelant croirait de nouveau que tout va bien.
-      console.error('[webhook] Erreur Supabase:', e)
-      throw e
-  }
+  const result = await clientServeur().rpc('partner_checkout_receipt_store', { p_data: data })
+  if (result.error || result.data?.status !== 'stored') throw new Error('subscriber_non_enregistre_reprise_requise')
 }
 
 async function updateSubscriberStatus(stripeSubId: string, status: string) {
@@ -212,6 +123,7 @@ async function updateSubscriberStatus(stripeSubId: string, status: string) {
       console.error(`[webhook] statut « ${status} » : AUCUNE ligne pour ${stripeSubId}`)
       await sendProvisionFailureAlert({
         email: 'inconnu',
+        sujet: `⚠️ ABONNEMENT NON RATTACHÉ : ${stripeSubId} (${status})`,
         reason: `statut « ${status} » reçu pour ${stripeSubId}, mais aucune ligne d'abonné ne correspond — l'état en base est faux`,
       })
     }
@@ -317,7 +229,7 @@ async function reserverEvenement(
 /** Marque terminé — et SEULEMENT si on détient encore le bail. */
 async function confirmerEvenement(id: string, proprietaire: string, note?: string): Promise<void> {
   const sb = clientServeurOuNull()
-  if (!sb) return
+  if (!sb) throw new Error('confirmation_evenement_indisponible')
   const { data, error } = await sb
     .from('site_evenements_stripe_traites')
     .update({ statut: 'fait', fini_le: new Date().toISOString(), note: note ?? null })
@@ -327,12 +239,13 @@ async function confirmerEvenement(id: string, proprietaire: string, note?: strin
     .select('event_id')
   if (error) {
     console.error(`[webhook] confirmation impossible : ${error.message}`)
-    return
+    throw new Error('confirmation_evenement_non_enregistree')
   }
   if (!data || data.length === 0) {
     // On a perdu le bail en route : quelqu'un d'autre a repris l'événement.
     // Ne pas se taire — c'est le signe que l'exécution a dépassé son bail.
     console.error(`[webhook] ${id} : bail perdu avant confirmation, travail peut-être fait deux fois`)
+    throw new Error('confirmation_evenement_bail_perdu')
   }
 }
 
@@ -426,6 +339,8 @@ export async function POST(request: Request) {
     const modeReel = /^(?:sk|rk)_live_/.test((process.env.STRIPE_SECRET_KEY ?? '').trim())
     if (event.livemode !== modeReel) return NextResponse.json({ received: true, ignored: 'mode_stripe_different' })
 
+    if (event.type === 'checkout.session.completed' && event.data.object.mode !== 'subscription') return NextResponse.json({ received: true, ignored: 'not_subscription_checkout' })
+
     const reserve = await reserverEvenement(event.id, event.type, proprietaire)
     if (reserve === 'impossible') {
       // On n'a pas pu écrire en base. Répondre 200 ici jetterait le paiement en
@@ -450,6 +365,13 @@ export async function POST(request: Request) {
     // ─── checkout.session.completed ────────────────────────────────
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session
+
+      // Reserve before reading Stripe, including before ending a reused trial.
+      // An absent legacy beneficiary is queued by activateOwnedCheckout below.
+      const owner = await clientServeur().rpc('partner_checkout_owner_read', { p_checkout_id: session.id })
+      if (owner.error) throw new Error('lecture_beneficiaire_indisponible')
+      const observationId = typeof owner.data?.auth_user_id === 'string'
+        ? await beginBillingObservation(clientServeur(), owner.data.auth_user_id) : null
 
       // Extraire les custom fields
       /**
@@ -607,15 +529,6 @@ export async function POST(request: Request) {
         }
       }
 
-      const trialEnd = subscription?.trial_end
-        ? new Date(subscription.trial_end * 1000).toISOString()
-        : null
-      const trialEndLabel = subscription?.trial_end
-        ? new Date(subscription.trial_end * 1000).toLocaleDateString('fr-FR', {
-            weekday: 'long', day: 'numeric', month: 'long',
-          })
-        : 'Non défini'
-
       /* ═══════════════════════════════════════════════════════════════════
          UN ESSAI GRATUIT PAR PERSONNE, PAS PAR ADRESSE E-MAIL
 
@@ -685,7 +598,7 @@ export async function POST(request: Request) {
           try {
             /* `trial_end: 'now'` met fin à l'essai et déclenche la facture tout
                de suite. L'abonnement, lui, continue : la vente est conservée. */
-            await stripe.subscriptions.update(idAbo, { trial_end: 'now' })
+            subscription = await stripe.subscriptions.update(idAbo, { trial_end: 'now' })
             noteIncident =
               `essai refusé (2e essai détecté par « ${verdict.signal} », précédent ${verdict.abonnementPrecedent}) — encaissement immédiat`
           } catch (e) {
@@ -705,21 +618,48 @@ export async function POST(request: Request) {
         }
       }
 
+      // Relire l'état final : le contrôle précédent peut avoir terminé l'essai.
+      const trialActive = subscription?.status === 'trialing' &&
+        typeof subscription.trial_end === 'number' && subscription.trial_end * 1000 > Date.now()
+      const trialEnd = trialActive && subscription?.trial_end
+        ? new Date(subscription.trial_end * 1000).toISOString() : null
+      const trialEndLabel = trialActive && subscription?.trial_end
+        ? new Date(subscription.trial_end * 1000).toLocaleDateString('fr-FR', {
+            weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris',
+          }) : null
+
       // Parrainage V3 — traçabilité prix payé + remise (colonnes existantes amount_eur / discount_eur).
       const fullPriceEur = (subscription?.items.data[0]?.price?.unit_amount ?? 0) / 100
       const refPct = Number(subscription?.metadata?.referral_discount_pct ?? 0)
       const discountEur = Math.round(fullPriceEur * refPct) / 100
       const amountEur = Math.round((fullPriceEur - discountEur) * 100) / 100
 
-      // 1. Sauvegarder dans Supabase
-      await upsertSubscriber({
+      if (typeof session.customer !== 'string' || typeof session.subscription !== 'string' || !subscription) {
+        throw new Error('abonnement_stripe_non_resolu')
+      }
+      // Identity, financial link and access are checked together in one transaction.
+      // A billing email, even already confirmed on another account, never chooses its owner.
+      const beneficiary = await activateOwnedCheckout(clientServeur(), {
+        checkoutId: session.id, customerId: session.customer, subscriptionId: session.subscription, observationId,
+        status: subscription.status, periodEnd: finDePeriode(subscription),
+        trialEnd,
+        pricePerMonth: subscription.items.data[0]?.price.recurring?.interval === 'year' ? amountEur / 12 : amountEur,
+      })
+      if (beneficiary.status === 'needs_review') throw new Error('checkout_identite_a_verifier_reprise_requise')
+      if (beneficiary.status === 'not_active' && owner.data?.auth_user_id) await synchroniserAbonnement(clientServeur(), stripe, session.subscription)
+      if (beneficiary.status === 'not_active' && !['canceled', 'incomplete_expired', 'unpaid', 'paused'].includes(subscription.status)) {
+        throw new Error('checkout_abonnement_non_actif_reprise_requise')
+      }
+      if (beneficiary.status === 'active') {
+      // Receipt coordinates must not overwrite a different account selected by billing email.
+        await upsertSubscriber({
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
         /* Le lien de relance vers l'écran 2 vit sur `/success?session_id=…` :
            sans cet identifiant, un mail « il manque ton numéro » ne pourrait
            proposer qu'un lien mort. */
         checkout_session_id: session.id,
-        email: session.customer_details?.email,
+        email: beneficiary.email,
         name: session.customer_details?.name,
         phone,
         city,
@@ -736,140 +676,33 @@ export async function POST(request: Request) {
         current_period_end: finDePeriode(subscription),
       })
 
-      // 2. Créer le compte Supabase Auth + envoyer le mail de bienvenue AVEC les identifiants.
-      //    Ordre imposé : on provisionne D'ABORD, pour que le mail puisse porter le mot de passe.
-      //    Avant ce câblage, le mail disait « connecte-toi » alors qu'aucun compte n'existait :
-      //    premier mur rencontré par 100% des chauffeurs payés depuis le site.
-      /* ⚠️ 28/08 — SANS E-MAIL, TOUT CE BLOC ÉTAIT SAUTÉ EN SILENCE.
-         L'alerte vit DANS le `if` : quand l'adresse manquait, il n'y avait ni
-         compte, ni mot de passe, ni mail de bienvenue — et personne pour le
-         savoir. La ligne d'abonné, elle, s'écrivait quand même, et la carte se
-         serait fait débiter au troisième jour.
-         C'est arrivé parce que /tarifs3 ne collectait aucune adresse : en
-         `ui_mode: 'custom'`, Stripe n'en demande pas — c'est à nous de la lui
-         donner par `updateEmail`. Le champ existe désormais côté formulaire ;
-         ce garde-ci est la seconde chance, pour le jour où il repartira. */
-      if (!session.customer_details?.email) {
-        await sendProvisionFailureAlert({
-          email: 'ADRESSE ABSENTE',
-          reason:
-            `session ${session.id} terminée SANS e-mail : aucun compte, aucun mot de passe et ` +
-            `aucun mail de bienvenue n'ont été créés. Le chauffeur a payé et n'a rien. ` +
-            `À traiter à la main, en urgence.`,
-        })
-      }
-      if (session.customer_details?.email) {
-        const provision = await provisionDriverAccount({
-          email: session.customer_details.email,
-          name: prenomChauffeur || session.customer_details.name,
-          phone,
-          city,
-        })
 
-        /* ═══════════════════════════════════════════════════════════════
-           OUVRIR L'ACCÈS DANS L'APP — SANS ÇA, IL A PAYÉ POUR RIEN.
-
-           ⚠️ CE GESTE MANQUAIT, ET C'ÉTAIT LA PREMIÈRE RAISON DE FUITE.
-           Le webhook créait le compte de connexion et s'arrêtait là.
-           `drivers.status` restait à « pending » et `subscription_active` à
-           false — les deux valeurs que l'app exige pour laisser entrer. Le
-           chauffeur qui venait de payer tombait sur l'écran « active ton
-           essai » : l'app lui redemandait de payer, en boucle, sans issue.
-           Mesuré le 29/08 : 18 lignes sur 31 dans cet état.
-
-           ⚠️ ON L'APPELLE AUSSI QUAND LE COMPTE EXISTAIT DÉJÀ. Un chauffeur qui
-           avait un compte gratuit et qui paie aujourd'hui doit être ouvert lui
-           aussi — c'est même le cas le plus fréquent après quelques mois.
-           Ne le faire que pour les comptes neufs recréerait le mur pour eux. */
-        if ((provision.status === 'created' || provision.status === 'already_exists') && provision.userId) {
-          const acces = await activerAccesChauffeur({
-            email: session.customer_details.email,
-            userId: provision.userId,
-            compteCree: provision.status === 'created',
-            finEssai: trialEnd,
-          })
-          if (!acces.ouvert) {
-            /* La trace en base d'abord : elle ne dépend d'aucun service tiers.
-               Un chauffeur qui a payé et à qui l'app redemande de payer est le
-               pire état possible — il faut pouvoir le retrouver demain matin. */
-            noteIncident =
-              `ACCÈS APP NON OUVERT (${acces.detail}) pour ${session.customer_details.email} — ` +
-              `il a payé, l'app lui redemandera de payer`
-            console.error(`[webhook] ⛔ ${noteIncident}`)
-            await sendProvisionFailureAlert({
-              email: session.customer_details.email,
-              reason:
-                `paiement encaissé mais accès app NON ouvert (${acces.detail}). ` +
-                `drivers.status reste « pending » : le chauffeur est bloqué sur l'écran d'activation.`,
-              sujet: `⛔ Chauffeur payé mais bloqué dans l'app`,
-            })
-          }
-        }
-
-        const mailParti = await sendWelcomeEmail({
-          email: session.customer_details.email,
-          name: prenomChauffeur,
-          plan: planInfo.name,
-          trialEnd: trialEndLabel,
-          // Identifiants seulement si le compte vient d'être créé. S'il existait déjà (rejeu
-          // Stripe, ou chauffeur déjà inscrit), on n'a touché à rien : pas de mot de passe à
-          // annoncer, il utilise le sien.
-          credentials:
-            provision.status === 'created'
-              ? { email: session.customer_details.email, password: provision.password }
-              : null,
-          /* ⚠️ 28/08 — LE CAS « COMPTE DÉJÀ LÀ » NE DOIT PLUS ÊTRE UN SILENCE.
-             Sans ce drapeau, le mail partait sans un mot sur la façon de se
-             connecter, et le chauffeur cherchait un mot de passe qui n'y était
-             pas. On ne réécrit pas le sien — on lui dit qu'il en a déjà un. */
-          dejaInscrit:
-            provision.status === 'already_exists'
-              ? { email: session.customer_details.email }
-              : null,
-        })
-
-        // Un paiement encaissé sans compte créé ne doit JAMAIS rester silencieux.
-        // ⚠️ 21/08/2026 — UN CHAUFFEUR PAYÉ POUVAIT NE JAMAIS RECEVOIR SES
-        // IDENTIFIANTS, SANS QUE PERSONNE NE LE SACHE.
-        //
-        // Son mot de passe n'existe QUE dans ce mail. Et l'alerte ci-dessous
-        // ne partait pas, puisqu'elle ne regarde que le PROVISIONNEMENT —
-        // lequel avait réussi. L'envoi, lui, échouait en silence.
-        //
-        // ⚠️ ON N'ÉCHOUE PAS LE WEBHOOK POUR AUTANT. Un incident chez
-        // l'expéditeur de courrier ne doit pas devenir une perte de paiement :
-        // on alerte, et le paiement reste enregistré.
-        // Associer la facturation APRÈS l'envoi des identifiants : si la base
-        // refuse, Stripe peut rejouer sans faire perdre le premier mot de passe.
-        if ((provision.status === 'created' || provision.status === 'already_exists') && provision.userId) {
-          if (typeof session.customer !== 'string' || typeof session.subscription !== 'string' || !subscription) {
-            throw new Error('abonnement_stripe_non_resolu')
-          }
-          await lierAbonnement(clientServeur(), {
-            userId: provision.userId, customerId: session.customer, subscriptionId: session.subscription,
-            status: subscription.status, periodEnd: finDePeriode(subscription),
-            pricePerMonth: subscription.items.data[0]?.price.recurring?.interval === 'year' ? amountEur / 12 : amountEur,
+        const enrollmentCheckout = await bindEnrollmentCheckout(clientServeur(), {
+          checkoutId: session.id, customerId: session.customer,
+          subscriptionId: session.subscription, authUserId: beneficiary.userId,
+        }, hasEnrollmentReference(session) || hasEnrollmentReference(subscription))
+        if (!enrollmentCheckout) {
+          await bindPartnerCheckout(clientServeur(), {
+            checkoutId: session.id, customerId: session.customer,
+            subscriptionId: session.subscription, authUserId: beneficiary.userId,
           })
         }
-
-        if (!mailParti && provision.status === 'created') {
-          // La trace en base D'ABORD : elle ne dépend de personne.
-          noteIncident = `MAIL IDENTIFIANTS NON PARTI — compte créé pour ${session.customer_details.email}, mot de passe perdu, à régénérer à la main`
-          console.error(`[webhook] ⛔ ${noteIncident}`)
-          // L'alerte ENSUITE : elle passe par le service d'envoi, donc elle
-          // peut très bien échouer elle aussi. C'est pour ça qu'elle est seconde.
+        const mailParti = session.metadata?.source === 'foreas_app' ? true : await sendCheckoutWelcome(clientServeur(), session.id, beneficiary.userId, {
+          email: beneficiary.email, name: prenomChauffeur, plan: planInfo.name,
+          trialEnd: trialEndLabel, trialActive, credentials: null,
+          dejaInscrit: { email: beneficiary.email },
+        })
+        if (!mailParti) {
+          noteIncident = `MAIL BIENVENUE À VÉRIFIER — caisse ${session.id}, récupération du compte disponible depuis la connexion`
           await sendProvisionFailureAlert({
-            email: session.customer_details?.email ?? 'inconnu',
-            reason: `compte créé mais e-mail de bienvenue NON envoyé (abonnement ${(session.subscription as string) ?? 'inconnu'}) — le chauffeur n’a pas ses identifiants`,
+            email: beneficiary.email,
+            sujet: `⚠️ CHECKOUT TERMINÉ — mail de bienvenue à vérifier : ${beneficiary.email}`,
+            reason: `Issue du mail de bienvenue à vérifier avant un renvoi. Caisse ${session.id}. Statut Stripe : ${subscription?.status ?? 'inconnu'}.`,
           })
         }
-        if (provision.status === 'failed' || provision.status === 'skipped') {
-          await sendProvisionFailureAlert({
-            email: session.customer_details.email,
-            name: session.customer_details.name,
-            reason: provision.reason,
-          })
-        }
+      } else {
+        // The current subscription is proved inactive. No access is opened.
+        noteIncident = `ACCÈS NON OUVERT — caisse ${session.id} : ${beneficiary.status}`
       }
 
       // 3. La mesure publicitaire est maintenant la responsabilite exclusive
@@ -896,7 +729,7 @@ export async function POST(request: Request) {
       // « en essai » pour toujours. On demande donc s'il est ENCORE dans le
       // futur, et le statut Stripe reste l'autorité principale.
       const finEssai = subscription?.trial_end ? subscription.trial_end * 1000 : 0
-      const enEssai = subscription?.status === 'trialing' || finEssai > Date.now()
+      const enEssai = subscription?.status === 'trialing' && finEssai > Date.now()
       // ⚠️ 24/08 — MÊME PIÈGE QUE LES ENVOIS PUBLICITAIRES VINGT LIGNES PLUS BAS.
       // Cette fonction est gelée dès que la réponse part : un appel lancé sans
       // rien pour le retenir peut ne jamais s'exécuter. Le commentaire qui
@@ -1013,6 +846,14 @@ export async function POST(request: Request) {
       }
     }
 
+    if (event.type === 'invoice.paid' || event.type === 'invoice.payment_succeeded') {
+      const enrollmentInvoice = await recordEnrollmentPaidInvoice(clientServeur(), stripe, event.data.object.id, event.livemode)
+      if (!enrollmentInvoice) await recordPartnerPaidInvoice(clientServeur(), stripe, event.data.object.id, event.livemode)
+    }
+    if (event.type === 'charge.refunded' || event.type.startsWith('charge.dispute.')) {
+      const enrollmentIssue = await blockEnrollmentInvoiceIssue(clientServeur(), stripe, event)
+      if (!enrollmentIssue) await recordPartnerInvoiceIssue(clientServeur(), stripe, event)
+    }
     await confirmerEvenement(event.id, proprietaire, noteIncident ?? undefined)
     return NextResponse.json({ received: true })
   } catch (error) {

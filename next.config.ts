@@ -2,6 +2,8 @@ import type { NextConfig } from 'next'
 import path from 'node:path'
 
 const nextConfig: NextConfig = {
+  distDir: process.env.FOREAS_BUILD_DIR || '.next',
+  devIndicators: false,
   /**
    * ⚠️ 21/08/2026 — NEXT PRENAIT LE DOSSIER PERSONNEL POUR LA RACINE DU PROJET.
    *
@@ -32,6 +34,10 @@ const nextConfig: NextConfig = {
     // Pages archivées (déplacées dans /archive) → redirection 308 vers la page vivante.
     // Évite tout 404 / perte de SEO sur d'anciens liens ou index Google.
     return [
+      { source: '/mobile', destination: '/chauffeur', permanent: true },
+      { source: '/chauffeurs', destination: '/chauffeur', permanent: true },
+      { source: '/devenir-partenaire', destination: '/partenaire', permanent: true },
+      { source: '/partenariat', destination: '/partenaire', permanent: true },
       /* ⚠️ 06/09 — UNE SEULE PAGE DE TARIFS, ET C'EST `/tarifs3`.
       Décision de Chandler : archiver les autres. Elles ne sont pas supprimées
       de l'histoire — `git log` les garde — mais plus aucune adresse ne les
@@ -56,11 +62,6 @@ const nextConfig: NextConfig = {
       // pur, la seconde déclaration aurait SILENCIEUSEMENT écrasé les cinq
       // redirections précédentes, dont /tarifs et /checkout.
       { source: '/experience', destination: '/chauffeur', permanent: true },
-      // 25/09/2026 — nouvelle page chauffeur : les anciennes adresses y mènent.
-      { source: '/mobile', destination: '/chauffeur', permanent: true },
-      { source: '/chauffeurs', destination: '/chauffeur', permanent: true },
-      // Temporaire : la page /partenaire arrive avec l'ouverture du programme.
-      { source: '/partenaire', destination: '/devenir-partenaire', permanent: false },
       // 20/08/2026 — /checkout redirige vers la page de tarifs : UN SEUL chemin
       // commercial. (Depuis le 06/09 cette page est `/tarifs3` ; c'était
       // `/tarifs2`, désormais archivée elle aussi, pour la raison ci-dessous.)

@@ -10,7 +10,7 @@
  * le temps de le voir. Ce n'est pas une copie : c'est le composant que la vraie
  * page utilise. Ce qu'on regarde est donc ce qui part.
  */
-import FormulaireProfil from './FormulaireProfil'
+import SuiviApresPaiement from './SuiviApresPaiement'
 import { Grid } from '@/components/ui/Container'
 import { Download } from 'lucide-react'
 
@@ -47,21 +47,14 @@ export default function CorpsSucces({
 }: Props) {
   return <Grid gap="xl" className="compte-bienvenue">
     <section className="compte-bienvenue-intro">
-      <p className="compte-repere t-eyebrow">{trialEndUnix ? 'Ton essai est activé' : 'Ton abonnement est activé'}</p>
+      <p className="compte-repere t-eyebrow">{paiementFinalise ? 'Paiement enregistré' : 'Confirmation en cours'}</p>
       <h1 className="compte-titre font-title t-display-xl">Bienvenue{firstName ? ',' : ' chez'} <span>{firstName || 'FOREAS'}.</span></h1>
-      {trialEndUnix ? <p className="compte-montant t-bodylg t-stat">0 € <span>aujourd’hui.</span></p> : <p className="compte-aide t-bodylg">Ton abonnement <strong>{tierName}</strong> est actif{billingLabel ? `, ${billingLabel}` : ''}.</p>}
+      <p className="compte-aide t-bodylg">{paiementFinalise ? 'Ta demande d’abonnement est enregistrée. Vérifie ton accès ci-dessous.' : 'Ton paiement reste à confirmer.'}</p>
       {trialEndFormatted && <p className="compte-aide t-bodylg">Premier paiement le <strong>{trialEndFormatted}</strong>{hasBeta60 ? ' · code BETA60' : ''}</p>}
       {trialEndUnix && <><p className="compte-accroche t-bodylg">Pendant trois jours, Ajnaya apprend comment tu travailles, tout en t’apportant du résultat.</p><p className="compte-description t-bodylg">Tes zones, tes heures, tes décisions : chaque course lui en dit un peu plus.</p></>}
     </section>
     <Grid gap="xl" className="compte-bienvenue-etapes">
-      <section className="compte-carte compte-codes">
-        <h2 className="compte-sous-titre font-title t-h1">Tes codes pour ouvrir l’app</h2>
-        <p className="compte-aide t-bodylg">{paiementFinalise ? 'Retrouve ton e-mail de bienvenue' : 'Ton e-mail de bienvenue est en préparation'}{customerEmail ? <> à cette adresse : <strong>{customerEmail}</strong>.</> : ', à l’adresse utilisée pour le paiement.'}</p>
-        <p className="compte-aide t-bodylg">Premier compte FOREAS ? Ton mot de passe est dans cet e-mail. Garde-le pour te connecter.</p>
-        <p className="compte-note t-bodylg">Si tu avais déjà un compte, garde ton mot de passe habituel.</p>
-        <p className="compte-note t-bodylg">Le mail tarde ? Regarde dans tes indésirables.</p>
-      </section>
-      <FormulaireProfil sessionId={sessionId} />
+      <SuiviApresPaiement sessionId={sessionId} />
     </Grid>
     <section className="compte-telecharger">
       <p className="compte-description t-bodylg">Ajnaya t’attend dans l’app. Elle fait le tour avec toi.</p>

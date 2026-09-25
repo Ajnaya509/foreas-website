@@ -34,3 +34,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 graphify-out/
+
+# Sortie de vérification séparée de l’aperçu
+/.next-final/

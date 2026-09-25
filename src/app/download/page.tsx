@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Header from '@/components/Header'
+import ReferralCodeCard from '@/components/ReferralCodeCard'
+import { normalizeReferralCode } from '@/lib/referralOffer'
+import '../devenir-partenaire/partenaire.css'
 import Footer from '@/components/Footer'
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores'
 
@@ -35,9 +38,11 @@ const PLAY_STORE = PLAY_STORE_URL
 
 export default function DownloadPage() {
   const [device, setDevice] = useState<Device>('desktop')
+  const [referralCode, setReferralCode] = useState<string | null>(null)
 
   useEffect(() => {
     setDevice(detectDevice())
+    setReferralCode(normalizeReferralCode(new URLSearchParams(window.location.search).get('ref')))
   }, [])
 
   return (
@@ -84,8 +89,10 @@ export default function DownloadPage() {
             className="font-body text-base text-white/50 mb-10 max-w-md mx-auto"
           >
             L'app FOREAS est disponible sur les deux boutiques. Tu peux aussi
-            accéder à la webapp directement.
+            consulter les formules avant de t’abonner.
           </motion.p>
+
+          {referralCode && <div className="partner-page" style={{ padding: 0, minHeight: 0, background: 'transparent' }}><ReferralCodeCard code={referralCode} /></div>}
 
           {/* Boutons téléchargement */}
           <motion.div
@@ -96,11 +103,11 @@ export default function DownloadPage() {
           >
             {/* Webapp CTA */}
             <a
-              href="/"
+              href={referralCode ? '/tarifs3?ref=' + encodeURIComponent(referralCode) : '/tarifs3'}
               className="group relative inline-flex items-center justify-center gap-2 w-full max-w-sm px-8 py-4 text-base font-semibold text-white overflow-hidden rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan" />
-              <span className="relative">Accéder à la webapp</span>
+              <span className="relative">Voir les formules FOREAS</span>
               <svg className="relative w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>

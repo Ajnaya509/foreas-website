@@ -15,6 +15,8 @@ const DASH =
   process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "https://partners.foreas.xyz";
 
 export const authUrls = {
+  signupPartner: `${DASH}/inscription`,
+  partnerTerms: `${DASH}/inscription/conditions`,
   /** Porte générique — smart routing par rôle côté dashboard */
   loginGeneric: `${DASH}/login`,
   /** Porte Admin — eyebrow "Console Admin · Accès restreint" */

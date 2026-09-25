@@ -62,6 +62,7 @@ const PAGES_AVEC_LEUR_PROPRE_PORTE = new Set([
      bouton de bas de section. Décision de Chandler : « le widget Ajnaya doit
      disparaître. » */
   '/mobile',
+  '/chauffeur',
 ])
 
 /**
@@ -85,6 +86,9 @@ const PAGES_AVEC_LEUR_PROPRE_PORTE = new Set([
  * pour toutes : le tunnel est hermétique du premier champ au dernier écran.
  */
 const PAGES_SANS_AUCUNE_PORTE = new Set([
+  '/partenaire',
+  '/partenariat',
+  '/partenariat/donnees',
   '/abonnement', // le compte doit rester accessible sans décor ni bulle concurrente
   '/apercu-abonnement',
   '/apercu-succes',

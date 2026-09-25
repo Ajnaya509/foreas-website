@@ -6,14 +6,16 @@ import { Check, Lock } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 import { CheckoutElementsProvider } from '@stripe/react-stripe-js/checkout'
+import CompteAvantPaiement, { type ComptePaiement } from '@/components/compte/CompteAvantPaiement'
 import FormulairePaiement from './FormulairePaiement'
 import { formaterEuros, resoudreFormule } from '@/lib/offre'
+import { normalizeReferralCode } from '@/lib/referralOffer'
 import {
-  TUNNEL_SITE_IMMEDIAT,
   ECONOMIE_ANNUELLE_PCT,
   EQUIVALENT_MENSUEL_ANNUEL_CENTIMES,
   PRIX_MENSUEL_AFFICHE_CENTIMES,
   planPourCheckout,
+  estDebitDuJour,
   type DebitDuJour,
   type Formule,
 } from '@/lib/politiquePaiement'
@@ -135,8 +137,10 @@ const PHRASE_SORTIE_MS = 520
 
 type EtatTarif =
   | { phase: 'chargement' }
-  | { phase: 'pret'; debit: DebitDuJour }
-  | { phase: 'indisponible' }
+  | { phase: 'connexion' }
+  | { phase: 'abonne'; key: string }
+  | { phase: 'pret'; debit: DebitDuJour; key: string }
+  | { phase: 'indisponible'; message?: string }
 
 /**
  * « 30 août », avec une espace INSÉCABLE entre le jour et le mois.
@@ -176,32 +180,34 @@ export default function Tarifs3Client() {
      (« page Next de 28 000 octets sans aucun texte »). Ici le rendu serveur ne
      bouge pas : la page s'affiche, puis la formule se corrige si le lien le
      demande. `resoudreFormule` accepte aussi les anciennes clés de campagne. */
-  useEffect(() => {
-    const brut = new URLSearchParams(window.location.search).get('formule')
-    const voulue = resoudreFormule(brut)
-    if (voulue) setFormule(voulue)
-  }, [])
 
   /* ── Le code parrain ──────────────────────────────────────────────────────
-     `codeSaisi` est ce qu'il tape. `codeApplique` est ce que la caisse connaît.
-     Les deux sont séparés exprès : tant qu'on n'a pas VÉRIFIÉ, taper ne doit
-     rien changer au prix affiché. Un champ qui modifie le montant à chaque
-     lettre, c'est un montant qui danse pendant qu'on saisit sa carte. */
+     `codeSaisi` est le brouillon. `codeApplique` est le code demandé au serveur,
+     depuis le lien initial ou après le bouton Appliquer. Ce n'est pas une preuve
+     d'attribution. Seule la réponse de la caisse confirme le code et la remise.
+     Taper un remplacement conserve la demande courante jusqu'à son application. */
   const [champCodeOuvert, setChampCodeOuvert] = useState(false)
   const [codeSaisi, setCodeSaisi] = useState('')
   const [codeApplique, setCodeApplique] = useState('')
+  const [codeRetire, setCodeRetire] = useState(false)
+  const [codeARevoir, setCodeARevoir] = useState(false)
+  const [entreePrete, setEntreePrete] = useState(false)
+  const [entreeErreur, setEntreeErreur] = useState<string | null>(null)
+  const verificationCode = useRef(0)
   /* ⚠️ 29/08 — CE QUE LA SESSION APPLIQUE VRAIMENT, DIT PAR LE SERVEUR.
      `etatCode` ne connaît que ce que le chauffeur a TAPÉ. Or un cookie posé par
      un lien /r/<code> applique une remise sans qu'il ait rien tapé : l'écran
      affichait alors le prix plein pendant que Stripe encaissait moins, à chaque
      échéance. Une seule source décide désormais, et c'est la session. */
-  const [remiseSession, setRemiseSession] = useState<{ pct: number; heritee: boolean }>({
+  const [remiseSession, setRemiseSession] = useState<{ pct: number; heritee: boolean; months: number | null; forever: boolean; sessionKey: string; code: string | null }>({
     pct: 0,
-    heritee: false,
+    heritee: false, months: null, forever: false, sessionKey: '', code: null,
   })
   const [etatCode, setEtatCode] = useState<{
     phase: 'repos' | 'verification' | 'accepte' | 'refuse' | 'panne'
     remisePct?: number
+    dureeMois?: number | null
+    permanente?: boolean
   }>({ phase: 'repos' })
   const [etat, setEtat] = useState<EtatTarif>({ phase: 'chargement' })
   const [tentative, setTentative] = useState(0)
@@ -221,48 +227,86 @@ export default function Tarifs3Client() {
 
 
 
-  /**
-   * ⚠️ LA MÊME TENTATIVE, PAS UNE NOUVELLE.
-   * Le brief : « Empêcher le double appui et la création de deux sessions.
-   * Garder la même tentative lors d'une reprise réseau. » Une session déjà
-   * ouverte pour une formule est conservée ici : refermer puis rouvrir le
-   * panneau rend SA session, pas une seconde qui laisserait derrière elle une
-   * tentative fantôme dans le tableau de bord Stripe à chaque hésitation.
-   */
-  /* ⚠️ 29/08 — LA CLÉ N'EST PLUS LA FORMULE SEULE.
-     Un code parrain change le montant de la session. Garder la formule comme
-     seule clé aurait resservi la session SANS remise à quelqu'un qui vient
-     d'entrer son code : le récapitulatif aurait annoncé une remise, et Stripe
-     aurait encaissé le prix plein. Le même écart que la remise fantôme du 29/08,
-     mais sous les yeux du chauffeur. */
-  const sessions = useRef<Map<string, string>>(new Map())
+  // A repeated render shares the current request. Returning to a previous
+  // formula or code is a new visit: another device may have expired its session.
+  const [comptePaiement, setComptePaiement] = useState<ComptePaiement | null>(null)
+  const [connexion, setConnexion] = useState(0)
+  const [lienPaiement, setLienPaiement] = useState<string | null>(null)
+  const [erreurLien, setErreurLien] = useState('')
+  const compteChange = useCallback((account: ComptePaiement | null) => {
+    sessions.current.clear(); sessionsEnCours.current.clear(); clesDemandes.current.clear()
+    setEtat({ phase: account ? 'chargement' : 'connexion' })
+    setComptePaiement(account); setConnexion(value => value + 1)
+  }, [])
+  const sessions = useRef<Map<string, { secret: string; discount: typeof remiseSession }>>(new Map())
+  const sessionsEnCours = useRef<Map<string, Promise<string>>>(new Map())
+  const clesDemandes = useRef<Map<string, string>>(new Map())
+  const contextePaiement = `${comptePaiement?.userId ?? '-'}|${connexion}|${formule}|${codeRetire ? '-' : codeApplique}|${lienPaiement ?? '-'}|${tentative}`
+  const visitePaiement = useRef({ contexte: contextePaiement, numero: 0 })
+  if (visitePaiement.current.contexte !== contextePaiement) {
+    visitePaiement.current = { contexte: contextePaiement, numero: visitePaiement.current.numero + 1 }
+    sessions.current.clear(); sessionsEnCours.current.clear(); clesDemandes.current.clear()
+  }
+  const cleVisible = `${contextePaiement}|${visitePaiement.current.numero}`
+  const derniereCleVisible = useRef(cleVisible)
+  derniereCleVisible.current = cleVisible
 
 
-  // ── Le tarif, confirmé par le serveur ──────────────────────────────────────
+  // Read the invitation before creating any payment session. URL transport works
+  // even when cookies are unavailable; normalization is syntax, never admission.
   useEffect(() => {
+    try {
+      const url = new URL(window.location.href)
+      const liens = url.searchParams.getAll('payment_link')
+      if (liens.length > 1 || (liens.length === 1 && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(liens[0]))) {
+        setErreurLien('Ce lien de paiement est incomplet. Demande un nouveau lien à FOREAS.')
+      } else if (liens.length === 1) setLienPaiement(liens[0])
+      const voulue = resoudreFormule(url.searchParams.get('formule'))
+      if (voulue) setFormule(voulue)
+      const proposals = url.searchParams.getAll('ref')
+      if (proposals.length > 1) {
+        setEntreeErreur('Ce lien contient plusieurs codes. Retire-les ou saisis le code que tu veux utiliser.')
+        setChampCodeOuvert(true)
+      } else if (proposals.length === 1) {
+        const raw = proposals[0].trim()
+        if (!raw) {
+          setEntreeErreur('Le code de ce lien est vide. Retire-le ou saisis ton code.')
+        } else {
+          const proposed = normalizeReferralCode(raw) || raw
+          setCodeApplique(proposed)
+          setCodeSaisi(proposed)
+        }
+        setChampCodeOuvert(true)
+      }
+    } catch {
+      setEntreeErreur('Le lien n’a pas pu être lu. Retire le code proposé ou saisis-le de nouveau.')
+      setChampCodeOuvert(true)
+    } finally { setEntreePrete(true) }
+  }, [])
+
+
+  // Personal terms never reuse another account's previous response.
+  useEffect(() => {
+    if (!entreePrete || erreurLien) return
+    if (!comptePaiement) { setEtat({ phase: 'connexion' }); return }
     let annule = false
+    const cle = cleVisible
     setEtat({ phase: 'chargement' })
-
-    fetch(`/api/checkout/politique?formule=${formule}`, { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((data: DebitDuJour & { confirmeParLeServeur?: boolean }) => {
-        if (annule) return
-        /**
-         * ⚠️ On exige le drapeau. Une réponse 200 dont le corps n'est pas celui
-         * qu'on attend — page d'erreur d'un intermédiaire, réponse mise en cache
-         * par un proxy — ne doit pas être lue comme une confirmation.
-         */
-        if (!data?.confirmeParLeServeur) return setEtat({ phase: 'indisponible' })
-        setEtat({ phase: 'pret', debit: data })
+    const query = new URLSearchParams({ formule })
+    if (lienPaiement) query.set('payment_link', lienPaiement)
+    fetch(`/api/checkout/politique?${query}`, { cache: 'no-store', headers: { Authorization: `Bearer ${comptePaiement.credential}` } })
+      .then(async response => {
+        const data = await response.json().catch(() => null)
+        if (annule || derniereCleVisible.current !== cle) return
+        if (!response.ok) { setEtat({ phase: 'indisponible', message: typeof data?.error === 'string' ? data.error : undefined }); return }
+        if (data?.confirmeParLeServeur !== true || data.accountId !== comptePaiement.userId) { setEtat({ phase: 'indisponible' }); return }
+        if (data.alreadySubscribed === true) { setEtat({ phase: 'abonne', key: cle }); return }
+        if (data.alreadySubscribed !== false || !estDebitDuJour(data, formule)) { setEtat({ phase: 'indisponible' }); return }
+        setEtat({ phase: 'pret', debit: data, key: cle })
       })
-      .catch(() => {
-        if (!annule) setEtat({ phase: 'indisponible' })
-      })
-
-    return () => {
-      annule = true
-    }
-  }, [formule, tentative])
+      .catch(() => { if (!annule && derniereCleVisible.current === cle) setEtat({ phase: 'indisponible' }) })
+    return () => { annule = true }
+  }, [formule, tentative, comptePaiement, cleVisible, entreePrete, lienPaiement, erreurLien])
 
   // ── Les phrases ────────────────────────────────────────────────────────────
   const [iPhrase, setIPhrase] = useState(0)
@@ -351,47 +395,66 @@ export default function Tarifs3Client() {
    */
   const figerPendantLePaiement = useCallback(() => setFigee(true), [])
 
-  /**
-   * Vérifie le code AVANT de toucher au montant.
-   *
-   * ⚠️ ON STOCKE `remisePct`, JAMAIS LA REMISE APPLIQUÉE.
-   * La remise réelle dépend de la formule choisie, et la formule peut changer
-   * APRÈS la vérification. Garder en mémoire « 10 % de remise » alors que le
-   * chauffeur vient de passer à l'annuel afficherait une promesse que la caisse
-   * ne tiendra pas — exactement la remise fantôme trouvée le 29/08, mais cette
-   * fois sous ses yeux. On garde la valeur brute, on dérive à l'affichage.
-   */
+  // Le code est vérifié ici ; le montant et la durée affichés viennent de la session de paiement.
   const appliquerCode = useCallback(async () => {
-    const code = codeSaisi.trim().toUpperCase()
+    const code = normalizeReferralCode(codeSaisi) || codeSaisi.trim()
     if (!code) return
+    const attempt = ++verificationCode.current
     setEtatCode({ phase: 'verification' })
     try {
       const res = await fetch('/api/parrainage/verifier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, formule }),
       })
+      if (attempt !== verificationCode.current) return
       if (!res.ok) {
         /* ⚠️ UNE PANNE N'EST PAS UN CODE FAUX. Dire « code inconnu » enverrait
            corriger une faute de frappe qui n'existe pas. */
         setEtatCode({ phase: 'panne' })
         return
       }
-      const data = (await res.json()) as { valide?: boolean; remisePct?: number }
+      const data = (await res.json()) as { valide?: boolean; remisePct?: number; dureeMois?: number | null; remisePermanente?: boolean }
+      if (attempt !== verificationCode.current) return
       if (!data?.valide) {
         setEtatCode({ phase: 'refuse' })
         return
       }
-      setEtatCode({ phase: 'accepte', remisePct: Number(data.remisePct) || 0 })
+      // Preserve the explicit replacement across reloads, including without cookies.
+      const invitation = new URL(window.location.href)
+      invitation.searchParams.set('ref', code)
+      window.history.replaceState(window.history.state, '', invitation.pathname + invitation.search + invitation.hash)
+      setEtatCode({ phase: 'accepte', remisePct: Number(data.remisePct) || 0, dureeMois: data.dureeMois ?? null, permanente: data.remisePermanente === true })
+      setCodeRetire(false)
+      setEntreeErreur(null)
+      setCodeARevoir(false)
       setCodeApplique(code)
     } catch {
-      setEtatCode({ phase: 'panne' })
+      if (attempt === verificationCode.current) setEtatCode({ phase: 'panne' })
     }
-  }, [codeSaisi])
+  }, [codeSaisi, formule])
 
   const retirerCode = useCallback(() => {
+    verificationCode.current += 1
+    try {
+      // This is the only cookie changed here. Advertising consent is independent.
+      const hasReferralCookie = () => document.cookie.split(';').some(part => part.trim().startsWith('foreas_partner_ref='))
+      if (hasReferralCookie()) {
+        document.cookie = 'foreas_partner_ref=; Max-Age=0; Path=/; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '')
+        if (hasReferralCookie()) throw new Error('cookie_not_removed')
+      }
+      const url = new URL(window.location.href)
+      url.searchParams.delete('ref')
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
+    } catch {
+      setEntreeErreur('Le code n’a pas pu être retiré de ce navigateur. Vérifie ses réglages puis réessaie.')
+      return
+    }
+    setCodeRetire(true)
+    setCodeARevoir(false)
     setCodeApplique('')
     setCodeSaisi('')
+    setEntreeErreur(null)
     setEtatCode({ phase: 'repos' })
   }, [])
 
@@ -405,40 +468,73 @@ export default function Tarifs3Client() {
      */
   }, [])
 
-  const recupererClientSecret = useCallback(async (): Promise<string> => {
-    const cleSession = `${formule}|${codeApplique}`
+  const recupererClientSecret = useCallback((): Promise<string> => {
+    if (!comptePaiement || comptePaiement.expiresAt * 1000 <= Date.now()) return Promise.reject(new Error('Reconnecte ton compte avant de payer.'))
+    if (etat.phase !== 'pret' || etat.key !== cleVisible || erreurLien) return Promise.reject(new Error('Vérifie les conditions de ton abonnement avant de payer.'))
+    const cleSession = cleVisible
     const deja = sessions.current.get(cleSession)
-    if (deja) return deja
-
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        plan: planPourCheckout(formule),
-        mode: REPLI_PANNEAU_STRIPE ? 'embedded' : 'elements',
-        /**
-         * ⚠️ CECI EST LA DEMANDE, PAS L'AFFICHAGE. Ce booléen dit au serveur quel
-         * tunnel emprunter. Ce que la page MONTRE vient de la réponse de
-         * `/api/checkout/politique`. Confondre les deux, c'est laisser le
-         * navigateur se répondre à lui-même.
-         */
-        immediate: TUNNEL_SITE_IMMEDIAT,
-        /* Le code n'est envoyé qu'une fois VÉRIFIÉ. Envoyer une saisie en cours
-           créerait une session par lettre tapée. */
-        ...(codeApplique ? { referral_code: codeApplique } : {}),
-      }),
-    })
-
-    const data = await res.json().catch(() => null)
-    if (!res.ok || !data?.clientSecret) throw new Error(data?.error || `checkout_${res.status}`)
-
-    setRemiseSession({
-      pct: Number(data.remiseParrainPct) || 0,
-      heritee: !!data.remiseHeritee,
-    })
-    sessions.current.set(cleSession, data.clientSecret as string)
-    return data.clientSecret as string
-  }, [formule, codeApplique])
+    if (deja) {
+      if (derniereCleVisible.current === cleSession) setRemiseSession(deja.discount)
+      return Promise.resolve(deja.secret)
+    }
+    const enCours = sessionsEnCours.current.get(cleSession)
+    if (enCours) return enCours
+    const requestKey = clesDemandes.current.get(cleSession) || crypto.randomUUID()
+    clesDemandes.current.set(cleSession, requestKey)
+    const promise = (async () => {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey, Authorization: `Bearer ${comptePaiement.credential}` },
+        body: JSON.stringify({
+          plan: planPourCheckout(formule),
+          mode: REPLI_PANNEAU_STRIPE ? 'embedded' : 'elements',
+          expectedTrial: etat.debit.essai,
+          ...(lienPaiement ? { payment_link: lienPaiement } : {}),
+          ...(codeRetire ? { referral_code: '' } : codeApplique ? { referral_code: codeApplique } : {}),
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (derniereCleVisible.current !== cleSession) throw new Error('La demande de paiement a changé.')
+      if (data?.alreadySubscribed === true && data.accountId === comptePaiement.userId) {
+        setEtat({ phase: 'abonne', key: cleSession })
+        throw new Error('Ton abonnement est déjà actif.')
+      }
+      if (!res.ok || !data?.clientSecret) {
+        if (data?.code === 'CONDITIONS_CHANGED') setEtat({ phase: 'indisponible', message: typeof data.error === 'string' ? data.error : undefined })
+        if (derniereCleVisible.current === cleSession && ['CODE_UNAVAILABLE', 'TERMS_UNAVAILABLE'].includes(data?.code)) {
+          setCodeARevoir(true)
+          setChampCodeOuvert(true)
+        }
+        throw new Error(data?.error || `checkout_${res.status}`)
+      }
+      if (data.accountId !== comptePaiement.userId || data.debit?.formule !== formule || data.debit?.essai !== etat.debit.essai || data.debit?.montantAujourdhuiCentimes !== etat.debit.montantAujourdhuiCentimes || data.debit?.montantEnsuiteCentimes !== etat.debit.montantEnsuiteCentimes) throw new Error('Le montant de cette demande doit être vérifié de nouveau.')
+      if (typeof data.clientSecret !== 'string' || typeof data.remiseParrainPct !== 'number' || !Number.isFinite(data.remiseParrainPct) || data.remiseParrainPct < 0 || data.remiseParrainPct > 100 || typeof data.remiseHeritee !== 'boolean' || typeof data.remisePermanente !== 'boolean' || (data.remiseDureeMois !== null && (!Number.isInteger(data.remiseDureeMois) || data.remiseDureeMois < 1 || data.remiseDureeMois > 120))) throw new Error('Les conditions de cette demande n’ont pas pu être confirmées.')
+      if ((data.remiseParrainPct > 0 && !data.referralCodeConfirmed) || (data.remisePermanente && data.remiseDureeMois !== null)) throw new Error('Les conditions de la remise ne correspondent pas à cette demande.')
+      const confirmedCode = data.referralCodeConfirmed
+      if (confirmedCode !== null && (typeof confirmedCode !== 'string' || normalizeReferralCode(confirmedCode) !== confirmedCode)) throw new Error('Le code de cette demande n’a pas pu être confirmé.')
+      if ((codeRetire && confirmedCode !== null) || (codeApplique && confirmedCode !== normalizeReferralCode(codeApplique))) throw new Error('Le code confirmé ne correspond pas à ta demande. Réessaie avant de payer.')
+      const discount = {
+        code: confirmedCode as string | null,
+        pct: data.remiseParrainPct as number,
+        heritee: data.remiseHeritee as boolean,
+        months: typeof data.remiseDureeMois === 'number' ? data.remiseDureeMois : null,
+        forever: data.remisePermanente === true,
+        sessionKey: cleSession,
+      }
+      if (discount.pct > 0 && !discount.forever && (!Number.isInteger(discount.months) || Number(discount.months) < 1)) throw new Error('La durée de la remise doit être confirmée avant le paiement.')
+      if (derniereCleVisible.current !== cleSession) throw new Error('La demande de paiement a changé.')
+      sessions.current.set(cleSession, { secret: data.clientSecret as string, discount })
+      if (derniereCleVisible.current === cleSession) {
+        setRemiseSession(discount)
+        setCodeARevoir(false)
+      }
+      return data.clientSecret as string
+    })()
+    sessionsEnCours.current.set(cleSession, promise)
+    const finish = () => { if (sessionsEnCours.current.get(cleSession) === promise) sessionsEnCours.current.delete(cleSession) }
+    void promise.then(finish, finish)
+    return promise
+  }, [formule, codeApplique, codeRetire, comptePaiement, cleVisible, etat, lienPaiement, erreurLien])
 
   /**
    * ⚠️ ELLE NAÎT DANS UN EFFET, DONC JAMAIS SUR LE SERVEUR.
@@ -456,7 +552,7 @@ export default function Tarifs3Client() {
    * et changer de formule en crée une nouvelle, ce qui est exactement voulu :
    * ce n'est plus le même montant.
    */
-  const [promesseSecret, setPromesseSecret] = useState<Promise<string> | null>(null)
+  const [promesseSecret, setPromesseSecret] = useState<{ key: string; promise: Promise<string> } | null>(null)
   const [stripeKO, setStripeKO] = useState(false)
   useEffect(() => {
     let vif = true
@@ -469,12 +565,16 @@ export default function Tarifs3Client() {
   }, [])
 
   useEffect(() => {
-    if (REPLI_PANNEAU_STRIPE) return
-    setPromesseSecret(recupererClientSecret())
-  }, [recupererClientSecret])
+    if (REPLI_PANNEAU_STRIPE || !entreePrete || entreeErreur || erreurLien || !comptePaiement || etat.phase !== 'pret' || etat.key !== cleVisible) return
+    setPromesseSecret({ key: cleVisible, promise: recupererClientSecret() })
+  }, [recupererClientSecret, cleVisible, entreePrete, entreeErreur, comptePaiement, etat, erreurLien])
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
-  const debit = etat.phase === 'pret' ? etat.debit : null
+  const debit = etat.phase === 'pret' && etat.key === cleVisible ? etat.debit : null
+  const codeConfirme = remiseSession.sessionKey === cleVisible ? remiseSession.code : null
+  const codeRetirable = !!(codeApplique || codeConfirme || codeARevoir || entreeErreur || codeSaisi)
+  const remiseCourante = remiseSession.sessionKey === cleVisible ? remiseSession : { pct: 0, months: null, heritee: false, forever: false }
+  const montantAvecRemise = (cents: number) => Math.round(cents * (100 - remiseCourante.pct) / 100)
   const libelleCTA = debit?.essai
     ? `Démarrer mes ${debit.joursEssai} jours offerts`
     : 'Démarrer mon abonnement'
@@ -681,7 +781,7 @@ export default function Tarifs3Client() {
                 sortir sa carte. Celui qui a un code, lui, le cherche — il
                 trouvera le lien. */}
             <div className={s.parrain}>
-              {!champCodeOuvert && !codeApplique && (
+              {!champCodeOuvert && !codeRetirable && (
                 <button
                   type="button"
                   className={s.parrainLien}
@@ -691,7 +791,7 @@ export default function Tarifs3Client() {
                 </button>
               )}
 
-              {(champCodeOuvert || codeApplique) && (
+              {(champCodeOuvert || codeRetirable) && (
                 <>
                   <div className={s.parrainLigne}>
                     <input
@@ -699,12 +799,13 @@ export default function Tarifs3Client() {
                       className={s.parrainChamp}
                       value={codeSaisi}
                       onChange={(e) => {
+                        verificationCode.current += 1
                         setCodeSaisi(e.target.value.toUpperCase())
                         /* Retaper efface le verdict précédent : garder « accepté »
                            affiché pendant qu'on modifie le code serait un mensonge
                            d'un caractère. */
                         if (etatCode.phase !== 'repos') setEtatCode({ phase: 'repos' })
-                        if (codeApplique) setCodeApplique('')
+                        // Keep the confirmed payment selection until Apply succeeds.
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -717,42 +818,26 @@ export default function Tarifs3Client() {
                       autoCapitalize="characters"
                       autoComplete="off"
                       spellCheck={false}
-                      maxLength={24}
+                      maxLength={32}
                       disabled={etatCode.phase === 'verification'}
                     />
-                    {codeApplique ? (
-                      <button type="button" className={s.parrainBouton} onClick={retirerCode}>
-                        Retirer
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className={s.parrainBouton}
-                        onClick={() => void appliquerCode()}
-                        disabled={etatCode.phase === 'verification' || codeSaisi.trim().length < 3}
-                      >
-                        {etatCode.phase === 'verification' ? 'Vérification…' : 'Appliquer'}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className={s.parrainBouton}
+                      onClick={() => void appliquerCode()}
+                      disabled={etatCode.phase === 'verification' || !codeSaisi.trim() || (codeConfirme !== null && normalizeReferralCode(codeSaisi) === codeConfirme && !codeARevoir && !entreeErreur)}
+                    >
+                      {etatCode.phase === 'verification' ? 'Vérification…' : 'Appliquer'}
+                    </button>
                   </div>
+                  {codeRetirable && <button type="button" className={s.parrainLien} onClick={retirerCode}>Retirer</button>}
 
+                  {entreeErreur && <p className={s.parrainKo} role="alert">{entreeErreur}</p>}
+                  {codeConfirme && <p className={s.parrainMot}>Code confirmé pour cette demande : <strong>{codeConfirme}</strong>. L’attribution sera vérifiée par FOREAS.</p>}
                   <p className={s.parrainMot} role="status" aria-live="polite">
-                    {etatCode.phase === 'accepte' && formule === 'annuel' && (
-                      /* ⚠️ LA PHRASE LA PLUS IMPORTANTE DE CE BLOC.
-                         Le coupon n'est pas appliqué à l'annuel — l'annuel est à
-                         tarif fixe. Afficher une remise ici, c'est promettre un
-                         montant que Stripe ne facturera pas. Le code n'est pas
-                         perdu pour autant : il part en attribution, le parrain
-                         touche sa commission. On le dit, plutôt que de laisser
-                         croire à une remise. */
-                      <span className={s.parrainNeutre}>
-                        Code accepté. L&apos;annuel est à tarif fixe : pas de remise dessus.
-                        Le parrain est bien crédité.
-                      </span>
-                    )}
-                    {etatCode.phase === 'accepte' && formule !== 'annuel' && (
+                    {etatCode.phase === 'accepte' && (
                       <span className={s.parrainOk}>
-                        Code accepté — {etatCode.remisePct} % de remise appliquée.
+                        Code reconnu. La remise applicable à ta formule sera confirmée dans le récapitulatif du paiement.
                       </span>
                     )}
                     {etatCode.phase === 'refuse' && (
@@ -788,13 +873,16 @@ export default function Tarifs3Client() {
 
               {etat.phase === 'indisponible' && (
                 <p className={s.erreur}>
-                  Le tarif n’a pas pu être confirmé.{' '}
+                  {etat.message || 'Le tarif n’a pas pu être confirmé.'}{' '}
                   <button type="button" className={s.lien} onClick={() => setTentative((n) => n + 1)}>
                     Réessayer
                   </button>
                 </p>
               )}
 
+              {etat.phase === 'connexion' && <p className={s.micro}>Connecte ton compte pour vérifier ton accès et les conditions de cette offre.</p>}
+              {etat.phase === 'abonne' && etat.key === cleVisible && <p role="status" className={s.micro}>Ton abonnement est déjà actif. <a className={s.lien} href="/go">Ouvrir FOREAS Driver</a> ou <a className={s.lien} href="/abonnement">gérer mon abonnement</a>.</p>}
+              {erreurLien && <p role="alert" className={s.erreur}>{erreurLien}</p>}
               {debit && (
                 <>
                   {debit.essai && <p className={s.chapeau}>{debit.joursEssai} jours offerts</p>}
@@ -803,7 +891,7 @@ export default function Tarifs3Client() {
                     <p className={`${s.hero} ${debit.essai ? s.heroGratuit : ''}`}>
                       {/* « 0 € » et non « 0,00 € » : sur le montant du jour, la
                           décimale affaiblit. */}
-                      {debit.essai ? '0 €' : formaterEuros(debit.montantAujourdhuiCentimes)}{' '}
+                      {debit.essai ? '0 €' : formaterEuros(montantAvecRemise(debit.montantAujourdhuiCentimes))}{' '}
                       <small>aujourd’hui</small>
                     </p>
                     {!debit.essai && (
@@ -846,48 +934,12 @@ export default function Tarifs3Client() {
                         249,99 plutôt que douze fois 29,99 ? »
                       */}
                       <p className={s.micro}>
-                        Ensuite {formaterEuros(debit.montantEnsuiteCentimes)} par{' '}
+                        Ensuite {formaterEuros(montantAvecRemise(debit.montantEnsuiteCentimes))} par{' '}
                         {debit.periodicite === 'an' ? 'an' : 'mois'}
                         {debit.periodicite === 'an' &&
                           `, soit ${ECONOMIE_ANNUELLE_PCT.toLocaleString('fr-FR')}\u202F% de moins qu’au mois`}
                         .
                       </p>
-                      {/* ⚠️ SANS CETTE LIGNE, DEUX MONTANTS SE CONTREDISAIENT.
-                          Le bloc parrain annonçait « 10 % de remise appliquée »
-                          pendant que le récapitulatif affichait le prix plein
-                          juste en dessous. Deux nombres qui se contredisent à
-                          l'écran, c'est le début d'un litige — le commentaire de
-                          `choisirFormule` le dit déjà pour le changement de
-                          formule ; ça vaut ici aussi.
-
-                          ⚠️ LE MONTANT EST CALCULÉ, DONC IL DOIT TOMBER JUSTE AU
-                          CENTIME. Stripe applique `percent_off` sur le montant
-                          puis arrondit au centime. Vérifié pour les TROIS
-                          paliers réels sur le prix réel (29,99 € = 2999) :
-                            10 % → 2699,1 → 26,99 €
-                            15 % → 2549,15 → 25,49 €
-                            18 % → 2459,18 → 24,59 €
-                          Troncature et arrondi donnent le même centime sur les
-                          trois : aucune ambiguïté possible sur nos tarifs.
-                          Si un palier ou le prix change, REVÉRIFIER ce calcul —
-                          un centime d'écart entre l'écran et le relevé se paie
-                          en confiance, pas en euros. */}
-                      {remiseSession.pct > 0 && (
-                          <p className={s.micro}>
-                            {remiseSession.heritee
-                              ? 'Avec la remise de ton lien de parrainage : '
-                              : 'Avec le code parrain : '}
-                            <span className={s.vert}>
-                              {formaterEuros(
-                                Math.round(
-                                  (debit.montantEnsuiteCentimes * (100 - remiseSession.pct)) / 100,
-                                ),
-                              )}{' '}
-                              par mois
-                            </span>
-                            .
-                          </p>
-                        )}
                     </>
                   ) : (
                     <>
@@ -909,6 +961,13 @@ export default function Tarifs3Client() {
                       )}
                     </>
                   )}
+                  {remiseCourante.pct > 0 && (
+                    <p className={s.micro}>
+                      {remiseCourante.heritee ? 'Remise du lien de parrainage : ' : 'Remise du code parrain : '}
+                      {remiseCourante.pct} % {remiseCourante.forever ? 'à chaque renouvellement de cet abonnement.' : 'pendant ' + remiseCourante.months + ' mois.'}
+                      {!remiseCourante.forever && <> Puis {formaterEuros(debit.montantEnsuiteCentimes)} par mois.</>}
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -925,10 +984,11 @@ export default function Tarifs3Client() {
                 dessine que l'intérieur du champ de carte — ce qu'il ne peut pas
                 déléguer, et c'est justement ce qui fait que le numéro ne passe
                 jamais par nos serveurs. */}
-            {REPLI_PANNEAU_STRIPE ? (
+            <CompteAvantPaiement onAccount={compteChange} />
+            {!entreePrete || entreeErreur || erreurLien || !comptePaiement || !debit ? null : REPLI_PANNEAU_STRIPE ? (
               <div className={s.zoneStripe}>
                 <EmbeddedCheckoutProvider
-                  key={`${formule}|${codeApplique}`}
+                  key={cleVisible}
                   stripe={stripePromise}
                   options={{ fetchClientSecret: recupererClientSecret }}
                 >
@@ -943,12 +1003,12 @@ export default function Tarifs3Client() {
                 Le paiement n’a pas pu se charger. Recharger la page, ou désactiver
                 un bloqueur de publicité s’il y en a un.
               </p>
-            ) : promesseSecret ? (
+            ) : promesseSecret?.key === cleVisible ? (
               <CheckoutElementsProvider
-                key={`${formule}|${codeApplique}`}
+                key={cleVisible}
                 stripe={stripePromise}
                 options={{
-                  clientSecret: promesseSecret,
+                  clientSecret: promesseSecret.promise,
                   /*
                     ⚠️ L'APPARENCE EST LE SEUL ENDROIT OÙ ON PARLE À STRIPE DU
                     STYLE, ET ELLE NE CONCERNE QUE LE CHAMP DE CARTE.
@@ -975,6 +1035,8 @@ export default function Tarifs3Client() {
                 }}
               >
                 <FormulairePaiement
+                  emailCompte={comptePaiement.email}
+                  onReessayer={() => setTentative(value => value + 1)}
                   libelleBouton={libelleCTA}
                   garanties={
                     debit?.essai

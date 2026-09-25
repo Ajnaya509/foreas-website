@@ -28,7 +28,7 @@ import { useCallback, useId, useState } from 'react'
  * ⚠️ ET IL SE TAIT UNE FOIS REMPLI. Un formulaire qui reste affiché après
  * l'envoi fait douter de l'envoi.
  */
-export default function FormulaireProfil({ sessionId }: { sessionId: string }) {
+export default function FormulaireProfil({ sessionId, credential }: { sessionId: string; credential: string }) {
   const idPrenom = useId()
   const idTel = useId()
   const [prenom, setPrenom] = useState('')
@@ -50,7 +50,7 @@ export default function FormulaireProfil({ sessionId }: { sessionId: string }) {
     try {
       const res = await fetch('/api/profil/completer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${credential}` },
         body: JSON.stringify({ sessionId, prenom: prenom.trim(), telephone: telephone.trim() }),
       })
       if (res.ok) {
@@ -66,7 +66,7 @@ export default function FormulaireProfil({ sessionId }: { sessionId: string }) {
     } catch {
       setEtat('erreur')
     }
-  }, [prenom, telephone, sessionId])
+  }, [prenom, telephone, sessionId, credential])
 
   if (etat === 'fait') return <div className="compte-bloc compte-profil" role="status">
     <h2 className="compte-sous-titre font-title t-h1">C’est enregistré, {prenom.trim()}.</h2>

@@ -236,6 +236,8 @@ export function buildSystemPrompt(
   history: Array<{ role: string; text: string }>,
 ) {
   const pageContextMap: Record<string, string> = {
+    '/partenaire': 'Présentation du programme partenaire. Les conditions précèdent la création de son espace et la configuration Stripe. Pour les détails, orienter vers la page et ses conditions.',
+    '/chauffeur': 'Page de découverte détaillée de FOREAS Driver. Le visiteur explore les outils du chauffeur, les exemples de calcul et la réservation directe.',
     '/chauffeurs': 'Page chauffeurs VTC — le visiteur explore les avantages pour un chauffeur indépendant.',
     // ⚠️ 22/08/2026 — DISAIT « Page B2B … gestionnaire de flotte, hôtelier ».
     // C'était vrai de l'ancienne home ivoire. Depuis que le téléphone vivant
@@ -243,7 +245,7 @@ export function buildSystemPrompt(
     // Ajnaya l'accueillait donc en le prenant pour un gestionnaire de flotte.
     // ⚠️ Cette description vit à DEUX endroits — ici et dans le jumeau — et
     // les deux servent. Corriger l'un seul laissait Ajnaya schizophrène.
-    '/': 'Page d’accueil « téléphone vivant » — le visiteur ÉCRIT SA ZONE et teste le VRAI chat Ajnaya, en direct, sans compte. C’est un CHAUFFEUR VTC, pas un gestionnaire de flotte. Intention forte : il est venu pour te parler.',
+    '/': 'Accueil de FOREAS. Le visiteur découvre la marque, les outils de FOREAS Driver et le programme partenaire. Oriente un chauffeur vers /chauffeur et une personne qui veut recommander FOREAS vers /partenaire.',
     '/partenaires': 'Page partenaires fleet — le visiteur gère une flotte VTC.',
     '/tarifs3': 'Page tarifs — le visiteur regarde activement les prix. IL EST CHAUD.',
     '/technologie': 'Page technologie — le visiteur s\'intéresse au fonctionnement technique.',

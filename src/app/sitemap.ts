@@ -88,7 +88,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     //
     // À ne pas confondre avec /cap, la page d'un parrain identifié par son code :
     // celle-là ne s'indexe pas, et porte bien son refus.
-    { url: `${BASE}/devenir-partenaire`,               lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/partenaire`,               lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     // Landing SEO — facturation électronique VTC 2026
     { url: `${BASE}/facturation-electronique-vtc-2026`, lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
     // Pages légales

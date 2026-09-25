@@ -706,7 +706,7 @@ for (const chemin of fichiers(RACINE)) {
 // situations opposées qui produisent le même chiffre.
 {
   const COMMERCIALES = [
-    'chauffeurs', 'professionnels', 'ou-ca-paie', 'cap', 'experience',
+    'chauffeurs', 'professionnels', 'ou-ca-paie', 'cap', 'r/[code]', 'experience',
     'reactivation', 'facturation-electronique-vtc-2026', 'technologie',
     'a-propos', 'contact', 'tarifs2',
   ]

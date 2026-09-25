@@ -12,7 +12,8 @@
  * tabular-nums, quiet-tech. Distraction zéro (pas de nav riche — règle landing §6.8).
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import CompteAvantPaiement, { type ComptePaiement } from '@/components/compte/CompteAvantPaiement'
 import { ShieldCheck, Check, Lock, ArrowRight, Loader2 } from 'lucide-react'
 import TestimonialVideoCard from '@/components/zone/TestimonialVideoCard'
 import { TESTIMONIALS } from '@/components/zone/testimonials.data'
@@ -59,32 +60,46 @@ const C = {
 }
 
 export default function ReactivationClient() {
+  const [comptePaiement, setComptePaiement] = useState<ComptePaiement | null>(null)
+  const accountNow = useRef<ComptePaiement | null>(null)
+  const requestKey = useRef<string | null>(null)
+  const active = useRef(false)
+  const generation = useRef(0)
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
+  useEffect(() => () => { generation.current++; active.current = false; accountNow.current = null }, [])
 
   const startCheckout = async () => {
-    if (loading) return
+    if (active.current) return
+    if (!comptePaiement || comptePaiement.expiresAt * 1000 <= Date.now()) { setErr('Connecte ton compte FOREAS pour continuer.'); document.getElementById('compte-reactivation')?.scrollIntoView({ block: 'center' }); return }
+    const owner = comptePaiement
+    const run = ++generation.current
+    active.current = true
+    const operation = requestKey.current ?? crypto.randomUUID()
+    requestKey.current = operation
     setErr('')
     setLoading(true)
     try {
       try { window.fbq?.('trackCustom', 'ReactivationCheckout', { plan: 'pro_monthly' }) } catch { /* noop */ }
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${owner.credential}`, 'Idempotency-Key': operation },
         // immediate = on encaisse maintenant (pas d'essai) — garantie 30j gérée hors-Stripe.
         body: JSON.stringify({ plan: 'pro_monthly', immediate: true }),
       })
       const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
+      if (generation.current !== run || accountNow.current !== owner) return
+      if (res.ok && data.url) {
+        const target = new URL(data.url)
+        if (target.protocol !== 'https:' || target.hostname !== 'checkout.stripe.com') throw new Error('La page de paiement n’a pas pu être vérifiée.')
+        window.location.href = target.href
         return
       }
       setErr(data.error || "Le paiement n'a pas pu démarrer. Réessaie dans un instant.")
       setLoading(false)
     } catch {
-      setErr('Erreur réseau. Réessaie dans un instant.')
-      setLoading(false)
-    }
+      if (generation.current === run) setErr('La page de paiement n’a pas pu s’ouvrir. Réessaie dans un instant.')
+    } finally { if (generation.current === run) { active.current = false; setLoading(false) } }
   }
 
   const Guarantee = ({ className = '' }: { className?: string }) => (
@@ -269,6 +284,12 @@ export default function ReactivationClient() {
             ))}
           </ul>
 
+          <div id="compte-reactivation" className="mt-6 rounded-2xl bg-white p-4 text-[#0B0B0F]">
+            <CompteAvantPaiement onAccount={account => {
+              generation.current++; active.current = false; requestKey.current = null;
+              accountNow.current = account; setComptePaiement(account); setLoading(false); setErr('');
+            }} />
+          </div>
           <div className="mt-6">
             <CTA />
           </div>

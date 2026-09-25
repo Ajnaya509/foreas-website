@@ -176,7 +176,8 @@ export default async function SuccessPage({ searchParams }: PageProps) {
     : null
 
   // Trial end (Stripe trial_period_days ou trial_end natif)
-  const trialEndUnix = subscription?.trial_end
+  const trialEndUnix = subscription?.status === 'trialing' && subscription.trial_end && subscription.trial_end * 1000 > Date.now()
+    ? subscription.trial_end : null
   const trialEndDate = trialEndUnix ? new Date(trialEndUnix * 1000) : null
   const trialEndFormatted = trialEndDate ? formatDateFR(trialEndDate) : null
 

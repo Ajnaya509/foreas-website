@@ -1,6 +1,8 @@
 import { Resend } from 'resend'
 
-const resend = new Resend('re_dYBfyu1C_MJw78AoXVrFAukPEmobRq7iW')
+const apiKey = process.env.RESEND_API_KEY
+if (!apiKey) throw new Error('RESEND_API_KEY is required')
+const resend = new Resend(apiKey)
 
 async function test() {
   console.log('Envoi email de bienvenue test...')

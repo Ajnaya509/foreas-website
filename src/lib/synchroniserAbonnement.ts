@@ -1,32 +1,41 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
+import { beginBillingObservation } from './checkoutOwner'
 
-/** Lire Stripe à nouveau protège des événements retardés ou reçus dans le désordre.
- * Le lien de propriété est celui écrit par le serveur à la souscription. */
+/** Reconcile all protected Stripe subscriptions of the same account together.
+ * An old customer must not close access provided by a different current customer. */
 export async function synchroniserAbonnement(supabase: SupabaseClient, stripe: Stripe, id: string) {
-  const { data: liens, error } = await supabase.from('subscriptions')
-    .select('user_id,stripe_customer_id').eq('stripe_subscription_id', id)
-  if (error) throw new Error('lecture_lien_abonnement')
-  if (!liens?.length) return
-  const owners = [...new Set(liens.map(l => l.user_id))]
-  const customers = [...new Set(liens.map(l => l.stripe_customer_id))]
-  if (owners.length !== 1 || customers.length !== 1 || !customers[0]) throw new Error('lien_abonnement_ambigu')
-  const liste = await stripe.subscriptions.list({ customer: customers[0], status: 'all', limit: 100 })
-  if (liste.has_more) throw new Error('abonnements_incomplets')
-  const concerne = liste.data.find(s => s.id === id)
-  if (!concerne) throw new Error('abonnement_introuvable')
-  const periode = (s: Stripe.Subscription) => (s as unknown as { current_period_end?: number }).current_period_end ??
-    (s.items.data[0] as unknown as { current_period_end?: number })?.current_period_end
-  const fin = periode(concerne)
-  const miseAJour = await supabase.from('subscriptions').update({ status: concerne.status,
-    current_period_end: fin ? new Date(fin * 1000).toISOString() : null }).eq('stripe_subscription_id', id).select('id')
-  if (miseAJour.error || !miseAJour.data?.length) throw new Error('etat_abonnement_non_ecrit')
-  const actif = liste.data.find(s => s.status === 'active' || s.status === 'trialing')
-  const acces = await supabase.from('drivers').update({
-    subscription_active: Boolean(actif), subscription_status: actif?.status ?? concerne.status,
-    trial_ends_at: actif?.status === 'trialing' && actif.trial_end ? new Date(actif.trial_end * 1000).toISOString() : null,
-  }).eq('auth_user_id', owners[0]).select('id')
-  if (acces.error || !acces.data?.length) throw new Error('acces_abonnement_non_ecrit')
-  const profil = await supabase.from('user_profiles').upsert({ user_id: owners[0], tier: actif ? 'pro' : 'free' }, { onConflict: 'user_id' }).select('user_id')
-  if (profil.error || !profil.data?.length) throw new Error('profil_abonnement_non_ecrit')
+  const first = await supabase.from('subscriptions').select('user_id').eq('provider', 'stripe').eq('stripe_subscription_id', id)
+  if (first.error) throw new Error('lecture_lien_abonnement')
+  if (!first.data?.length) return
+  const owners = [...new Set(first.data.map(row => row.user_id))]
+  if (owners.length !== 1 || !owners[0]) throw new Error('lien_abonnement_ambigu')
+  const observationId = await beginBillingObservation(supabase, owners[0])
+  const mapped = await supabase.from('subscriptions').select('stripe_customer_id,stripe_subscription_id')
+    .eq('user_id', owners[0]).eq('provider', 'stripe')
+  if (mapped.error || !mapped.data?.length) throw new Error('lecture_liens_abonnement')
+  const links = mapped.data.map(row => ({ id: row.stripe_subscription_id, customer: row.stripe_customer_id }))
+  if (links.some(row => !row.id || !row.customer) || !links.some(row => row.id === id)) throw new Error('lien_abonnement_ambigu')
+  const customers = [...new Set(links.map(row => row.customer))]
+  if (customers.length > 20) throw new Error('abonnements_controle_requis')
+  const lists = await Promise.all(customers.map(async customer => {
+    const result = await stripe.subscriptions.list({ customer, status: 'all', limit: 100 })
+    if (result.has_more) throw new Error('abonnements_incomplets')
+    return { customer, subscriptions: result.data }
+  }))
+  const states = links.map(link => {
+    const subscription = lists.find(list => list.customer === link.customer)?.subscriptions.find(sub => sub.id === link.id)
+    if (!subscription) throw new Error('abonnement_introuvable')
+    const customer = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
+    if (customer !== link.customer) throw new Error('lien_abonnement_ambigu')
+    const period = (subscription as unknown as { current_period_end?: number }).current_period_end ?? subscription.items.data[0]?.current_period_end
+    const toDate = (value: number | null | undefined) => value == null ? null : new Date(value * 1000).toISOString()
+    return { ...link, status: subscription.status, period_end: toDate(period), trial_end: toDate(subscription.trial_end) }
+  })
+  // The transaction rejects superseded observations or links changed during the reads,
+  // then updates billing, driver access and profile atomically.
+  const saved = await supabase.rpc('partner_billing_sync_owner', {
+    p_auth_user_id: owners[0], p_source_subscription_id: id, p_expected_links: links, p_states: states, p_observation_id: observationId,
+  })
+  if (saved.error || saved.data?.status !== 'synced') throw new Error('synchronisation_abonnement_reprise_requise')
 }

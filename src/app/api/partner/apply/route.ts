@@ -1,66 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { sendPartnerApplicantEmail, sendPartnerInternalEmail } from '@/lib/email'
+import { randomUUID } from 'node:crypto'
+import { clientServeurOuNull } from '@/lib/supabaseServeur'
+import { validatePartnerApplication, UUID_PATTERN } from '@/lib/partnerApplication'
+import { partnerRateKey } from '@/lib/partnerRateKey'
+import { processPartnerApplicationMail, partnerApplicationConfirmation } from '@/lib/partnerApplicationMail'
 
 export const runtime = 'nodejs'
+const headers = { 'Cache-Control': 'no-store' }
 
-/**
- * POST /api/partner/apply — candidature partenaire (Onboarding V1).
- * Flux : insert dans `partner_applications` (status 'pending', clé anon) + 2 emails
- * (candidat + contact@foreas.xyz). AUCUN compte auth créé ici — l'app/admin approuve
- * puis déclenche l'invitation mot de passe. Zéro porte dérobée.
- */
 export async function POST(req: NextRequest) {
+  const requestId = randomUUID()
+  const fail = (status: number, code: string, message: string, fields?: unknown) => NextResponse.json(
+    { contract_version: 'partner.v1', error: { code, message, request_id: requestId, ...(fields ? { fields } : {}) } },
+    { status, headers: { ...headers, ...(status === 429 ? { 'Retry-After': '900' } : {}) } },
+  )
+  if (!req.headers.get('content-type')?.includes('application/json')) return fail(415, 'INVALID_REQUEST', 'Le formulaire doit être envoyé depuis cette page.')
+  const origin = req.headers.get('origin')
+  if (origin && origin !== req.nextUrl.origin) return fail(403, 'INVALID_REQUEST', 'Actualise la page avant de réessayer.')
+  const key = req.headers.get('idempotency-key') || ''
+  if (!UUID_PATTERN.test(key)) return fail(400, 'INVALID_REQUEST', 'Actualise la page avant de réessayer.')
   try {
-    const body = await req.json().catch(() => ({}))
-
-    const company_name = String(body.company_name || '').trim().slice(0, 120)
-    const contact_name = String(body.contact_name || '').trim().slice(0, 120)
-    const email = String(body.email || '').trim().toLowerCase().slice(0, 160)
-    const phone = String(body.phone || '').trim().slice(0, 30) || null
-    const siret = String(body.siret || '').replace(/\s/g, '').slice(0, 14) || null
-    const message = String(body.message || '').trim().slice(0, 2000) || null
-    const honeypot = String(body.website || '').trim() // champ piège anti-bot (caché côté UI)
-
-    // Bot détecté (honeypot rempli) → on répond OK sans rien faire (ne pas l'informer).
-    if (honeypot) return NextResponse.json({ ok: true })
-
-    // Validation serveur
-    if (company_name.length < 2)
-      return NextResponse.json({ error: 'Nom de société requis (2 caractères min).' }, { status: 400 })
-    if (contact_name.length < 2)
-      return NextResponse.json({ error: 'Nom du contact requis.' }, { status: 400 })
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return NextResponse.json({ error: 'Email valide requis.' }, { status: 400 })
-    if (siret && siret.length !== 14)
-      return NextResponse.json({ error: 'SIRET invalide (14 chiffres).' }, { status: 400 })
-
-    // Insert (RLS: policy "anyone can apply" autorise l'INSERT anon, status forcé 'pending')
-    const { error } = await supabase
-      .from('partner_applications')
-      .insert({ company_name, contact_name, email, phone, siret, message, status: 'pending' })
-
+    if (Number(req.headers.get('content-length') || 0) > 16_384) return fail(413, 'INVALID_REQUEST', 'Le formulaire est trop long.')
+    const raw = await req.text()
+    if (Buffer.byteLength(raw, 'utf8') > 16_384) return fail(413, 'INVALID_REQUEST', 'Le formulaire est trop long.')
+    let input: unknown
+    try { input = JSON.parse(raw) } catch { return fail(400, 'INVALID_REQUEST', 'Vérifie les informations du formulaire.') }
+    const { data, errors } = validatePartnerApplication(input)
+    if (Object.keys(errors).length) return fail(400, 'INVALID_REQUEST', 'Vérifie les champs indiqués.', errors)
+    if (data.website) return fail(400, 'INVALID_REQUEST', 'Impossible de valider ce formulaire.')
+    const sb = clientServeurOuNull()
+    const rateKey = partnerRateKey(req.headers)
+    if (!sb || !rateKey) return fail(503, 'SERVICE_UNAVAILABLE', 'Les candidatures sont momentanément indisponibles. Réessaie plus tard.')
+    const { data: result, error } = await sb.rpc('partner_application_submit', {
+      p_request_key: key, p_company_name: data.company_name, p_contact_name: data.contact_name,
+      p_email: data.email, p_phone: data.phone || null, p_siret: data.siret || null,
+      p_message: data.message || null, p_category: data.category,
+      p_professional_url: data.professional_url || null, p_territory: data.territory || null,
+      p_collaboration_mode: data.collaboration_mode, p_rate_key: rateKey,
+    })
     if (error) {
-      console.error('[partner/apply] insert error:', error.message)
-      return NextResponse.json({ error: "Impossible d'enregistrer la demande. Réessaie." }, { status: 500 })
+      if (error.message === 'RATE_LIMITED') return fail(429, 'RATE_LIMITED', 'Trop de demandes ont été envoyées. Réessaie dans quinze minutes.')
+      if (error.message === 'OPERATION_CONFLICT') return fail(409, 'OPERATION_CONFLICT', 'La première demande a déjà été enregistrée. Contacte FOREAS pour la modifier.')
+      if (error.message === 'INVALID_REQUEST') return fail(400, 'INVALID_REQUEST', 'Vérifie les informations du formulaire.')
+      console.error('[partner/apply] dépôt refusé', { requestId, code: error.code })
+      return fail(503, 'SERVICE_UNAVAILABLE', 'La demande n’a pas pu être confirmée. Réessaie avec ce formulaire.')
     }
-
-    // Emails best-effort (n'empêchent jamais la confirmation).
-    await Promise.allSettled([
-      sendPartnerApplicantEmail({ email, contactName: contact_name, companyName: company_name }),
-      sendPartnerInternalEmail({
-        companyName: company_name,
-        contactName: contact_name,
-        email,
-        phone: phone ?? undefined,
-        siret: siret ?? undefined,
-        message: message ?? undefined,
-      }),
-    ])
-
-    return NextResponse.json({ ok: true })
-  } catch (e) {
-    console.error('[partner/apply] error:', e)
-    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 })
+    if (!result?.application?.reference || result.application.status !== 'received') return fail(503, 'SERVICE_UNAVAILABLE', 'La réception de ta demande reste à vérifier. Réessaie avec ce formulaire.')
+    try { await processPartnerApplicationMail(sb, result.application.reference) }
+    catch { console.error('[partner/apply] confirmation à reprendre', { requestId }) }
+    const emailStatus = await partnerApplicationConfirmation(sb, result.application.reference)
+    return NextResponse.json({ contract_version: 'partner.v1', data: { application: result.application, confirmation_email: emailStatus }, meta: { request_id: requestId, as_of: new Date().toISOString() } }, { status: result.replayed ? 200 : 201, headers })
+  } catch {
+    console.error('[partner/apply] interruption', { requestId })
+    return fail(503, 'SERVICE_UNAVAILABLE', 'La demande n’a pas pu être confirmée. Réessaie avec ce formulaire.')
   }
 }

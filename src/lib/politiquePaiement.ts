@@ -1,50 +1,25 @@
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS } from './offre'
 
-/**
- * FOREAS — CE QUI EST RÉELLEMENT PRÉLEVÉ AUJOURD'HUI.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * POURQUOI CE FICHIER EXISTE
- *
- * Le brief de la page de paiement pose une règle en toutes lettres :
- *
- *     « ne jamais déduire l'essai dans le navigateur »
- *     « afficher 3 jours accordés seulement après confirmation du serveur »
- *
- * Et la maquette retenue, elle, montre « 249,99 € aujourd'hui ».
- *
- * ⚠️ CES DEUX PHRASES SE CONTREDISENT SUR LE SITE D'AUJOURD'HUI.
- *
- * Mesuré dans le dépôt : le tunnel du site part avec `IMMEDIATE_PAYMENT = false`
- * (src/app/tarifs3/page.tsx). Donc `POST /api/checkout` pose un `trial_end` de
- * trois jours, et le chauffeur est débité de **0 € aujourd'hui**, puis du montant
- * plein trois jours plus tard.
- *
- * Écrire « 249,99 € aujourd'hui » en dur dans la page aurait donc produit un
- * chiffre faux — plausible, joli, et faux. C'est exactement le mécanisme que le
- * dépôt combat depuis des semaines : une valeur recopiée dans un `.tsx`, plus
- * reliée à rien, qui affirme.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * CE QUE CE FICHIER FAIT
- *
- * Il calcule le débit du jour à partir des DEUX seules constantes qui décident
- * vraiment du montant — celles que `POST /api/checkout` utilise pour construire
- * son `price_data`. Il ne décide rien : il rapporte.
- *
- * Aucun montant, aucun pourcentage, aucune date n'est écrit à la main ici.
- * `359,88 €` et `−30,5 %` sont des RÉSULTATS. C'est la seule parade certaine
- * contre le « 359,58 € » que le brief interdit : un chiffre qu'on ne tape jamais
- * ne peut pas être tapé de travers.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * CE QU'IL NE FAIT PAS
- *
- * Il ne touche à aucune règle de prix, d'essai, d'abonnement ou de paiement.
- * Il n'appelle pas Stripe. Il ne lit aucun secret. Il est pur.
- */
+/** Pure amount calculation. Account eligibility is verified by the server in
+ * checkoutEligibility before both the preview and the actual checkout. Prices
+ * and trial duration come only from offre.ts; no browser flag grants a trial. */
 
 export type Formule = 'mensuel' | 'annuel'
+
+/** HTTP data remains untrusted even when the server returned 200. Only the
+ * calculator's complete, displayable shape may reach the payment summary. */
+export function estDebitDuJour(value: unknown, formule: Formule): value is DebitDuJour {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const data = value as Record<string, unknown>
+  if (typeof data.essai !== 'boolean') return false
+  const expected = calculerDebitDuJour(formule, !data.essai, Date.now())
+  for (const [key, field] of Object.entries(expected)) {
+    if (key !== 'premierDebitISO' && data[key] !== field) return false
+  }
+  return data.essai
+    ? typeof data.premierDebitISO === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(data.premierDebitISO) && Number.isFinite(Date.parse(data.premierDebitISO))
+    : data.premierDebitISO === null
+}
 
 /**
  * Ce que l'offre annuelle représente ramené au mois.
@@ -71,21 +46,9 @@ export const REFERENCE_DOUZE_MOIS_CENTIMES = PRIX_MENSUEL_CENTIMES * 12
 /** Le prix affiché sur la carte mensuelle. Même source que le serveur. */
 export const PRIX_MENSUEL_AFFICHE_CENTIMES = PRIX_MENSUEL_CENTIMES
 
-/**
- * Le tunnel que le site emprunte réellement.
- *
- * ⚠️ Cette valeur est en miroir de `IMMEDIATE_PAYMENT` dans
- * `src/app/tarifs3/page.tsx`, et c'est elle qui part dans le corps du POST vers
- * `/api/checkout` sous le nom `immediate`.
- *
- * `false` = essai de trois jours, 0 € aujourd'hui.
- * `true`  = encaissement comptant, montant plein aujourd'hui.
- *
- * Le jour où Chandler bascule le site en comptant, il change CE booléen, et la
- * page de paiement dit la vérité toute seule — récapitulatif, bouton, date de
- * premier débit. Rien d'autre à modifier.
- */
-export const TUNNEL_SITE_IMMEDIAT = false
+// The caller supplies the personal decision from checkoutEligibility.
+// Explicit direct reactivation can waive a new account's trial.
+// There is no public boolean able to grant an already-used trial again.
 
 /** Ce que le serveur accorde, tel que la page a le droit de l'afficher. */
 export interface DebitDuJour {

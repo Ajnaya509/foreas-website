@@ -1,0 +1,23 @@
+/* Payment surface: the existing white card and its blue action palette. */
+.compte { color: #0b0b0f; padding-top: 16px; }
+.compte h2 { color: #0b0b0f; margin-bottom: 8px; }
+.compte form > label { margin-top: 12px; }
+.lien {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 44px;
+  width: 100%;
+  border: 0;
+  padding: 6px 0;
+  background: transparent;
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.lien:disabled { color: #6b6b75; cursor: default; text-decoration: none; }
+.lien:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; border-radius: 4px; }

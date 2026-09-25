@@ -3,8 +3,17 @@ import { identiteDepuisCookie, monterUneMarche } from '@/lib/escalier'
 import { clientServeurOuNull } from '@/lib/supabaseServeur'
 import { syncAdvertisingConsentAtCheckout } from '@/lib/advertisingConsentServer'
 import Stripe from 'stripe'
-import { supabase } from '@/lib/supabase'
+import { resolveReferralOffer } from '@/lib/referralOfferServer'
+import { normalizeReferralCode, discountForPlan, ensureReferralCoupon, ReferralOfferError } from '@/lib/referralOffer'
 import { PRIX_MENSUEL_CENTIMES, PRIX_ANNUEL_CENTIMES, ESSAI_JOURS, resoudreFormule } from '@/lib/offre'
+import { CheckoutOwnerError, verifiedCheckoutAccount } from '@/lib/checkoutOwner'
+import { uniqueCheckout, UniqueCheckoutError } from '@/lib/uniqueCheckout'
+import { checkoutEligibility } from '@/lib/checkoutEligibility'
+import { paymentLinkOffer, checkLegacyPaymentLink, attachPaymentOffer } from '@/lib/paymentLinkOffer'
+import { calculerDebitDuJour } from '@/lib/politiquePaiement'
+import { UUID_PATTERN } from '@/lib/partnerApplication'
+import { preparePartnerCheckout, registerPartnerCheckoutPrice } from '@/lib/partnerCheckoutAttribution'
+import { ENROLLMENT_VERSION, enrollmentIntentCode, isEnrollmentCode, prepareEnrollmentCheckout } from '@/lib/partnerEnrollmentAttribution'
 
 // ─── Prix : construits dynamiquement, PAS de Price ID Stripe pré-créé ────────
 // Le mapping PRICE_IDS (Pro 97€ / Elite 247€ / weekly grandfathering / alias vip_*) a été
@@ -36,39 +45,9 @@ function getStripe() {
   })
 }
 
-/**
- * ═════════════════════════════════════════════════════════════════════════════
- * LE SECOND CLIENT, ET POURQUOI IL Y EN A DEUX
- * ═════════════════════════════════════════════════════════════════════════════
- *
- * `ui_mode: 'custom'` — celui qui permet de dessiner NOS champs au lieu du
- * gabarit Stripe — n'existe qu'à partir de la version d'API `2025-08-27.basil`.
- * La tentation était de monter tout le site dessus. Je l'ai mesuré avant :
- *
- * ⚠️ BASIL DÉPLACE `current_period_end` DE L'ABONNEMENT VERS SES LIGNES.
- *
- * Et `src/app/api/webhooks/stripe/route.ts` fait, ligne 445 :
- *     subscription = await stripe.subscriptions.retrieve(...)
- * puis lit `subscription.current_period_end` ligne 502. Avec Basil, ce champ
- * n'est plus là : la valeur devient `undefined`, la ligne d'abonné part sans
- * date de fin de période, et RIEN NE LÈVE D'ERREUR. Une panne muette sur le
- * chemin qui encaisse, à quarante-huit heures d'un lancement.
- *
- * D'où deux clients, et une règle simple :
- *
- *   getStripe()          → 2025-02-24.acacia — TOUT ce qui existait déjà.
- *                          Aucun appel du site ne change de comportement.
- *   getStripeElements()  → 2025-08-27.basil  — UNIQUEMENT la création d'une
- *                          session `ui_mode: 'custom'`.
- *
- * Les deux sont indépendants : une session créée en Basil produit le même
- * événement `checkout.session.completed`, et le webhook la relit avec le client
- * Acacia, donc dans la forme qu'il connaît.
- *
- * ⚠️ LE JOUR OÙ QUELQU'UN VOUDRA UNIFIER LES DEUX, il devra d'abord réparer la
- * lecture de `current_period_end` (voir la parade déjà posée dans le webhook),
- * et refaire cette mesure. Ce n'est pas un chantier de cosmétique.
- */
+/** Checkout creation, recovery and expiry share the Basil contract in both
+ * producers. This supports custom, embedded and hosted presentations under
+ * the same account gate. Existing subscription readers keep their version. */
 function getStripeElements() {
   const key = (process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')
   return new Stripe(key, {
@@ -76,23 +55,6 @@ function getStripeElements() {
     timeout: 8000,
     maxNetworkRetries: 1,
   })
-}
-
-// Parrainage V3 — coupon Stripe réutilisable par palier de remise (10/15/18 %).
-// Récupère le coupon s'il existe, sinon le crée (id déterministe → pas de doublons Stripe).
-async function ensureReferralCoupon(stripe: Stripe, pct: number): Promise<string> {
-  const id = `foreas_ref_${pct}`
-  try {
-    await stripe.coupons.retrieve(id)
-  } catch {
-    await stripe.coupons.create({
-      id,
-      percent_off: pct,
-      duration: 'forever',
-      name: `Parrainage FOREAS −${pct}%`,
-    })
-  }
-  return id
 }
 
 /**
@@ -114,14 +76,26 @@ export async function POST(request: NextRequest) {
     if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json({ error: 'Clé Stripe non configurée' }, { status: 500 })
     }
+    const attributionDb = clientServeurOuNull()
+    if (!attributionDb) throw new CheckoutOwnerError(503, 'La vérification de ton compte est indisponible.')
+    const beneficiary = await verifiedCheckoutAccount(attributionDb, request.headers.get('authorization'))
     const stripe = getStripe()
     const body = await request.json()
-    const { plan, mode, referral_code, immediate } = body
+    const { plan, mode, referral_code, payment_link } = body
+    const eligibility = await checkoutEligibility(attributionDb, stripe, beneficiary.userId)
+    if (eligibility.active) return NextResponse.json({ alreadySubscribed: true, accountId: beneficiary.userId }, { status: 409, headers: { 'Cache-Control': 'no-store' } })
+    // An explicit direct-payment page may waive a new account’s trial.
+    // A caller can never restore a trial already used by this account.
+    const immediate = eligibility.immediate || body.immediate === true
+    const linkedOffer = payment_link === undefined ? null : await paymentLinkOffer(attributionDb, payment_link)
+    const submittedKey = request.headers.get('idempotency-key')
+    if (submittedKey && !UUID_PATTERN.test(submittedKey)) return NextResponse.json({ error: 'La demande de paiement est invalide.' }, { status: 400 })
 
-    // Referral code: from body OR from cookie foreas_partner_ref
     const cookieHeader = request.headers.get('cookie') || ''
-    const cookieRefMatch = cookieHeader.match(/foreas_partner_ref=([^;]+)/)
-    const effectiveReferralCode = (referral_code || cookieRefMatch?.[1] || '').trim().toUpperCase() || null
+    if (referral_code !== undefined && typeof referral_code !== 'string') return NextResponse.json({ error: 'Code parrain invalide.' }, { status: 400 })
+    const rawReferral = referral_code === '' ? null : referral_code ?? linkedOffer?.referralCode ?? request.cookies.get('foreas_partner_ref')?.value ?? await enrollmentIntentCode(attributionDb, beneficiary.userId)
+    const effectiveReferralCode = rawReferral == null ? null : normalizeReferralCode(rawReferral)
+    if (rawReferral != null && !effectiveReferralCode) return NextResponse.json({ error: 'Ce code parrain n’est pas reconnu. Vérifie-le ou retire-le avant de continuer.', code: 'CODE_UNAVAILABLE' }, { status: 422 })
 
     // ── 23/08 — QUI COMMENCE À PAYER ? ────────────────────────────────────────
     // Cette route ne connaissait AUCUNE identité. Le paiement partait donc chez
@@ -134,32 +108,6 @@ export async function POST(request: NextRequest) {
     // `null` — et la marche ne monte pas plutôt que de monter chez quelqu'un
     // d'autre.
     const identiteVisiteur = await identiteDepuisCookie(cookieHeader)
-
-    // Parrainage V3 — remise dynamique (fonction SQL, GRANT anon).
-    // get_referral_discount_for_code gère DÉJÀ les codes CHAUFFEUR (palier 10/15/18 %)
-    // ET les codes PARTENAIRE (sa remise si is_promo_active). Le repli explicite sur
-    // get_partner_discount_for_code est une ceinture+bretelles : si la branche
-    // partenaire de la 1re fonction évoluait côté fil APP, les partenaires restent
-    // couverts (fonction stricte : status='active' + is_promo_active).
-    let referralDiscountPct = 0
-    if (effectiveReferralCode) {
-      try {
-        const { data } = await supabase.rpc('get_referral_discount_for_code', {
-          p_code: effectiveReferralCode,
-        })
-        referralDiscountPct = typeof data === 'number' ? data : 0
-        if (referralDiscountPct === 0) {
-          const { data: partnerData } = await supabase.rpc('get_partner_discount_for_code', {
-            p_code: effectiveReferralCode,
-          })
-          referralDiscountPct = typeof partnerData === 'number' ? partnerData : 0
-        }
-      } catch {
-        /* code inconnu / DB indispo → pas de remise, checkout normal */
-      }
-    }
-    const referralCouponId =
-      referralDiscountPct > 0 ? await ensureReferralCoupon(stripe, referralDiscountPct) : null
 
     if (!plan) {
       return NextResponse.json({ error: 'Plan requis' }, { status: 400 })
@@ -205,6 +153,19 @@ export async function POST(request: NextRequest) {
     // L'intervalle vient de la formule RÉSOLUE, plus du nom envoyé par le navigateur.
     const isAnnual = formule === 'annuel'
 
+    if (body.expectedTrial !== undefined && (typeof body.expectedTrial !== 'boolean' || body.expectedTrial !== !immediate)) {
+      return NextResponse.json({ error: 'Les conditions de ton abonnement ont changé. Vérifie le montant avant de continuer.', code: 'CONDITIONS_CHANGED' }, { status: 409 })
+    }
+    if (linkedOffer) await checkLegacyPaymentLink(attributionDb, stripe, linkedOffer, beneficiary.userId, true)
+
+    const referralOffer = effectiveReferralCode ? await resolveReferralOffer(effectiveReferralCode) : null
+    const enrollmentReferral = isEnrollmentCode(effectiveReferralCode)
+    const discount = referralOffer ? discountForPlan(referralOffer, isAnnual) : { percent: 0, months: null, duration: 'none' as const }
+    const referralDiscountPct = discount.percent
+    const referralCouponId = discount.percent > 0 && discount.duration !== 'none'
+      ? await ensureReferralCoupon(stripe, discount.percent, discount.months, discount.duration, referralOffer!.sponsor_type)
+      : null
+
     // ⚠️ Prix construit dynamiquement dans LES DEUX cas (essai ET paiement immédiat).
     // Avant, seul le chemin `immediate` utilisait price_data ; le chemin essai passait par
     // PRICE_IDS[plan] → des Price Stripe pré-créés qui portent ENCORE l'ancienne grille
@@ -221,7 +182,6 @@ export async function POST(request: NextRequest) {
       quantity: 1,
     }
     const origin = request.nextUrl.origin
-    const trialEnd = getTrialEnd()
     const isEmbedded = mode === 'embedded'
     /**
      * `mode: 'elements'` — le mode où NOUS dessinons les champs.
@@ -236,6 +196,7 @@ export async function POST(request: NextRequest) {
     const isElements = mode === 'elements'
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
+      expand: ['line_items.data.price'],
       line_items: [lineItem],
       /* ⚠️ 29/08 — CETTE LIGNE EMPÊCHAIT TOUT PAIEMENT SUR /tarifs3.
          `required` oblige Stripe à obtenir une adresse de facturation complète
@@ -262,16 +223,24 @@ export async function POST(request: NextRequest) {
        * courante sur l'identité canonique avant tout envoi publicitaire.
        */
       metadata: {
+        ...(enrollmentReferral ? { foreas_partner_enrollment: ENROLLMENT_VERSION } : {}),
+        ...(linkedOffer ? { foreas_payment_link_id: linkedOffer.id } : {}),
         foreas_measurement_source: 'p29_private_queue',
+        // 17/09/2026 — le compte FOREAS VÉRIFIÉ voyage avec le paiement. Sans lui, le
+        // webhook et la synchro ne pouvaient relier l'abonnement que par l'e-mail.
+        foreas_user_id: beneficiary.userId,
+        // Copie de référence ; l'intention privée enregistrée ci-dessous fait foi.
+        ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
       },
-      // client_reference_id carries the referral code for MLM attribution
-      // Railway webhook reads this to create partner_referrals row
-      ...(effectiveReferralCode ? { client_reference_id: effectiveReferralCode } : {}),
+      client_reference_id: beneficiary.userId,
       subscription_data: {
         // `immediate` → on encaisse TOUT DE SUITE (pas de trial_end).
         // Sinon : essai glissant de 3 jours, identique pour tous (voir getTrialEnd).
-        ...(immediate ? {} : { trial_end: trialEnd }),
+        ...(immediate ? {} : { trial_period_days: TRIAL_DAYS }),
         metadata: {
+          ...(enrollmentReferral ? { foreas_partner_enrollment: ENROLLMENT_VERSION } : {}),
+          // Le compte vérifié : c'est LUI que la synchro Stripe → FOREAS lit en premier.
+          foreas_user_id: beneficiary.userId,
           // L'identité voyage jusqu'au webhook : lui n'a ni cookie ni session.
           // Sans elle, un paiement confirmé ne saurait pas quel escalier monter.
           ...(identiteVisiteur ? { foreas_identity_id: identiteVisiteur } : {}),
@@ -295,21 +264,8 @@ export async function POST(request: NextRequest) {
           plan_demande: String(plan).slice(0, 40),
           flow: immediate ? 'immediate' : 'trial',
           ...(effectiveReferralCode ? { referral_code: effectiveReferralCode } : {}),
-          /* ⚠️ 29/08/2026 — CETTE LIGNE ANNONÇAIT UNE REMISE QUI N'EXISTAIT PAS.
-             Le 21/08, le coupon a cessé d'être appliqué à l'annuel : `/tarifs3`
-             écrit « L'annuel est au tarif fixe », et le coupon `forever` coûtait
-             45 € par abonné et par an. Correction juste — mais À MOITIÉ FAITE :
-             cette métadonnée, elle, continuait de partir sur l'annuel.
-             Le webhook la lit (`referral_discount_pct`) et en déduit
-             `discount_eur` et `amount_eur`. Résultat mesuré sur l'abonnement de
-             test du 29/08 : la base disait 224,99 € avec 25 € de remise, pendant
-             que Stripe affichait 249,99 € et « Aucun bon de réduction n'a été
-             appliqué ». Une remise fantôme, dans les chiffres de revenus et dans
-             le calcul des commissions de parrainage.
-             ⚠️ LA CONDITION DOIT ÊTRE LA MÊME QUE CELLE DU COUPON, plus bas :
-             `referralCouponId && !isAnnual`. Deux conditions différentes pour un
-             seul fait, c'est exactement comme ça que l'écart est né. */
-          ...(referralDiscountPct > 0 && referralCouponId && !isAnnual
+          // Remise comptable et coupon suivent la même offre vérifiée.
+          ...(referralDiscountPct > 0 && referralCouponId
             ? { referral_discount_pct: String(referralDiscountPct) }
             : {}),
         },
@@ -345,47 +301,48 @@ export async function POST(request: NextRequest) {
           : { success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${origin}/tarifs3?canceled=true` }),
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ⚠️ 21/08/2026 — LA REMISE PARRAIN S'APPLIQUAIT AUSSI À L'ANNUEL.
-    //
-    // `isAnnual` est calculé ligne 139 et servait à trois choses — le nom du
-    // produit, le montant, la périodicité — puis n'était PLUS jamais consulté.
-    // Le coupon partait donc sur les deux formules.
-    //
-    // Or `/tarifs3` écrit, en toutes lettres : « L'annuel est au tarif fixe. »
-    //
-    // Ce que ça coûtait : 249,99 € − 18 % = 204,99 €. Quarante-cinq euros par
-    // abonné et par an — et le coupon est `duration: 'forever'`, donc à CHAQUE
-    // renouvellement, indéfiniment. Le site promettait une chose et la caisse
-    // en facturait une autre, dans le sens défavorable à FOREAS.
-    //
-    // ⚠️ CE DÉFAUT ÉTAIT INVISIBLE AUX CONTRÔLES. Le prix affiché était juste,
-    // le prix envoyé à Stripe était juste, la remise était juste : c'est leur
-    // COMBINAISON qui contredisait la phrase. Aucune règle cherchant un chiffre
-    // faux ne pouvait l'attraper.
-    //
-    // ⚠️ ET LA CORRECTION NE SUFFIT PAS SEULE : le coupon étant « forever », les
-    // abonnements annuels déjà créés avec un coupon attaché continueront d'être
-    // remisés. Ce point part au fil qui possède Stripe — le Site ne touche pas
-    // aux abonnements existants.
-    // ─────────────────────────────────────────────────────────────────────────
-    if (referralCouponId && !isAnnual) {
+    // Le programme partenaire donne désormais 10 % sur les deux périodicités.
+    // discountForPlan conserve séparément les règles du parrainage chauffeur.
+    if (referralCouponId) {
       sessionParams.discounts = [{ coupon: referralCouponId }]
     } else {
       sessionParams.allow_promotion_codes = true
     }
 
-    /**
-     * ⚠️ SEULE LA CRÉATION D'UNE SESSION `custom` PASSE PAR BASIL.
-     * Tout le reste de cette route — coupons, remise parrain, résolution
-     * d'identité — continue d'utiliser le client Acacia obtenu ligne 116.
-     * Ce n'est pas de la prudence excessive : `ui_mode: 'custom'` n'existe qu'à
-     * partir de Basil, et Basil déplace des champs que le webhook lit encore.
-     * On prend donc la version neuve pour la seule chose qui l'exige.
-     */
-    const session = await (isElements ? getStripeElements() : stripe).checkout.sessions.create(
-      sessionParams,
-    )
+    // Checkout operations share Basil and the same private account reservation.
+    // Subscription readers keep their existing provider version.
+    sessionParams.customer_email = beneficiary.email
+    const session = await uniqueCheckout({
+      db: attributionDb, stripe: getStripeElements(), userId: beneficiary.userId,
+      livemode: /^sk_live_/.test((process.env.STRIPE_SECRET_KEY || '').replace(/\s/g, '')),
+      params: sessionParams,
+      context: { formule, immediate, referral: effectiveReferralCode, discount, offerId: linkedOffer?.id ?? null },
+      validate: async () => {
+        const current = await checkoutEligibility(attributionDb, stripe, beneficiary.userId)
+        if (current.active) throw new CheckoutOwnerError(409, 'Ton abonnement est déjà actif. Retrouve-le dans ton compte FOREAS.')
+        if (current.immediate && !immediate) throw new CheckoutOwnerError(409, 'Les conditions ont changé. Vérifie le montant avant de continuer.')
+      },
+      finalize: async (session) => {
+        await registerPartnerCheckoutPrice(attributionDb, session, {
+          interval: isAnnual ? 'year' : 'month', unitAmount: isAnnual ? ANNUAL_PRICE_CENTS : PRICE_CENTS,
+        })
+        if (effectiveReferralCode) {
+          if (enrollmentReferral) {
+            await prepareEnrollmentCheckout(attributionDb, {
+              session, code: effectiveReferralCode, authUserId: beneficiary.userId,
+              interval: isAnnual ? 'year' : 'month', unitAmount: isAnnual ? ANNUAL_PRICE_CENTS : PRICE_CENTS,
+            })
+          } else {
+            await preparePartnerCheckout(attributionDb, {
+              checkoutId: session.id,
+              customerId: typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null,
+              code: effectiveReferralCode, authUserId: beneficiary.userId,
+            })
+          }
+        }
+        if (linkedOffer) await attachPaymentOffer(attributionDb, linkedOffer.id, session.id, beneficiary.userId, isAnnual)
+      },
+    })
 
     // ⛔ CECI PROUVE QU'ON A COMMENCÉ À PAYER, PAS QU'ON A PAYÉ.
     // La preuve est l'identifiant de session Stripe : stable, unique,
@@ -418,31 +375,35 @@ export async function POST(request: NextRequest) {
       }
       await Promise.allSettled(jobs)
     })
-    /* ⚠️ 29/08 — LA SESSION RENVOIE DÉSORMAIS LA REMISE QU'ELLE PORTE VRAIMENT.
-       Trouvé par l'audit adverse : un visiteur passé une fois par /r/<code>
-       garde un cookie `foreas_partner_ref` trente jours. Des jours plus tard il
-       paie sur /tarifs3 sans jamais ouvrir le bloc parrain — le coupon s'attache
-       côté serveur (ligne 123, repli sur le cookie), mais l'écran, lui, ne
-       connaît que `codeApplique` et affiche le prix plein.
-       Résultat : « Ensuite 29,99 € par mois » affiché, 26,99 € prélevé à chaque
-       échéance, indéfiniment. Le client paie MOINS que l'annonce — ça reste un
-       montant faux sur la page qui encaisse, et une commission de parrainage
-       déclenchée sans que rien ne l'indique.
-       ⚠️ LA VALEUR RENDUE EST CELLE DU COUPON, PAS CELLE DU CODE. Même condition
-       que l'attachement vingt lignes plus haut : zéro sur l'annuel, qui est à
-       tarif fixe. Deux conditions différentes pour un seul fait, c'est
-       exactement l'écart qu'on vient de corriger deux fois. */
-    const remiseSurLaSession = referralCouponId && !isAnnual ? referralDiscountPct : 0
+    // L’écran reçoit la remise effectivement attachée à cette session.
+    const remiseSurLaSession = referralCouponId ? referralDiscountPct : 0
     if (isElements || isEmbedded)
       return NextResponse.json({
         clientSecret: session.client_secret,
+        accountId: beneficiary.userId,
+        debit: calculerDebitDuJour(formule, immediate, Date.now()),
+        referralCodeConfirmed: effectiveReferralCode,
         remiseParrainPct: remiseSurLaSession,
+        remiseDureeMois: remiseSurLaSession > 0 ? discount.months : null,
+        remisePermanente: remiseSurLaSession > 0 && discount.duration === 'forever',
         /* Pour que l'écran puisse dire d'où vient la remise quand le chauffeur
            n'a rien tapé : elle vient de son lien de parrainage. */
         remiseHeritee: remiseSurLaSession > 0 && !referral_code,
       })
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
+    if (error instanceof UniqueCheckoutError) return NextResponse.json({ error: error.message }, { status: error.status })
+    if (error instanceof CheckoutOwnerError) return NextResponse.json({ error: error.message }, { status: error.status })
+    if (error instanceof ReferralOfferError) {
+      return NextResponse.json({
+        error: error.code === 'CODE_UNAVAILABLE'
+          ? 'Ce code parrain n’est plus disponible. Vérifie-le ou retire-le pour continuer.'
+          : error.code === 'TERMS_UNAVAILABLE'
+            ? 'La durée de cette remise doit être confirmée par FOREAS avant de payer avec ce code.'
+            : 'La remise ne peut pas être vérifiée maintenant. Réessaie avant de payer.',
+        code: error.code,
+      }, { status: error.code === 'CODE_UNAVAILABLE' ? 422 : 503, headers: { 'Cache-Control': 'no-store' } })
+    }
     const err = error as { message?: string; type?: string; code?: string; statusCode?: number }
     // Ni dans les journaux, ni dans la réponse : aucun morceau de clé.
     // Un préfixe de clé écrit dans un journal reste lisible par quiconque accède
@@ -450,7 +411,7 @@ export async function POST(request: NextRequest) {
     // Stripe suffisent. Et le message brut de Stripe, lui, contient parfois un
     // fragment de la clé (« Invalid API Key provided: sk_live_***…»), donc il ne
     // part jamais au navigateur.
-    console.error('[checkout] erreur Stripe:', err.type, err.code, err.statusCode, err.message)
+    console.error('[checkout] erreur Stripe:', err.type, err.code, err.statusCode)
     return NextResponse.json(
       { error: "Le paiement n'a pas pu être initialisé. Réessaie dans un instant." },
       { status: 500 },

@@ -18,7 +18,7 @@ import ForeasLogo from '@/components/experience/ForeasLogo'
  */
 const links = [
   { name: 'Chauffeurs', href: '/chauffeur' },
-  { name: 'Partenaires', href: '/partenaires' },
+  { name: 'Partenaires', href: '/partenariat' },
   { name: 'Technologie', href: '/technologie' },
   { name: 'À propos', href: '/a-propos' },
   { name: 'Contact', href: '/contact' },
