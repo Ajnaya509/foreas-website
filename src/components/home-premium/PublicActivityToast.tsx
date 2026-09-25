@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import ActivityGlassReflection from './ActivityGlassReflection'
 import s from './home.module.css'
 
-import { ACTIVITY_KINDS, activityPhrase, brandEvents, previewEvents, type ActivityEvent, type ActivitySurface } from './activityCopy'
+import { ACTIVITY_KINDS, activityPhrase, carnetEvents, previewEvents, type ActivityEvent, type ActivitySurface } from './activityCopy'
 
 function ring(audio: AudioContext) {
   const note = audio.createOscillator()
@@ -63,9 +63,9 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
       .then((payload: { events?: ActivityEvent[] }) => {
         if (controller.signal.aborted) return
         const verified = (payload.events ?? []).filter(event => !!event.id && ACTIVITY_KINDS.includes(event.kind) && (surface === 'home' || event.kind === 'app_page_opened'))
-        setEvents(verified.length ? verified : brandEvents(surface))
+        setEvents(verified.length ? verified : carnetEvents(surface))
       })
-      .catch(() => { if (!controller.signal.aborted) setEvents(brandEvents(surface)) })
+      .catch(() => { if (!controller.signal.aborted) setEvents(carnetEvents(surface)) })
     return () => controller.abort()
   }, [surface])
 
