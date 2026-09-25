@@ -1,5 +1,5 @@
 export type ActivityKind = 'app_page_opened' | 'partner_account_activated' | 'booking_site_published'
-export type ActivityEvent = { id: string; kind: ActivityKind; name: string | null }
+export type ActivityEvent = { id: string; kind: ActivityKind; name: string | null; brand?: boolean }
 export type ActivitySurface = 'home' | 'driver'
 
 // Personas d’aperçu uniquement. Les noms publics viennent d’événements consentis.
@@ -83,7 +83,16 @@ const DRIVER_COPY = [
   'Tu verras toi-même ce qui t’est utile. L’essai Pro dure trois jours.',
 ] as const
 
+// Message de marque : la phrase est signée FOREAS, sans prénom ni action attribuée.
+function brandSentence(surface: ActivitySurface, event: ActivityEvent, index: number) {
+  if (surface === 'driver') return DRIVER_COPY[index % DRIVER_COPY.length]
+  const variant = HOME_COPY[event.kind][Math.floor(index / ACTIVITY_KINDS.length) % HOME_COPY[event.kind].length]
+  const cut = variant.indexOf('. ')
+  return cut >= 0 ? variant.slice(cut + 2) : variant
+}
+
 export function activityPhrase(surface: ActivitySurface, event: ActivityEvent, index: number) {
+  if (event.brand) return `FOREAS · ${brandSentence(surface, event, index)}`
   const name = event.name || (event.kind === 'partner_account_activated' ? 'Un partenaire' : 'Un chauffeur')
   if (surface === 'driver') return `${name} découvre l’app. ${DRIVER_COPY[index % DRIVER_COPY.length]}`
   const variants = HOME_COPY[event.kind]
@@ -94,6 +103,16 @@ export function previewEvents(surface: ActivitySurface): ActivityEvent[] {
   return (surface === 'home' ? HOME_PEOPLE : DRIVER_PEOPLE).map((name, index) => ({
     id: `preview-${surface}-${index}`,
     name,
+    kind: surface === 'home' ? ACTIVITY_KINDS[index % ACTIVITY_KINDS.length] : 'app_page_opened',
+  }))
+}
+
+// Rotation publique quand aucune action vérifiée n'est disponible.
+export function brandEvents(surface: ActivitySurface): ActivityEvent[] {
+  return Array.from({ length: 27 }, (_, index) => ({
+    id: `foreas-${surface}-${index}`,
+    name: null,
+    brand: true,
     kind: surface === 'home' ? ACTIVITY_KINDS[index % ACTIVITY_KINDS.length] : 'app_page_opened',
   }))
 }

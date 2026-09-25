@@ -5,26 +5,37 @@ import { useEffect, useState } from 'react'
 import ActivityGlassReflection from './ActivityGlassReflection'
 import s from './home.module.css'
 
-import { ACTIVITY_KINDS, activityPhrase, previewEvents, type ActivityEvent, type ActivitySurface } from './activityCopy'
+import { ACTIVITY_KINDS, activityPhrase, brandEvents, previewEvents, type ActivityEvent, type ActivitySurface } from './activityCopy'
+
+function ring(audio: AudioContext) {
+  const note = audio.createOscillator()
+  const volume = audio.createGain()
+  const now = audio.currentTime
+  note.type = 'sine'
+  note.frequency.setValueAtTime(740, now)
+  note.frequency.exponentialRampToValueAtTime(990, now + .13)
+  volume.gain.setValueAtTime(.0001, now)
+  volume.gain.exponentialRampToValueAtTime(.05, now + .018)
+  volume.gain.exponentialRampToValueAtTime(.0001, now + .18)
+  note.connect(volume).connect(audio.destination)
+  note.start(now)
+  note.stop(now + .19)
+}
+
+let sharedAudio: AudioContext | null = null
 
 function playChime() {
   try {
     if (localStorage.getItem('foreas_intro_sound') === 'off') return
-    const audio = new AudioContext()
-    if (audio.state === 'suspended') { void audio.close(); return }
-    const note = audio.createOscillator()
-    const volume = audio.createGain()
-    const now = audio.currentTime
-    note.type = 'sine'
-    note.frequency.setValueAtTime(740, now)
-    note.frequency.exponentialRampToValueAtTime(990, now + .13)
-    volume.gain.setValueAtTime(.0001, now)
-    volume.gain.exponentialRampToValueAtTime(.025, now + .018)
-    volume.gain.exponentialRampToValueAtTime(.0001, now + .18)
-    note.connect(volume).connect(audio.destination)
-    note.start(now)
-    note.stop(now + .19)
-    note.onended = () => { void audio.close() }
+    sharedAudio = sharedAudio ?? new AudioContext()
+    const audio = sharedAudio
+    if (audio.state === 'running') { ring(audio); return }
+    // Le navigateur attend un premier geste : le son part dès ce geste.
+    const unlock = () => {
+      ['pointerdown', 'keydown', 'touchstart'].forEach(type => window.removeEventListener(type, unlock))
+      void audio.resume().then(() => ring(audio)).catch(() => {})
+    }
+    ;['pointerdown', 'keydown', 'touchstart'].forEach(type => window.addEventListener(type, unlock, { once: true, passive: true }))
   } catch { /* Le son ne retarde jamais l’information. */ }
 }
 
@@ -51,9 +62,10 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
       .then(response => response.ok ? response.json() : { events: [] })
       .then((payload: { events?: ActivityEvent[] }) => {
         if (controller.signal.aborted) return
-        setEvents((payload.events ?? []).filter(event => !!event.id && ACTIVITY_KINDS.includes(event.kind) && (surface === 'home' || event.kind === 'app_page_opened')))
+        const verified = (payload.events ?? []).filter(event => !!event.id && ACTIVITY_KINDS.includes(event.kind) && (surface === 'home' || event.kind === 'app_page_opened'))
+        setEvents(verified.length ? verified : brandEvents(surface))
       })
-      .catch(() => { if (!controller.signal.aborted) setEvents([]) })
+      .catch(() => { if (!controller.signal.aborted) setEvents(brandEvents(surface)) })
     return () => controller.abort()
   }, [surface])
 
