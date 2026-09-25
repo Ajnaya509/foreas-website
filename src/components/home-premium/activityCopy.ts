@@ -91,10 +91,10 @@ function brandSentence(surface: ActivitySurface, event: ActivityEvent, index: nu
   return cut >= 0 ? variant.slice(cut + 2) : variant
 }
 
-// Passé simple : seul le premier verbe change, le reste du texte est inchangé.
+// Passé composé : seul le premier verbe change, le reste du texte est inchangé.
 const PASSE_SIMPLE: Record<string, string> = {
-  'découvre': 'découvrit', 'ouvre': 'ouvrit', 'regarde': 'regarda',
-  'rejoint': 'rejoignit', 'active': 'activa', 'publie': 'publia', 'met': 'mit',
+  'découvre': 'a découvert', 'ouvre': 'a ouvert', 'regarde': 'a regardé',
+  'rejoint': 'a rejoint', 'active': 'a activé', 'publie': 'a publié', 'met': 'a mis',
 }
 function auPasseSimple(text: string) {
   const [first, ...rest] = text.split(' ')
@@ -104,7 +104,7 @@ function auPasseSimple(text: string) {
 export function activityPhrase(surface: ActivitySurface, event: ActivityEvent, index: number) {
   if (event.brand) return `FOREAS · ${brandSentence(surface, event, index)}`
   const name = event.name || (event.kind === 'partner_account_activated' ? 'Un partenaire' : 'Un chauffeur')
-  if (surface === 'driver') return `${name} découvrit l’app. ${DRIVER_COPY[index % DRIVER_COPY.length]}`
+  if (surface === 'driver') return `${name} a découvert l’app. ${DRIVER_COPY[index % DRIVER_COPY.length]}`
   const variants = HOME_COPY[event.kind]
   return `${name} ${auPasseSimple(variants[Math.floor(index / ACTIVITY_KINDS.length) % variants.length])}`
 }
@@ -127,7 +127,7 @@ export function brandEvents(surface: ActivitySurface): ActivityEvent[] {
   }))
 }
 
-// Rotation publique : les 54 prénoms du carnet (27 accueil + 27 chauffeur), au passé simple.
+// Rotation publique : les 54 prénoms du carnet (27 accueil + 27 chauffeur), au passé composé.
 export function carnetEvents(surface: ActivitySurface): ActivityEvent[] {
   return (surface === 'home' ? HOME_PEOPLE : DRIVER_PEOPLE).map((name, index) => ({
     id: `carnet-${surface}-${index}`,
