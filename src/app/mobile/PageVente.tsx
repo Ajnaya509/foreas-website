@@ -61,7 +61,15 @@ const ANNUEL = formaterEuros(PRIX_ANNUEL_CENTIMES)
 /** Douze mois au mois, moins l'année : la soustraction que le chauffeur peut refaire. */
 const ECONOMIE = formaterEuros(PRIX_MENSUEL_CENTIMES * 12 - PRIX_ANNUEL_CENTIMES)
 
-export default function PageVente() {
+export default function PageVente({ pageSource = '/' }: { pageSource?: string } = {}) {
+  // Le contenu mobile reste identique. Seul le contexte du lien suit sa route.
+  const whatsapp = (href: string) => {
+    if (pageSource === '/') return href
+    const [path, query] = href.split('?')
+    const params = new URLSearchParams(query)
+    params.set('p', pageSource)
+    return `${path}?${params.toString()}`
+  }
   const racine = useRef<HTMLDivElement | null>(null)
   /* ⚠️ LE MOIS EST COCHÉ D'AVANCE — décision Chandler, 06/09. Elle REMPLACE
      celle du 05/09 (« l'année en avant, comme partout dans le métier ») : ne
@@ -247,7 +255,7 @@ export default function PageVente() {
              « Ton seuil » de la carte au-dessus.</p>
           <p className={s.preuve}>Ton seuil en euros par heure entre directement dans le
              calcul du verdict. Change-le, les verdicts changent avec.</p>
-          <PorteWhatsApp href="/wa?s=mobile_fonction&f=reglage&o=court_seuil">
+          <PorteWhatsApp href={whatsapp('/wa?s=mobile_fonction&f=reglage&o=court_seuil')}>
             Règle ton seuil sur WhatsApp
           </PorteWhatsApp>
         </div>
@@ -333,7 +341,7 @@ export default function PageVente() {
           <p className={s.tampon}>Ce ne sont pas les chiffres d’un chauffeur.</p>
         </div>
 
-        <a className={s.cta} href="/wa?s=pain&a=11&p=/&i=verdict&o=fin_module_verdict">Demande-lui pour ta course</a>
+        <a className={s.cta} href={whatsapp('/wa?s=pain&a=11&p=/&i=verdict&o=fin_module_verdict')}>Demande-lui pour ta course</a>
         <div><a className={s.sortie} href="#vitrine">Ou continue à lire</a></div>
       </section>
 
@@ -446,7 +454,7 @@ export default function PageVente() {
           <p className={s.tampon}>Aucun montant n’est avancé.</p>
         </div>
 
-        <a className={s.cta} href="/wa?s=mobile_fonction&f=site&p=/&i=clientele&o=fin_module_vitrine">Demande-lui ta page</a>
+        <a className={s.cta} href={whatsapp('/wa?s=mobile_fonction&f=site&p=/&i=clientele&o=fin_module_vitrine')}>Demande-lui ta page</a>
         <div><a className={s.sortie} href="#carnet">Ou continue à lire</a></div>
       </section>
 
@@ -520,7 +528,7 @@ export default function PageVente() {
           <figcaption className={s.tampon}>Aperçu d’un export réel, rempli de données de démonstration.</figcaption>
         </figure>
 
-        <a className={s.cta} href="/wa?s=mobile_fonction&f=compta&p=/&i=compta&o=fin_module_carnet">Demande-lui ton export</a>
+        <a className={s.cta} href={whatsapp('/wa?s=mobile_fonction&f=compta&p=/&i=compta&o=fin_module_carnet')}>Demande-lui ton export</a>
         <div><a className={s.sortie} href="#court">Ou continue à lire</a></div>
       </section>
 
@@ -536,7 +544,7 @@ export default function PageVente() {
         <h2>La journée s’arrête quand la barre est pleine, pas quand t’es cassé.</h2>
         <p>Tu poses ton chiffre le matin. Elle monte course après course.</p>
         <p className={s.preuve}>Elle bouge avec tes vraies courses, jamais avec une saisie à la main.</p>
-        <PorteWhatsApp href="/wa?s=mobile_fonction&f=objectif&o=court_barre">
+        <PorteWhatsApp href={whatsapp('/wa?s=mobile_fonction&f=objectif&o=court_barre')}>
           Demande ton objectif sur WhatsApp
         </PorteWhatsApp>
       </section>
@@ -552,7 +560,7 @@ export default function PageVente() {
            autres : l’endroit et l’heure, jamais le montant. Dès le premier qui
            roule, ça s’alimente.</p>
         <p className={s.tampon}>Estimation. Aucune course promise.</p>
-        <PorteWhatsApp href="/wa?s=mobile_fonction&f=zones&o=court_vague">
+        <PorteWhatsApp href={whatsapp('/wa?s=mobile_fonction&f=zones&o=court_vague')}>
           Demande ta zone sur WhatsApp
         </PorteWhatsApp>
       </section>
@@ -574,7 +582,7 @@ export default function PageVente() {
         <p>Tu lui écris comme à un collègue. Elle répond.</p>
         <p className={s.preuve}>Elle connaît l’app par cœur — 24 fiches produit, en service
            depuis le 3 septembre 2026. Ta ville, c’est toi qui la connais.</p>
-        <PorteWhatsApp href="/wa?s=mobile_fonction&f=ajnaya&o=court_ajnaya">
+        <PorteWhatsApp href={whatsapp('/wa?s=mobile_fonction&f=ajnaya&o=court_ajnaya')}>
           Écris-lui sur WhatsApp
         </PorteWhatsApp>
       </section>
@@ -585,7 +593,7 @@ export default function PageVente() {
         <p>Uber, Bolt, Heetch changent leurs règles de tarif. Tu es prévenu.</p>
         <p className={s.preuve}>Trois plateformes, nommées. On ne promet aucun délai : on te
            le dit quand on le sait.</p>
-        <PorteWhatsApp href="/wa?s=mobile_fonction&f=regles&o=court_guetteur">
+        <PorteWhatsApp href={whatsapp('/wa?s=mobile_fonction&f=regles&o=court_guetteur')}>
           Demande ce qui a changé sur WhatsApp
         </PorteWhatsApp>
       </section>
@@ -604,7 +612,7 @@ export default function PageVente() {
         <p className={s.preuve}>Ton filleul direct uniquement — rien sur les filleuls de tes
            filleuls. Six fois 5 €, ça fait 30 €. L’abonnement en coûte {MENSUEL}.</p>
         <p className={s.tampon}>Tant qu’ils paient.</p>
-        <PorteWhatsApp href="/wa?s=mobile_fonction&f=parrainage&o=court_collegue">
+        <PorteWhatsApp href={whatsapp('/wa?s=mobile_fonction&f=parrainage&o=court_collegue')}>
           Demande ton lien sur WhatsApp
         </PorteWhatsApp>
       </section>
@@ -664,7 +672,7 @@ export default function PageVente() {
         </div>
 
         <a className={`${s.cta} ${s.violet}`} href="/tarifs3">Commencer les {ESSAI_JOURS} jours</a>
-        <div><a className={s.sortie} href="/wa?s=avant_paiement&p=/&i=offre&o=avant_paiement">Une question d’abord</a></div>
+        <div><a className={s.sortie} href={whatsapp('/wa?s=avant_paiement&p=/&i=offre&o=avant_paiement')}>Une question d’abord</a></div>
         <p className={s.tampon}>Carte enregistrée dès l’inscription. Renouvellement désactivable.</p>
       </section>
 
@@ -728,7 +736,7 @@ export default function PageVente() {
         <p className={s.sur}>FOREAS</p>
         <h2>Ta prochaine course.<br />Ton choix.</h2>
         <p>Vois « à prendre » ou « à laisser », lis la raison, puis décide.</p>
-        <a className={s.cta} href="/wa?s=apres_lecture&p=/&i=cloture&o=final">Parle à Ajnaya</a>
+        <a className={s.cta} href={whatsapp('/wa?s=apres_lecture&p=/&i=cloture&o=final')}>Parle à Ajnaya</a>
         <div><a className={s.sortie} href="/tarifs3">Ou commence les {ESSAI_JOURS} jours</a></div>
       </section>
 
@@ -741,7 +749,7 @@ export default function PageVente() {
           <a href="/confidentialite">Confidentialité</a>
           <a href="/suppression-compte">Supprimer mon compte</a>
           <a href="/contact">Contact</a>
-          <a href="/wa?s=cap&p=/&o=pied">Tu pilotes une flotte</a>
+          <a href={whatsapp('/wa?s=cap&p=/&o=pied')}>Tu pilotes une flotte</a>
         </div>
       </footer>
     </div>

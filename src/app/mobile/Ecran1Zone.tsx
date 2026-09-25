@@ -61,7 +61,7 @@ const RYTHME_MS = 62
 const PAUSE_PLEIN = 22   // tours d'attente une fois le mot écrit
 const PAUSE_VIDE = 4
 
-export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
+export default function Ecran1Zone({ lienWhatsApp, pageSource = '/mobile' }: { lienWhatsApp: string; pageSource?: string }) {
   const sectionRef = useRef<HTMLElement | null>(null)
   const champRef = useRef<HTMLInputElement | null>(null)
   const rappel = useRef<number | null>(null)
@@ -214,6 +214,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
     >
       <div className={s.halos} aria-hidden="true" />
       <div className={s.grain} aria-hidden="true" />
+      <div className={s.desktopScene} aria-hidden="true" />
 
       {/* ══ LE HAUT DE PAGE ══════════════════════════════════════════════════
           Décision de Chandler, 04/09 : la copie forte passe EN HAUT, visible
@@ -245,7 +246,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
       {!validee ? (
         <>
           <h1 id="titre-zone" className={s.titreHero}>
-            Gagne plus.<br />Roule moins.
+            Gagne plus.<br /><span>Roule moins.</span>
           </h1>
           {/* « pas » en gras : c'est LE mot qui retourne la phrase. Sans lui,
               « ne paie plus » se lit comme une constatation triste ; avec, on
@@ -295,6 +296,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
             valider(zone)
           }}
         >
+          <p className={s.desktopFormTitle}>Où roules-tu ?</p>
           {/* Le libellé reste pour les lecteurs d'écran : l'invite qui s'écrit
               toute seule ne se lit pas à voix haute, et un champ sans nom est
               un champ inutilisable au clavier. */}
@@ -437,7 +439,7 @@ export default function Ecran1Zone({ lienWhatsApp }: { lienWhatsApp: string }) {
                 if (validee) p.set('z', validee)
                 const q = (question ?? '').trim()
                 if (q) p.set('q', q.slice(0, 160))
-                p.set('p', '/mobile')
+                p.set('p', pageSource)
                 p.set('o', 'telephone_hero')
                 /* Le code du billet : `/wa` le colle en fin de message sous la
                    forme `(réf 29JK6E)`, le pont WhatsApp le lit, Ajnaya reprend

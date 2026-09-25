@@ -49,7 +49,7 @@
 /* Le vert WhatsApp existe déjà partout ailleurs sur le site (widget, modale
    de sortie, vérification). Avec le logo à côté, le chauffeur sait ce qu'il
    ouvre avant même d'avoir lu le libellé. */
-.wa { background: #25D366; color: #07110A; }
+.wa { background: #087B55; color: #FFFFFF; }
 .logo { width: 21px; height: 21px; flex: none; }
 
 .essai {
@@ -64,4 +64,21 @@
 @media (max-width: 359px) {
   .wa, .essai { font-size: 1rem; gap: 7px; padding: 0 12px; }
   .logo { width: 19px; height: 19px; }
+}
+
+/* Même action sur ordinateur, à une largeur de bouton, sans recouvrir le pied. */
+@media (min-width: 900px) {
+  :global([data-driver-page]) .barre {
+    width: min(460px, calc(100% - 80px));
+    margin-inline: auto;
+    padding: 0;
+    bottom: calc(var(--bandeau, 0px) + 24px);
+  }
+  :global([data-driver-page]) .wa,
+  :global([data-driver-page]) .essai {
+    min-height: 58px;
+    padding-inline: 28px;
+    font-size: 1.1875rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+  }
 }

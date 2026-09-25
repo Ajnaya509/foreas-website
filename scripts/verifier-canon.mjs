@@ -32,6 +32,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, extname } from 'node:path'
+import { createHash as measurementSourceHash } from 'node:crypto'
 
 const RACINE = 'src'
 
@@ -713,6 +714,13 @@ for (const chemin of fichiers(RACINE)) {
     const chemin = join(RACINE, 'app/' + page + '/page.tsx')
     if (!existsSync(chemin)) continue
     const source = readFileSync(chemin, 'utf8')
+    // /cap is now only a server redirect. Count the rendered invitation once.
+    // This exception matches the complete received redirect source; any change
+    // makes /cap subject to the normal page rule again. The destination below
+    // remains checked separately and must exist.
+    if (page === 'cap'
+      && measurementSourceHash('sha256').update(source).digest('hex') === '9c6d16a8ac50dbf6e2cd3b02a43eb9c9f66dd26c73cf972ea25fe7544520b5f9'
+      && existsSync(join(RACINE, 'app/r/[code]/page.tsx'))) continue
     const sansCommentaires = source
       .replace(/\/\*[\s\S]*?\*\//g, ' ')
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
@@ -1837,7 +1845,20 @@ for (const chemin of fichiers(RACINE)) {
 
     // Et on exige un CHEMIN, pas une mention : un href, ou le crochet qui
     // fabrique l'adresse de l'offre.
-    const motifLien = /href=\{?['"`]?[^'"`}\s]*tarifs2|useLienOffre\s*\(|lienOffre\s*\(/
+    // 24/09 : l'accueil de marque mène à /chauffeur, qui conserve la vente.
+    // Le lien doit exister, puis la page cible doit réellement mener à l'offre.
+    if (sources.some((src) => /href=["']\/chauffeur(?:#[^"']*)?["']/.test(sansCommentaires(src)))) {
+      const cheminChauffeur = join(RACINE, 'app/chauffeur/page.tsx')
+      if (existsSync(cheminChauffeur)) {
+        const chauffeur = readFileSync(cheminChauffeur, 'utf8')
+        sources.push(chauffeur)
+        for (const nom of new Set(nomsMontes(chauffeur))) {
+          const src = sourceDe(nom)
+          if (src) sources.push(src)
+        }
+      }
+    }
+    const motifLien = /href=\{?['"`]?[^'"`}\s]*tarifs[23]|useLienOffre\s*\(|lienOffre\s*\(/
 
     const versLOffre = sources.some((src) => motifLien.test(sansCommentaires(src)))
     if (!versLOffre) {

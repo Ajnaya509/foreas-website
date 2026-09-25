@@ -55,7 +55,12 @@ const nextConfig: NextConfig = {
       // objet. TypeScript a crié « Duplicate identifier » — mais en JavaScript
       // pur, la seconde déclaration aurait SILENCIEUSEMENT écrasé les cinq
       // redirections précédentes, dont /tarifs et /checkout.
-      { source: '/experience', destination: '/', permanent: true },
+      { source: '/experience', destination: '/chauffeur', permanent: true },
+      // 25/09/2026 — nouvelle page chauffeur : les anciennes adresses y mènent.
+      { source: '/mobile', destination: '/chauffeur', permanent: true },
+      { source: '/chauffeurs', destination: '/chauffeur', permanent: true },
+      // Temporaire : la page /partenaire arrive avec l'ouverture du programme.
+      { source: '/partenaire', destination: '/devenir-partenaire', permanent: false },
       // 20/08/2026 — /checkout redirige vers la page de tarifs : UN SEUL chemin
       // commercial. (Depuis le 06/09 cette page est `/tarifs3` ; c'était
       // `/tarifs2`, désormais archivée elle aussi, pour la raison ci-dessous.)

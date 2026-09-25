@@ -1125,3 +1125,15 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 639px) {
   .compte-confirmation { width: 100%; max-width: none; max-height: calc(100svh - 16px); max-height: calc(100dvh - 16px); margin: auto 0 0; padding: 24px; padding-bottom: max(24px, env(safe-area-inset-bottom)); border-bottom: 0; border-radius: var(--radius-modal) var(--radius-modal) 0 0; }
 }
+
+/* Accueil public, 24/09/2026. Valeurs réservées à cette composition.
+   Les composants mobiles historiques ne consomment aucune de ces variables. */
+.foreas-home {
+  --home-on-accent: #05070F;
+  --home-gutter: clamp(20px, 4.7vw, 72px);
+  --home-display: clamp(3.1rem, 5.9vw, 6rem);
+  --home-title: clamp(2.4rem, 4vw, 4rem);
+  --home-lead: clamp(1rem, 1.4vw, 1.2rem);
+  --home-eyebrow: .65rem;
+  --home-radius: 24px;
+}

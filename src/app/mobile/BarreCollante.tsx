@@ -57,7 +57,7 @@ const REPERE_CONVAINCU = 'court'
  * avec FOREAS. 0 €. Je teste. » : le bug du 29/08, que le compilateur ne voit
  * pas. Les deux portent `barre_mobile`.
  */
-export default function BarreCollante() {
+export default function BarreCollante({ pageSource = '/' }: { pageSource?: string } = {}) {
   // Une fois montrée, elle ne clignote plus : on ne la reprend jamais au visiteur.
   const [montree, setMontree] = useState(false)
   // true au départ — le hero EST le premier écran, la barre n'a rien à y faire.
@@ -145,10 +145,10 @@ export default function BarreCollante() {
      dans le libellé. */
   const lien = convaincu
     ? '/tarifs3'
-    : `/wa?s=barre_mobile&p=/&i=zone&o=barre_collante${zone ? `&z=${encodeURIComponent(zone)}` : ''}`
+    : `/wa?s=barre_mobile&p=${encodeURIComponent(pageSource)}&i=zone&o=barre_collante${zone ? `&z=${encodeURIComponent(zone)}` : ''}`
 
   return (
-    <div className={`${s.barre} ${visible ? s.dedans : ''}`} aria-hidden={!visible}>
+    <div data-driver-sticky className={`${s.barre} ${visible ? s.dedans : ''}`} aria-hidden={!visible}>
       <a
         className={convaincu ? s.essai : s.wa}
         href={lien}

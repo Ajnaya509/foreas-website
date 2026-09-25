@@ -210,7 +210,7 @@
    WhatsApp garde SA couleur — un chauffeur reconnaît le vert avant de
    lire le mot. */
 .aj-chip.essai .ico{background:rgba(0,212,255,.14);color:#00C9FF;}
-.aj-chip.wa .ico{background:rgba(37,211,102,.14);color:#25D366;}
+.aj-chip.wa .ico{background:rgba(37,211,102,.14);color:#FFFFFF;}
 .aj-chip + .aj-chip{margin-top:6px;}
 .aj-chip .lib{flex:1;font-size:14px;font-weight:700;}
 .aj-chip .chev{color:rgba(248,250,252,.38);font-size:15px;}

@@ -40,6 +40,7 @@
   position: absolute; inset: 0; pointer-events: none;
   background: rgba(255,255,255,.012);
 }
+.desktopScene, .desktopFormTitle { display: none; }
 
 /* ══ LA NOTIFICATION ═══════════════════════════════════════════════════════
    Elle a la forme d'une vraie notification de téléphone : coins très arrondis,
@@ -463,4 +464,106 @@
 @media (max-width: 360px) {
   .prixHero { font-size: 11.5px; }
   .pointHero { padding: 0 5px; }
+}
+
+/* /chauffeur : toutes les retouches de composition restent au-dessus de 900 px. */
+@media (min-width: 900px) {
+  :global([data-driver-page]) .ecran1 {
+    width: min(100%, 1600px);
+    margin-inline: auto;
+    min-height: 740px;
+    height: auto;
+    padding: 76px clamp(48px, 7vw, 112px) 68px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(40px, 6vw, 96px);
+    align-content: center;
+    isolation: isolate;
+    border-bottom: 1px solid rgba(248,250,252,.08);
+  }
+  :global([data-driver-page]) .desktopScene {
+    display: block;
+    position: absolute;
+    z-index: 0;
+    inset: 0 0 0 34%;
+    pointer-events: none;
+    background: linear-gradient(90deg,#060610 0%,rgba(6,6,16,.08) 65%),linear-gradient(0deg,#060610 0%,transparent 34%,rgba(6,6,16,.1) 80%,#060610aa),url('/media/home/night-drive.webp') 65% center / cover no-repeat;
+    opacity: .84;
+    mask-image: linear-gradient(90deg,transparent,#000 28%);
+  }
+  :global([data-driver-page]) .ecran1 .halos { z-index: 1; opacity: .6; }
+  :global([data-driver-page]) .ecran1 .grain {
+    z-index: 1;
+    background: linear-gradient(120deg,rgba(140,82,255,.05),transparent 40%);
+  }
+  :global([data-driver-page]) .ecran1Attente {
+    min-height: clamp(720px, 90svh, 940px);
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    grid-template-rows: repeat(4, min-content);
+    row-gap: 0;
+  }
+  :global([data-driver-page]) .ecran1Attente::after {
+    left: 50%; bottom: 0; width: 60%; height: 1px;
+    background: linear-gradient(90deg,transparent,rgba(140,82,255,.5),rgba(0,212,255,.5),transparent);
+  }
+  :global([data-driver-page]) .ecran1Attente .titreHero {
+    grid-column: 1; grid-row: 1;
+    margin: 0; text-align: left;
+    font-size: clamp(4.7rem, 7.6vw, 7.6rem);
+    font-weight: 600;
+    letter-spacing: -.045em;
+    line-height: .91;
+    white-space: nowrap;
+    text-shadow: 0 6px 45px rgba(0,0,0,.22);
+  }
+  :global([data-driver-page]) .ecran1Attente .titreHero span {
+    background: linear-gradient(105deg,#F8FAFC 0%,#BDA7FF 58%,#91D7ED 100%);
+    background-clip: text;-webkit-background-clip: text;-webkit-text-fill-color: transparent;
+  }
+  :global([data-driver-page]) .ecran1Attente .sousHero {
+    grid-column: 1; grid-row: 2;
+    max-width: 440px; margin: 26px 0 0;
+    text-align: left;font-size: 1.0625rem;line-height: 1.7;
+    color: rgba(248,250,252,.74);
+  }
+  :global([data-driver-page]) .ecran1Attente .champBloc {
+    grid-column: 1; grid-row: 3;
+    width: 100%; max-width: 460px; min-width: 0;
+    margin: 32px 0 0; padding: 0;
+  }
+  :global([data-driver-page]) .desktopFormTitle {
+    display: block;margin: 0 0 12px;color: #F8FAFC;
+    font: 500 1.3125rem/1.2 var(--font-genos),sans-serif;
+  }
+  :global([data-driver-page]) .ecran1Attente .respire { display: none; }
+  :global([data-driver-page]) .ecran1Attente .champRangee {
+    background: rgba(248,250,252,.065);
+    border: 1px solid rgba(248,250,252,.2);
+    box-shadow: 0 1px rgba(248,250,252,.05) inset,0 16px 40px #0002;
+    backdrop-filter: blur(18px); border-radius: 16px;
+  }
+  :global([data-driver-page]) .ecran1Attente .champ { height: 64px; font-size: 1rem; }
+  :global([data-driver-page]) .ecran1Attente .champRangee .champBouton {
+    height: 52px; padding-inline: 23px; font-weight: 600; font-size: 1.25rem;
+    background: #F8FAFC;color: #0B0F1E;border-radius: 11px;
+  }
+  :global([data-driver-page]) .ecran1Attente .explique {
+    max-width: 400px;margin-top: 16px;text-align: left;
+    font-size: .8125rem;line-height: 1.7;color: rgba(248,250,252,.6);
+  }
+  :global([data-driver-page]) .prixHero {
+    grid-column: 1;grid-row: 4;align-self: start;text-align: left;
+    margin: 17px 0 0;font-size: .6875rem;line-height: 1.6;color: rgba(248,250,252,.5);
+  }
+  :global([data-driver-page]) .ecran1:not(.ecran1Attente) {
+    min-height: 820px;padding-block: 56px;align-items: center;
+  }
+  :global([data-driver-page]) .consigne {display:flex;flex-wrap:wrap;align-self:center;gap:20px}
+  :global([data-driver-page]) .consigneTexte {flex-basis:100%}
+  :global([data-driver-page]) .consigneTitre {font-size:clamp(3rem,5vw,5rem);font-weight:600;line-height:1;letter-spacing:-.035em;white-space:normal}
+  :global([data-driver-page]) .consigneSous {margin-top:20px;font-size:1.125rem;line-height:1.6}
+  :global([data-driver-page]) .changer {font-size:.9375rem;color:rgba(248,250,252,.72)}
+  :global([data-driver-page]) .telBloc {width:100%;height:700px;min-height:0;margin:0;overflow:hidden}
+  :global([data-driver-page]) .halos::before {width:900px;height:800px;top:-400px;left:-240px}
+  :global([data-driver-page]) .halos::after {width:700px;height:640px;top:50px;right:-260px}
 }

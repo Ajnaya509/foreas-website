@@ -271,10 +271,10 @@
 .vente .porteWa{display:flex;align-items:center;justify-content:center;gap:9px;
   width:100%;min-height:50px;margin-top:18px;padding:0 14px;
   border:1px solid rgba(0,212,255,.42);border-radius:14px;
-  background:rgba(0,212,255,.05);color:var(--encre-1);
+  background:rgba(0,212,255,.05);color:#FFFFFF;
   font-family:var(--titre);font-size:1.0625rem;font-weight:700;letter-spacing:.2px;
   text-decoration:none;text-align:center}
-.vente .porteWa svg{width:20px;height:20px;flex:none;color:#25D366}
+.vente .porteWa svg{width:20px;height:20px;flex:none;color:#FFFFFF}
 .vente .porteWa:active{transform:scale(.99)}
 @media (max-width:359px){
   .vente .porteWa{font-size:0.9375rem;gap:7px;padding:0 10px}
@@ -384,3 +384,174 @@
   .vente .calcul .l{opacity:1!important;transform:none!important;animation:none!important}
   .vente, .vente *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* /chauffeur : mêmes scènes, recomposées à partir de 900 px seulement. */
+@media (min-width: 900px) {
+  :global([data-driver-page]) .vente {
+    width: calc(100% - 80px);
+    max-width: 1248px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(32px, 5vw, 80px);
+    overflow: clip;
+    --titre: var(--font-genos), 'Genos', sans-serif;
+    --lire: var(--font-inter), 'Inter', sans-serif;
+  }
+  :global([data-driver-page]) .vente .scene,
+  :global([data-driver-page]) .vente .court {
+    min-width: 0;
+    padding: 88px 0;
+    scroll-margin-top: 32px;
+  }
+  :global([data-driver-page]) .vente h2 {
+    font-size: clamp(2.75rem, 4.2vw, 4.3rem);
+    font-weight: 600;
+    text-wrap: balance;
+    letter-spacing: -.035em;
+    line-height: 1.02;
+  }
+  :global([data-driver-page]) .vente h3 { font-size: 2rem; font-weight: 600; line-height: 1.12; }
+  :global([data-driver-page]) .vente p { font-size: 1rem; line-height: 1.65; }
+  :global([data-driver-page]) .vente p.grand { font-size: 1.125rem; line-height: 1.65; }
+  :global([data-driver-page]) .vente .sur { font-size: .6875rem; margin-bottom: 20px; }
+  :global([data-driver-page]) .vente .tampon { font-size: .75rem; line-height: 1.6; }
+  :global([data-driver-page]) .vente .gifle {
+    grid-column: 1 / -1;
+    padding: 104px 0 80px;
+  }
+  :global([data-driver-page]) .vente > .scene:first-child { padding-top: 64px; }
+  :global([data-driver-page]) .vente .gifle h2 {
+    max-width: 1120px;
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+    font-size: clamp(3.8rem, 6.1vw, 6rem);
+    line-height: 1.02;
+    letter-spacing: -.04em;
+  }
+  :global([data-driver-page]) .vente .gifle p { max-width: 640px; }
+  :global([data-driver-page]) .vente .gifle .sur { padding-left: 0; }
+  :global([data-driver-page]) .vente .carte-sombre { padding: 32px; border-radius: 24px; background: linear-gradient(145deg,rgba(248,250,252,.055),rgba(248,250,252,.018)); border-color: rgba(248,250,252,.11); box-shadow: 0 1px rgba(248,250,252,.04) inset,0 24px 64px #0002; }
+  :global([data-driver-page]) .vente .calcul .l { padding-block: 12px; font-size: 1rem; }
+  :global([data-driver-page]) .vente .verdict .mot { font-size: 2.25rem; }
+  :global([data-driver-page]) .vente .cta { font-weight: 600; border-radius: 14px; padding-inline: 24px; width: fit-content; min-width: 240px; }
+  :global([data-driver-page]) .vente .porteWa { width: fit-content; max-width: 100%; padding-inline: 20px; }
+  :global([data-driver-page]) .vente .court h2 { font-size: 3rem; }
+  :global([data-driver-page]) .vente .court .preuve { font-size: .9375rem; line-height: 1.6; }
+
+  /* Une preuve à côté de son explication, à une taille réellement lisible. */
+  :global([data-driver-page]) .vente .scene:has(> figure),
+  :global([data-driver-page]) .vente .scene:has(> .seuilBloc) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(48px, 7vw, 112px);
+    align-content: start;
+  }
+  :global([data-driver-page]) .vente .scene:has(> figure) > *,
+  :global([data-driver-page]) .vente .scene:has(> .seuilBloc) > * { grid-column: 1; }
+  :global([data-driver-page]) .vente .scene:has(> figure) > figure {
+    grid-column: 2;
+    grid-row: 1 / span 7;
+    align-self: start;
+    margin-top: 0 !important;
+    width: 100%;
+    max-width: 460px;
+    justify-self: end;
+  }
+  :global([data-driver-page]) .vente .scene:has(> figure) > .cta { align-self: start; }
+  :global([data-driver-page]) .vente .scene:has(> figure) > h2 { align-self: start; }
+  :global([data-driver-page]) .vente .scene:has(> figure) {
+    grid-template-rows: repeat(6, min-content) minmax(0, 1fr);
+  }
+  :global([data-driver-page]) .vente .scene:has(> .seuilBloc) {
+    grid-template-rows: repeat(4, min-content) minmax(0, 1fr);
+  }
+  :global([data-driver-page]) .vente .scene:has(> .seuilBloc) > .carte-sombre {
+    grid-column: 2;
+    grid-row: 1 / span 5;
+    align-self: center;
+    margin-top: 0 !important;
+  }
+  :global([data-driver-page]) .vente .scene:has(> .seuilBloc) > .seuilBloc { margin-top: 32px; }
+  :global([data-driver-page]) .vente .doc img { height: 520px; }
+
+  /* Les dix vidéos restent à la demande ; le rail exploite la largeur. */
+  :global([data-driver-page]) .vente .scene:has(> .rail) { grid-column: 1 / -1; }
+  :global([data-driver-page]) .vente .scene:has(> .rail) > p { max-width: 640px; }
+  :global([data-driver-page]) .vente .rail {
+    margin: 32px 0 0;
+    padding: 0 0 16px;
+    gap: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(140, 82, 255, .5) transparent;
+  }
+  :global([data-driver-page]) .vente .rail::-webkit-scrollbar { display: block; height: 6px; }
+  :global([data-driver-page]) .vente .rail::-webkit-scrollbar-thumb { background: rgba(140, 82, 255, .5); border-radius: 3px; }
+  :global([data-driver-page]) .vente .rail .clip { width: clamp(216px, 20vw, 264px); scroll-snap-align: start; }
+
+  :global([data-driver-page]) .vente .court[id='essai'] {
+    grid-column: 1 / -1;
+    padding: 56px;
+    margin-bottom: 40px;
+    border: 1px solid var(--filet);
+    border-radius: 28px;
+    background: radial-gradient(ellipse at 100% 0%, rgba(140, 82, 255, .12), transparent 64%), #0C0D19;
+  }
+  :global([data-driver-page]) .vente .court[id='essai'] > p { max-width: 720px; }
+  :global([data-driver-page]) .vente .scene:has(> .prix-carte) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(48px, 7vw, 112px);
+    grid-template-rows: repeat(6, min-content) minmax(0, 1fr);
+  }
+  :global([data-driver-page]) .vente .scene:has(> .prix-carte) > * { grid-column: 1; }
+  :global([data-driver-page]) .vente .scene:has(> .prix-carte) > .prix-carte {
+    grid-column: 2;
+    grid-row: 1 / span 7;
+    align-self: center;
+    margin-top: 0;
+    padding: 32px;
+  }
+  :global([data-driver-page]) .vente .scene:has(> .prix-carte) > .bascule { max-width: 380px; }
+  :global([data-driver-page]) .vente .prix-val { font-size: 3.75rem; }
+
+  :global([data-driver-page]) .vente .scene:has(details) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    column-gap: clamp(48px, 7vw, 112px);
+    grid-template-rows: min-content min-content minmax(0, 1fr);
+    align-content: start;
+  }
+  :global([data-driver-page]) .vente .scene:has(details) > p,
+  :global([data-driver-page]) .vente .scene:has(details) > h2 { grid-column: 1; align-self: start; }
+  :global([data-driver-page]) .vente .scene:has(details) > div {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin-top: 0 !important;
+  }
+  :global([data-driver-page]) .vente .scene:has(> .orbe) {
+    grid-column: 1 / -1;
+    padding-block: 100px;
+    text-align: center;
+  }
+  :global([data-driver-page]) .vente .scene:has(> .orbe) h2 { font-size: clamp(3.5rem, 5vw, 5rem); }
+  :global([data-driver-page]) .vente .scene:has(> .orbe) .orbe,
+  :global([data-driver-page]) .vente .scene:has(> .orbe) .cta { margin-inline: auto; }
+  :global([data-driver-page]) .vente footer {
+    grid-column: 1 / -1;
+    padding: 40px 0 calc(var(--bandeau, 0px) + 130px);
+  }
+  :global([data-driver-page]) .vente footer .liens { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 32px; }
+  :global([data-driver-page]) .vente .scene:not(.gifle),
+  :global([data-driver-page]) .vente .court { border-top-color: rgba(248,250,252,.09); }
+  :global([data-driver-page]) .vente .doc { border-radius: 20px; overflow: hidden; box-shadow: 0 20px 64px #0004; }
+  :global([data-driver-page]) .vente .prix-carte { border-color: rgba(140,82,255,.25); border-radius: 24px; box-shadow: 0 24px 80px #0003; }
+  :global([data-driver-page]) .vente details { padding-block: 18px; }
+  :global([data-driver-page]) .vente summary { font-size: 1.0625rem; font-weight: 500; line-height: 1.55; }
+  :global([data-driver-page]) .vente .scene:has(> .orbe) { background: radial-gradient(ellipse at 50% 50%,rgba(140,82,255,.07),transparent 70%); }
+}
+
+:global([data-driver-page]) .vente .cta[href^="/wa"] { color: #FFFFFF; background: #087B55; }

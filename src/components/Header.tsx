@@ -27,7 +27,7 @@ import ForeasLogo from '@/components/experience/ForeasLogo'
  */
 
 const navigation = [
-  { name: 'Chauffeurs', href: '/chauffeurs' },
+  { name: 'Chauffeurs', href: '/chauffeur' },
   { name: 'Partenaires', href: '/partenaires' },
   { name: 'Tarifs', href: '/tarifs3' },
 ]

@@ -17,7 +17,7 @@ import ForeasLogo from '@/components/experience/ForeasLogo'
  * - Real social URLs (Twitter + LinkedIn)
  */
 const links = [
-  { name: 'Chauffeurs', href: '/chauffeurs' },
+  { name: 'Chauffeurs', href: '/chauffeur' },
   { name: 'Partenaires', href: '/partenaires' },
   { name: 'Technologie', href: '/technologie' },
   { name: 'À propos', href: '/a-propos' },

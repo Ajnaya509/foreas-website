@@ -60,6 +60,7 @@ import { usePathname } from 'next/navigation'
 
 /** Les pages où le rideau ne se joue jamais. Chacune pour une raison écrite. */
 const PAGES_SANS_RIDEAU = [
+  '/partenariat', // arrivée depuis la prospection : accès immédiat à la candidature
   '/abonnement', // le compte doit rester accessible sans décor ni bulle concurrente
   '/apercu-abonnement',
   '/apercu-succes',
@@ -69,6 +70,7 @@ const PAGES_SANS_RIDEAU = [
 ]
 
 const CLE_SESSION = 'foreas_preloader_vu'
+const CLE_SON = 'foreas_intro_sound'
 
 /** Les deux cadences. Sommes en millisecondes, identiques aux noms du CSS. */
 const CADENCE_PLEINE = { pose: 440, trait: 460, battement: 140, ecart: 700 }
@@ -80,7 +82,18 @@ export default function Preloader() {
   const pathname = usePathname()
   const exclu = PAGES_SANS_RIDEAU.some((p) => pathname.startsWith(p))
   const [isLoading, setIsLoading] = useState(!exclu)
+  const [replayKey, setReplayKey] = useState(0)
   const voile = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (exclu) return
+    const rejouer = () => {
+      setIsLoading(true)
+      setReplayKey(value => value + 1)
+    }
+    window.addEventListener('foreas-replay-intro', rejouer)
+    return () => window.removeEventListener('foreas-replay-intro', rejouer)
+  }, [exclu])
 
   useEffect(() => {
     if (exclu) return
@@ -93,6 +106,7 @@ export default function Preloader() {
       // chargement ». Jamais d'erreur visible pour ça.
     }
     const animationsRefusees = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const apercu = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('apercu-ouverture') === '1'
 
     /* ⚠️ 27/08 — ONGLET EN ARRIÈRE-PLAN : LE PIÈGE QUI M'A COÛTÉ UNE HEURE.
        Un navigateur GÈLE les animations CSS d'un onglet qu'on ne regarde pas.
@@ -107,7 +121,7 @@ export default function Preloader() {
        revient trouve la page, pas un décor en retard d'une seconde. */
     const ongletCache = document.hidden
 
-    if (dejaVu || animationsRefusees || ongletCache) {
+    if ((dejaVu && !apercu && replayKey === 0) || animationsRefusees || ongletCache) {
       setIsLoading(false)
       return
     }
@@ -123,7 +137,7 @@ export default function Preloader() {
 
     // ── La cadence se choisit MAINTENANT, avant le premier mouvement ────────
     const dejaPrete = document.readyState === 'complete'
-    const cadence = dejaPrete ? CADENCE_COURTE : CADENCE_PLEINE
+    const cadence = apercu ? CADENCE_PLEINE : dejaPrete ? CADENCE_COURTE : CADENCE_PLEINE
     noeud.style.setProperty('--rideau-pose', `${cadence.pose}ms`)
     noeud.style.setProperty('--rideau-trait', `${cadence.trait}ms`)
     noeud.style.setProperty('--rideau-ecart', `${cadence.ecart}ms`)
@@ -135,6 +149,24 @@ export default function Preloader() {
 
     const depart = performance.now()
     let fini = false
+
+    // Le navigateur peut refuser le son avant un premier geste. Dans ce cas,
+    // l'ouverture visuelle continue sans attente ni message d'erreur.
+    let sonTimer: number | undefined
+    try {
+      // Première visite : on tente aussi le son. Le visiteur peut le couper
+      // ensuite ; certains navigateurs exigent toutefois un premier geste.
+      if (replayKey === 0 && localStorage.getItem(CLE_SON) !== 'off') {
+        sonTimer = window.setTimeout(() => {
+          if (document.hidden) return
+          const son = new Audio('/sounds/foreas-ouverture.mp3')
+          son.volume = 0.55
+          void son.play().catch(() => window.dispatchEvent(new Event('foreas-intro-audio-blocked')))
+        }, cadence.pose)
+      }
+    } catch {
+      // Le stockage privé ne doit jamais retenir le rideau.
+    }
 
     /* Si la page passe en arrière-plan APRÈS le départ, l'animation gèle en
        route. Le filet devra agir — et ce n'est pas une panne. Un filet qui crie
@@ -216,6 +248,7 @@ export default function Preloader() {
 
     return () => {
       window.clearTimeout(filet)
+      if (sonTimer !== undefined) window.clearTimeout(sonTimer)
       window.removeEventListener('load', presser)
       document.removeEventListener('visibilitychange', surVisibilite)
       volets.forEach((v) => {
@@ -223,7 +256,7 @@ export default function Preloader() {
         v.removeEventListener('animationcancel', surCoupure)
       })
     }
-  }, [exclu])
+  }, [exclu, replayKey])
 
   if (!isLoading) return null
 
