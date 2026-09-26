@@ -45,12 +45,12 @@ const inter = Inter({
 const genos = localFont({
   src: [
     {
-      path: '../../public/fonts/Genos-VariableFont_wght.ttf',
+      path: '../../public/fonts/Genos-VariableFont_wght.woff2',
       weight: '100 900',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/Genos-Italic-VariableFont_wght.ttf',
+      path: '../../public/fonts/Genos-Italic-VariableFont_wght.woff2',
       weight: '100 900',
       style: 'italic',
     },

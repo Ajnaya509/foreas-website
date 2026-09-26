@@ -273,16 +273,16 @@ export default function PageVente({ pageSource = '/' }: { pageSource?: string } 
               visiteurs, ne fera jamais glisser ce carrousel. Elles ne partent en
               lecture que sur un appui (voir l'effet plus haut), et l'affiche JPG
               tient l'image en attendant : personne ne voit un cadre noir. */}
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 12,40 € — à prendre"><video src="/demo/verdict/01-1240-prendre.mp4" poster="/demo/verdict/01-1240-prendre.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 34,07 € — à laisser"><video src="/demo/verdict/07-3407-laisser.mp4" poster="/demo/verdict/07-3407-laisser.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 21,90 € — à prendre"><video src="/demo/verdict/04-2190-prendre.mp4" poster="/demo/verdict/04-2190-prendre.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 15,80 € — à laisser"><video src="/demo/verdict/02-1580-laisser.mp4" poster="/demo/verdict/02-1580-laisser.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 24,60 € — à prendre"><video src="/demo/verdict/05-2460-prendre.mp4" poster="/demo/verdict/05-2460-prendre.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 18,70 € — à laisser"><video src="/demo/verdict/03-1870-laisser.mp4" poster="/demo/verdict/03-1870-laisser.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 31,50 € — à prendre"><video src="/demo/verdict/08-3150-prendre.mp4" poster="/demo/verdict/08-3150-prendre.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 27,80 € — à laisser"><video src="/demo/verdict/06-2780-laisser.mp4" poster="/demo/verdict/06-2780-laisser.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 39,80 € — à prendre"><video src="/demo/verdict/10-3980-prendre.mp4" poster="/demo/verdict/10-3980-prendre.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
-          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 46,20 € — à laisser"><video src="/demo/verdict/09-4620-laisser.mp4" poster="/demo/verdict/09-4620-laisser.jpg" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 12,40 € — à prendre"><video src="/demo/verdict/01-1240-prendre.mp4" poster="/demo/verdict/01-1240-prendre.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 34,07 € — à laisser"><video src="/demo/verdict/07-3407-laisser.mp4" poster="/demo/verdict/07-3407-laisser.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 21,90 € — à prendre"><video src="/demo/verdict/04-2190-prendre.mp4" poster="/demo/verdict/04-2190-prendre.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 15,80 € — à laisser"><video src="/demo/verdict/02-1580-laisser.mp4" poster="/demo/verdict/02-1580-laisser.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 24,60 € — à prendre"><video src="/demo/verdict/05-2460-prendre.mp4" poster="/demo/verdict/05-2460-prendre.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 18,70 € — à laisser"><video src="/demo/verdict/03-1870-laisser.mp4" poster="/demo/verdict/03-1870-laisser.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 31,50 € — à prendre"><video src="/demo/verdict/08-3150-prendre.mp4" poster="/demo/verdict/08-3150-prendre.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 27,80 € — à laisser"><video src="/demo/verdict/06-2780-laisser.mp4" poster="/demo/verdict/06-2780-laisser.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 39,80 € — à prendre"><video src="/demo/verdict/10-3980-prendre.mp4" poster="/demo/verdict/10-3980-prendre.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
+          <button className={s.clip} type="button" aria-label="Lire la démonstration — Course à 46,20 € — à laisser"><video src="/demo/verdict/09-4620-laisser.mp4" poster="/demo/verdict/09-4620-laisser.webp" muted playsInline preload="none" loop aria-hidden></video><span className={s.lire} aria-hidden></span></button>
         </div>
         <p className={s["aide-rail"]}>Fais glisser · touche pour lancer</p>
         {/* Le mot « DÉMONSTRATION » est déjà écrit DANS chacune des dix images.
@@ -401,7 +401,7 @@ export default function PageVente({ pageSource = '/' }: { pageSource?: string } 
         <p className={s.sur}>L’autocollant</p>
         <h2>Il scanne.<br />Il te retrouve.</h2>
         <figure data-preuve="section" style={{ margin: '22px 0 0' }}>
-          <img src="/demo/autocollant.jpg" width="880" height="722" alt="Un autocollant FOREAS avec un QR code, collé au dos d’un appuie-tête dans une voiture"
+          <img src="/demo/autocollant.webp" width="880" height="722" loading="lazy" decoding="async" alt="Un autocollant FOREAS avec un QR code, collé au dos d’un appuie-tête dans une voiture"
                style={{ width: '100%', borderRadius: '18px', display: 'block', border: '1px solid var(--filet)' }} />
         </figure>
         <p>Commandé depuis l’app, livré chez toi.</p>
@@ -521,7 +521,7 @@ export default function PageVente({ pageSource = '/' }: { pageSource?: string } 
              que le défaut qu’elle corrige. */}
         <figure className={s.doc} data-preuve="figure">
           <span className={s.cadre}>
-            <img src="/demo/export-mensuel.jpg" width="1240" height="1754"
+            <img src="/demo/export-mensuel.webp" width="900" height="1273" loading="lazy" decoding="async"
                  alt="Aperçu d’un récapitulatif mensuel généré par FOREAS, rempli de données de démonstration" />
           </span>
           <a className={s.lien} href="/demo/export-mensuel.jpg" target="_blank" rel="noopener">Ouvrir le document en entier</a>

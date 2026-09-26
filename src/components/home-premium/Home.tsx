@@ -35,7 +35,7 @@ export default function Home() {
     </header>
     <main id="main-content">
       <section className={s.hero} aria-labelledby="hero-titre">
-        <div className={s.heroPhoto}><Image src="/media/home/binate-hero.webp" alt="Alassane Binate, chauffeur VTC, dans son véhicule" fill priority sizes="(max-width: 700px) 100vw, 65vw"/></div>
+        <div className={s.heroPhoto}><Image src="/media/home/binate-hero.webp" alt="Alassane Binate, chauffeur VTC, dans son véhicule" fill priority fetchPriority="high" sizes="(max-width: 700px) 100vw, 65vw"/></div>
         <div className={s.heroAtmosphere} aria-hidden="true"/>
         <div className={`${s.container} ${s.heroInner}`}>
           <div className={s.heroCopy}>
