@@ -70,7 +70,6 @@ const PAGES_SANS_RIDEAU = [
 ]
 
 const CLE_SESSION = 'foreas_preloader_vu'
-const CLE_SON = 'foreas_intro_sound'
 
 /** Les deux cadences. Sommes en millisecondes, identiques aux noms du CSS. */
 const CADENCE_PLEINE = { pose: 440, trait: 460, battement: 140, ecart: 700 }
@@ -156,7 +155,10 @@ export default function Preloader() {
     try {
       // Première visite : on tente aussi le son. Le visiteur peut le couper
       // ensuite ; certains navigateurs exigent toutefois un premier geste.
-      if (replayKey === 0 && localStorage.getItem(CLE_SON) !== 'off') {
+      // 26/09/2026 — La bulle de son de l'accueil est retirée (demande de
+      // Chandler) : plus personne ne peut couper le son, donc un ancien « off »
+      // mémorisé ne doit plus le faire taire pour toujours.
+      if (replayKey === 0) {
         sonTimer = window.setTimeout(() => {
           if (document.hidden) return
           const son = new Audio('/sounds/foreas-ouverture.mp3')

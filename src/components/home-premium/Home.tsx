@@ -6,7 +6,6 @@ import HomeLink from './HomeLink'
 import HomeMenu from './HomeMenu'
 import Film from './Film'
 import BookingPreview from './BookingPreview'
-import BrandSoundButton from './BrandSoundButton'
 import PublicActivityToast from './PublicActivityToast'
 import s from './home.module.css'
 
@@ -29,7 +28,6 @@ export default function Home() {
     <header className={`${s.container} ${s.header}`}>
       <a href="/" aria-label="FOREAS, accueil" className={s.brand}><ForeasLogo/></a>
       <nav className={s.nav} aria-label="Navigation principale"><HomeLink href="/chauffeur">L’application</HomeLink><HomeLink href="/partenaire">Partenaires</HomeLink><a href="#essentiel">L’essentiel</a><a href="#questions">Questions</a></nav>
-      <BrandSoundButton/>
       <a className={s.login} href={authUrls.loginGeneric}>Mon espace <ArrowUpRight size={16} aria-hidden="true"/></a>
       <HomeMenu login={authUrls.loginGeneric}/>
     </header>
