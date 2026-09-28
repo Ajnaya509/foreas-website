@@ -1,0 +1,63 @@
+.dialog {
+  box-sizing:border-box;width:min(760px,calc(100% - 40px));max-width:none;
+  max-height:calc(100dvh - 40px);margin:auto;padding:0;overflow:auto;
+  overscroll-behavior:contain;border:1px solid var(--glass-on-noir-border-top);
+  border-radius:var(--radius-modal);background:var(--modal-on-noir);
+  color:var(--text-hero);font-family:var(--font-inter),sans-serif;
+  -webkit-font-smoothing:antialiased;box-shadow:0 32px 110px rgba(0,0,0,.5);
+}
+.dialog::backdrop {background:var(--scrim-moyen);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.dialog[open] {animation:invitation-in var(--duration-slow) var(--ease-apple) both}
+.dialog[open]::backdrop {animation:veil-in var(--duration-base) var(--ease-standard) both}
+.dialog.closing {animation:invitation-out 240ms var(--ease-standard) both}
+.dialog.closing::backdrop {animation:veil-out 240ms var(--ease-standard) both}
+.dialog * {box-sizing:border-box;min-width:0}
+.dialog :where(h2,p) {margin:0}
+.dialog :where(a,button) {-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.dialog :where(a,button):focus-visible {outline:2px solid var(--accent-cyan);outline-offset:5px}
+.layout {position:relative;display:grid;grid-template-columns:.88fr 1.12fr;isolation:isolate}
+.layout::after {content:'';position:absolute;inset:0 20% auto;height:1px;background:linear-gradient(90deg,transparent,var(--accent-purple-mist),var(--accent-cyan),transparent);opacity:.35;pointer-events:none}
+.close {position:absolute;z-index:3;top:10px;right:10px;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--text-secondary);cursor:pointer;transition:background var(--duration-fast),color var(--duration-fast)}
+.close:hover {background:var(--glass-on-noir);color:var(--text-hero)}
+.visual {position:relative;min-height:430px;overflow:hidden;background:var(--foreas-obsidian-deep);border-right:1px solid var(--glass-border)}
+.logo {position:absolute;z-index:2;top:32px;left:30px;width:110px;height:auto;color:var(--text-hero)}
+.halo {position:absolute;inset:15% -40% -20%;background:radial-gradient(ellipse at 44% 56%,color-mix(in srgb,var(--accent-purple) 19%,transparent),transparent 62%),radial-gradient(ellipse at 60% 72%,color-mix(in srgb,var(--accent-cyan) 7%,transparent),transparent 54%);pointer-events:none}
+.phone {position:absolute;inset:80px -16px 42px;overflow:hidden;mix-blend-mode:screen;mask-image:linear-gradient(#000 78%,transparent 100%)}
+.phone img {position:absolute;top:0;left:50%;display:block;height:100%;width:auto;max-width:none;object-fit:contain;transform:translateX(-50%) rotate(-7deg)}
+.rotato {inset:66px 22px 30px}
+.rotato img {height:100%}
+.visualCaption {position:absolute;bottom:26px;left:24px;right:24px;text-align:center;font:500 9px/1.5 var(--font-inter),sans-serif;letter-spacing:.12em;color:var(--text-secondary)}
+.content {display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:52px 34px 26px;background:radial-gradient(ellipse at 100% 0,color-mix(in srgb,var(--accent-purple) 5%,transparent),transparent 60%)}
+.eyebrow {font:500 10px/1.5 var(--font-inter),sans-serif;letter-spacing:.12em;color:var(--accent-purple-mist)}
+.content h2 {margin-top:18px;font:600 clamp(38px,3.5vw,48px)/.98 var(--font-genos),sans-serif;letter-spacing:-.03em;text-wrap:balance;color:var(--text-hero)}
+.content h2 span {color:var(--text-secondary)}
+.description {margin-top:20px!important;max-width:310px;font:400 14px/1.7 var(--font-inter),sans-serif;color:var(--text-secondary)}
+.primary {display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:52px;margin-top:28px;padding:12px 18px;border:1px solid transparent;border-radius:14px;background:var(--text-hero);color:var(--ink-on-accent);font:600 19px/1.25 var(--font-genos),sans-serif;text-decoration:none;cursor:pointer;transition:background var(--duration-fast),box-shadow var(--duration-fast)}
+.primary svg {flex-shrink:0}
+.primary:hover {background:color-mix(in srgb,var(--text-hero) 92%,var(--accent-cyan));box-shadow:0 3px 20px color-mix(in srgb,var(--accent-cyan) 8%,transparent)}
+.primary:active {background:color-mix(in srgb,var(--text-hero) 84%,var(--accent-purple-mist))}
+.note {align-self:center;margin-top:12px!important;font:400 11px/1.6 var(--font-inter),sans-serif;text-align:center;color:var(--text-secondary)}
+.later {align-self:center;min-height:44px;margin-top:12px;padding:8px 14px;border:0;border-radius:10px;background:transparent;font:400 12px/1.5 var(--font-inter),sans-serif;color:var(--text-secondary);cursor:pointer;text-underline-offset:4px}
+.later:hover {color:var(--text-hero);text-decoration:underline}
+@keyframes invitation-in {from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes invitation-out {to{opacity:0;transform:translateY(8px) scale(.99)}}
+@keyframes veil-in {from{opacity:0}to{opacity:1}}
+@keyframes veil-out {to{opacity:0}}
+@media(max-width:600px) {
+  .dialog {width:calc(100% - 24px);max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px));margin:auto auto max(12px,env(safe-area-inset-bottom,0px));border-radius:22px}
+  .layout {grid-template-columns:1fr}
+  .visual {height:124px;min-height:0;border-right:0;border-bottom:1px solid var(--glass-border)}
+  .logo {left:24px;top:27px;width:106px}
+  .visualCaption {left:24px;right:auto;bottom:25px;max-width:135px;text-align:left;font-size:8px}
+  .halo {inset:-90% -10% -80% 15%}
+  .phone {inset:18px -64px auto auto;width:300px;height:210px;mask-image:linear-gradient(#000 35%,transparent 95%)}
+  .rotato {inset:10px 4px auto auto;width:140px;height:265px}
+  .phone img {transform:translateX(-50%) rotate(-12deg)}
+  .content {padding:24px 24px 12px}
+  .content h2 {margin-top:12px;font-size:40px;line-height:1}
+  .description {margin-top:14px!important;max-width:none;font-size:14px;line-height:1.65}
+  .primary {margin-top:22px}
+  .later {margin-top:8px}
+}
+@media(max-height:560px) {.visual{display:none}.layout{grid-template-columns:1fr}.dialog{width:min(460px,calc(100% - 24px))}.content{padding:30px 28px 12px}.content h2{font-size:36px}.description{margin-top:12px!important}.primary{margin-top:16px}.later{margin-top:4px}}
+@media(prefers-reduced-motion:reduce) {.dialog[open],.dialog[open]::backdrop,.dialog.closing,.dialog.closing::backdrop{animation:none}.dialog :where(a,button){transition:none}}

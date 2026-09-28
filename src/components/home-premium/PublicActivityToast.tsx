@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import ActivityGlassReflection from './ActivityGlassReflection'
 import { ACTIVITY_KINDS, activityPhrase, carnetEvents, previewEvents, type ActivityEvent, type ActivitySurface } from './activityCopy'
 import s from './public-activity.module.css'
+import { useAnyOverlayOpen } from '@/lib/overlayStore'
 
 const FIRST_MS = 5000
 const DISPLAY_MS = 7000
@@ -21,7 +22,9 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   const [tabVisible, setTabVisible] = useState(true)
+  const overlayOpen = useAnyOverlayOpen()
   const audio = useRef<AudioContext | null>(null)
+  const lastChimed = useRef('')
   const preview = useRef(false)
 
   useEffect(() => {
@@ -55,7 +58,7 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
   }, [])
 
   useEffect(() => {
-    if (!events.length || dismissed || !tabVisible || ((hovered || focused) && phase === 'show')) return
+    if (!events.length || dismissed || !tabVisible || overlayOpen || ((hovered || focused) && phase === 'show')) return
     const delay = phase === 'waiting' ? (preview.current ? 900 : FIRST_MS)
       : phase === 'show' ? DISPLAY_MS : phase === 'leave' ? FADE_MS : REST_MS
     const timer = window.setTimeout(() => {
@@ -65,7 +68,7 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
       else { setIndex(value => (value + 1) % events.length); setPhase('show') }
     }, delay)
     return () => window.clearTimeout(timer)
-  }, [events.length, dismissed, tabVisible, hovered, focused, phase, index])
+  }, [events.length, dismissed, tabVisible, overlayOpen, hovered, focused, phase, index])
 
   useEffect(() => {
     // Le son est préparé au premier geste et joué uniquement avec une notification.
@@ -88,7 +91,10 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
 
   useEffect(() => {
     const context = audio.current
-    if (phase !== 'show' || dismissed || document.hidden || !context || context.state !== 'running') return
+    if (phase !== 'show' || dismissed || overlayOpen || document.hidden || !context || context.state !== 'running') return
+    const chimeKey = `${surface}-${index}`
+    if (lastChimed.current === chimeKey) return
+    lastChimed.current = chimeKey
     const note = context.createOscillator()
     const gain = context.createGain()
     const now = context.currentTime
@@ -102,9 +108,9 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
     note.start(now)
     note.stop(now + .24)
     note.onended = () => { note.disconnect(); gain.disconnect() }
-  }, [phase, index, dismissed])
+  }, [phase, index, dismissed, overlayOpen, surface])
 
-  if (dismissed || !tabVisible || (phase !== 'show' && phase !== 'leave')) return null
+  if (dismissed || !tabVisible || overlayOpen || (phase !== 'show' && phase !== 'leave')) return null
   const event = events[index]
   if (!event) return null
   const phrase = activityPhrase(surface, event, index)

@@ -7,6 +7,7 @@ import HomeMenu from './HomeMenu'
 import Film from './Film'
 import BookingPreview from './BookingPreview'
 import PublicActivityToast from './PublicActivityToast'
+import ExitInvitation from './ExitInvitation'
 import s from './home.module.css'
 
 const questions = [
@@ -24,6 +25,7 @@ function Actions({ location }: { location: string }) {
 export default function Home() {
   return <div className={`foreas-home ${s.page}`}>
     <PublicActivityToast/>
+    <ExitInvitation/>
     
     <header className={`${s.container} ${s.header}`}>
       <a href="/" aria-label="FOREAS, accueil" className={s.brand}><ForeasLogo/></a>
@@ -70,7 +72,7 @@ export default function Home() {
 
       <section className={`${s.container} ${s.demo}`} aria-labelledby="demo-titre">
         <div className={s.sectionHeading}><div><p className={s.eyebrow}>LE PRODUIT, EN SITUATION</p><h2 id="demo-titre">Une course s’affiche.<br/><span>Tu vois plus que son prix.</span></h2></div><p>Le chiffre affiché attire l’œil.<br/>Le détail t’aide à décider.</p></div>
-        <Film src="/media/home/course-demo.mp4" poster="/media/home/course-poster.webp" label="Voir l’analyse d’une course" caption="Démonstration de Verdict Instant. Les montants illustrent cet exemple. Les estimations dépendent de tes réglages et de ton téléphone."/>
+        <Film invitationTarget src="/media/home/course-demo.mp4" poster="/media/home/course-poster.webp" label="Voir l’analyse d’une course" caption="Démonstration de Verdict Instant. Les montants illustrent cet exemple. Les estimations dépendent de tes réglages et de ton téléphone."/>
       </section>
 
       <section className={`${s.container} ${s.direct}`} aria-labelledby="direct-titre">

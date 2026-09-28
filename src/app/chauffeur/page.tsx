@@ -4,6 +4,7 @@ import { metadonneesPage } from '@/lib/site'
 import Ecran1Zone from '../mobile/Ecran1Zone'
 import PageVente from '../mobile/PageVente'
 import PublicActivityToast from '@/components/home-premium/PublicActivityToast'
+import ExitInvitation from '@/components/home-premium/ExitInvitation'
 import BarreCollante from '../mobile/BarreCollante'
 
 export const metadata: Metadata = metadonneesPage(
@@ -25,6 +26,7 @@ export default function ChauffeurPage() {
       <PageVente pageSource="/chauffeur" />
       <BarreCollante pageSource="/chauffeur" />
       <PublicActivityToast surface="driver" />
+      <ExitInvitation surface="driver" />
     </main>
   )
 }
