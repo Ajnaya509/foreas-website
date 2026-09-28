@@ -24,7 +24,7 @@
 .driverActivity{bottom:calc(max(var(--consent-banner-h,0px),var(--bandeau,0px)) + env(safe-area-inset-bottom,0px) + 16px)}
 :global([data-driver-page]:has([data-driver-sticky][aria-hidden="false"])) .driverActivity{bottom:calc(max(var(--consent-banner-h,0px),var(--bandeau,0px)) + env(safe-area-inset-bottom,0px) + 98px)}
 .activityTrace{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);pointer-events:none;overflow:visible}
-.activityRibbon{opacity:0;filter:drop-shadow(0 0 1.4px #8c52ff55)}
+.activityRibbon{opacity:0;filter:drop-shadow(0 0 .8px #8c52ff33)}
 .activityLeaving{animation:activity-leave .38s ease-in both}
 .activityCopy{display:grid;place-items:center;width:100%;min-width:0;text-align:center}
 .activityCopy p{margin:0;grid-area:1/1;font-size:.9rem;line-height:1.32;font-weight:650;color:var(--text-hero);text-wrap:balance}

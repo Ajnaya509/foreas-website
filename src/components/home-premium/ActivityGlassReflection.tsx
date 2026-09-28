@@ -105,7 +105,7 @@ export default function ActivityGlassReflection({ durationMs = 3200, intensity =
       for (let i = 0; i <= 128; i++) {
         const t = i / 128
         const point = contour.pointAt(center + (t - .5) * span)
-        const halfWidth = 1.7 * Math.pow(Math.sin(Math.PI * t), 1.6)
+        const halfWidth = 1.55 * Math.pow(Math.sin(Math.PI * t), 1.8)
         outer.push(`${(point.x + point.nx * halfWidth).toFixed(2)},${(point.y + point.ny * halfWidth).toFixed(2)}`)
         inner.push(`${(point.x - point.nx * halfWidth).toFixed(2)},${(point.y - point.ny * halfWidth).toFixed(2)}`)
       }
@@ -138,9 +138,11 @@ export default function ActivityGlassReflection({ durationMs = 3200, intensity =
     <defs>
       {/* The supplied graphic has a violet centre and cyan extremities. */}
       <linearGradient ref={gradientRef} id={`${id}-light`} gradientUnits="userSpaceOnUse">
-        <stop offset="0" stopColor="#1BDAFF" />
+        <stop offset="0" stopColor="#1BDAFF" stopOpacity="0" />
+        <stop offset=".2" stopColor="#1BDAFF" stopOpacity=".9" />
         <stop offset=".5" stopColor="#8C52FF" />
-        <stop offset="1" stopColor="#1BDAFF" />
+        <stop offset=".8" stopColor="#1BDAFF" stopOpacity=".9" />
+        <stop offset="1" stopColor="#1BDAFF" stopOpacity="0" />
       </linearGradient>
     </defs>
     <path ref={ribbonRef} className={s.activityRibbon} fill={`url(#${id}-light)`} />
