@@ -40,7 +40,7 @@ export default function VerdictFocusArt() {
       img.style.transform = reduced.matches || started ? detail : initial
       box.dataset.verdictPhase = reduced.matches || started ? 'detail' : 'recognition'
       if (reduced.matches || started) return
-      // L'image est chargée : le visiteur voit réellement le téléphone pendant 500 ms.
+      // L'image est chargée : le visiteur reconnaît la demande pendant 1,5 seconde.
       delay = setTimeout(() => {
         started = true
         box.dataset.verdictPhase = 'zooming'
@@ -48,7 +48,7 @@ export default function VerdictFocusArt() {
           duration: 1150, easing: 'cubic-bezier(.22,.72,.2,1)', fill: 'forwards',
         })
         animation.onfinish = () => { box.dataset.verdictPhase = 'detail' }
-      }, 500)
+      }, 1500)
     }
     fit()
     const observer = new ResizeObserver(() => {
