@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import Image from 'next/image'
 import { ArrowUpRight, Play, X } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
 import ActivityGlassReflection from './ActivityGlassReflection'
+import VerdictFocusArt from './VerdictFocusArt'
 import { ESSAI_JOURS } from '@/lib/offre'
 import { mesurer } from '@/lib/mesure'
 import { useAnyOverlayOpen, useOverlayLock } from '@/lib/overlayStore'
@@ -233,14 +233,12 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
       <div className={s.visual} aria-hidden="true">
         <ForeasLogo className={s.logo}/>
         <div className={s.halo}/>
-        <div className={s.phone}>
-          <Image src="/media/home/course-poster.webp" alt="" width={1600} height={1200} sizes="(max-width: 600px) 360px, 460px"/>
-        </div>
+        <VerdictFocusArt/>
         <span className={s.visualCaption}>VERDICT INSTANT<span>Démonstration</span></span>
       </div>
       <div className={s.content}>
         <p className={s.eyebrow}>{isDriver ? `FOREAS PRO · ${ESSAI_JOURS} JOURS D’ESSAI` : 'FOREAS DRIVER, EN ACTION'}</p>
-        <h2 id="exit-invitation-title" tabIndex={-1}>{isDriver ? 'Choisis tes courses.' : 'Vois au-delà du prix.'}</h2>
+        <h2 id="exit-invitation-title" tabIndex={-1}>{isDriver ? <>Choisis <span className={s.emphasis}>mieux</span> tes courses.</> : 'Vois au-delà du prix.'}</h2>
         <p id="exit-invitation-description" className={s.description}>{isDriver
           ? 'Le prix ne dit pas tout. Teste tes décisions avec le temps, l’approche et tes frais sous les yeux.'
           : 'Le prix attire. Le temps et les frais font la différence. Vois comment FOREAS estime ce qu’une course te laisse.'}</p>

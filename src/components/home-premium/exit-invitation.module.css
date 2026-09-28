@@ -19,11 +19,15 @@
 .layout::after {content:'';position:absolute;inset:0 20% auto;height:1px;background:linear-gradient(90deg,transparent,var(--accent-purple-mist),var(--accent-cyan),transparent);opacity:.35;pointer-events:none}
 .close {position:absolute;z-index:3;top:10px;right:10px;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--text-secondary);cursor:pointer;transition:background var(--duration-fast),color var(--duration-fast)}
 .close:hover {background:var(--glass-on-noir);color:var(--text-hero)}
+.layout:has([data-verdict-phase="zooming"])>.close,.layout:has([data-verdict-phase="detail"])>.close {background:var(--foreas-obsidian-deep);color:var(--text-hero)}
 .visual {position:relative;min-height:430px;overflow:hidden;background:var(--foreas-obsidian-deep);border-right:1px solid var(--glass-border)}
 .logo {position:absolute;z-index:2;top:32px;left:30px;width:110px;height:auto;color:var(--text-hero)}
 .halo {position:absolute;inset:15% -40% -20%;background:radial-gradient(ellipse at 44% 56%,color-mix(in srgb,var(--accent-purple) 19%,transparent),transparent 62%),radial-gradient(ellipse at 60% 72%,color-mix(in srgb,var(--accent-cyan) 7%,transparent),transparent 54%);pointer-events:none}
-.phone {position:absolute;inset:65px 0 48px;mix-blend-mode:screen;pointer-events:none}
-.phone img {position:absolute;top:0;left:50%;display:block;height:100%;width:auto;max-width:none;object-fit:contain;transform:translateX(-50%)}
+.phone {position:absolute;inset:0;mix-blend-mode:screen;pointer-events:none}
+.phone img {position:absolute;top:0;left:0;display:block;width:1600px;height:1200px;max-width:none;transform-origin:0 0;opacity:0}
+.visual:has([data-verdict-phase="zooming"]) :is(.logo,.visualCaption),.visual:has([data-verdict-phase="detail"]) :is(.logo,.visualCaption) {opacity:0}
+.logo,.visualCaption {transition:opacity 350ms ease}
+.emphasis {text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.14em;text-decoration-color:var(--accent-purple-mist)}
 .visualCaption {position:absolute;bottom:26px;left:24px;right:24px;text-align:center;font:500 9px/1.5 var(--font-inter),sans-serif;letter-spacing:.12em;color:var(--text-secondary)}
 .visualCaption span {display:block;margin-top:5px;font-size:10px;letter-spacing:0;color:var(--text-secondary)}
 .content {display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:52px 34px 26px;background:radial-gradient(ellipse at 100% 0,color-mix(in srgb,var(--accent-purple) 5%,transparent),transparent 60%)}
@@ -50,9 +54,8 @@
   .logo {left:24px;top:42px;width:106px}
   .visualCaption {left:24px;right:auto;bottom:46px;max-width:135px;text-align:left;font-size:9px}
   .halo {inset:-90% -10% -80% 15%}
-  .phone {inset:2px 6px 2px 46%}
   .content {padding:24px 24px 12px}
-  .content h2 {margin-top:10px;font-size:clamp(27px,7.6vw,38px);line-height:1.05;letter-spacing:-.035em;text-wrap:nowrap}
+  .content h2 {margin-top:10px;font-size:clamp(23px,6.6vw,34px);line-height:1.05;letter-spacing:-.035em;text-wrap:nowrap}
   .description {margin-top:14px!important;max-width:none;font-size:14px;line-height:1.65}
   .primary {margin-top:22px;font-size:17px;gap:8px;padding-inline:12px}
   .later {margin-top:8px}
