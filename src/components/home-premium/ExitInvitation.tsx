@@ -218,7 +218,7 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
         <p id="exit-invitation-description" className={s.description}>{isDriver
           ? 'Le temps. L’approche. Tes frais. Teste FOREAS Pro sur tes propres courses pour choisir avec tes chiffres.'
           : 'Le prix attire. Le temps et les frais font la différence. Vois comment FOREAS estime ce qu’une course te laisse.'}</p>
-        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}>Commencer mes {ESSAI_JOURS} jours Pro <ArrowUpRight size={20} aria-hidden="true"/></a>
+        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}>Commencer mes {ESSAI_JOURS} jours Pro gratuits <ArrowUpRight size={20} aria-hidden="true"/></a>
           : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><Play size={17} fill="currentColor" aria-hidden="true"/>Voir ce que le prix cache</button>}
         <p className={s.note}>{isDriver ? 'Conditions et tarif présentés avant de commencer.' : 'La démonstration, ici. Sans inscription.'}</p>
         <button className={s.later} type="button" onClick={dismiss}>Continuer ma visite</button>
