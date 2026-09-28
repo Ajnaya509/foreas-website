@@ -5,9 +5,11 @@ import s from './home.module.css'
 
 type Point = { x: number; y: number; nx: number; ny: number }
 
-function roundedContour(width: number, height: number) {
+function roundedContour(width: number, height: number, borderRadius: number) {
+  width = Math.max(2, width)
+  height = Math.max(2, height)
   const inset = .5
-  const radius = Math.min(19.5, (height - 1) / 2)
+  const radius = Math.max(.5, Math.min(borderRadius - inset, (width - 1) / 2, (height - 1) / 2))
   const right = width - inset
   const bottom = height - inset
   const horizontal = width - 2 * inset - 2 * radius
@@ -51,7 +53,7 @@ function roundedContour(width: number, height: number) {
 }
 
 /** A single tapered ribbon, drawn at the card's real size, with no dashed joins. */
-export default function ActivityGlassReflection({ durationMs = 3200, intensity = .82 }: { durationMs?: number; intensity?: number }) {
+export default function ActivityGlassReflection({ durationMs = 3200, intensity = .82, borderRadius = 20 }: { durationMs?: number; intensity?: number; borderRadius?: number }) {
   const id = useId()
   const svgRef = useRef<SVGSVGElement>(null)
   const ribbonRef = useRef<SVGPathElement>(null)
@@ -65,10 +67,10 @@ export default function ActivityGlassReflection({ durationMs = 3200, intensity =
     if (!svg || !ribbon || !gradient || reducedMotion.matches) return
 
     let width = svg.clientWidth
-    let contour = roundedContour(width, svg.clientHeight)
+    let contour = roundedContour(width, svg.clientHeight, borderRadius)
     const observer = new ResizeObserver(([entry]) => {
       width = entry.contentRect.width
-      contour = roundedContour(width, entry.contentRect.height)
+      contour = roundedContour(width, entry.contentRect.height, borderRadius)
     })
     observer.observe(svg)
     const started = performance.now()
@@ -109,7 +111,7 @@ export default function ActivityGlassReflection({ durationMs = 3200, intensity =
     frame = requestAnimationFrame(draw)
     reducedMotion.addEventListener('change', stop)
     return () => { stop(); reducedMotion.removeEventListener('change', stop) }
-  }, [durationMs, intensity])
+  }, [durationMs, intensity, borderRadius])
 
   return <svg ref={svgRef} className={s.activityTrace} aria-hidden="true">
     <defs>

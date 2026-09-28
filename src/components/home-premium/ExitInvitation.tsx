@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { ArrowUpRight, Play, X } from 'lucide-react'
 import ForeasLogo from '@/components/experience/ForeasLogo'
+import ActivityGlassReflection from './ActivityGlassReflection'
 import { ESSAI_JOURS } from '@/lib/offre'
 import { mesurer } from '@/lib/mesure'
 import { useAnyOverlayOpen, useOverlayLock } from '@/lib/overlayStore'
@@ -14,7 +15,7 @@ const SEEN_KEY = 'foreas_exit_invitation_seen'
 export const COURSE_DEMO_SEEN_KEY = 'foreas_course_demo_seen'
 export const OPEN_COURSE_DEMO = 'foreas:open-course-demo'
 type Surface = 'home' | 'driver'
-type Trigger = 'desktop_exit' | 'mobile_return' | 'preview'
+type Trigger = 'desktop_exit' | 'mobile_return' | 'mobile_pause' | 'preview'
 
 function hasSeen(key: string) {
   try { return sessionStorage.getItem(key) === '1' } catch { return false }
@@ -65,8 +66,10 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
     let lastScroll = window.scrollY
     let upwardDistance = 0
     let mobileCandidate = false
+    let touchInput = false
     let pointerDown = false
-    let idleTimer: ReturnType<typeof setTimeout> | undefined
+    let lastInteractionAt = Date.now()
+    let mobileTimer: ReturnType<typeof setInterval> | undefined
     let previewTimer: ReturnType<typeof setInterval> | undefined
 
     const visibleMilliseconds = () => visibleTime + (visibleSince ? Date.now() - visibleSince : 0)
@@ -77,12 +80,16 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
       if (document.activeElement?.closest('input, textarea, select, [contenteditable="true"]')) return false
       const banner = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--consent-banner-h')) || 0
       if (banner > 0) return false
-      return !Array.from(document.querySelectorAll<HTMLMediaElement>('video, audio')).some(media => !media.paused && !media.ended)
+      // Les animations muettes sans commandes font partie du décor.
+      // Une vraie vidéo ou un son en lecture garde la priorité sur l'invitation.
+      return !Array.from(document.querySelectorAll<HTMLMediaElement>('video, audio'))
+        .some(media => !media.paused && !media.ended && (!media.muted || media.controls))
     }
     const show = (source: Trigger) => {
       if (!canOpen()) return
       used = true
       clearInterval(previewTimer)
+      clearInterval(mobileTimer)
       trigger.current = source
       if (!preview.current) {
         try { sessionStorage.setItem(SEEN_KEY, '1') } catch { /* Session privée. */ }
@@ -96,46 +103,55 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
         visibleSince = 0
       } else visibleSince = Date.now()
       mobileCandidate = false
-      clearTimeout(idleTimer)
+      lastInteractionAt = Date.now()
     }
     const onPointerMove = (event: PointerEvent) => { if (event.clientY > 80) movedInside = true }
     const onMouseLeave = (event: MouseEvent) => {
       if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return
       if (event.clientY <= 8 && movedInside && visibleMilliseconds() >= 25000) show('desktop_exit')
     }
-    const scheduleMobile = () => {
-      clearTimeout(idleTimer)
-      if (!mobileCandidate || pointerDown) return
-      idleTimer = setTimeout(() => {
-        if (!pointerDown && mobileCandidate && visibleMilliseconds() >= 45000) show('mobile_return')
-      }, 1800)
+    const isTouchVisit = () => touchInput || matchMedia('(any-pointer: coarse)').matches
+    const checkMobile = () => {
+      if (used || engaged || hasSeen(SEEN_KEY) || (surface === 'home' && hasSeen(COURSE_DEMO_SEEN_KEY))) {
+        clearInterval(mobileTimer)
+        return
+      }
+      if (!isTouchVisit() || document.hidden || pointerDown || maxScroll < innerHeight) return
+      if (visibleMilliseconds() < 45000) return
+      // Réévaluation après le délai, la fin d'une vidéo ou la fermeture d'un
+      // autre panneau : une occasion momentanément bloquée n'est plus perdue.
+      const pauseMs = mobileCandidate ? 1800 : 3500
+      if (Date.now() - lastInteractionAt >= pauseMs) show(mobileCandidate ? 'mobile_return' : 'mobile_pause')
     }
     const onScroll = () => {
-      if (!matchMedia('(pointer: coarse)').matches || used) return
+      if (used) return
       const y = Math.max(0, window.scrollY)
       maxScroll = Math.max(maxScroll, y)
       upwardDistance = y < lastScroll ? upwardDistance + lastScroll - y : 0
       if (y > lastScroll) mobileCandidate = false
-      // Mobile : retour vers le haut après lecture, puis arrêt du geste.
-      if (maxScroll >= innerHeight && upwardDistance >= 160 && y < innerHeight * .65) mobileCandidate = true
+      // Une remontée n'a pas besoin d'atteindre le haut d'une longue page.
+      if (upwardDistance >= 160) mobileCandidate = true
       lastScroll = y
-      scheduleMobile()
+      lastInteractionAt = Date.now()
     }
-    const onPointerDown = () => { pointerDown = true; clearTimeout(idleTimer) }
-    const onPointerUp = () => { pointerDown = false; scheduleMobile() }
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') touchInput = true
+      pointerDown = true
+      lastInteractionAt = Date.now()
+    }
+    const onPointerUp = () => { pointerDown = false; lastInteractionAt = Date.now() }
+    const onInteraction = () => { lastInteractionAt = Date.now() }
     const onNavigate = (event: MouseEvent) => {
       const link = (event.target as Element | null)?.closest('a[href]')
       if (link && !link.getAttribute('href')?.startsWith('#')) {
         engaged = true
-        clearTimeout(idleTimer)
+        clearInterval(mobileTimer)
       }
-    }
-    const onMediaPlay = (event: Event) => {
-      if (event.target instanceof HTMLVideoElement) { engaged = true; clearTimeout(idleTimer) }
     }
 
     // Accès direct pour montrer le résultat, sans consommation de la session ni mesure.
     previewTimer = preview.current ? setInterval(() => show('preview'), 700) : undefined
+    mobileTimer = preview.current ? undefined : setInterval(checkMobile, 500)
     document.addEventListener('visibilitychange', onVisibility)
     document.addEventListener('pointermove', onPointerMove, { passive: true })
     document.documentElement.addEventListener('mouseleave', onMouseLeave)
@@ -144,10 +160,14 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
     document.addEventListener('pointerup', onPointerUp, { passive: true })
     document.addEventListener('pointercancel', onPointerUp, { passive: true })
     document.addEventListener('click', onNavigate, true)
-    document.addEventListener('play', onMediaPlay, true)
+    document.addEventListener('play', onInteraction, true)
+    document.addEventListener('pause', onInteraction, true)
+    document.addEventListener('ended', onInteraction, true)
+    document.addEventListener('input', onInteraction, true)
+    document.addEventListener('focusout', onInteraction, true)
     return () => {
       clearInterval(previewTimer)
-      clearTimeout(idleTimer)
+      clearInterval(mobileTimer)
       document.removeEventListener('visibilitychange', onVisibility)
       document.removeEventListener('pointermove', onPointerMove)
       document.documentElement.removeEventListener('mouseleave', onMouseLeave)
@@ -156,7 +176,11 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
       document.removeEventListener('pointerup', onPointerUp)
       document.removeEventListener('pointercancel', onPointerUp)
       document.removeEventListener('click', onNavigate, true)
-      document.removeEventListener('play', onMediaPlay, true)
+      document.removeEventListener('play', onInteraction, true)
+      document.removeEventListener('pause', onInteraction, true)
+      document.removeEventListener('ended', onInteraction, true)
+      document.removeEventListener('input', onInteraction, true)
+      document.removeEventListener('focusout', onInteraction, true)
     }
   }, [surface, track])
 
@@ -196,7 +220,7 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
   if (!mounted) return null
   const isDriver = surface === 'driver'
   return createPortal(<dialog ref={dialog} className={`${s.dialog} ${closing ? s.closing : ''}`}
-    data-exit-invitation={surface} aria-labelledby="exit-invitation-title" aria-describedby="exit-invitation-description"
+    data-exit-invitation={surface} data-invitation-trigger={trigger.current} aria-labelledby="exit-invitation-title" aria-describedby="exit-invitation-description"
     onCancel={event => { event.preventDefault(); dismiss() }}
     onClick={event => {
       const rect = event.currentTarget.getBoundingClientRect()
@@ -218,8 +242,8 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
         <p id="exit-invitation-description" className={s.description}>{isDriver
           ? 'Le temps. L’approche. Tes frais. Teste FOREAS Pro sur tes propres courses pour choisir avec tes chiffres.'
           : 'Le prix attire. Le temps et les frais font la différence. Vois comment FOREAS estime ce qu’une course te laisse.'}</p>
-        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}>Commencer mes {ESSAI_JOURS} jours Pro gratuits <ArrowUpRight size={20} aria-hidden="true"/></a>
-          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><Play size={17} fill="currentColor" aria-hidden="true"/>Voir ce que le prix cache</button>}
+        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}><ActivityGlassReflection borderRadius={14}/><span>Commencer mes {ESSAI_JOURS} jours Pro gratuits</span><ArrowUpRight size={20} aria-hidden="true"/></a>
+          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><ActivityGlassReflection borderRadius={14}/><Play size={17} fill="currentColor" aria-hidden="true"/><span>Voir ce que le prix cache</span></button>}
         <p className={s.note}>{isDriver ? 'Conditions et tarif présentés avant de commencer.' : 'La démonstration, ici. Sans inscription.'}</p>
         <button className={s.later} type="button" onClick={dismiss}>Continuer ma visite</button>
       </div>
