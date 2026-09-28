@@ -105,7 +105,7 @@ export default function ActivityGlassReflection({ durationMs = 3200, intensity =
       for (let i = 0; i <= 128; i++) {
         const t = i / 128
         const point = contour.pointAt(center + (t - .5) * span)
-        const halfWidth = 1.35 * Math.pow(Math.sin(Math.PI * t), 1.6)
+        const halfWidth = 1.7 * Math.pow(Math.sin(Math.PI * t), 1.6)
         outer.push(`${(point.x + point.nx * halfWidth).toFixed(2)},${(point.y + point.ny * halfWidth).toFixed(2)}`)
         inner.push(`${(point.x - point.nx * halfWidth).toFixed(2)},${(point.y - point.ny * halfWidth).toFixed(2)}`)
       }

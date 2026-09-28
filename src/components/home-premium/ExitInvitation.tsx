@@ -242,8 +242,8 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
         <p id="exit-invitation-description" className={s.description}>{isDriver
           ? 'Le prix ne dit pas tout. Teste tes décisions avec le temps, l’approche et tes frais sous les yeux.'
           : 'Le prix attire. Le temps et les frais font la différence. Vois comment FOREAS estime ce qu’une course te laisse.'}</p>
-        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}><ActivityGlassReflection borderRadius={14} durationMs={4200} repeatPauseMs={1800}/><span>Commencer mes {ESSAI_JOURS} jours Pro gratuits</span><ArrowUpRight size={20} aria-hidden="true"/></a>
-          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><ActivityGlassReflection borderRadius={14} durationMs={4200} repeatPauseMs={1800}/><Play size={17} fill="currentColor" aria-hidden="true"/><span>Voir ce que le prix cache</span></button>}
+        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}><ActivityGlassReflection borderRadius={14} intensity={.94} durationMs={4200} repeatPauseMs={1800}/><span>Commencer mes {ESSAI_JOURS} jours Pro gratuits</span><ArrowUpRight size={20} aria-hidden="true"/></a>
+          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><ActivityGlassReflection borderRadius={14} intensity={.94} durationMs={4200} repeatPauseMs={1800}/><Play size={17} fill="currentColor" aria-hidden="true"/><span>Voir ce que le prix cache</span></button>}
         <p className={s.note}>{isDriver ? 'Conditions et tarif présentés avant de commencer.' : 'La démonstration, ici. Sans inscription.'}</p>
         <button className={s.later} type="button" onClick={dismiss}>Continuer ma visite</button>
       </div>
