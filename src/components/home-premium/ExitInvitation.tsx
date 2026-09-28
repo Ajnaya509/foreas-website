@@ -214,13 +214,13 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
       </div>
       <div className={s.content}>
         <p className={s.eyebrow}>{isDriver ? `FOREAS PRO · ${ESSAI_JOURS} JOURS D’ESSAI` : 'FOREAS DRIVER, EN ACTION'}</p>
-        <h2 id="exit-invitation-title">{isDriver ? <>{ESSAI_JOURS === 3 ? 'Trois' : ESSAI_JOURS} jours.<br/><span>Ton propre avis.</span></> : <>Regarde.<br/><span>Puis décide.</span></>}</h2>
+        <h2 id="exit-invitation-title">{isDriver ? <>Ton temps mérite<br/><span>les bonnes courses.</span></> : <>Avant d’accepter.<br/><span>Vois ce qu’il reste.</span></>}</h2>
         <p id="exit-invitation-description" className={s.description}>{isDriver
-          ? 'Tes courses, tes frais, tes réglages. Prends le temps de voir ce que Pro t’apporte sur ta route.'
-          : 'L’approche. Le temps. Les frais. Vois comment FOREAS éclaire une course avant de choisir.'}</p>
-        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}>Découvrir l’essai Pro <ArrowUpRight size={20} aria-hidden="true"/></a>
-          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><Play size={17} fill="currentColor" aria-hidden="true"/>Voir la démo</button>}
-        <p className={s.note}>{isDriver ? 'Conditions et tarif présentés avant de commencer.' : 'La démonstration s’ouvre ici. Sans inscription.'}</p>
+          ? 'Le temps. L’approche. Tes frais. Teste FOREAS Pro sur tes propres courses pour choisir avec tes chiffres.'
+          : 'Le prix attire. Le temps et les frais font la différence. Vois comment FOREAS estime ce qu’une course te laisse.'}</p>
+        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}>Commencer mes {ESSAI_JOURS} jours Pro <ArrowUpRight size={20} aria-hidden="true"/></a>
+          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><Play size={17} fill="currentColor" aria-hidden="true"/>Voir ce que le prix cache</button>}
+        <p className={s.note}>{isDriver ? 'Conditions et tarif présentés avant de commencer.' : 'La démonstration, ici. Sans inscription.'}</p>
         <button className={s.later} type="button" onClick={dismiss}>Continuer ma visite</button>
       </div>
     </div>}
