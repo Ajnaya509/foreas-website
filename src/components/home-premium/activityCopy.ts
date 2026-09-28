@@ -7,13 +7,13 @@ export const HOME_PEOPLE = [
   'Samy', 'Karim', 'Mehdi', 'Yanis', 'Walid', 'Amine', 'Lina',
   'Omar', 'Farid', 'Youssef', 'Sofiane', 'Nabil', 'Nadia', 'Malik',
   'Rachid', 'Moussa', 'Bilal', 'Idriss', 'Sarah', 'Ibrahim', 'Adama',
-  'Ismaël', 'Hugo', 'Thomas', 'Inès', 'Rayan', 'Boubacar',
+  'Ismaël', 'Adel', 'Farès', 'Inès', 'Rayan', 'Boubacar',
 ] as const
 export const DRIVER_PEOPLE = [
   'Sami', 'Kamel', 'Nassim', 'Ilyes', 'Anis', 'Reda', 'Assia',
   'Hakim', 'Ali', 'Ahmed', 'Abdel', 'Hamza', 'Myriam', 'Seydou',
   'Mamadou', 'Souleymane', 'Ousmane', 'Yacine', 'Dounia', 'Nadir',
-  'Tarek', 'Fouad', 'Lucas', 'Nicolas', 'Aïcha', 'Issa', 'Lamine',
+  'Tarek', 'Fouad', 'Mourad', 'Zakaria', 'Aïcha', 'Issa', 'Lamine',
 ] as const
 
 export const ACTIVITY_KINDS: readonly ActivityKind[] = ['app_page_opened', 'partner_account_activated', 'booking_site_published']
