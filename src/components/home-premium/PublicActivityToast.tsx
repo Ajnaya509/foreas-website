@@ -1,68 +1,43 @@
 'use client'
 
-import { X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowRight, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import ActivityGlassReflection from './ActivityGlassReflection'
-import s from './home.module.css'
-
 import { ACTIVITY_KINDS, activityPhrase, carnetEvents, previewEvents, type ActivityEvent, type ActivitySurface } from './activityCopy'
+import s from './public-activity.module.css'
 
-function ring(audio: AudioContext) {
-  const note = audio.createOscillator()
-  const volume = audio.createGain()
-  const now = audio.currentTime
-  note.type = 'sine'
-  note.frequency.setValueAtTime(740, now)
-  note.frequency.exponentialRampToValueAtTime(990, now + .13)
-  volume.gain.setValueAtTime(.0001, now)
-  volume.gain.exponentialRampToValueAtTime(.05, now + .018)
-  volume.gain.exponentialRampToValueAtTime(.0001, now + .18)
-  note.connect(volume).connect(audio.destination)
-  note.start(now)
-  note.stop(now + .19)
-}
-
-let sharedAudio: AudioContext | null = null
-
-function playChime() {
-  try {
-    if (localStorage.getItem('foreas_intro_sound') === 'off') return
-    sharedAudio = sharedAudio ?? new AudioContext()
-    const audio = sharedAudio
-    if (audio.state === 'running') { ring(audio); return }
-    // Le navigateur attend un premier geste : le son part dès ce geste.
-    const unlock = () => {
-      ['pointerdown', 'keydown', 'touchstart'].forEach(type => window.removeEventListener(type, unlock))
-      void audio.resume().then(() => ring(audio)).catch(() => {})
-    }
-    ;['pointerdown', 'keydown', 'touchstart'].forEach(type => window.addEventListener(type, unlock, { once: true, passive: true }))
-  } catch { /* Le son ne retarde jamais l’information. */ }
-}
+const FIRST_MS = 5000
+const DISPLAY_MS = 7000
+const FADE_MS = 700
+const REST_MS = 2200
+const DISMISSED_KEY = 'foreas_activity_dismissed'
+type Phase = 'waiting' | 'show' | 'leave' | 'rest'
 
 export default function PublicActivityToast({ surface = 'home' }: { surface?: ActivitySurface }) {
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [index, setIndex] = useState(0)
-  const [visible, setVisible] = useState(false)
-  const [preview, setPreview] = useState(false)
-  const [leaving, setLeaving] = useState(false)
+  const [phase, setPhase] = useState<Phase>('waiting')
   const [dismissed, setDismissed] = useState(false)
-  const [typed, setTyped] = useState('')
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const [tabVisible, setTabVisible] = useState(true)
+  const audio = useRef<AudioContext | null>(null)
+  const preview = useRef(false)
 
   useEffect(() => {
-    const preview = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('apercu-notifications') === '1'
-    if (preview) {
-      setPreview(true)
-      setEvents(previewEvents(surface))
-      return
-    }
-    try { if (sessionStorage.getItem('foreas_activity_dismissed') === '1') { setDismissed(true); return } } catch {}
-    // En public, seuls les événements approuvés et prouvés sont affichés.
+    preview.current = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+      && new URLSearchParams(location.search).get('apercu-notifications') === '1'
+    if (preview.current) { setEvents(previewEvents(surface)); return }
+    try {
+      if (sessionStorage.getItem(DISMISSED_KEY) === '1') { setDismissed(true); return }
+    } catch { /* La navigation privée ne bloque pas l’affichage. */ }
     const controller = new AbortController()
     void fetch('/api/activite-publique', { signal: controller.signal, cache: 'no-store' })
       .then(response => response.ok ? response.json() : { events: [] })
       .then((payload: { events?: ActivityEvent[] }) => {
         if (controller.signal.aborted) return
-        const verified = (payload.events ?? []).filter(event => !!event.id && ACTIVITY_KINDS.includes(event.kind) && (surface === 'home' || event.kind === 'app_page_opened'))
+        const verified = (payload.events ?? []).filter(event => !!event.id && ACTIVITY_KINDS.includes(event.kind)
+          && (surface === 'home' || event.kind === 'app_page_opened'))
         setEvents(verified.length ? verified : carnetEvents(surface))
       })
       .catch(() => { if (!controller.signal.aborted) setEvents(carnetEvents(surface)) })
@@ -70,58 +45,102 @@ export default function PublicActivityToast({ surface = 'home' }: { surface?: Ac
   }, [surface])
 
   useEffect(() => {
-    if (!events.length || dismissed) return
-    const show = window.setTimeout(() => setVisible(true), preview ? 900 : 5000)
-    return () => window.clearTimeout(show)
-  }, [events.length, dismissed, preview])
+    const update = () => {
+      setTabVisible(!document.hidden)
+      if (document.hidden) { setHovered(false); setFocused(false) }
+    }
+    update()
+    document.addEventListener('visibilitychange', update)
+    return () => document.removeEventListener('visibilitychange', update)
+  }, [])
 
   useEffect(() => {
-    if (!visible || events.length < 2) return
-    let exitTimer: number | undefined
-    const cycle = window.setInterval(() => {
-      if (document.hidden) return
-      setLeaving(true)
-      exitTimer = window.setTimeout(() => {
-        setTyped('')
-        setIndex(value => (value + 1) % events.length)
-        setLeaving(false)
-      }, 380)
-    }, 14000)
-    return () => { window.clearInterval(cycle); if (exitTimer) window.clearTimeout(exitTimer) }
-  }, [visible, events.length])
+    if (!events.length || dismissed || !tabVisible || ((hovered || focused) && phase === 'show')) return
+    const delay = phase === 'waiting' ? (preview.current ? 900 : FIRST_MS)
+      : phase === 'show' ? DISPLAY_MS : phase === 'leave' ? FADE_MS : REST_MS
+    const timer = window.setTimeout(() => {
+      if (phase === 'waiting') setPhase('show')
+      else if (phase === 'show') setPhase('leave')
+      else if (phase === 'leave') setPhase('rest')
+      else { setIndex(value => (value + 1) % events.length); setPhase('show') }
+    }, delay)
+    return () => window.clearTimeout(timer)
+  }, [events.length, dismissed, tabVisible, hovered, focused, phase, index])
 
   useEffect(() => {
-    if (visible && !leaving && !document.hidden) playChime()
-  }, [visible, leaving, index])
+    // Le son est préparé au premier geste et joué uniquement avec une notification.
+    const unlock = () => {
+      try {
+        if (localStorage.getItem('foreas_intro_sound') === 'off') return
+        audio.current ??= new AudioContext()
+        void audio.current.resume().catch(() => {})
+      } catch { /* Le visuel reste autonome. */ }
+    }
+    window.addEventListener('pointerdown', unlock, { once: true, passive: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+      void audio.current?.close()
+      audio.current = null
+    }
+  }, [])
 
   useEffect(() => {
-    if (!visible || dismissed) return
-    const event = events[index]
-    if (!event) return
-    const phrase = activityPhrase(surface, event, index)
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setTyped(phrase); return }
-    const letters = Array.from(phrase)
-    let position = 0
-    setTyped('')
-    const timer = window.setInterval(() => {
-      position += 1
-      setTyped(letters.slice(0, position).join(''))
-      if (position >= letters.length) window.clearInterval(timer)
-    }, 25)
-    return () => window.clearInterval(timer)
-  }, [visible, dismissed, events, index, surface])
+    const context = audio.current
+    if (phase !== 'show' || dismissed || document.hidden || !context || context.state !== 'running') return
+    const note = context.createOscillator()
+    const gain = context.createGain()
+    const now = context.currentTime
+    note.type = 'sine'
+    note.frequency.setValueAtTime(880, now)
+    note.frequency.exponentialRampToValueAtTime(1174, now + .15)
+    gain.gain.setValueAtTime(.0001, now)
+    gain.gain.exponentialRampToValueAtTime(.015, now + .025)
+    gain.gain.exponentialRampToValueAtTime(.0001, now + .22)
+    note.connect(gain).connect(context.destination)
+    note.start(now)
+    note.stop(now + .24)
+    note.onended = () => { note.disconnect(); gain.disconnect() }
+  }, [phase, index, dismissed])
 
-  if (!visible || !events.length) return null
+  if (dismissed || !tabVisible || (phase !== 'show' && phase !== 'leave')) return null
   const event = events[index]
   if (!event) return null
   const phrase = activityPhrase(surface, event, index)
+  const split = phrase.indexOf('. ')
+  const heading = split < 0 ? phrase : phrase.slice(0, split)
+  const benefit = split < 0 ? '' : phrase.slice(split + 2)
+  const name = event.name || (event.kind === 'partner_account_activated' ? 'Un partenaire' : 'Un chauffeur')
+  const action = heading.startsWith(name) ? heading.slice(name.length).trim() : heading
+  const destination = surface === 'driver' ? '/tarifs3'
+    : event.kind === 'partner_account_activated' ? '/partenaire'
+    : event.kind === 'booking_site_published' ? '/chauffeur#vitrine' : '/chauffeur'
+  const label = surface === 'driver' ? 'Découvrir les 3 jours Pro'
+    : event.kind === 'partner_account_activated' ? 'Découvrir le programme'
+    : event.kind === 'booking_site_published' ? 'Découvrir mon site' : 'Découvrir l’application'
 
-  return <aside key={index} className={`${s.activityToast} ${surface === 'driver' ? s.driverActivity : ''} ${leaving ? s.activityLeaving : ''}`} aria-label={`${preview ? 'Aperçu : ' : ''}${phrase}`}>
-    <ActivityGlassReflection />
-    <div className={s.activityCopy}>
-      <p className={s.activityMeasure} aria-hidden="true">{phrase}</p>
-      <p aria-hidden="true">{typed}{typed.length < phrase.length && <span className={s.activityCaret} />}</p>
-    </div>
-    <button type="button" onClick={() => { setDismissed(true); setVisible(false); if (!preview) { try { sessionStorage.setItem('foreas_activity_dismissed', '1') } catch {} } }} aria-label="Masquer ces notifications"><X size={17} aria-hidden="true"/></button>
+  function dismiss() {
+    setDismissed(true)
+    if (!preview.current) {
+      try { sessionStorage.setItem(DISMISSED_KEY, '1') } catch {}
+    }
+  }
+
+  return <aside key={`${surface}-${index}`} data-foreas-notification="glass-v2" data-phase={phase}
+    className={`${s.notification} ${phase === 'leave' ? s.leaving : ''}`} aria-label={phrase}
+    onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+    onFocusCapture={() => setFocused(true)}
+    onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false) }}>
+    <ActivityGlassReflection durationMs={6000} intensity={.94}/>
+    <span className={s.avatar} aria-hidden="true">{event.name?.slice(0, 1) || 'F'}</span>
+    <a className={s.action} href={destination} aria-label={`${phrase} ${label}`}>
+      <div className={s.copy}>
+        <p className={s.heading}><strong>{name}</strong> {action}</p>
+        {benefit && <p className={s.benefit}>{benefit}</p>}
+      </div>
+      <ArrowRight size={15} aria-hidden="true"/>
+    </a>
+    <button type="button" className={s.close} aria-label="Masquer ces notifications" onClick={dismiss}><X size={14} aria-hidden="true"/></button>
   </aside>
 }

@@ -51,7 +51,7 @@ function roundedContour(width: number, height: number) {
 }
 
 /** A single tapered ribbon, drawn at the card's real size, with no dashed joins. */
-export default function ActivityGlassReflection() {
+export default function ActivityGlassReflection({ durationMs = 3200, intensity = .82 }: { durationMs?: number; intensity?: number }) {
   const id = useId()
   const svgRef = useRef<SVGSVGElement>(null)
   const ribbonRef = useRef<SVGPathElement>(null)
@@ -83,7 +83,7 @@ export default function ActivityGlassReflection() {
       observer.disconnect()
     }
     const draw = (now: number) => {
-      const progress = Math.max(0, (now - started - 140) / 3200)
+      const progress = Math.max(0, (now - started - 140) / durationMs)
       if (progress >= 1 || document.hidden) { stop(); return }
       const span = Math.min(width * .82, contour.length * .4)
       const center = contour.start + progress * contour.length
@@ -97,7 +97,7 @@ export default function ActivityGlassReflection() {
         inner.push(`${(point.x - point.nx * halfWidth).toFixed(2)},${(point.y - point.ny * halfWidth).toFixed(2)}`)
       }
       ribbon.setAttribute('d', `M${outer.join(' L')} L${inner.reverse().join(' L')} Z`)
-      ribbon.style.opacity = String(.82 * smooth(progress / .12) * smooth((1 - progress) / .22))
+      ribbon.style.opacity = String(intensity * smooth(progress / .12) * smooth((1 - progress) / .22))
       const tail = contour.pointAt(center - span / 2)
       const head = contour.pointAt(center + span / 2)
       gradient.setAttribute('x1', String(tail.x))
@@ -109,7 +109,7 @@ export default function ActivityGlassReflection() {
     frame = requestAnimationFrame(draw)
     reducedMotion.addEventListener('change', stop)
     return () => { stop(); reducedMotion.removeEventListener('change', stop) }
-  }, [])
+  }, [durationMs, intensity])
 
   return <svg ref={svgRef} className={s.activityTrace} aria-hidden="true">
     <defs>
