@@ -191,7 +191,9 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
     const previousOverflow = document.documentElement.style.overflow
     document.documentElement.style.overflow = 'hidden'
     element.showModal()
-    element.querySelector<HTMLElement>('[data-invitation-primary]')?.focus({ preventScroll: true })
+    // Entrer dans le dialogue sans dessiner un faux reflet fixe sur le bouton.
+    // Le parcours au clavier conserve ensuite ses vrais repères de sélection.
+    element.querySelector<HTMLElement>('#exit-invitation-title')?.focus({ preventScroll: true })
     return () => {
       element.close()
       document.documentElement.style.overflow = previousOverflow
@@ -231,19 +233,19 @@ export default function ExitInvitation({ surface = 'home' }: { surface?: Surface
       <div className={s.visual} aria-hidden="true">
         <ForeasLogo className={s.logo}/>
         <div className={s.halo}/>
-        <div className={`${s.phone} ${isDriver ? s.rotato : ''}`}>
-          <Image src={isDriver ? '/media/home/foreas-rotato.webp' : '/media/home/course-poster.webp'} alt="" width={isDriver ? 610 : 1600} height={isDriver ? 1195 : 1200} sizes="(max-width: 600px) 190px, 320px"/>
+        <div className={s.phone}>
+          <Image src="/media/home/course-poster.webp" alt="" width={1600} height={1200} sizes="(max-width: 600px) 360px, 460px"/>
         </div>
-        <span className={s.visualCaption}>{isDriver ? 'TON ACTIVITÉ. TES DÉCISIONS.' : 'VERDICT INSTANT · DÉMONSTRATION'}</span>
+        <span className={s.visualCaption}>VERDICT INSTANT<span>Démonstration</span></span>
       </div>
       <div className={s.content}>
         <p className={s.eyebrow}>{isDriver ? `FOREAS PRO · ${ESSAI_JOURS} JOURS D’ESSAI` : 'FOREAS DRIVER, EN ACTION'}</p>
-        <h2 id="exit-invitation-title">{isDriver ? <>Ton temps mérite<br/><span>les bonnes courses.</span></> : <>Avant d’accepter.<br/><span>Vois ce qu’il reste.</span></>}</h2>
+        <h2 id="exit-invitation-title" tabIndex={-1}>{isDriver ? 'Choisis tes courses.' : 'Vois au-delà du prix.'}</h2>
         <p id="exit-invitation-description" className={s.description}>{isDriver
-          ? 'Le temps. L’approche. Tes frais. Teste FOREAS Pro sur tes propres courses pour choisir avec tes chiffres.'
+          ? 'Le prix ne dit pas tout. Teste tes décisions avec le temps, l’approche et tes frais sous les yeux.'
           : 'Le prix attire. Le temps et les frais font la différence. Vois comment FOREAS estime ce qu’une course te laisse.'}</p>
-        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}><ActivityGlassReflection borderRadius={14}/><span>Commencer mes {ESSAI_JOURS} jours Pro gratuits</span><ArrowUpRight size={20} aria-hidden="true"/></a>
-          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><ActivityGlassReflection borderRadius={14}/><Play size={17} fill="currentColor" aria-hidden="true"/><span>Voir ce que le prix cache</span></button>}
+        {isDriver ? <a className={s.primary} data-invitation-primary href={href} onClick={() => track('discover_trial')}><ActivityGlassReflection borderRadius={14} durationMs={4200} repeatPauseMs={1800}/><span>Commencer mes {ESSAI_JOURS} jours Pro gratuits</span><ArrowUpRight size={20} aria-hidden="true"/></a>
+          : <button className={s.primary} data-invitation-primary type="button" onClick={watchDemo}><ActivityGlassReflection borderRadius={14} durationMs={4200} repeatPauseMs={1800}/><Play size={17} fill="currentColor" aria-hidden="true"/><span>Voir ce que le prix cache</span></button>}
         <p className={s.note}>{isDriver ? 'Conditions et tarif présentés avant de commencer.' : 'La démonstration, ici. Sans inscription.'}</p>
         <button className={s.later} type="button" onClick={dismiss}>Continuer ma visite</button>
       </div>

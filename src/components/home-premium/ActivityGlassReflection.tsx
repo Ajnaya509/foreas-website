@@ -53,7 +53,7 @@ function roundedContour(width: number, height: number, borderRadius: number) {
 }
 
 /** A single tapered ribbon, drawn at the card's real size, with no dashed joins. */
-export default function ActivityGlassReflection({ durationMs = 3200, intensity = .82, borderRadius = 20 }: { durationMs?: number; intensity?: number; borderRadius?: number }) {
+export default function ActivityGlassReflection({ durationMs = 3200, intensity = .82, borderRadius = 20, repeatPauseMs }: { durationMs?: number; intensity?: number; borderRadius?: number; repeatPauseMs?: number }) {
   const id = useId()
   const svgRef = useRef<SVGSVGElement>(null)
   const ribbonRef = useRef<SVGPathElement>(null)
@@ -73,20 +73,31 @@ export default function ActivityGlassReflection({ durationMs = 3200, intensity =
       contour = roundedContour(width, entry.contentRect.height, borderRadius)
     })
     observer.observe(svg)
-    const started = performance.now()
+    let started = performance.now()
     let frame = 0
+    let repeatTimer: ReturnType<typeof setTimeout> | undefined
     const smooth = (value: number) => {
       const t = Math.max(0, Math.min(1, value))
       return t * t * (3 - 2 * t)
     }
     const stop = () => {
       cancelAnimationFrame(frame)
+      clearTimeout(repeatTimer)
       ribbon.style.opacity = '0'
       observer.disconnect()
     }
     const draw = (now: number) => {
       const progress = Math.max(0, (now - started - 140) / durationMs)
-      if (progress >= 1 || document.hidden) { stop(); return }
+      if (document.hidden) { ribbon.style.opacity = '0'; return }
+      if (progress >= 1) {
+        ribbon.style.opacity = '0'
+        if (repeatPauseMs === undefined) { stop(); return }
+        repeatTimer = setTimeout(() => {
+          started = performance.now()
+          frame = requestAnimationFrame(draw)
+        }, repeatPauseMs)
+        return
+      }
       const span = Math.min(width * .82, contour.length * .4)
       const center = contour.start + progress * contour.length
       const outer: string[] = []
@@ -108,10 +119,20 @@ export default function ActivityGlassReflection({ durationMs = 3200, intensity =
       gradient.setAttribute('y2', String(head.y))
       frame = requestAnimationFrame(draw)
     }
+    const onVisibility = () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(repeatTimer)
+      ribbon.style.opacity = '0'
+      if (!document.hidden && repeatPauseMs !== undefined && !reducedMotion.matches) {
+        started = performance.now()
+        frame = requestAnimationFrame(draw)
+      }
+    }
     frame = requestAnimationFrame(draw)
     reducedMotion.addEventListener('change', stop)
-    return () => { stop(); reducedMotion.removeEventListener('change', stop) }
-  }, [durationMs, intensity, borderRadius])
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => { stop(); reducedMotion.removeEventListener('change', stop); document.removeEventListener('visibilitychange', onVisibility) }
+  }, [durationMs, intensity, borderRadius, repeatPauseMs])
 
   return <svg ref={svgRef} className={s.activityTrace} aria-hidden="true">
     <defs>
