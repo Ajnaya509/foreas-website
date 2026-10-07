@@ -20,7 +20,7 @@ export default function CGUPage() {
             <h1 className="font-title text-3xl md:text-4xl font-bold text-white mb-2">
               Conditions Générales d&apos;Utilisation
             </h1>
-            <p className="font-sans text-sm text-white/45 mb-8 md:mb-12">Dernière mise à jour : Juin 2026</p>
+            <p className="font-sans text-sm text-white/45 mb-8 md:mb-12">Dernière mise à jour : 7 octobre 2026</p>
           </motion.div>
 
           <motion.div
@@ -71,6 +71,9 @@ export default function CGUPage() {
                 <li className="pl-4 border-l border-white/15 font-sans text-sm md:text-base text-white/65 leading-relaxed">Des tableaux de bord de suivi de performance et de revenus ;</li>
                 <li className="pl-4 border-l border-white/15 font-sans text-sm md:text-base text-white/65 leading-relaxed">Des indicateurs d&apos;optimisation d&apos;itinéraires et de temps de repositionnement.</li>
               </ul>
+              <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed mt-3">
+                La connexion à YouTube est facultative. Lorsque vous choisissez d&apos;utiliser cette fonction, vous acceptez également les <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline underline-offset-2">conditions d&apos;utilisation de YouTube</a>. Vous choisissez séparément si FOREAS peut publier des réponses depuis votre chaîne. FOREAS ne propose aucune modification ou suppression de vidéo.
+              </p>
               <p className="font-sans text-sm md:text-base text-white/65 leading-relaxed mt-3">
                 Les recommandations fournies par le Service sont de nature <strong className="text-white/80 font-semibold">indicative</strong> et ne constituent en aucun cas une obligation ou une garantie de résultat.
               </p>
