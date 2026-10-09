@@ -3,6 +3,7 @@ import { authUrls } from '@/lib/auth-urls';
 import Image from 'next/image';
 import {ArrowRight, MessageCircle, Plus, Users, Wallet} from 'lucide-react';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores';
+import ZoomALApparition from '@/components/partner-public/ZoomALApparition';
 import ForeasLogo from '@/components/experience/ForeasLogo';
 import s from '@/app/partenaire/partenaire.module.css';
 
@@ -59,9 +60,9 @@ export default function Landing() {
           <p className={s.note}>Ouvert aussi aux partenaires qui ne sont pas chauffeurs. Aucun abonnement Premium nécessaire.</p>
         </div>
         <figure className={s.heroProduct}>
-          <div className={s.verdictFrame}>
+          <ZoomALApparition className={s.verdictFrame}>
             <Image src="/media/partenaire/verdict-instant.webp" alt="Démonstration de Verdict Instant dans FOREAS Driver : une course affichée 46,20 € reçoit le verdict « À laisser, 16 € de l’heure », car elle prend 121 minutes au total." width={1156} height={2350} sizes="(min-width: 768px) 440px, 92vw" priority className={s.verdictImage}/>
-          </div>
+          </ZoomALApparition>
           <figcaption>
             <span className={s.deviceCaption}>Verdict Instant, dans FOREAS Driver : le prix affiché, puis ce qu’il rapporte vraiment à l’heure. Démonstration, données d’exemple.</span>
             <span className={s.stores} aria-label="Disponible sur les boutiques officielles">

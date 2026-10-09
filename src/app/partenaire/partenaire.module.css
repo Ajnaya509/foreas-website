@@ -126,10 +126,13 @@
 
 /* Ouverture : le produit à côté de la promesse, et la preuve qu’il existe. */
 .heroProduct { display: grid; justify-items: center; gap: 1.5rem; margin: 0; }
-/* Verdict Instant : téléphone entier au chargement, puis zoom unique sur le verdict et le prix, qui reste fixe. */
+/* Verdict Instant : téléphone entier, puis zoom unique quand l’image apparaît à l’écran ; ensuite fixe. */
 .verdictFrame { position: relative; width: min(100%, 28rem); aspect-ratio: 3 / 4; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, black 84%, transparent); mask-image: linear-gradient(to bottom, black 84%, transparent); }
-.verdictImage { display: block; width: 61.7%; height: auto; margin: 4% auto 0; transform: scale(1.59); transform-origin: 50% 0; animation: verdictZoom 720ms var(--ease-decelerate) 200ms both; }
+.verdictImage { display: block; width: 61.7%; height: auto; margin: 4% auto 0; transform: scale(1.59); transform-origin: 50% 0; }
+.verdictFrame[data-zoom='attente'] .verdictImage { transform: scale(1); }
+.verdictFrame[data-zoom='joue'] .verdictImage { animation: verdictZoom 720ms var(--ease-decelerate) 150ms both; }
 @keyframes verdictZoom { from { transform: scale(1); } to { transform: scale(1.59); } }
+@media (prefers-reduced-motion: reduce) { .verdictFrame[data-zoom] .verdictImage { transform: scale(1.59); } }
 .heroProduct figcaption { display: grid; justify-items: center; gap: 1rem; text-align: center; }
 .deviceCaption { @apply text-caption; max-width: 19rem; color: var(--text-secondary); }
 .stores { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
