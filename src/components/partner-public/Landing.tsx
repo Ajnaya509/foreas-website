@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { authUrls } from '@/lib/auth-urls';
-import {ArrowRight, MessageCircle, Users, Wallet} from 'lucide-react';
+import Image from 'next/image';
+import {ArrowRight, MessageCircle, Plus, Users, Wallet} from 'lucide-react';
+import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores';
 import ForeasLogo from '@/components/experience/ForeasLogo';
 import s from '@/app/partenaire/partenaire.module.css';
 
@@ -15,6 +17,24 @@ const texteDuFilm = [
   'Vous n’avez pas à tout expliquer de mémoire. Votre espace partenaire met à votre disposition des messages, des visuels et un code à scanner pour présenter l’application. Vous y retrouvez aussi vos inscriptions et vos commissions.',
   'Commencez par un chauffeur à qui FOREAS peut vraiment servir. Aidez-le à découvrir l’outil. Et faites de cette recommandation le début d’un revenu régulier. Créez votre espace partenaire gratuit.',
 ];
+
+// Réponses tirées des conditions acceptées par les partenaires (version du 24 septembre 2026).
+const questions = [
+  ['Faut-il être chauffeur pour devenir partenaire ?', 'Non. Centre de formation, loueur, flotte, communauté, créateur ou simple contact : il suffit de connaître des chauffeurs VTC. Aucun minimum et aucune exclusivité ne sont demandés.'],
+  ['Est-ce que cela me coûte quelque chose ?', 'Non. La création de votre espace est gratuite et aucun achat n’est demandé. Le chauffeur s’abonne et paie directement FOREAS : vous n’encaissez rien.'],
+  ['Quand suis-je payé ?', 'Pour un abonnement mensuel, les deux premiers mois deviennent payables ensemble, soit 20 €, après le paiement du deuxième mois. Ensuite, 10 € pour chaque mois payé. Les versements passent par Stripe, après ses vérifications. Votre espace affiche l’état de chaque commission.'],
+  ['Faut-il un statut particulier ?', 'Pas pour vous inscrire et partager votre lien. Pour recevoir vos versements, Stripe vérifie votre identité et vos coordonnées bancaires. Vos déclarations fiscales et sociales restent à votre charge.'],
+  ['Et si le chauffeur arrête son abonnement ?', 'Les commissions suivent ses paiements : un mois non payé ne donne pas de commission. Les commissions déjà acquises sur des paiements conservés restent acquises.'],
+  ['Puis-je arrêter quand je veux ?', 'Oui, à tout moment. Vous cessez de partager votre lien et vous écrivez à contact@foreas.xyz.'],
+] as const;
+
+function BoutiqueApple() {
+  return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>;
+}
+
+function BoutiqueGoogle() {
+  return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>;
+}
 
 export default function Landing() {
   return <div className={`${s.page} ${s.v2Page}`}>
@@ -31,27 +51,52 @@ export default function Landing() {
         <div>
           <p className={s.eyebrow}>PROGRAMME PARTENAIRE FOREAS</p>
           <h1 id="titre-partenariat">Recommandez<br/>FOREAS Driver.<br/><span>Soyez rémunéré.</span></h1>
-          <p className={s.lead}>Vous connaissez des chauffeurs VTC ? Créez votre espace, partagez votre lien et suivez vos recommandations au même endroit.</p>
+          <p className={s.lead}>Vous connaissez des chauffeurs VTC ? Partagez votre lien. Pour chaque chauffeur abonné au mensuel grâce à vous, vous recevez 10 € par mois.</p>
           <div className={s.actions}>
             <Link href={authUrls.signupPartner} className={s.cta}>Créer mon espace partenaire <ArrowRight size={20} aria-hidden="true"/></Link>
             <a href="#film" className={s.secondary}>Comment ça fonctionne ? <ArrowRight size={17} aria-hidden="true"/></a>
           </div>
           <p className={s.note}>Ouvert aussi aux partenaires qui ne sont pas chauffeurs. Aucun abonnement Premium nécessaire.</p>
         </div>
-        <aside className={s.rewards} aria-label="Règles de rémunération du programme partenaire">
-          <p className={s.rewardLabel}>VOTRE RÉMUNÉRATION</p>
-          <div className={s.rewardLine}>
-            <strong>10 <span>€</span></strong>
-            <div><h2>Par mois admissible</h2><p>Les deux premiers mois payés ouvrent ensemble 20 €, après le paiement du deuxième mois.</p></div>
-          </div>
-          <div className={s.or}><span>ou</span></div>
-          <div className={s.rewardLine}>
-            <strong>50 <span>€</span></strong>
-            <div><h2>Sur le premier annuel</h2><p>Après son premier paiement annuel admissible.</p></div>
-          </div>
-          <div className={s.driverBenefit}><strong>−10 %</strong><p>de remise pour le chauffeur invité, selon les conditions affichées avant son paiement.</p></div>
-          <p className={s.rewardFoot}>Les paiements doivent être conservés et admissibles. <a href={authUrls.partnerTerms}>Lire les conditions <ArrowRight size={16} aria-hidden="true"/></a></p>
-        </aside>
+        <figure className={s.heroProduct}>
+          <Image src="/media/home/foreas-rotato.webp" alt="L’application FOREAS Driver sur téléphone : une zone conseillée près de Roissy, en démonstration." width={610} height={1195} sizes="(min-width: 768px) 300px, 240px" priority className={s.device}/>
+          <figcaption>
+            <span className={s.deviceCaption}>FOREAS Driver, l’app que vous recommandez. Démonstration, données d’exemple.</span>
+            <span className={s.stores} aria-label="Disponible sur les boutiques officielles">
+              <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className={s.store}><BoutiqueApple/><span><small>Télécharger sur</small>App Store</span></a>
+              <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className={s.store}><BoutiqueGoogle/><span><small>Disponible sur</small>Google Play</span></a>
+            </span>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="remuneration" className={`${s.container} ${s.section} ${s.gains}`} aria-labelledby="gains-titre">
+        <p className={s.eyebrow}>CE QUE CHACUN Y GAGNE</p>
+        <h2 id="gains-titre">Ce que vous recevez. Ce qu’il paie.</h2>
+        <div className={s.gainsGrid}>
+          <article className={s.rewards} aria-labelledby="pour-vous">
+            <p id="pour-vous" className={s.rewardLabel}>POUR VOUS</p>
+            <div className={s.rewardLine}>
+              <strong>10 <span>€</span></strong>
+              <div><h3>Par mois admissible</h3><p>Les deux premiers mois payés ouvrent ensemble 20 €, après le paiement du deuxième mois.</p></div>
+            </div>
+            <div className={s.or}><span>ou</span></div>
+            <div className={s.rewardLine}>
+              <strong>50 <span>€</span></strong>
+              <div><h3>Sur le premier annuel</h3><p>Une seule fois, après son premier paiement annuel admissible.</p></div>
+            </div>
+            <p className={s.rewardFoot}>Les paiements doivent être conservés et admissibles. Versements par Stripe. <a href={authUrls.partnerTerms}>Lire les conditions <ArrowRight size={16} aria-hidden="true"/></a></p>
+          </article>
+          <article className={`${s.rewards} ${s.driverCard}`} aria-labelledby="pour-le-chauffeur">
+            <p id="pour-le-chauffeur" className={s.rewardLabel}>POUR LE CHAUFFEUR</p>
+            <dl className={s.priceList}>
+              <div><dt>Essai</dt><dd><strong>3 jours</strong><span>0 € aujourd’hui. Sa carte est enregistrée dès le départ.</span></dd></div>
+              <div><dt>Ensuite</dt><dd><strong>29,99 € <small>par mois</small></strong><span>ou 249,99 € par an.</span></dd></div>
+              <div><dt>Avec votre lien</dt><dd><strong className={s.accent}>−10 %</strong><span>sur son abonnement, à chaque renouvellement, selon les conditions affichées avant son paiement.</span></dd></div>
+            </dl>
+            <p className={s.rewardFoot}>Il s’abonne et paie directement FOREAS. Vous n’encaissez rien.</p>
+          </article>
+        </div>
       </section>
 
       <section id="film" className={`${s.container} ${s.filmSection}`} aria-labelledby="film-titre">
@@ -90,6 +135,29 @@ export default function Landing() {
           <article><Users size={26} aria-hidden="true"/><h3>Suivez vos invitations.</h3><p>Retrouvez les inscriptions et les paiements attribués à votre lien.</p></article>
           <article><Wallet size={26} aria-hidden="true"/><h3>Comprenez vos commissions.</h3><p>Chaque montant affiche son état, du paiement du chauffeur au versement.</p></article>
         </div>
+      </section>
+
+      <section id="questions" className={`${s.container} ${s.section} ${s.faqSection}`} aria-labelledby="questions-titre">
+        <div className={s.faq}>
+          <p className={s.eyebrow}>QUESTIONS FRÉQUENTES</p>
+          <h2 id="questions-titre">Avant de vous lancer.</h2>
+          {questions.map(([question, reponse]) => <details key={question}><summary>{question}<Plus size={20} aria-hidden="true"/></summary><p>{reponse}</p></details>)}
+        </div>
+      </section>
+
+      <section className={`${s.container} ${s.section} ${s.publisher}`} aria-labelledby="editeur-titre">
+        <div>
+          <p className={s.eyebrow}>QUI EST DERRIÈRE FOREAS</p>
+          <h2 id="editeur-titre">Une société française, joignable.</h2>
+          <p className={s.sectionIntro}>FOREAS Driver est édité par EPHIALTES, à Paris. Une question avant de vous lancer ? Écrivez-nous.</p>
+        </div>
+        <dl className={s.identity}>
+          <div><dt>Société</dt><dd>EPHIALTES</dd></div>
+          <div><dt>SIREN</dt><dd>940 879 281</dd></div>
+          <div><dt>Adresse</dt><dd>58 rue de Monceau, 75008 Paris</dd></div>
+          <div><dt>Contact</dt><dd><a href="mailto:contact@foreas.xyz">contact@foreas.xyz</a></dd></div>
+          <div><dt>Versements</dt><dd>Par Stripe. Vos coordonnées bancaires sont saisies chez Stripe, pas chez FOREAS.</dd></div>
+        </dl>
         <Link href={authUrls.signupPartner} className={`${s.cta} ${s.v2FinalCta}`}>Créer mon espace partenaire <ArrowRight size={20} aria-hidden="true"/></Link>
       </section>
     </main>
