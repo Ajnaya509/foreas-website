@@ -140,8 +140,8 @@ export default function Landing() {
         <h2 id="outils-titre">Tout ce qu’il faut pour avancer.</h2>
         <div className={s.workspace}>
           <figure className={s.workspaceShot}>
-            <Image src="/media/partenaire/espace-partenaire.webp" alt="Vraie capture de l’espace partenaire FOREAS : menu Accueil, Partager, Mes gains et Aide, lien prêt à copier, message à préparer et premières commissions à 0,00 €." width={1280} height={980} sizes="(min-width: 900px) 640px, 92vw" className={s.workspaceImage}/>
-            <figcaption>Vraie capture de l’espace partenaire, compte au démarrage. Code et lien personnels masqués.</figcaption>
+            <Image src="/media/partenaire/espace-partenaire-exemple.webp" alt="Exemple de l’espace partenaire FOREAS : lien prêt à copier, message à préparer, 30 € en attente du deuxième mois, 120 € admissibles au versement, 15 chauffeurs attribués. Chiffres d’exemple." width={1600} height={966} sizes="(min-width: 900px) 640px, 92vw" className={s.workspaceImage}/>
+            <figcaption>Exemple avec 15 chauffeurs abonnés au mensuel. Interface réelle de l’espace partenaire, chiffres d’exemple.</figcaption>
           </figure>
           <ul className={s.workspaceList}>
             <li><h3>Partagez à votre façon.</h3><p>Un message à adapter, un QR à faire scanner ou un visuel à publier.</p></li>
@@ -156,29 +156,15 @@ export default function Landing() {
           <p className={s.eyebrow}>QUESTIONS FRÉQUENTES</p>
           <h2 id="questions-titre">Avant de vous lancer.</h2>
           {questions.map(([question, reponse]) => <details key={question}><summary>{question}<Plus size={20} aria-hidden="true"/></summary><p>{reponse}</p></details>)}
+          <Link href={authUrls.signupPartner} className={s.cta}>Créer mon espace partenaire <ArrowRight size={20} aria-hidden="true"/></Link>
         </div>
       </section>
 
-      <section className={`${s.container} ${s.section} ${s.publisher}`} aria-labelledby="editeur-titre">
-        <div>
-          <p className={s.eyebrow}>QUI EST DERRIÈRE FOREAS</p>
-          <h2 id="editeur-titre">Une société française, joignable.</h2>
-          <p className={s.sectionIntro}>FOREAS Driver est édité par EPHIALTES, à Paris. Une question avant de vous lancer ? Écrivez-nous.</p>
-        </div>
-        <dl className={s.identity}>
-          <div><dt>Société</dt><dd>EPHIALTES</dd></div>
-          <div><dt>SIREN</dt><dd>940 879 281</dd></div>
-          <div><dt>Adresse</dt><dd>58 rue de Monceau, 75008 Paris</dd></div>
-          <div><dt>Contact</dt><dd><a href="mailto:contact@foreas.xyz">contact@foreas.xyz</a></dd></div>
-          <div><dt>Versements</dt><dd>Par Stripe. Vos coordonnées bancaires sont saisies chez Stripe, pas chez FOREAS.</dd></div>
-        </dl>
-        <Link href={authUrls.signupPartner} className={`${s.cta} ${s.v2FinalCta}`}>Créer mon espace partenaire <ArrowRight size={20} aria-hidden="true"/></Link>
-      </section>
     </main>
 
     <footer className={`${s.container} ${s.footer}`}>
       <div><strong>FOREAS, toujours plus loin.</strong><p>© 2026 FOREAS. Tous droits réservés.</p></div>
-      <nav aria-label="Informations légales"><Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link><a href="mailto:contact@foreas.xyz">Contact</a></nav>
+      <nav aria-label="Informations légales"><Link href="/mentions-legales">Mentions légales</Link><a href={authUrls.partnerTerms}>Conditions du programme</a><Link href="/confidentialite">Confidentialité</Link><a href="mailto:contact@foreas.xyz">Contact</a></nav>
     </footer>
   </div>;
 }
