@@ -172,3 +172,31 @@
 @media (min-width: 900px) { .gainsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v2Profiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 420px) { .priceList strong { font-size: 2.25rem; } .publisher > .cta { width: 100%; } }
 
+/* Versements par Stripe : le logo officiel, en blanc, près des montants. */
+.stripeLine { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; color: var(--text-secondary); }
+.stripeLine img { display: block; width: auto; height: 1.25rem; }
+
+/* Faites le calcul : un curseur, un montant, la condition juste dessous. */
+.simulator { @apply grid gap-xl mt-xl px-xxl py-xxxl; border: 1px solid var(--glass-on-noir-border-top); border-radius: var(--radius-modal); }
+.page .simControls h3 { margin: 0 0 1rem; }
+.simLabel { display: block; @apply text-body font-semibold; font-variant-numeric: tabular-nums; color: var(--text-hero); }
+.simRange { display: block; width: 100%; min-height: 44px; margin-top: .5rem; accent-color: var(--accent-cyan); cursor: pointer; }
+.simScale { display: flex; justify-content: space-between; @apply text-caption; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.simResult { display: grid; align-content: center; gap: .25rem; }
+.simResult strong { font-family: var(--font-genos), sans-serif; font-size: 4.75rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--accent-cyan-ice); }
+.simResult span { @apply text-label; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.simNote { @apply text-caption; color: var(--text-secondary); }
+
+/* Dans votre espace : une vraie capture, puis ce qu’on y fait. */
+.workspace { @apply grid gap-xxxl mt-huge; align-items: center; }
+.workspaceShot { display: grid; gap: .75rem; margin: 0; }
+.workspaceImage { display: block; width: 100%; height: auto; border: 1px solid var(--glass-on-noir-border-top); border-radius: var(--radius-card); }
+.workspaceShot figcaption { @apply text-caption; color: var(--text-secondary); }
+.workspaceList { display: grid; gap: 1.75rem; margin: 0; padding: 0; list-style: none; }
+.workspaceList li + li { padding-top: 1.75rem; border-top: 1px solid var(--glass-on-noir-border-top); }
+.page .workspaceList h3 { margin: 0 0 .5rem; }
+.workspaceList p { @apply text-body; color: var(--text-secondary); }
+@media (min-width: 768px) { .simulator { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; } .simNote { grid-column: 1 / -1; } }
+@media (min-width: 900px) { .workspace { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
+@media (max-width: 420px) { .simulator { @apply px-xl; } .simResult strong { font-size: 3.75rem; } }
+

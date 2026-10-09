@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { authUrls } from '@/lib/auth-urls';
 import Image from 'next/image';
-import {ArrowRight, MessageCircle, Plus, Users, Wallet} from 'lucide-react';
+import {ArrowRight, Plus} from 'lucide-react';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-stores';
 import ZoomALApparition from '@/components/partner-public/ZoomALApparition';
+import Simulateur from '@/components/partner-public/Simulateur';
 import ForeasLogo from '@/components/experience/ForeasLogo';
 import s from '@/app/partenaire/partenaire.module.css';
 
@@ -88,7 +89,10 @@ export default function Landing() {
               <strong>50 <span>€</span></strong>
               <div><h3>Sur le premier annuel</h3><p>Une seule fois, après son premier paiement annuel admissible.</p></div>
             </div>
-            <p className={s.rewardFoot}>Les paiements doivent être conservés et admissibles. Versements par Stripe. <a href={authUrls.partnerTerms}>Lire les conditions <ArrowRight size={16} aria-hidden="true"/></a></p>
+            <p className={s.rewardFoot}>Les paiements doivent être conservés et admissibles.
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <span className={s.stripeLine}>Versements par <img src="/media/partenaire/stripe-blanc.svg" alt="Stripe" width={48} height={20}/></span>
+              <a href={authUrls.partnerTerms}>Lire les conditions <ArrowRight size={16} aria-hidden="true"/></a></p>
           </article>
           <article className={`${s.rewards} ${s.driverCard}`} aria-labelledby="pour-le-chauffeur">
             <p id="pour-le-chauffeur" className={s.rewardLabel}>POUR LE CHAUFFEUR</p>
@@ -100,6 +104,7 @@ export default function Landing() {
             <p className={s.rewardFoot}>Il s’abonne et paie directement FOREAS. Vous n’encaissez rien.</p>
           </article>
         </div>
+        <Simulateur/>
       </section>
 
       <section id="film" className={`${s.container} ${s.filmSection}`} aria-labelledby="film-titre">
@@ -133,10 +138,16 @@ export default function Landing() {
       <section className={`${s.container} ${s.section}`} aria-labelledby="outils-titre">
         <p className={s.eyebrow}>DANS VOTRE ESPACE</p>
         <h2 id="outils-titre">Tout ce qu’il faut pour avancer.</h2>
-        <div className={`${s.profiles} ${s.v2Profiles}`}>
-          <article><MessageCircle size={26} aria-hidden="true"/><h3>Partagez à votre façon.</h3><p>Un message à adapter, un QR à faire scanner ou un visuel à publier.</p></article>
-          <article><Users size={26} aria-hidden="true"/><h3>Suivez vos invitations.</h3><p>Retrouvez les inscriptions et les paiements attribués à votre lien.</p></article>
-          <article><Wallet size={26} aria-hidden="true"/><h3>Comprenez vos commissions.</h3><p>Chaque montant affiche son état, du paiement du chauffeur au versement.</p></article>
+        <div className={s.workspace}>
+          <figure className={s.workspaceShot}>
+            <Image src="/media/partenaire/espace-partenaire.webp" alt="Vraie capture de l’espace partenaire FOREAS : menu Accueil, Partager, Mes gains et Aide, lien prêt à copier, message à préparer et premières commissions à 0,00 €." width={1280} height={980} sizes="(min-width: 900px) 640px, 92vw" className={s.workspaceImage}/>
+            <figcaption>Vraie capture de l’espace partenaire, compte au démarrage. Code et lien personnels masqués.</figcaption>
+          </figure>
+          <ul className={s.workspaceList}>
+            <li><h3>Partagez à votre façon.</h3><p>Un message à adapter, un QR à faire scanner ou un visuel à publier.</p></li>
+            <li><h3>Suivez vos invitations.</h3><p>Retrouvez les inscriptions et les paiements attribués à votre lien.</p></li>
+            <li><h3>Comprenez vos commissions.</h3><p>Chaque montant affiche son état, du paiement du chauffeur au versement.</p></li>
+          </ul>
         </div>
       </section>
 
