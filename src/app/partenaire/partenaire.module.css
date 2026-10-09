@@ -126,3 +126,13 @@
 .transcript p { padding-bottom: 1rem; line-height: 1.75; }
 @media (min-width: 768px) { .filmHeading { grid-template-columns: 1fr 1fr; gap: 3rem; } }
 @media (max-width: 420px) { .actions { gap: .5rem; } .actions > a { width: 100%; } .filmLink { width: 100%; } .driverBenefit { gap: 1rem; } .page h1 { font-size: clamp(2.3rem, 10.5vw, 2.75rem); } }
+
+/* Film partenaire : sans chargement automatique, même lecteur que /partenariat. */
+.filmSection { padding-block: 3.5rem; scroll-margin-top: 1rem; border-top: 1px solid var(--glass-on-noir-border-top); }
+.filmHeading { display: grid; gap: 1.5rem; margin-bottom: 2rem; align-items: end; }
+.filmHeading > p { max-width: 28rem; color: var(--text-secondary); line-height: 1.75; }
+.film { display: block; width: 100%; height: auto; aspect-ratio: 16/9; background: var(--noir-apple); border: 1px solid var(--glass-on-noir-border-top); border-radius: var(--radius-modal); }
+.transcript { max-width: 52rem; margin-top: 1rem; color: var(--text-secondary); font-size: .9375rem; }
+.transcript summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; text-decoration: underline; text-underline-offset: .25em; }
+.transcript p { padding-bottom: 1rem; line-height: 1.75; }
+@media (min-width: 768px) { .filmHeading { grid-template-columns: 1fr 1fr; gap: 3rem; } }
