@@ -34,7 +34,7 @@ export default function Landing() {
           <p className={s.lead}>Vous connaissez des chauffeurs VTC ? Créez votre espace, partagez votre lien et suivez vos recommandations au même endroit.</p>
           <div className={s.actions}>
             <Link href={authUrls.signupPartner} className={s.cta}>Créer mon espace partenaire <ArrowRight size={20} aria-hidden="true"/></Link>
-            <a href="#fonctionnement" className={s.secondary}>Comment ça marche ? <ArrowRight size={17} aria-hidden="true"/></a>
+            <a href="#film" className={s.secondary}>Comment ça fonctionne ? <ArrowRight size={17} aria-hidden="true"/></a>
           </div>
           <p className={s.note}>Ouvert aussi aux partenaires qui ne sont pas chauffeurs. Aucun abonnement Premium nécessaire.</p>
         </div>
