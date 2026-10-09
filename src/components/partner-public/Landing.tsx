@@ -59,9 +59,11 @@ export default function Landing() {
           <p className={s.note}>Ouvert aussi aux partenaires qui ne sont pas chauffeurs. Aucun abonnement Premium nécessaire.</p>
         </div>
         <figure className={s.heroProduct}>
-          <Image src="/media/home/foreas-rotato.webp" alt="L’application FOREAS Driver sur téléphone : une zone conseillée près de Roissy, en démonstration." width={610} height={1195} sizes="(min-width: 768px) 300px, 240px" priority className={s.device}/>
+          <div className={s.verdictFrame}>
+            <Image src="/media/partenaire/verdict-instant.webp" alt="Démonstration de Verdict Instant dans FOREAS Driver : une course affichée 46,20 € reçoit le verdict « À laisser, 16 € de l’heure », car elle prend 121 minutes au total." width={1156} height={2350} sizes="(min-width: 768px) 440px, 92vw" priority className={s.verdictImage}/>
+          </div>
           <figcaption>
-            <span className={s.deviceCaption}>FOREAS Driver, l’app que vous recommandez. Démonstration, données d’exemple.</span>
+            <span className={s.deviceCaption}>Verdict Instant, dans FOREAS Driver : le prix affiché, puis ce qu’il rapporte vraiment à l’heure. Démonstration, données d’exemple.</span>
             <span className={s.stores} aria-label="Disponible sur les boutiques officielles">
               <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className={s.store}><BoutiqueApple/><span><small>Télécharger sur</small>App Store</span></a>
               <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className={s.store}><BoutiqueGoogle/><span><small>Disponible sur</small>Google Play</span></a>

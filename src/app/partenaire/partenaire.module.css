@@ -126,7 +126,10 @@
 
 /* Ouverture : le produit à côté de la promesse, et la preuve qu’il existe. */
 .heroProduct { display: grid; justify-items: center; gap: 1.5rem; margin: 0; }
-.device { display: block; width: 220px; height: auto; }
+/* Verdict Instant : téléphone entier au chargement, puis zoom unique sur le verdict et le prix, qui reste fixe. */
+.verdictFrame { position: relative; width: min(100%, 28rem); aspect-ratio: 3 / 4; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, black 84%, transparent); mask-image: linear-gradient(to bottom, black 84%, transparent); }
+.verdictImage { display: block; width: 61.7%; height: auto; margin: 4% auto 0; transform: scale(1.59); transform-origin: 50% 0; animation: verdictZoom 720ms var(--ease-decelerate) 200ms both; }
+@keyframes verdictZoom { from { transform: scale(1); } to { transform: scale(1.59); } }
 .heroProduct figcaption { display: grid; justify-items: center; gap: 1rem; text-align: center; }
 .deviceCaption { @apply text-caption; max-width: 19rem; color: var(--text-secondary); }
 .stores { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
@@ -162,7 +165,7 @@
 .identity dd { @apply text-body; margin: 0; color: var(--text-hero); }
 .identity a { text-decoration: underline; text-underline-offset: .25em; }
 .publisher > .cta { justify-self: start; }
-@media (min-width: 768px) { .device { width: 280px; } .identity > div { grid-template-columns: 8rem 1fr; align-items: baseline; } .publisher { grid-template-columns: repeat(2, minmax(0, 1fr)); } .publisher > .cta { grid-column: 1 / -1; } }
+@media (min-width: 768px) { .identity > div { grid-template-columns: 8rem 1fr; align-items: baseline; } .publisher { grid-template-columns: repeat(2, minmax(0, 1fr)); } .publisher > .cta { grid-column: 1 / -1; } }
 @media (min-width: 900px) { .gainsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v2Profiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 420px) { .priceList strong { font-size: 2.25rem; } .publisher > .cta { width: 100%; } }
 
